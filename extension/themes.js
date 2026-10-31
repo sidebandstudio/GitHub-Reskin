@@ -190,8 +190,25 @@
     // The neon for links, icons, carets, the scrollbar and selection marks, mixed toward the text color
     // until it reads on every page background. Glows and edges keep the raw neon. The scrollbar
     // thumb and focus ring are softened only on dark pages. On a light page they would fade out.
-    const pageBgs = [p.bg, p.surface, p.inset, p.raised];
-    const worst = (color) => Math.min(...pageBgs.map((bg) => contrast(color, bg)));
+    let [surface, inset, raised] = [p.surface, p.inset, p.raised];
+    const worst = (color) => Math.min(...[p.bg, surface, inset, raised].map((bg) => contrast(color, bg)));
+    // On a mid-grey background the surfaces can sit either side of where black and white text
+    // cross over, so nothing reads on all of them. Then each surface that black or white, on the
+    // text's side, can't read on moves to the other side of the background, as far from it as before.
+    const straddles = worst("#000000") < 4.5 && worst("#ffffff") < 4.5;
+    if (straddles) {
+      const [side, away] = luminance(p.ink) > luminance(p.bg) ? ["#ffffff", "#000000"] : ["#000000", "#ffffff"];
+      const flip = (color) => {
+        if (contrast(side, color) >= 4.5) return color;
+        let t = 0;
+        while (contrast(mix(p.bg, away, t), p.bg) < contrast(color, p.bg) && t < 1) t += 0.01;
+        return mix(p.bg, away, Math.min(t, 1));
+      };
+      [surface, inset, raised] = [surface, inset, raised].map(flip);
+    }
+    const surfaces = straddles
+      ? `--bgColor-muted:${surface} !important;--control-bgColor-rest:${surface} !important;--bgColor-inset:${inset} !important;--header-bgColor:${inset} !important;--overlay-bgColor:${raised} !important;--button-default-bgColor-rest:${raised} !important;--sideNav-bgColor-selected:${raised} !important;`
+      : "";
     // The text color can read on the page background but not quite on a surface. Then black or
     // white, whichever reads on all of them.
     const toward = worst(p.ink) >= 4.5 ? p.ink : worst("#000000") > worst("#ffffff") ? "#000000" : "#ffffff";
@@ -227,8 +244,8 @@
     // are square, and only labels that aren't links get a clip-path bevel, which would clip focus rings.
     // The top glow covers one screen and scrolls with the page, so it ends where it has faded out.
     return `/* reskin-effects:cyberpunk */
-:root,[data-color-mode],[data-light-theme],[data-dark-theme]{--bgColor-accent-muted:${mix(p.bg, neon2, 0.12)} !important;--bgColor-accent-emphasis:${darkenForWhiteText(neon2)} !important;--borderColor-accent-muted:${mix(p.bg, neon2, 0.4)} !important;--button-primary-bgColor-rest:${neon} !important;--button-primary-bgColor-hover:${buttonHover} !important;--button-primary-bgColor-active:${buttonActive} !important;--button-primary-borderColor-rest:${neon} !important;--button-primary-borderColor-hover:${neon} !important;--button-primary-fgColor-rest:${onNeon} !important;--button-primary-iconColor-rest:${onNeon} !important;--underlineNav-borderColor-active:${neonFg} !important;--borderColor-accent-emphasis:${neonFg} !important;--focus-outlineColor:${neonFg} !important;--fgColor-accent:${neonFg} !important;--fgColor-link:${neonFg} !important}
-:root{scrollbar-color:${p.dark ? mix(p.bg, neonFg, 0.55) : neonFg} ${p.inset}}
+:root,[data-color-mode],[data-light-theme],[data-dark-theme]{${surfaces}--bgColor-accent-muted:${mix(p.bg, neon2, 0.12)} !important;--bgColor-accent-emphasis:${darkenForWhiteText(neon2)} !important;--borderColor-accent-muted:${mix(p.bg, neon2, 0.4)} !important;--button-primary-bgColor-rest:${neon} !important;--button-primary-bgColor-hover:${buttonHover} !important;--button-primary-bgColor-active:${buttonActive} !important;--button-primary-borderColor-rest:${neon} !important;--button-primary-borderColor-hover:${neon} !important;--button-primary-fgColor-rest:${onNeon} !important;--button-primary-iconColor-rest:${onNeon} !important;--underlineNav-borderColor-active:${neonFg} !important;--borderColor-accent-emphasis:${neonFg} !important;--focus-outlineColor:${neonFg} !important;--fgColor-accent:${neonFg} !important;--fgColor-link:${neonFg} !important}
+:root{scrollbar-color:${p.dark ? mix(p.bg, neonFg, 0.55) : neonFg} ${inset}}
 body{background-image:radial-gradient(ellipse 80% 50% at 50% -10%,${alpha(neon2, 10)},transparent 70%),linear-gradient(${alpha(neon2, 5)} 1px,transparent 1px),linear-gradient(90deg,${alpha(neon2, 5)} 1px,transparent 1px),repeating-linear-gradient(${alpha(p.ink, 2)} 0 1px,transparent 1px 3px) !important;background-size:100% 100vh,48px 48px,48px 48px,auto !important;background-repeat:no-repeat,repeat,repeat,repeat !important}
 ::selection{background-color:${neon} !important;color:${onNeon} !important}
 input,textarea,[contenteditable]{caret-color:${neonFg}}

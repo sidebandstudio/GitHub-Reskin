@@ -135,21 +135,52 @@ test("on a light edited background, Cyberpunk's neon icons, caret and marks stil
   assert.match(dark, /caret-color:#fcee0a/);
 });
 
+// Every variable css() paints a page background, surface, inset or raised panel with, links included.
+const PAGE_BGS = ["--bgColor-default", "--bgColor-muted", "--bgColor-inset", "--header-bgColor", "--headerSearch-bgColor", "--page-header-bgColor", "--card-bgColor", "--overlay-bgColor", "--control-bgColor-rest", "--button-default-bgColor-rest", "--sideNav-bgColor-selected"];
+
+const LINK_VARS = new RegExp(`(${[...PAGE_BGS, "--fgColor-link", "--fgColor-accent"].join("|")}):(#[0-9a-f]{6})`, "g");
+
+// The lowest contrast Cyberpunk's links and accent text get on any of those, with the given colors.
+function worstLink(custom) {
+  const out = css(palette({ theme: "cyberpunk", custom: { graph: "#00f0ff", ...custom } }));
+  // Later values replace earlier ones, as in the cascade.
+  const vars = Object.fromEntries([...out.matchAll(LINK_VARS)].map(([, name, value]) => [name, value]));
+  return Math.min(...["--fgColor-link", "--fgColor-accent"].flatMap((fg) => PAGE_BGS.map((bg) => contrast(vars[fg], vars[bg]))));
+}
+
 test("Cyberpunk links and accent text reach 4.5:1 on every page background for any accent", () => {
   const levels = Array.from({ length: 16 }, (_, i) => (i * 17).toString(16).padStart(2, "0"));
   // The last text color reads on the background (4.6:1) but not on the slightly lighter surfaces.
   for (const [bg, text] of [["#0a0a17", "#e4f3ff"], ["#ffffff", "#000000"], ["#000000", "#767676"]]) {
     for (const r of levels) for (const g of levels) for (const b of levels) {
       const accent = `#${r}${g}${b}`;
-      const p = palette({ theme: "cyberpunk", custom: { bg, text, accent, graph: "#00f0ff" } });
-      const out = css(p);
-      for (const name of ["--fgColor-link", "--fgColor-accent"]) {
-        const color = cssVar(out, name);
-        const ratio = Math.min(...[p.bg, p.surface, p.inset, p.raised].map((c) => contrast(color, c)));
-        assert.ok(ratio >= 4.5, `${name} for ${accent} on ${bg}: ${ratio.toFixed(2)}`);
+      const ratio = worstLink({ bg, text, accent });
+      assert.ok(ratio >= 4.5, `${accent} on ${bg}: ${ratio.toFixed(2)}`);
+    }
+  }
+});
+
+test("Cyberpunk links and accent text reach 4.5:1 on mid grey and mid colored backgrounds too", () => {
+  // Around the middle, where the surfaces can fall either side of where black and white text cross over.
+  const greys = Array.from({ length: 33 }, (_, i) => (0x60 + i).toString(16).padStart(2, "0")).map((v) => `#${v}${v}${v}`);
+  const colors = ["#ff0000", "#e00000", "#00a000", "#008f00", "#0000ff", "#3060ff", "#d06000", "#c08000", "#8000ff", "#a020a0", "#008080", "#009999", "#e0407f", "#6a8a3a"];
+  const texts = ["#ffffff", "#000000", "#e4f3ff", "#111111", "#f0f0f0", "#ffff99", "#001a33", "#ccffff"];
+  const accents = [...new Set([...THEMES.map((t) => t.accent), "#000000", "#ffffff", "#757575", "#808080", "#ff2a6d", "#39ff14", "#1b1464", "#fff6a8"])];
+  let cases = 0;
+  for (const bg of [...greys, ...colors]) {
+    for (const text of texts.filter((c) => contrast(c, bg) >= 4.5)) {
+      for (const accent of accents) {
+        const ratio = worstLink({ bg, text, accent });
+        assert.ok(ratio >= 4.5, `${accent} with ${text} on ${bg}: ${ratio.toFixed(2)}`);
+        cases++;
       }
     }
   }
+  assert.ok(cases > 1000, `${cases} cases`);
+  // The reported case: white text on #757575 and a black accent.
+  assert.ok(worstLink({ bg: "#757575", text: "#ffffff", accent: "#000000" }) >= 4.5);
+  // Where some color already reads on every surface, Cyberpunk leaves GitHub's surfaces to the palette.
+  assert.doesNotMatch(css(palette(DEFAULTS)).slice(css(palette(DEFAULTS)).indexOf("reskin-effects:")), /--overlay-bgColor/);
 });
 
 // A stand-in for chrome.storage.local that records what gets saved. With `deferred`, each read
@@ -290,6 +321,35 @@ test("a late load in another tab can't undo a theme picked in the popup", async 
   const fresh = load(storage);
   storage.reads[2].release();
   assert.equal((await fresh).theme, "cyberpunk");
+});
+
+// Runs content.js against a stand-in page. Returns its stylesheet, the localStorage cache, and a
+// way to report a storage change.
+function openTab(storage) {
+  const style = { textContent: "" };
+  const cache = new Map();
+  const listeners = [];
+  const document = { createElement: () => style, documentElement: { append() {} } };
+  const localStorage = { getItem: (k) => cache.get(k) ?? null, setItem: (k, v) => cache.set(k, v), removeItem: (k) => cache.delete(k) };
+  const chrome = { storage: { local: storage, onChanged: { addListener: (fn) => listeners.push(fn) } } };
+  vm.runInNewContext(readFileSync(new URL("./extension/content.js", import.meta.url), "utf8"), { GitHubReskin: globalThis.GitHubReskin, document, localStorage, chrome });
+  return { style, cache, change: (changes) => listeners.forEach((fn) => fn(changes, "local")) };
+}
+
+test("a tab's first read finishing late can't repaint over a newer change", async () => {
+  const storage = fakeStorage({ theme: "editing-suite" }, true);
+  const tab = openTab(storage);
+  // The popup picks Cyberpunk while the tab's first read is still out.
+  storage.data.theme = "cyberpunk";
+  tab.change({ theme: { oldValue: "editing-suite", newValue: "cyberpunk" } });
+  assert.equal(storage.reads.length, 2);
+  storage.reads[1].release();
+  await new Promise((resolve) => setTimeout(resolve));
+  storage.reads[0].release();
+  await new Promise((resolve) => setTimeout(resolve));
+  const cyberpunk = css(palette({ ...DEFAULTS, theme: "cyberpunk" }));
+  assert.equal(tab.style.textContent, cyberpunk);
+  assert.equal(tab.cache.get("github-reskin-css"), cyberpunk);
 });
 
 // sha256 of css() for every theme without effects, plus one with edited colors. It was

@@ -25,8 +25,18 @@
     cache(() => (text ? localStorage.setItem(CACHE, text) : localStorage.removeItem(CACHE)));
   }
 
-  load(chrome.storage.local).then(apply);
+  // Reads can finish out of order, so only the latest one paints. An older read would bring back
+  // settings that have since changed.
+  let reads = 0;
+  function refresh() {
+    const read = ++reads;
+    load(chrome.storage.local).then((settings) => {
+      if (read === reads) apply(settings);
+    });
+  }
+
+  refresh();
   chrome.storage.onChanged.addListener((changes, area) => {
-    if (area === "local") load(chrome.storage.local).then(apply);
+    if (area === "local") refresh();
   });
 })();
