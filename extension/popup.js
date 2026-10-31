@@ -1,7 +1,7 @@
 // The popup card. Saves to storage.local, and the content script repaints GitHub on change.
 (function () {
   "use strict";
-  const { THEMES, DEFAULTS, EDITABLE, palette, isHex } = globalThis.GitHubReskin;
+  const { THEMES, DEFAULTS, EDITABLE, palette, load, isHex } = globalThis.GitHubReskin;
   const LABELS = { bg: "Background", text: "Text", accent: "Accent", graph: "Contribution graph" };
   const $ = (id) => document.getElementById(id);
   const currentTheme = () => THEMES.find((t) => t.id === settings.theme) || THEMES[0];
@@ -16,7 +16,8 @@
   function setColor(key, value) {
     const p = palette(settings);
     const custom = Object.fromEntries(EDITABLE.map((k) => [k, p[k]]));
-    save({ custom: { ...custom, [key]: value.toLowerCase() } });
+    // The theme is saved with the colors, so they stay on it if the default theme changes.
+    save({ theme: currentTheme().id, custom: { ...custom, [key]: value.toLowerCase() } });
   }
 
   for (const theme of THEMES) {
@@ -99,7 +100,7 @@
   }
 
   // The card stays inert until settings load, so the load can't overwrite an early click.
-  chrome.storage.local.get(DEFAULTS).then((stored) => {
+  load(chrome.storage.local).then((stored) => {
     settings = stored;
     render();
     document.querySelector("main").inert = false;

@@ -34,7 +34,7 @@ Under the themes you can change four colors: background, text, accent and the co
 It adjusts the colors it works out so they stay readable:
 
 - Muted text and links move toward your text color until they reach WCAG AA contrast, 4.5:1.
-- Primary buttons get a darker shade of your accent when GitHub's white button text wouldn't read on the accent itself.
+- Primary buttons get a darker shade of your accent when GitHub's white button text wouldn't read on the accent itself. Cyberpunk instead fills them with the accent and uses black, white or your background color for the button text, whichever reads best.
 - If your text color is hard to read on your background, the popup warns you. GitHub's main text still uses your color, but borders, muted text and links are then worked out from black or white instead.
 
 ## How it works
@@ -97,7 +97,7 @@ The workflow redraws the graph once a day, starting around 06:17 UTC. GitHub can
 | Input | Default | What it does |
 | --- | --- | --- |
 | `username` | owner of the repo | Whose graph to draw. Set this when the repo belongs to an organization. |
-| `style` | `flat` | `flat` or `cyberpunk` |
+| `style` | `flat` | `flat` or `cyberpunk`. Needs `whoisaldo/GitHub-Reskin@main`; `@v1` doesn't have it. |
 | `color` | `#f2a93b` in flat | Color of the busiest days. Quieter days get fainter mixes of it. |
 | `background` | `#0a0a0b` in flat | Panel color |
 | `text` | `#ededea` in flat | Text color. Empty days and labels are mixed from it. |

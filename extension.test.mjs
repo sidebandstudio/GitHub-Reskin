@@ -5,7 +5,7 @@ import test from "node:test";
 import "./extension/github-modes.js";
 import "./extension/themes.js";
 
-const { THEMES, DEFAULTS, palette, css, contrast, isHex } = globalThis.GitHubReskin;
+const { THEMES, DEFAULTS, palette, css, load, contrast, isHex } = globalThis.GitHubReskin;
 
 test("every theme keeps text, muted text, links and button text readable", () => {
   for (const theme of THEMES) {
@@ -132,6 +132,63 @@ test("on a light edited background, Cyberpunk's neon icons, caret and marks stil
   const dark = css(palette(DEFAULTS));
   assert.equal(cssVar(dark, "--focus-outlineColor"), "#fcee0a");
   assert.match(dark, /caret-color:#fcee0a/);
+});
+
+test("Cyberpunk links and accent text reach 4.5:1 on every page background for any accent", () => {
+  const levels = Array.from({ length: 16 }, (_, i) => (i * 17).toString(16).padStart(2, "0"));
+  for (const [bg, text] of [["#0a0a17", "#e4f3ff"], ["#ffffff", "#000000"]]) {
+    for (const r of levels) for (const g of levels) for (const b of levels) {
+      const accent = `#${r}${g}${b}`;
+      const p = palette({ theme: "cyberpunk", custom: { bg, text, accent, graph: "#00f0ff" } });
+      const out = css(p);
+      for (const name of ["--fgColor-link", "--fgColor-accent"]) {
+        const color = cssVar(out, name);
+        const ratio = Math.min(...[p.bg, p.surface, p.inset, p.raised].map((c) => contrast(color, c)));
+        assert.ok(ratio >= 4.5, `${name} for ${accent} on ${bg}: ${ratio.toFixed(2)}`);
+      }
+    }
+  }
+});
+
+// A stand-in for chrome.storage.local that records what gets saved.
+function fakeStorage(data) {
+  const saved = [];
+  return {
+    data,
+    saved,
+    async get(keys) {
+      return Object.fromEntries(keys.filter((k) => k in data).map((k) => [k, data[k]]));
+    },
+    async set(patch) {
+      saved.push(patch);
+      Object.assign(data, patch);
+    },
+  };
+}
+
+test("an upgrade from 1.0 keeps edited colors on Editing Suite, and new installs get Cyberpunk", async () => {
+  const fresh = fakeStorage({});
+  assert.deepEqual(await load(fresh), DEFAULTS);
+  assert.equal((await load(fresh)).theme, "cyberpunk");
+  assert.deepEqual(fresh.saved, []);
+
+  // 1.0 saved only the colors when you edited them.
+  const custom = { bg: "#101010", text: "#f0f0f0", accent: "#ff2a6d", graph: "#39ff14" };
+  const upgraded = fakeStorage({ custom });
+  const settings = await load(upgraded);
+  assert.equal(settings.theme, "editing-suite");
+  assert.deepEqual(settings.custom, custom);
+  assert.deepEqual(upgraded.saved, [{ theme: "editing-suite" }]);
+  assert.equal(palette(settings).bg, "#101010");
+  assert.equal(palette(settings).effects, null);
+  await load(upgraded);
+  assert.equal(upgraded.saved.length, 1);
+
+  for (const theme of ["cyberpunk", "nord"]) {
+    const chosen = fakeStorage({ theme, custom, enabled: false });
+    assert.deepEqual(await load(chosen), { enabled: false, theme, custom });
+    assert.deepEqual(chosen.saved, []);
+  }
 });
 
 // sha256 of css() for every theme without effects, plus one with edited colors. It was

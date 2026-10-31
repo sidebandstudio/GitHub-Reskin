@@ -61,7 +61,7 @@ footer a:hover { text-decoration: underline; }
 [data-effects="cyberpunk"] h1 { letter-spacing: .08em; text-transform: uppercase; text-shadow: 0 0 10px var(--glow); }
 [data-effects="cyberpunk"] :is(h2, .link, footer) { font-family: ui-monospace, "SF Mono", SFMono-Regular, "Cascadia Mono", Menlo, Consolas, monospace; }
 [data-effects="cyberpunk"] h2 { letter-spacing: .12em; }
-[data-effects="cyberpunk"] h2::before { content: "// "; color: var(--accent); }
+[data-effects="cyberpunk"] h2::before { content: "// " / ""; color: var(--accent); }
 [data-effects="cyberpunk"] .theme { border-radius: 10px 0; corner-shape: bevel; }
 [data-effects="cyberpunk"] .swatch { border-radius: 6px 0; corner-shape: bevel; }
 [data-effects="cyberpunk"] .theme:hover { border-color: var(--accent); }

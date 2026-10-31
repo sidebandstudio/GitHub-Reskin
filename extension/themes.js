@@ -191,7 +191,10 @@
     // until it reads on every page background. Glows and edges keep the raw neon. The scrollbar
     // thumb and focus ring are softened only on dark pages. On a light page they would fade out.
     const pageBgs = [p.bg, p.surface, p.inset, p.raised];
-    const neonFg = readable(neon, pageBgs.reduce((worst, c) => (contrast(c, neon) < contrast(worst, neon) ? c : worst)), p.ink);
+    const worst = (color) => Math.min(...pageBgs.map((bg) => contrast(color, bg)));
+    let t = 0;
+    while (worst(mix(neon, p.ink, t)) < 4.5 && t < 1) t += 0.05;
+    const neonFg = mix(neon, p.ink, Math.min(t, 1));
     const header = ":is(.AppHeader,.HeaderMktg,.Header,.gist-header-logged-out)";
     const logo = ":is(.AppHeader-logo,.Header-link,header a[aria-label='Homepage'],a[aria-label='Gist Homepage'])";
     const title = ":is([data-testid='repo-name-link'],strong[itemprop='name'] a,#repo-title-component a,.AppHeader-context-item-label,.gist-blob-name)";
@@ -255,5 +258,17 @@ ${title}:hover{animation:reskin-flicker .6s linear 1}
 
   const EFFECTS = { cyberpunk };
 
-  globalThis.GitHubReskin = { THEMES, DEFAULTS, EDITABLE, palette, css, mix, contrast, isHex };
+  // Reads settings from chrome.storage.local, filling in DEFAULTS. Before 1.1, Editing Suite was
+  // the default and editing a color saved only `custom`, so edits with no saved theme were made on
+  // Editing Suite. That theme is saved once, so the new default doesn't take over those colors.
+  async function load(storage) {
+    const stored = await storage.get(Object.keys(DEFAULTS));
+    if (stored.custom && !stored.theme) {
+      stored.theme = "editing-suite";
+      await storage.set({ theme: stored.theme });
+    }
+    return { ...DEFAULTS, ...stored };
+  }
+
+  globalThis.GitHubReskin = { THEMES, DEFAULTS, EDITABLE, palette, css, load, mix, contrast, isHex };
 })();
