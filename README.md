@@ -16,7 +16,18 @@ Reload any GitHub or Gist tabs you already had open, then click GitHub Reskin in
 
 ## Themes and colors
 
-Twelve themes come with it. The dark ones are Editing Suite, Dracula, Nord, Catppuccin Mocha, Gruvbox, Tokyo Night, Rosé Pine, One Dark and Solarized Dark. The light ones are Catppuccin Latte, Rosé Pine Dawn and Solarized Light.
+Thirteen themes come with it. Cyberpunk is the default. The other dark ones are Editing Suite, Dracula, Nord, Catppuccin Mocha, Gruvbox, Tokyo Night, Rosé Pine, One Dark and Solarized Dark. The light ones are Catppuccin Latte, Rosé Pine Dawn and Solarized Light.
+
+Cyberpunk is electric yellow and cyan on a near-black blue-violet, and it changes more than colors:
+
+- Headings, the header, tabs, buttons, counters and labels use condensed and monospace system fonts. Font sizes and spacing stay as GitHub has them.
+- Headings, the selected tab, primary buttons, focus rings, hovered links and contribution graph cells glow. Busier days glow more. Code, diffs and body text don't.
+- Buttons, labels, boxes and menus get beveled corners instead of round ones. Browsers without `corner-shape` support cut the corners of labels and counters with a clip path and keep the rest rounded.
+- A faint grid and scanlines sit behind the page, and the header has a neon edge. Scrollbars, selected text and the text cursor use the accent.
+- The GitHub logo and the repo title glitch when you hover them. If your system is set to reduce motion, nothing moves.
+- The popup takes on the same look.
+
+The effects use whatever colors you set, so editing Cyberpunk's colors keeps the effects in your colors.
 
 Under the themes you can change four colors: background, text, accent and the contribution graph. GitHub Reskin works out the rest, like borders, muted text and button colors. "Reset to theme" puts the theme's colors back, and the switch at the top turns the theme off.
 
@@ -30,11 +41,11 @@ It adjusts the colors it works out so they stay readable:
 
 The extension recolors github.com and gist.github.com through the color variables GitHub's own CSS uses. A dark theme also brings in GitHub's standard dark colors for code, diffs and labels, and a light theme brings the light ones. These replace whatever palette your GitHub account uses, including dimmed, high contrast, colorblind and tritanopia, so code stays readable under any theme. If you use a colorblind palette, diffs go back to GitHub's standard red and green while a theme is on.
 
-Your settings stay in the browser, and the extension makes no network requests. It also caches the generated CSS in github.com's local storage, so a full page load doesn't flash GitHub's own colors first.
+Cyberpunk's effects come out of the same generated CSS, using only system fonts and CSS gradients. Your settings stay in the browser, and the extension makes no network requests. It also caches the generated CSS in github.com's local storage, so a full page load doesn't flash GitHub's own colors first.
 
 ## Add a theme
 
-Themes live in [`extension/themes.js`](extension/themes.js). A theme needs an `id`, a `name` and four colors: `bg`, `text`, `accent` and `graph`. You can also give `surface`, `border` and `muted` if the original palette has them. Run `node --test` to check that every theme keeps its text, links and button text readable.
+Themes live in [`extension/themes.js`](extension/themes.js). A theme needs an `id`, a `name` and four colors: `bg`, `text`, `accent` and `graph`. You can also give `surface`, `border` and `muted` if the original palette has them, and `effects: "cyberpunk"` to add Cyberpunk's effects. Run `node --test` to check that every theme keeps its text, links and button text readable, and that themes without effects produce the same CSS as before.
 
 GitHub's standard light and dark colors live in `extension/github-modes.js`, which is generated. If GitHub changes its colors, `node scripts/github-modes.mjs` rebuilds that file from github.com's current CSS.
 

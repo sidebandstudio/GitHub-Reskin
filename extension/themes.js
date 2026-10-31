@@ -6,7 +6,9 @@
   // and muted values follow the original palette and drop away once you edit.
   // palette() shifts muted text and links toward the text color when they'd be hard to read.
   // Palettes are from their open source projects, credited in the README.
+  // A theme with `effects` also gets the matching extra CSS from EFFECTS below.
   const THEMES = [
+    { id: "cyberpunk", name: "Cyberpunk", bg: "#0a0a17", text: "#e4f3ff", accent: "#fcee0a", graph: "#00f0ff", surface: "#11112a", border: "#2d2a52", muted: "#9a9ccc", effects: "cyberpunk" },
     { id: "editing-suite", name: "Editing Suite", bg: "#0a0a0b", text: "#ededea", accent: "#f2a93b", graph: "#f2a93b" },
     { id: "dracula", name: "Dracula", bg: "#282a36", text: "#f8f8f2", accent: "#bd93f9", graph: "#ff79c6", surface: "#21222c", border: "#44475a", muted: "#6272a4" },
     { id: "nord", name: "Nord", bg: "#2e3440", text: "#eceff4", accent: "#88c0d0", graph: "#88c0d0", surface: "#3b4252", border: "#4c566a", muted: "#616e88" },
@@ -92,6 +94,8 @@
       hover: mix(bg, ink, 0.12),
       strong: darkenForWhiteText(accent),
       shades: [mix(bg, ink, 0.09), ...[0.35, 0.55, 0.78, 1].map((t) => mix(bg, graph, t))],
+      // Effects stay on when you edit the theme's colors, and use the edited ones.
+      effects: theme.effects || null,
     };
   }
 
@@ -157,8 +161,90 @@
     const blob = `.js-highlight-blob{fill:${p.graph} !important;stroke:${p.graph} !important}`;
     // GitHub's own colors for the matching mode go first, so code, diffs and labels suit the background.
     const mode = (globalThis.GitHubReskinModes || {})[p.dark ? "dark" : "light"] || "";
-    return `${blob}\n:root,[data-color-mode],[data-light-theme],[data-dark-theme]{${mode}${declarations}color-scheme:${p.dark ? "dark" : "light"} !important}\n${days}\n`;
+    const extra = p.effects ? EFFECTS[p.effects](p) : "";
+    return `${blob}\n:root,[data-color-mode],[data-light-theme],[data-dark-theme]{${mode}${declarations}color-scheme:${p.dark ? "dark" : "light"} !important}\n${days}\n${extra}`;
   }
+
+  // Of the choices, the color that reads best on color.
+  function bestOn(color, choices) {
+    return choices.reduce((best, c) => (contrast(c, color) > contrast(best, color) ? c : best));
+  }
+
+  // color at the given opacity, in percent.
+  const alpha = (color, percent) => `color-mix(in srgb,${color} ${percent}%,transparent)`;
+
+  const FONT_DISPLAY = `"Bahnschrift","DIN Alternate","Roboto Condensed","Arial Narrow",ui-monospace,monospace`;
+  const FONT_MONO = `ui-monospace,"SF Mono",SFMono-Regular,"Cascadia Mono","JetBrains Mono",Menlo,Consolas,"Liberation Mono",monospace`;
+
+  // Neon on dark glass: condensed and monospace type, glows, beveled corners, a grid behind
+  // the page and glitchy hovers. Code, diffs and body text never glow. Motion only runs
+  // inside prefers-reduced-motion: no-preference.
+  function cyberpunk(p) {
+    const neon = p.accent;
+    const neon2 = p.graph;
+    const onNeon = bestOn(neon, [p.bg, "#000000", "#ffffff"]);
+    const header = ":is(.AppHeader,.HeaderMktg,.Header,.gist-header-logged-out)";
+    const logo = ":is(.AppHeader-logo,.Header-link,header a[aria-label='Homepage'],a[aria-label='Gist Homepage'])";
+    const title = ":is([data-testid='repo-name-link'],strong[itemprop='name'] a,#repo-title-component a,.AppHeader-context-item-label,.gist-blob-name)";
+    const buttons = ":is(.btn,.Button,[data-component='Button'],[data-component='IconButton'],[data-component='ActionMenu.Button'],.BtnGroup-item)";
+    const primary = ":is(.btn-primary,.Button--primary,[data-variant='primary'])";
+    const labels = ":is(.Label,.IssueLabel,.Counter,.topic-tag,.State,[data-component='Label'],[data-component='CounterLabel'],[class*='prc-Token-TokenBase'],[class*='prc-StateLabel'])";
+    const tabs = ":is(.UnderlineNav-item,[class*='UnderlineItem'],.tabnav-tab,.js-selected-navigation-item)";
+    const selectedTab = ":is(.UnderlineNav-item.selected,.UnderlineNav-item[aria-current='page'],[class*='UnderlineItem'][aria-current='page'],.tabnav-tab.selected,.tabnav-tab[aria-current='page'])";
+    const boxes = ":is(.Box,.markdown-body pre,.blankslate)";
+    // Panels from GitHub's React code have hashed class names, so these keep GitHub's radius.
+    const panels = ":is(.rounded-1,.rounded-2,.rounded-3,.rounded-top-2,.rounded-bottom-2,[class*='Box_'],[class*='branchInfoBar'])";
+    const overlays = ":is([class*='prc-Overlay-Overlay'],.Overlay,.SelectMenu-modal,.dropdown-menu,.Popover-message)";
+    const code = ":is(pre,code,kbd,samp,tt,textarea,.blob-code,.blob-code-inner,.react-code-text,.react-code-lines,.diff-table,[class*='diff-text'],[class*='DiffLines'])";
+    const days = p.shades
+      .slice(1)
+      .map((shade, i) => `.ContributionCalendar-day[data-level="${i + 1}"]{box-shadow:0 0 ${[2, 4, 6, 9][i]}px ${alpha(shade, 85)} !important}`)
+      .join("\n");
+    // Primary buttons fill with the neon. Accent tints use the graph color, since a yellow
+    // mixed into a dark base turns olive. Bevels use corner-shape, which doesn't clip menus inside.
+    // Without it, only labels that aren't links fall back to clip-path, which would clip focus rings.
+    return `/* reskin-effects:cyberpunk */
+:root,[data-color-mode],[data-light-theme],[data-dark-theme]{--bgColor-accent-muted:${mix(p.bg, neon2, 0.12)} !important;--bgColor-accent-emphasis:${darkenForWhiteText(neon2)} !important;--borderColor-accent-muted:${mix(p.bg, neon2, 0.4)} !important;--button-primary-bgColor-rest:${neon} !important;--button-primary-bgColor-hover:${mix(neon, "#ffffff", 0.15)} !important;--button-primary-bgColor-active:${mix(neon, "#000000", 0.12)} !important;--button-primary-borderColor-rest:${neon} !important;--button-primary-borderColor-hover:${neon} !important;--button-primary-fgColor-rest:${onNeon} !important;--button-primary-iconColor-rest:${onNeon} !important}
+:root{scrollbar-color:${mix(p.bg, neon, 0.55)} ${p.inset}}
+body{background-image:radial-gradient(ellipse 80% 50% at 50% -10%,${alpha(neon2, 10)},transparent 70%),linear-gradient(${alpha(neon2, 5)} 1px,transparent 1px),linear-gradient(90deg,${alpha(neon2, 5)} 1px,transparent 1px),repeating-linear-gradient(${alpha(p.ink, 2)} 0 1px,transparent 1px 3px) !important;background-size:auto,48px 48px,48px 48px,auto !important;background-attachment:fixed !important}
+::selection{background-color:${neon} !important;color:${onNeon} !important}
+input,textarea,[contenteditable]{caret-color:${neon}}
+${header}{box-shadow:0 1px 0 ${neon},0 4px 24px -6px ${alpha(neon, 55)} !important}
+${logo}:hover svg{filter:drop-shadow(0 0 6px ${alpha(neon, 80)})}
+${title}{text-shadow:0 0 10px ${alpha(neon2, 55)}}
+${title}:hover{color:${p.link} !important;text-shadow:-1px 0 ${alpha(neon, 70)},1px 0 ${alpha(neon2, 70)},0 0 10px ${alpha(neon, 60)}}
+:is(h1,h2,h3,[data-component='Heading']){font-family:${FONT_DISPLAY};letter-spacing:.02em}
+:is(h1,h2,.markdown-body h3){text-shadow:0 0 12px ${alpha(neon, 35)}}
+:is(.markdown-body h1,.markdown-body h2){border-bottom-color:${alpha(neon, 35)} !important}
+${header},${header} :is(a,button,summary),${tabs},${buttons}{font-family:${FONT_DISPLAY}}
+${labels}{font-family:${FONT_MONO};border-radius:.5em 0 !important;corner-shape:bevel}
+@supports not (corner-shape:bevel){${labels}:not(a,button){clip-path:polygon(.4em 0,100% 0,100% calc(100% - .4em),calc(100% - .4em) 100%,0 100%,0 .4em)}}
+${buttons}{border-radius:8px 0 !important;corner-shape:bevel}
+${primary}{font-weight:600;box-shadow:0 0 0 1px ${neon},0 0 14px ${alpha(neon, 55)} !important}
+${primary}:hover{box-shadow:0 0 0 1px ${neon},0 0 22px ${alpha(neon, 80)} !important}
+${boxes}{border-radius:12px 0 !important;corner-shape:bevel}
+:is(.Box-header,.Box>:first-child){border-top-left-radius:12px !important;corner-shape:bevel}
+.Box>:last-child{border-bottom-right-radius:12px !important;corner-shape:bevel}
+${panels}{corner-shape:bevel}
+${overlays}{border-radius:12px 0 !important;corner-shape:bevel;box-shadow:0 0 0 1px ${alpha(neon, 55)},0 10px 32px -8px ${alpha(neon, 45)} !important}
+${selectedTab}{color:${p.text} !important;text-shadow:0 0 10px ${alpha(neon, 70)}}
+${selectedTab}::after{background:${neon} !important;box-shadow:0 0 10px ${neon},0 0 3px ${neon} !important}
+${selectedTab} svg{color:${neon} !important;filter:drop-shadow(0 0 4px ${alpha(neon, 80)})}
+a:hover:not(${code} a){text-shadow:0 0 8px ${alpha(p.link, 70)}}
+:focus-visible{box-shadow:0 0 0 3px ${alpha(neon, 30)},0 0 16px ${alpha(neon, 65)} !important}
+${days}
+.ContributionCalendar-day{border-radius:1px !important}
+${code},${code} *{text-shadow:none !important}
+@media (prefers-reduced-motion:no-preference){
+@keyframes reskin-glitch{0%,100%{transform:none;filter:drop-shadow(0 0 6px ${alpha(neon, 80)})}20%{transform:translate(-2px,1px);filter:drop-shadow(-2px 0 ${neon}) drop-shadow(2px 0 ${neon2})}40%{transform:translate(2px,-1px);filter:drop-shadow(2px 0 ${neon}) drop-shadow(-2px 0 ${neon2})}60%{transform:skewX(-8deg);opacity:.7}80%{transform:translate(1px,0);opacity:1}}
+@keyframes reskin-flicker{0%,100%{opacity:1}10%{opacity:.55}14%{opacity:1}40%{opacity:.8}44%{opacity:1}70%{opacity:.6}72%{opacity:1}}
+${logo}:hover svg{animation:reskin-glitch .5s steps(1,end) 2}
+${title}:hover{animation:reskin-flicker .6s linear 1}
+}
+`;
+  }
+
+  const EFFECTS = { cyberpunk };
 
   globalThis.GitHubReskin = { THEMES, DEFAULTS, EDITABLE, palette, css, mix, contrast, isHex };
 })();
