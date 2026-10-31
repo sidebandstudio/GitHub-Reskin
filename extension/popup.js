@@ -7,10 +7,12 @@
   const currentTheme = () => THEMES.find((t) => t.id === settings.theme) || THEMES[0];
   let settings = { ...DEFAULTS };
 
+  // The theme is saved with every change. Colors edited in 1.0 have no saved theme, and load()
+  // gives them Editing Suite without saving it.
   function save(patch) {
     settings = { ...settings, ...patch };
     render();
-    chrome.storage.local.set(patch);
+    chrome.storage.local.set({ theme: settings.theme, ...patch });
   }
 
   function setColor(key, value) {

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import vm from "node:vm";
 import "./extension/github-modes.js";
 import "./extension/themes.js";
 
@@ -136,7 +137,8 @@ test("on a light edited background, Cyberpunk's neon icons, caret and marks stil
 
 test("Cyberpunk links and accent text reach 4.5:1 on every page background for any accent", () => {
   const levels = Array.from({ length: 16 }, (_, i) => (i * 17).toString(16).padStart(2, "0"));
-  for (const [bg, text] of [["#0a0a17", "#e4f3ff"], ["#ffffff", "#000000"]]) {
+  // The last text color reads on the background (4.6:1) but not on the slightly lighter surfaces.
+  for (const [bg, text] of [["#0a0a17", "#e4f3ff"], ["#ffffff", "#000000"], ["#000000", "#767676"]]) {
     for (const r of levels) for (const g of levels) for (const b of levels) {
       const accent = `#${r}${g}${b}`;
       const p = palette({ theme: "cyberpunk", custom: { bg, text, accent, graph: "#00f0ff" } });
@@ -150,18 +152,78 @@ test("Cyberpunk links and accent text reach 4.5:1 on every page background for a
   }
 });
 
-// A stand-in for chrome.storage.local that records what gets saved.
-function fakeStorage(data) {
+// A stand-in for chrome.storage.local that records what gets saved. With `deferred`, each read
+// takes what's stored when it starts and returns it only when its `release` is called.
+function fakeStorage(data, deferred = false) {
   const saved = [];
+  const reads = [];
   return {
     data,
     saved,
-    async get(keys) {
-      return Object.fromEntries(keys.filter((k) => k in data).map((k) => [k, data[k]]));
+    reads,
+    get(keys) {
+      const value = Object.fromEntries(keys.filter((k) => k in data).map((k) => [k, structuredClone(data[k])]));
+      if (!deferred) return Promise.resolve(value);
+      return new Promise((resolve) => reads.push({ release: () => resolve(value) }));
     },
     async set(patch) {
+      // A copy, since the popup's objects come from another realm.
+      patch = structuredClone(patch);
       saved.push(patch);
       Object.assign(data, patch);
+    },
+  };
+}
+
+// Just enough of the DOM for popup.js. Returns the popup's controls once settings have loaded.
+async function openPopup(storage) {
+  const all = [];
+  const element = (tag) => {
+    const listeners = {};
+    const el = {
+      tagName: tag.toUpperCase(),
+      children: [],
+      dataset: {},
+      style: { setProperty() {} },
+      classList: { toggle() {} },
+      setAttribute() {},
+      removeAttribute() {},
+      append: (...kids) => el.children.push(...kids),
+      addEventListener: (type, fn) => (listeners[type] = fn),
+      fire: (type) => listeners[type]({ target: el }),
+      querySelectorAll: () => all.filter((e) => e.tagName === "INPUT"),
+    };
+    all.push(el);
+    return el;
+  };
+  const ids = Object.fromEntries(["themes", "colors", "enabled", "reset", "warning", "status"].map((id) => [id, element("div")]));
+  const main = element("main");
+  main.inert = true;
+  const document = {
+    documentElement: element("html"),
+    body: element("body"),
+    activeElement: null,
+    createElement: element,
+    getElementById: (id) => ids[id],
+    querySelector: () => main,
+  };
+  const chrome = { storage: { local: storage } };
+  vm.runInNewContext(readFileSync(new URL("./extension/popup.js", import.meta.url), "utf8"), { GitHubReskin: globalThis.GitHubReskin, document, chrome });
+  const loaded = async () => {
+    while (main.inert) await new Promise((resolve) => setTimeout(resolve));
+  };
+  return {
+    loaded,
+    pick: (id) => ids.themes.children.find((b) => b.dataset.id === id).fire("click"),
+    toggle: (on) => {
+      ids.enabled.checked = on;
+      ids.enabled.fire("change");
+    },
+    reset: () => ids.reset.fire("click"),
+    setColor: (key, value) => {
+      const picker = ids.colors.children.flatMap((row) => row.children).find((e) => e.type === "color" && e.dataset.key === key);
+      picker.value = value;
+      picker.fire("input");
     },
   };
 }
@@ -178,17 +240,56 @@ test("an upgrade from 1.0 keeps edited colors on Editing Suite, and new installs
   const settings = await load(upgraded);
   assert.equal(settings.theme, "editing-suite");
   assert.deepEqual(settings.custom, custom);
-  assert.deepEqual(upgraded.saved, [{ theme: "editing-suite" }]);
   assert.equal(palette(settings).bg, "#101010");
   assert.equal(palette(settings).effects, null);
-  await load(upgraded);
-  assert.equal(upgraded.saved.length, 1);
+  // Loading never writes. Each load works the theme out again.
+  assert.equal((await load(upgraded)).theme, "editing-suite");
+  assert.deepEqual(upgraded.saved, []);
 
   for (const theme of ["cyberpunk", "nord"]) {
     const chosen = fakeStorage({ theme, custom, enabled: false });
     assert.deepEqual(await load(chosen), { enabled: false, theme, custom });
     assert.deepEqual(chosen.saved, []);
   }
+});
+
+test("every popup change saves the theme it was made on", async () => {
+  const custom = { bg: "#101010", text: "#f0f0f0", accent: "#ff2a6d", graph: "#39ff14" };
+  const actions = [
+    ["turning it off", (popup) => popup.toggle(false), { theme: "editing-suite", enabled: false }],
+    ["resetting the colors", (popup) => popup.reset(), { theme: "editing-suite", custom: null }],
+    ["editing a color", (popup) => popup.setColor("graph", "#00F0FF"), { theme: "editing-suite", custom: { ...custom, graph: "#00f0ff" } }],
+    ["picking a theme", (popup) => popup.pick("nord"), { theme: "nord", custom: null }],
+  ];
+  for (const [name, act, expected] of actions) {
+    // Colors edited in 1.0, with no theme saved.
+    const storage = fakeStorage({ custom: { ...custom } });
+    const popup = await openPopup(storage);
+    await popup.loaded();
+    act(popup);
+    assert.deepEqual(storage.saved, [expected], name);
+  }
+});
+
+test("a late load in another tab can't undo a theme picked in the popup", async () => {
+  const custom = { bg: "#101010", text: "#f0f0f0", accent: "#ff2a6d", graph: "#39ff14" };
+  const storage = fakeStorage({ custom }, true);
+  // The content script and the popup both read the 1.0 settings before either is done.
+  const tab = load(storage);
+  const popup = await openPopup(storage);
+  assert.equal(storage.reads.length, 2);
+  storage.reads[1].release();
+  await popup.loaded();
+  popup.pick("cyberpunk");
+  storage.reads[0].release();
+  assert.equal((await tab).theme, "editing-suite");
+  await new Promise((resolve) => setTimeout(resolve));
+  assert.deepEqual(storage.saved, [{ theme: "cyberpunk", custom: null }]);
+  assert.equal(storage.data.theme, "cyberpunk");
+  // The tab repaints on that change with a fresh load.
+  const fresh = load(storage);
+  storage.reads[2].release();
+  assert.equal((await fresh).theme, "cyberpunk");
 });
 
 // sha256 of css() for every theme without effects, plus one with edited colors. It was
@@ -249,4 +350,23 @@ test("the CSS loads nothing from the network", () => {
   for (const [name, text] of stylesheets()) {
     assert.doesNotMatch(text, /@import|https?:|url\(\s*["']?\/\//i, name);
   }
+});
+
+test("where corner-shape doesn't draw, Gecko included, Cyberpunk's bevels become square corners", () => {
+  const gate = /@supports \(not \(corner-shape: ?bevel\)\) or \(-moz-appearance: ?none\) ?\{/;
+  assert.match(css(palette({ theme: "cyberpunk" })), gate);
+  assert.match(popupCss, gate);
+});
+
+test("Cyberpunk issue labels follow its background, not the OS light or dark setting", () => {
+  const threshold = (out) => out.match(/IssueLabel'\]\)\{--lightness-threshold:([.\d]+)/)[1];
+  assert.equal(threshold(css(palette({ theme: "cyberpunk" }))), ".6");
+  assert.equal(threshold(css(palette({ theme: "cyberpunk", custom: { bg: "#ffffff", text: "#000000", accent: "#fcee0a", graph: "#00f0ff" } }))), ".453");
+});
+
+test("Cyberpunk's top glow is drawn once and scrolls with the page", () => {
+  const body = css(palette({ theme: "cyberpunk" })).match(/\nbody\{([^}]*)\}/)[1];
+  assert.doesNotMatch(body, /background-attachment/);
+  assert.match(body, /background-size:100% 100vh,/);
+  assert.match(body, /background-repeat:no-repeat,/);
 });

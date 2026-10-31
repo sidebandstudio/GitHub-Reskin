@@ -192,9 +192,12 @@
     // thumb and focus ring are softened only on dark pages. On a light page they would fade out.
     const pageBgs = [p.bg, p.surface, p.inset, p.raised];
     const worst = (color) => Math.min(...pageBgs.map((bg) => contrast(color, bg)));
+    // The text color can read on the page background but not quite on a surface. Then black or
+    // white, whichever reads on all of them.
+    const toward = worst(p.ink) >= 4.5 ? p.ink : worst("#000000") > worst("#ffffff") ? "#000000" : "#ffffff";
     let t = 0;
-    while (worst(mix(neon, p.ink, t)) < 4.5 && t < 1) t += 0.05;
-    const neonFg = mix(neon, p.ink, Math.min(t, 1));
+    while (worst(mix(neon, toward, t)) < 4.5 && t < 1) t += 0.05;
+    const neonFg = mix(neon, toward, Math.min(t, 1));
     const header = ":is(.AppHeader,.HeaderMktg,.Header,.gist-header-logged-out)";
     const logo = ":is(.AppHeader-logo,.Header-link,header a[aria-label='Homepage'],a[aria-label='Gist Homepage'])";
     const title = ":is([data-testid='repo-name-link'],strong[itemprop='name'] a,#repo-title-component a,.AppHeader-context-item-label,.gist-blob-name)";
@@ -212,13 +215,21 @@
       .slice(1)
       .map((shade, i) => `.ContributionCalendar-day[data-level="${i + 1}"]{box-shadow:0 0 ${[2, 4, 6, 9][i]}px ${alpha(shade, 85)} !important}`)
       .join("\n");
+    // When GitHub's own setting is auto, it colors issue labels by the OS light or dark setting.
+    // These are its dark or light label colors, chosen by Cyberpunk's background instead.
+    const issueLabels = ":is(.hx_IssueLabel,[class*='prc-Token-IssueLabel'])";
+    const [labelColors, labelHover] = p.dark
+      ? ["--lightness-threshold:.6 !important;--background-alpha:.18 !important;--border-alpha:.3 !important;--lighten-by:calc((var(--lightness-threshold) - var(--perceived-lightness))*100*var(--lightness-switch)) !important;background:rgb(var(--label-r),var(--label-g),var(--label-b),var(--background-alpha)) !important;border-color:hsl(var(--label-h),calc(var(--label-s)*1%),calc((var(--label-l) + var(--lighten-by))*1%),var(--border-alpha)) !important;color:hsl(var(--label-h),calc(var(--label-s)*1%),calc((var(--label-l) + var(--lighten-by))*1%)) !important", "background:hsl(var(--label-h),calc(var(--label-s)*1%),calc((var(--label-l) + 10)*1%),.3) !important"]
+      : ["--lightness-threshold:.453 !important;--border-threshold:.96 !important;--border-alpha:max(0,min(calc((var(--perceived-lightness) - var(--border-threshold))*100),1)) !important;background:rgb(var(--label-r),var(--label-g),var(--label-b)) !important;border-color:hsl(var(--label-h),calc(var(--label-s)*1%),calc((var(--label-l) - 25)*1%),var(--border-alpha)) !important;color:hsl(0deg,0%,calc(var(--lightness-switch)*100%)) !important", "background:linear-gradient(#00000026,#00000026),rgb(var(--label-r),var(--label-g),var(--label-b)) !important"];
     // Primary buttons fill with the neon. Accent tints use the graph color, since a yellow
     // mixed into a dark base turns olive. Bevels use corner-shape, which doesn't clip menus inside.
-    // Without it, only labels that aren't links fall back to clip-path, which would clip focus rings.
+    // Gecko parses corner-shape but draws round corners, and some engines lack it. There, corners
+    // are square, and only labels that aren't links get a clip-path bevel, which would clip focus rings.
+    // The top glow covers one screen and scrolls with the page, so it ends where it has faded out.
     return `/* reskin-effects:cyberpunk */
 :root,[data-color-mode],[data-light-theme],[data-dark-theme]{--bgColor-accent-muted:${mix(p.bg, neon2, 0.12)} !important;--bgColor-accent-emphasis:${darkenForWhiteText(neon2)} !important;--borderColor-accent-muted:${mix(p.bg, neon2, 0.4)} !important;--button-primary-bgColor-rest:${neon} !important;--button-primary-bgColor-hover:${buttonHover} !important;--button-primary-bgColor-active:${buttonActive} !important;--button-primary-borderColor-rest:${neon} !important;--button-primary-borderColor-hover:${neon} !important;--button-primary-fgColor-rest:${onNeon} !important;--button-primary-iconColor-rest:${onNeon} !important;--underlineNav-borderColor-active:${neonFg} !important;--borderColor-accent-emphasis:${neonFg} !important;--focus-outlineColor:${neonFg} !important;--fgColor-accent:${neonFg} !important;--fgColor-link:${neonFg} !important}
 :root{scrollbar-color:${p.dark ? mix(p.bg, neonFg, 0.55) : neonFg} ${p.inset}}
-body{background-image:radial-gradient(ellipse 80% 50% at 50% -10%,${alpha(neon2, 10)},transparent 70%),linear-gradient(${alpha(neon2, 5)} 1px,transparent 1px),linear-gradient(90deg,${alpha(neon2, 5)} 1px,transparent 1px),repeating-linear-gradient(${alpha(p.ink, 2)} 0 1px,transparent 1px 3px) !important;background-size:auto,48px 48px,48px 48px,auto !important;background-attachment:fixed !important}
+body{background-image:radial-gradient(ellipse 80% 50% at 50% -10%,${alpha(neon2, 10)},transparent 70%),linear-gradient(${alpha(neon2, 5)} 1px,transparent 1px),linear-gradient(90deg,${alpha(neon2, 5)} 1px,transparent 1px),repeating-linear-gradient(${alpha(p.ink, 2)} 0 1px,transparent 1px 3px) !important;background-size:100% 100vh,48px 48px,48px 48px,auto !important;background-repeat:no-repeat,repeat,repeat,repeat !important}
 ::selection{background-color:${neon} !important;color:${onNeon} !important}
 input,textarea,[contenteditable]{caret-color:${neonFg}}
 ${header}{box-shadow:0 1px 0 ${neon},0 4px 24px -6px ${alpha(neon, 55)} !important}
@@ -230,7 +241,6 @@ ${title}:hover{color:${neonFg} !important;text-shadow:-1px 0 ${alpha(neon, 70)},
 :is(.markdown-body h1,.markdown-body h2){border-bottom-color:${alpha(neon, 35)} !important}
 ${header},${header} :is(a,button,summary),${tabs},${buttons}{font-family:${FONT_DISPLAY}}
 ${labels}{font-family:${FONT_MONO};border-radius:.5em 0 !important;corner-shape:bevel}
-@supports not (corner-shape:bevel){${labels}:not(a,button){clip-path:polygon(.4em 0,100% 0,100% calc(100% - .4em),calc(100% - .4em) 100%,0 100%,0 .4em)}}
 ${buttons}{border-radius:8px 0 !important;corner-shape:bevel}
 ${primary}{font-weight:600;box-shadow:0 0 0 1px ${neon},0 0 14px ${alpha(neon, 55)} !important}
 ${primary}:hover{box-shadow:0 0 0 1px ${neon},0 0 22px ${alpha(neon, 80)} !important}
@@ -239,6 +249,9 @@ ${boxes}{border-radius:12px 0 !important;corner-shape:bevel}
 .Box>:last-child{border-bottom-right-radius:12px !important;corner-shape:bevel}
 ${panels}{corner-shape:bevel}
 ${overlays}{border-radius:12px 0 !important;corner-shape:bevel;box-shadow:0 0 0 1px ${alpha(neon, 55)},0 10px 32px -8px ${alpha(neon, 45)} !important}
+@supports (not (corner-shape:bevel)) or (-moz-appearance:none){${labels},${buttons},${boxes},:is(.Box-header,.Box>:first-child),.Box>:last-child,${panels},${overlays}{border-radius:0 !important}${labels}:not(a,button){clip-path:polygon(.4em 0,100% 0,100% calc(100% - .4em),calc(100% - .4em) 100%,0 100%,0 .4em)}}
+${issueLabels}{${labelColors}}
+${issueLabels}:where([data-cursor-is-interactive='true']:hover){${labelHover}}
 ${selectedTab}{color:${p.text} !important;text-shadow:0 0 10px ${alpha(neon, 70)}}
 ${selectedTab}::after{background:${neonFg} !important;box-shadow:0 0 10px ${neon},0 0 3px ${neon} !important}
 ${selectedTab} svg{color:${neonFg} !important;filter:drop-shadow(0 0 4px ${alpha(neon, 80)})}
@@ -260,13 +273,11 @@ ${title}:hover{animation:reskin-flicker .6s linear 1}
 
   // Reads settings from chrome.storage.local, filling in DEFAULTS. Before 1.1, Editing Suite was
   // the default and editing a color saved only `custom`, so edits with no saved theme were made on
-  // Editing Suite. That theme is saved once, so the new default doesn't take over those colors.
+  // Editing Suite, and still load on it. Nothing is written here: the popup saves the theme with
+  // every change, so a late read in another tab can't overwrite a theme you just picked.
   async function load(storage) {
     const stored = await storage.get(Object.keys(DEFAULTS));
-    if (stored.custom && !stored.theme) {
-      stored.theme = "editing-suite";
-      await storage.set({ theme: stored.theme });
-    }
+    if (stored.custom && !stored.theme) stored.theme = "editing-suite";
     return { ...DEFAULTS, ...stored };
   }
 

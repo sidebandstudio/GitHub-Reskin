@@ -22,7 +22,7 @@ Cyberpunk is electric yellow and cyan on a near-black blue-violet, and it change
 
 - Headings, the header, tabs, buttons, counters and labels use condensed and monospace system fonts. Font sizes and spacing stay as GitHub has them.
 - Headings, the selected tab, primary buttons, focus rings, hovered links and contribution graph cells glow. Busier days glow more. Code, diffs and body text don't.
-- Buttons, labels, boxes and menus get beveled corners instead of round ones. Browsers without `corner-shape` support cut the corners of labels and counters with a clip path and keep the rest rounded.
+- Buttons, labels, boxes and menus get beveled corners instead of round ones. Firefox and Zen, and other browsers that don't draw `corner-shape`, get square corners instead, and labels and counters that aren't links keep their cut corners through a clip path.
 - A faint grid and scanlines sit behind the page, and the header has a neon edge. Scrollbars, selected text and the text cursor use the accent.
 - The GitHub logo and the repo title glitch when you hover them. If your system is set to reduce motion, nothing moves.
 - The popup takes on the same look.
