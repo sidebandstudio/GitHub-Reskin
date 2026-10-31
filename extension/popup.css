@@ -45,3 +45,41 @@ footer a { color: var(--accent); text-decoration: none; }
 footer a:hover { text-decoration: underline; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .off .themes, .off .colors { opacity: .45; }
+
+/* Cyberpunk: the popup gets the same effects as GitHub. */
+[data-effects="cyberpunk"] {
+  --glow: color-mix(in srgb, var(--accent) 55%, transparent);
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--graph) 6%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--graph) 6%, transparent) 1px, transparent 1px);
+  background-size: 24px 24px;
+  caret-color: var(--accent);
+}
+[data-effects="cyberpunk"] ::selection { background: var(--accent); color: var(--bg); }
+[data-effects="cyberpunk"] header { padding-bottom: 10px; border-bottom: 1px solid var(--accent); box-shadow: 0 6px 14px -10px var(--glow); }
+[data-effects="cyberpunk"] :is(h1, .theme) { font-family: "Bahnschrift", "DIN Alternate", "Roboto Condensed", "Arial Narrow", ui-monospace, monospace; }
+[data-effects="cyberpunk"] h1 { letter-spacing: .08em; text-transform: uppercase; text-shadow: 0 0 10px var(--glow); }
+[data-effects="cyberpunk"] :is(h2, .link, footer) { font-family: ui-monospace, "SF Mono", SFMono-Regular, "Cascadia Mono", Menlo, Consolas, monospace; }
+[data-effects="cyberpunk"] h2 { letter-spacing: .12em; }
+[data-effects="cyberpunk"] h2::before { content: "// "; color: var(--accent); }
+[data-effects="cyberpunk"] .theme { border-radius: 10px 0; corner-shape: bevel; }
+[data-effects="cyberpunk"] .swatch { border-radius: 6px 0; corner-shape: bevel; }
+[data-effects="cyberpunk"] .theme:hover { border-color: var(--accent); }
+[data-effects="cyberpunk"] .theme[aria-pressed="true"] { box-shadow: 0 0 0 1px var(--accent), 0 0 14px var(--glow); }
+[data-effects="cyberpunk"] .theme[aria-pressed="true"] .name { color: var(--accent); }
+[data-effects="cyberpunk"] .track { border-radius: 6px 0; corner-shape: bevel; }
+[data-effects="cyberpunk"] .track::after { border-radius: 4px 0; corner-shape: bevel; }
+[data-effects="cyberpunk"] .switch input:checked + .track { background: var(--accent); box-shadow: 0 0 12px var(--glow); }
+[data-effects="cyberpunk"] .switch input:checked + .track::after { background: var(--bg); }
+[data-effects="cyberpunk"] .color input { border-radius: 6px 0; corner-shape: bevel; }
+[data-effects="cyberpunk"] :focus-visible { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent), 0 0 14px var(--glow); }
+[data-effects="cyberpunk"] footer { border-top-color: var(--accent); }
+[data-effects="cyberpunk"] footer a:hover { text-shadow: 0 0 8px var(--glow); }
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes popup-flicker { 0%, 100% { opacity: 1; } 10% { opacity: .5; } 14% { opacity: 1; } 40% { opacity: .75; } 44% { opacity: 1; } }
+  [data-effects="cyberpunk"] h1:hover { animation: popup-flicker .6s linear 1; }
+}
+/* With Cyberpunk, the on/off switch doesn't slide under reduced motion either. */
+@media (prefers-reduced-motion: reduce) {
+  [data-effects="cyberpunk"] .track, [data-effects="cyberpunk"] .track::after { transition: none; }
+}

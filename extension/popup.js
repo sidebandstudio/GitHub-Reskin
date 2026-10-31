@@ -73,12 +73,14 @@
   function render() {
     const p = palette(settings);
     const style = document.documentElement.style;
-    for (const key of ["bg", "surface", "border", "muted", "strong"]) style.setProperty(`--${key}`, p[key]);
+    for (const key of ["bg", "surface", "border", "muted", "strong", "graph"]) style.setProperty(`--${key}`, p[key]);
     style.setProperty("--accent", p.link);
     // The popup keeps readable text even while you try a text color that isn't.
     style.setProperty("--text", p.ink);
     $("warning").hidden = p.ink === p.text;
     style.colorScheme = p.dark ? "dark" : "light";
+    // The popup takes on the theme's effects too, styled in popup.css.
+    document.body.dataset.effects = p.effects || "";
 
     $("enabled").checked = settings.enabled;
     document.body.classList.toggle("off", !settings.enabled);
