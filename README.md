@@ -86,18 +86,31 @@ The workflow redraws the graph once a day, starting around 06:17 UTC. GitHub can
 | Input | Default | What it does |
 | --- | --- | --- |
 | `username` | owner of the repo | Whose graph to draw. Set this when the repo belongs to an organization. |
-| `color` | `#f2a93b` | Color of the busiest days. Quieter days get fainter mixes of it. |
-| `background` | `#0a0a0b` | Panel color |
-| `text` | `#ededea` | Text color. Empty days and labels are mixed from it. |
+| `style` | `flat` | `flat` or `cyberpunk` |
+| `color` | `#f2a93b` in flat | Color of the busiest days. Quieter days get fainter mixes of it. |
+| `background` | `#0a0a0b` in flat | Panel color |
+| `text` | `#ededea` in flat | Text color. Empty days and labels are mixed from it. |
 | `output` | `contributions.svg` | Where the SVG goes |
 | `token` | the workflow token | Token for the GraphQL API |
 
 Colors are 6-digit hex, with or without the `#`. Quote them when you include the `#`, because YAML reads an unquoted `#` as the start of a comment. With the default workflow token, the graph shows what visitors see on your profile. That includes private contributions as plain counts if you turned on "Include private contributions on my profile" in your GitHub settings.
 
+To draw it in neon instead, set `style`:
+
+```yaml
+      - uses: Alitleis123/GitHub-Reskin@v1
+        with:
+          output: assets/contributions.svg
+          style: cyberpunk
+```
+
+The cyberpunk style draws a near-black panel with a faint grid, a cut-corner magenta edge and a monospace font. Days glow, and busier days glow more: they brighten through cyan, and the busiest are yellow. It defaults to `#0b0a17` for `background` and `#00f0ff` for `text`. Set `color`, `background` or `text` and it uses yours instead; with `color` set, days shade toward that one color, the same way the flat style does. A slow scanline passes over the panel, except for visitors whose system asks for reduced motion. Without the motion it's a still image like the flat graph.
+
 To run it on your own computer, you need Node 20 or newer and a GitHub token. With the GitHub CLI:
 
 ```sh
 GITHUB_TOKEN=$(gh auth token) node index.mjs --username you --color "#7c5cff" --output contributions.svg
+GITHUB_TOKEN=$(gh auth token) node index.mjs --username you --style cyberpunk --output contributions.svg
 ```
 
 ## Theme credits

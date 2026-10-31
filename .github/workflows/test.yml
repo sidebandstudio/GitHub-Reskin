@@ -23,3 +23,12 @@ jobs:
           output: out/contributions.svg
 
       - run: grep -q 'contributions in the last year' out/contributions.svg
+
+      - name: Draw a cyberpunk graph with the action
+        uses: ./
+        with:
+          username: ${{ github.actor }}
+          style: cyberpunk
+          output: out/cyberpunk.svg
+
+      - run: grep -q 'contributions in the last year' out/cyberpunk.svg && grep -q 'id="glow-4"' out/cyberpunk.svg

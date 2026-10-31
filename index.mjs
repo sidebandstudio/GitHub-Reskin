@@ -20,6 +20,7 @@ const QUERY = `query($login: String!) {
 const LEVELS = ["NONE", "FIRST_QUARTILE", "SECOND_QUARTILE", "THIRD_QUARTILE", "FOURTH_QUARTILE"];
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const FONT = `Geist, 'Geist Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif`;
+const MONO = `'JetBrains Mono', 'SF Mono', ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace`;
 const CELL = 12;
 const GAP = 3;
 const PAD = 24;
@@ -60,25 +61,38 @@ export function mix(a, b, t) {
   return "#" + x.map((v, i) => Math.round(v + (y[i] - v) * t).toString(16).padStart(2, "0")).join("");
 }
 
-export function render(calendar, { color = "#f2a93b", background = "#0a0a0b", text = "#ededea" } = {}) {
-  [color, background, text] = [color, background, text].map(hex);
-  const shades = [mix(background, text, 0.08), ...[0.35, 0.55, 0.78, 1].map((t) => mix(background, color, t))];
-  const muted = mix(background, text, 0.55);
-  const { weeks, totalContributions } = calendar;
+// Colors each style uses for any the caller leaves unset.
+const STYLES = {
+  flat: { color: "#f2a93b", background: "#0a0a0b", text: "#ededea" },
+  cyberpunk: { color: "#fcee0a", background: "#0b0a17", text: "#00f0ff" },
+};
+
+export function styleDefaults(style) {
+  if (!Object.hasOwn(STYLES, style)) throw new Error(`Style must be ${Object.keys(STYLES).join(" or ")}. Got: ${style}`);
+  return STYLES[style];
+}
+
+export function render(calendar, { style = "flat", ...colors } = {}) {
+  const defaults = styleDefaults(style);
+  const [color, background, text] = ["color", "background", "text"].map((name) => hex(colors[name] ?? defaults[name]));
+  const draw = style === "cyberpunk" ? cyberpunk : flat;
+  return draw(layout(calendar), { color, background, text, ramp: colors.color == null });
+}
+
+// Positions shared by every style.
+function layout({ weeks, totalContributions }) {
   const step = CELL + GAP;
   const left = PAD + 32;
   const top = 72;
   const gridRight = left + weeks.length * step - GAP;
   const gridBottom = top + 7 * step - GAP;
-  const width = gridRight + PAD;
-  const height = gridBottom + 48;
-  const cell = (x, y, level) =>
-    `<rect class="day" x="${x}" y="${y}" width="${CELL}" height="${CELL}" rx="2.5" fill="${shades[level]}"/>`;
 
   const days = weeks.flatMap((week, col) =>
-    week.contributionDays.map((day) =>
-      cell(left + col * step, top + day.weekday * step, Math.max(0, LEVELS.indexOf(day.contributionLevel))),
-    ),
+    week.contributionDays.map((day) => ({
+      x: left + col * step,
+      y: top + day.weekday * step,
+      level: Math.max(0, LEVELS.indexOf(day.contributionLevel)),
+    })),
   );
 
   // Label each column where a new month starts. Drop a label that would crowd the next one.
@@ -99,10 +113,23 @@ export function render(calendar, { color = "#f2a93b", background = "#0a0a0b", te
 
   const legendY = gridBottom + 18;
   const legendX = gridRight - 30 - 5 * step;
-  const legend = shades.map((_, level) => cell(legendX + level * step, legendY, level));
+  const legend = LEVELS.map((_, level) => ({ x: legendX + level * step, y: legendY, level }));
+  const key = [
+    `<text x="${legendX - 6}" y="${legendY + CELL - 2}" text-anchor="end">Less</text>`,
+    `<text x="${gridRight}" y="${legendY + CELL - 2}" text-anchor="end">More</text>`,
+  ];
 
   const total = totalContributions.toLocaleString("en-US");
   const summary = `${total} contribution${totalContributions === 1 ? "" : "s"} in the last year`;
+
+  return { width: gridRight + PAD, height: gridBottom + 48, left, top, days, months, weekdays, legend, key, summary };
+}
+
+function flat({ width, height, days, months, weekdays, legend, key, summary }, { color, background, text }) {
+  const shades = [mix(background, text, 0.08), ...[0.35, 0.55, 0.78, 1].map((t) => mix(background, color, t))];
+  const muted = mix(background, text, 0.55);
+  const cell = ({ x, y, level }) =>
+    `<rect class="day" x="${x}" y="${y}" width="${CELL}" height="${CELL}" rx="2.5" fill="${shades[level]}"/>`;
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="title">
 <title id="title">${summary}</title>
@@ -111,11 +138,87 @@ export function render(calendar, { color = "#f2a93b", background = "#0a0a0b", te
 <g fill="${muted}" font-family="${FONT}" font-size="11">
 ${months.join("\n")}
 ${weekdays.join("\n")}
-<text x="${legendX - 6}" y="${legendY + CELL - 2}" text-anchor="end">Less</text>
-<text x="${gridRight}" y="${legendY + CELL - 2}" text-anchor="end">More</text>
+${key.join("\n")}
 </g>
-${days.join("\n")}
-${legend.join("\n")}
+${days.map(cell).join("\n")}
+${legend.map(cell).join("\n")}
+</svg>
+`;
+}
+
+// Dark panel with a faint grid, a cut-corner neon edge and glowing cells.
+// Without a chosen color, busier days brighten through cyan and the busiest turn yellow.
+function cyberpunk({ width, height, left, top, days, months, weekdays, legend, key, summary }, { color, background, text, ramp }) {
+  const [magenta, cyan, yellow] = ["#ff2a6d", "#00f0ff", "#fcee0a"];
+  const busy = ramp
+    ? [mix(background, cyan, 0.3), mix(background, cyan, 0.6), cyan, yellow]
+    : [0.35, 0.55, 0.78, 1].map((t) => mix(background, color, t));
+  const shades = [mix(background, text, 0.06), ...busy];
+  const edge = ramp ? magenta : color;
+  const accent = ramp ? yellow : color;
+  const muted = mix(background, text, 0.6);
+  const cut = 16;
+  const panel = [
+    [cut + 0.5, 0.5],
+    [width - 0.5, 0.5],
+    [width - 0.5, height - 0.5 - cut],
+    [width - 0.5 - cut, height - 0.5],
+    [0.5, height - 0.5],
+    [0.5, cut + 0.5],
+  ].join(" ");
+  // One glow per busy level, wider for busier days, and doubled for the top two. Empty days don't glow.
+  const filters = [1, 1.8, 2.6, 3.4].map(
+    (blur, i) => `<filter id="glow-${i + 1}" filterUnits="userSpaceOnUse" x="0" y="0" width="${width}" height="${height}">
+<feGaussianBlur stdDeviation="${blur}"/>
+<feMerge><feMergeNode/>${i > 1 ? "<feMergeNode/>" : ""}<feMergeNode in="SourceGraphic"/></feMerge>
+</filter>`,
+  );
+  const cell = ({ x, y, level }) =>
+    `<rect class="day" x="${x}" y="${y}" width="${CELL}" height="${CELL}" rx="1" fill="${shades[level]}"` +
+    (level ? "/>" : ` stroke="${mix(background, text, 0.16)}" stroke-width=".75"/>`);
+  const cells = shades.map((_, level) => {
+    const group = [...days, ...legend].filter((day) => day.level === level).map(cell);
+    return `<g${level ? ` filter="url(#glow-${level})"` : ""}>\n${group.join("\n")}\n</g>`;
+  });
+  const sweep = 56;
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="title">
+<title id="title">${summary}</title>
+<defs>
+<style>
+@keyframes sweep { from { transform: translateY(0) } to { transform: translateY(${height + sweep}px) } }
+@media (prefers-reduced-motion: no-preference) { .sweep { animation: sweep 9s linear infinite } }
+</style>
+<clipPath id="panel"><polygon points="${panel}"/></clipPath>
+<pattern id="grid" patternUnits="userSpaceOnUse" x="${left - GAP / 2}" y="${top - GAP / 2}" width="${CELL + GAP}" height="${CELL + GAP}">
+<path d="M${CELL + GAP} 0H0V${CELL + GAP}" fill="none" stroke="${mix(background, text, 0.07)}"/>
+</pattern>
+<pattern id="scanlines" patternUnits="userSpaceOnUse" width="4" height="3">
+<rect width="4" height="1" fill="${text}" opacity=".035"/>
+</pattern>
+<linearGradient id="sweep" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" stop-color="${text}" stop-opacity="0"/>
+<stop offset=".85" stop-color="${text}" stop-opacity=".12"/>
+<stop offset="1" stop-color="${text}" stop-opacity="0"/>
+</linearGradient>
+${filters.join("\n")}
+</defs>
+<polygon points="${panel}" fill="${background}"/>
+<g clip-path="url(#panel)">
+<rect width="${width}" height="${height}" fill="url(#grid)"/>
+<rect width="${width}" height="${height}" fill="url(#scanlines)"/>
+<rect class="sweep" y="${-sweep}" width="${width}" height="${sweep}" fill="url(#sweep)"/>
+</g>
+<polygon points="${panel}" fill="none" stroke="${edge}" stroke-width="1.5" filter="url(#glow-1)"/>
+<rect x="${cut + 8}" y="0" width="72" height="3" fill="${accent}" filter="url(#glow-2)"/>
+<rect x="${width - cut - 48}" y="${height - 3}" width="24" height="3" fill="${accent}" filter="url(#glow-2)"/>
+<text x="${PAD}" y="${PAD + 14}" fill="${text}" font-family="${MONO}" font-size="14" font-weight="600" letter-spacing=".04em" filter="url(#glow-1)">${summary}</text>
+<g fill="${muted}" font-family="${MONO}" font-size="11">
+${months.join("\n")}
+${weekdays.join("\n")}
+${key.join("\n")}
+</g>
+${cells.join("\n")}
 </svg>
 `;
 }
@@ -123,7 +226,7 @@ ${legend.join("\n")}
 async function main() {
   const { values } = parseArgs({
     options: Object.fromEntries(
-      ["username", "token", "color", "background", "text", "output"].map((name) => [name, { type: "string" }]),
+      ["username", "token", "style", "color", "background", "text", "output"].map((name) => [name, { type: "string" }]),
     ),
   });
   // Flags win, then GitHub Action inputs.
@@ -131,11 +234,14 @@ async function main() {
   const username = option("username");
   const token = option("token") || process.env.GITHUB_TOKEN || process.env.GH_TOKEN;
   const output = option("output") || "contributions.svg";
+  const style = option("style") || "flat";
+  styleDefaults(style);
   if (!username) throw new Error("Pass --username");
   if (!token) throw new Error("Set GITHUB_TOKEN or pass --token");
 
   const calendar = await fetchCalendar(username, token);
   const svg = render(calendar, {
+    style,
     color: option("color"),
     background: option("background"),
     text: option("text"),
