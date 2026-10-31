@@ -4,8 +4,9 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import "./extension/github-modes.js";
 import "./extension/themes.js";
+import "./extension/slang.js";
 
-const { THEMES, DEFAULTS, palette, css, load, contrast, isHex } = globalThis.GitHubReskin;
+const { THEMES, DEFAULTS, palette, css, load, contrast, isHex, slang } = globalThis.GitHubReskin;
 
 test("every theme keeps text, muted text, links and button text readable", () => {
   for (const theme of THEMES) {
@@ -77,6 +78,31 @@ test("only themes with effects get the effects CSS, and it follows edited colors
   assert.match(effects, /#ff2a6d/);
   assert.match(effects, /#39ff14/);
   assert.doesNotMatch(out, /#fcee0a|#00f0ff/);
+});
+
+test("only Cyberpunk swaps GitHub's labels for street slang, with its colors or edited ones", () => {
+  for (const theme of THEMES) {
+    const out = css(palette({ theme: theme.id }));
+    assert.equal(out.includes("reskin-slang"), theme.effects === "cyberpunk", theme.id);
+  }
+  const custom = { bg: "#101010", text: "#f0f0f0", accent: "#ff2a6d", graph: "#39ff14" };
+  const out = css(palette({ theme: "cyberpunk", custom }));
+  assert.match(out, /\.vcard-names::before\{content:"\/\/ choom" \/ ""/);
+  assert.match(out.slice(out.indexOf("reskin-slang")), /#ff2a6d/);
+});
+
+test("screen readers hear GitHub's words, not the slang", () => {
+  const out = slang(palette(DEFAULTS));
+  // Every added word has empty alternative text.
+  const contents = [...out.matchAll(/content:([^;}]*)/g)].map(([, value]) => value);
+  assert.ok(contents.length > 10, `${contents.length} contents`);
+  for (const value of contents) assert.match(value, /^"[^"]+" \/ ""$/, value);
+  // GitHub's labels are shrunk, which keeps them in the accessibility tree, and each gets slang in its place.
+  assert.doesNotMatch(out, /display:\s*none|visibility:\s*hidden|content-visibility/);
+  const shrunk = [...out.matchAll(/^([^{}\n]+)\{[^}]*font-size:0 !important\}$/gm)].map(([, selector]) => selector);
+  assert.ok(shrunk.length > 10, `${shrunk.length} labels`);
+  for (const selector of shrunk) assert.ok(out.includes(`\n${selector}::before{content:"`), selector);
+  assert.doesNotMatch(out, /@import|https?:|url\(/i);
 });
 
 // The value css() gives a variable last, which is the one that applies.

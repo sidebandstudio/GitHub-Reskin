@@ -29,6 +29,8 @@ Cyberpunk is electric yellow and cyan on a near-black blue-violet, and it change
 
 The effects use whatever colors you set, so editing Cyberpunk's colors keeps the effects in your colors.
 
+Cyberpunk also swaps some of GitHub's own labels for street slang, set in [`extension/slang.js`](extension/slang.js). Profiles get a "choom" tag over the name, Pinned becomes Preem picks, Achievements becomes Street cred, the Code button says Jack in, Sponsor says Send eddies, Releases become Drops, and a missing page is stamped Flatlined. Names, numbers and anything people wrote stay as they are, and screen readers still hear GitHub's words.
+
 Under the themes you can change four colors: background, text, accent and the contribution graph. GitHub Reskin works out the rest, like borders, muted text and button colors. "Reset to theme" puts the theme's colors back, and the switch at the top turns the theme off.
 
 It adjusts the colors it works out so they stay readable:

@@ -256,7 +256,8 @@ ${title}:hover{animation:reskin-flicker .6s linear 1}
 `;
   }
 
-  const EFFECTS = { cyberpunk };
+  // Cyberpunk also swaps some of GitHub's labels for street slang, from slang.js.
+  const EFFECTS = { cyberpunk: (p) => cyberpunk(p) + (globalThis.GitHubReskin.slang?.(p) || "") };
 
   // Reads settings from chrome.storage.local, filling in DEFAULTS. Before 1.1, Editing Suite was
   // the default and editing a color saved only `custom`, so edits with no saved theme were made on
