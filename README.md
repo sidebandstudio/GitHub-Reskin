@@ -98,7 +98,7 @@ Colors are 6-digit hex, with or without the `#`. Quote them when you include the
 To draw it in neon instead, set `style`:
 
 ```yaml
-      - uses: Alitleis123/GitHub-Reskin@v1
+      - uses: whoisaldo/GitHub-Reskin@main
         with:
           output: assets/contributions.svg
           style: cyberpunk
