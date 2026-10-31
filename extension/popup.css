@@ -79,3 +79,7 @@ footer a:hover { text-decoration: underline; }
   @keyframes popup-flicker { 0%, 100% { opacity: 1; } 10% { opacity: .5; } 14% { opacity: 1; } 40% { opacity: .75; } 44% { opacity: 1; } }
   [data-effects="cyberpunk"] h1:hover { animation: popup-flicker .6s linear 1; }
 }
+/* With Cyberpunk, the on/off switch doesn't slide under reduced motion either. */
+@media (prefers-reduced-motion: reduce) {
+  [data-effects="cyberpunk"] .track, [data-effects="cyberpunk"] .track::after { transition: none; }
+}

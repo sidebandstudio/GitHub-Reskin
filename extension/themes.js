@@ -183,6 +183,15 @@
     const neon = p.accent;
     const neon2 = p.graph;
     const onNeon = bestOn(neon, [p.bg, "#000000", "#ffffff"]);
+    // Hover and pressed buttons move away from their text color when a shade would make it hard to read.
+    const awayFromText = bestOn(onNeon, ["#000000", "#ffffff"]);
+    const buttonHover = readable(mix(neon, "#ffffff", 0.15), onNeon, awayFromText);
+    const buttonActive = readable(mix(neon, "#000000", 0.12), onNeon, awayFromText);
+    // The neon for links, icons, carets, the scrollbar and selection marks, mixed toward the text color
+    // until it reads on every page background. Glows and edges keep the raw neon. The scrollbar
+    // thumb and focus ring are softened only on dark pages. On a light page they would fade out.
+    const pageBgs = [p.bg, p.surface, p.inset, p.raised];
+    const neonFg = readable(neon, pageBgs.reduce((worst, c) => (contrast(c, neon) < contrast(worst, neon) ? c : worst)), p.ink);
     const header = ":is(.AppHeader,.HeaderMktg,.Header,.gist-header-logged-out)";
     const logo = ":is(.AppHeader-logo,.Header-link,header a[aria-label='Homepage'],a[aria-label='Gist Homepage'])";
     const title = ":is([data-testid='repo-name-link'],strong[itemprop='name'] a,#repo-title-component a,.AppHeader-context-item-label,.gist-blob-name)";
@@ -204,15 +213,15 @@
     // mixed into a dark base turns olive. Bevels use corner-shape, which doesn't clip menus inside.
     // Without it, only labels that aren't links fall back to clip-path, which would clip focus rings.
     return `/* reskin-effects:cyberpunk */
-:root,[data-color-mode],[data-light-theme],[data-dark-theme]{--bgColor-accent-muted:${mix(p.bg, neon2, 0.12)} !important;--bgColor-accent-emphasis:${darkenForWhiteText(neon2)} !important;--borderColor-accent-muted:${mix(p.bg, neon2, 0.4)} !important;--button-primary-bgColor-rest:${neon} !important;--button-primary-bgColor-hover:${mix(neon, "#ffffff", 0.15)} !important;--button-primary-bgColor-active:${mix(neon, "#000000", 0.12)} !important;--button-primary-borderColor-rest:${neon} !important;--button-primary-borderColor-hover:${neon} !important;--button-primary-fgColor-rest:${onNeon} !important;--button-primary-iconColor-rest:${onNeon} !important}
-:root{scrollbar-color:${mix(p.bg, neon, 0.55)} ${p.inset}}
+:root,[data-color-mode],[data-light-theme],[data-dark-theme]{--bgColor-accent-muted:${mix(p.bg, neon2, 0.12)} !important;--bgColor-accent-emphasis:${darkenForWhiteText(neon2)} !important;--borderColor-accent-muted:${mix(p.bg, neon2, 0.4)} !important;--button-primary-bgColor-rest:${neon} !important;--button-primary-bgColor-hover:${buttonHover} !important;--button-primary-bgColor-active:${buttonActive} !important;--button-primary-borderColor-rest:${neon} !important;--button-primary-borderColor-hover:${neon} !important;--button-primary-fgColor-rest:${onNeon} !important;--button-primary-iconColor-rest:${onNeon} !important;--underlineNav-borderColor-active:${neonFg} !important;--borderColor-accent-emphasis:${neonFg} !important;--focus-outlineColor:${neonFg} !important;--fgColor-accent:${neonFg} !important;--fgColor-link:${neonFg} !important}
+:root{scrollbar-color:${p.dark ? mix(p.bg, neonFg, 0.55) : neonFg} ${p.inset}}
 body{background-image:radial-gradient(ellipse 80% 50% at 50% -10%,${alpha(neon2, 10)},transparent 70%),linear-gradient(${alpha(neon2, 5)} 1px,transparent 1px),linear-gradient(90deg,${alpha(neon2, 5)} 1px,transparent 1px),repeating-linear-gradient(${alpha(p.ink, 2)} 0 1px,transparent 1px 3px) !important;background-size:auto,48px 48px,48px 48px,auto !important;background-attachment:fixed !important}
 ::selection{background-color:${neon} !important;color:${onNeon} !important}
-input,textarea,[contenteditable]{caret-color:${neon}}
+input,textarea,[contenteditable]{caret-color:${neonFg}}
 ${header}{box-shadow:0 1px 0 ${neon},0 4px 24px -6px ${alpha(neon, 55)} !important}
 ${logo}:hover svg{filter:drop-shadow(0 0 6px ${alpha(neon, 80)})}
 ${title}{text-shadow:0 0 10px ${alpha(neon2, 55)}}
-${title}:hover{color:${p.link} !important;text-shadow:-1px 0 ${alpha(neon, 70)},1px 0 ${alpha(neon2, 70)},0 0 10px ${alpha(neon, 60)}}
+${title}:hover{color:${neonFg} !important;text-shadow:-1px 0 ${alpha(neon, 70)},1px 0 ${alpha(neon2, 70)},0 0 10px ${alpha(neon, 60)}}
 :is(h1,h2,h3,[data-component='Heading']){font-family:${FONT_DISPLAY};letter-spacing:.02em}
 :is(h1,h2,.markdown-body h3){text-shadow:0 0 12px ${alpha(neon, 35)}}
 :is(.markdown-body h1,.markdown-body h2){border-bottom-color:${alpha(neon, 35)} !important}
@@ -228,10 +237,10 @@ ${boxes}{border-radius:12px 0 !important;corner-shape:bevel}
 ${panels}{corner-shape:bevel}
 ${overlays}{border-radius:12px 0 !important;corner-shape:bevel;box-shadow:0 0 0 1px ${alpha(neon, 55)},0 10px 32px -8px ${alpha(neon, 45)} !important}
 ${selectedTab}{color:${p.text} !important;text-shadow:0 0 10px ${alpha(neon, 70)}}
-${selectedTab}::after{background:${neon} !important;box-shadow:0 0 10px ${neon},0 0 3px ${neon} !important}
-${selectedTab} svg{color:${neon} !important;filter:drop-shadow(0 0 4px ${alpha(neon, 80)})}
+${selectedTab}::after{background:${neonFg} !important;box-shadow:0 0 10px ${neon},0 0 3px ${neon} !important}
+${selectedTab} svg{color:${neonFg} !important;filter:drop-shadow(0 0 4px ${alpha(neon, 80)})}
 a:hover:not(${code} a){text-shadow:0 0 8px ${alpha(p.link, 70)}}
-:focus-visible{box-shadow:0 0 0 3px ${alpha(neon, 30)},0 0 16px ${alpha(neon, 65)} !important}
+:focus-visible{box-shadow:0 0 0 3px ${p.dark ? alpha(neon, 30) : neonFg},0 0 16px ${alpha(neon, 65)} !important}
 ${days}
 .ContributionCalendar-day{border-radius:1px !important}
 ${code},${code} *{text-shadow:none !important}

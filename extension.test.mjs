@@ -79,6 +79,61 @@ test("only themes with effects get the effects CSS, and it follows edited colors
   assert.doesNotMatch(out, /#fcee0a|#00f0ff/);
 });
 
+// The value css() gives a variable last, which is the one that applies.
+const cssVar = (out, name) => [...out.matchAll(new RegExp(`${name}:(#[0-9a-f]{6})`, "g"))].at(-1)[1];
+
+test("Cyberpunk primary buttons keep readable text at rest, on hover and when pressed", () => {
+  // Every theme's accent, greys around where black and white text cross over, and light and dark extremes.
+  const accents = [...THEMES.map((t) => t.accent), "#707070", "#767676", "#777777", "#7b7b7b", "#808080", "#868686", "#fff6a8", "#1b1464", "#000000", "#ffffff"];
+  for (const [bg, text] of [["#0a0a17", "#e4f3ff"], ["#ffffff", "#000000"]]) {
+    for (const accent of accents) {
+      const out = css(palette({ theme: "cyberpunk", custom: { bg, text, accent, graph: "#00f0ff" } }));
+      const fg = cssVar(out, "--button-primary-fgColor-rest");
+      assert.equal(cssVar(out, "--button-primary-iconColor-rest"), fg);
+      for (const state of ["rest", "hover", "active"]) {
+        const ratio = contrast(fg, cssVar(out, `--button-primary-bgColor-${state}`));
+        assert.ok(ratio >= 4.5, `${accent} on ${bg}, ${state}: ${ratio.toFixed(2)}`);
+      }
+    }
+  }
+  // The theme's own colors keep their hover and pressed shades.
+  const out = css(palette(DEFAULTS));
+  assert.equal(cssVar(out, "--button-primary-bgColor-hover"), "#fcf12f");
+  assert.equal(cssVar(out, "--button-primary-bgColor-active"), "#ded109");
+});
+
+test("on a light edited background, Cyberpunk's neon icons, caret and marks still read", () => {
+  const p = palette({ theme: "cyberpunk", custom: { bg: "#ffffff", text: "#000000", accent: "#fcee0a", graph: "#00f0ff" } });
+  const out = css(p);
+  const effects = out.slice(out.indexOf("reskin-effects:"));
+  const pick = (pattern) => effects.match(pattern)[1];
+  // Non-text UI needs 3:1 (WCAG 1.4.11), text 4.5:1.
+  const ui = {
+    "selected tab icon": pick(/\[aria-current='page'\]\) svg\{color:(#[0-9a-f]{6})/),
+    "selected tab underline": pick(/\[aria-current='page'\]\)::after\{background:(#[0-9a-f]{6})/),
+    caret: pick(/caret-color:(#[0-9a-f]{6})/),
+    "scrollbar thumb": pick(/scrollbar-color:(#[0-9a-f]{6})/),
+    "underline nav": cssVar(out, "--underlineNav-borderColor-active"),
+    "focus outline": cssVar(out, "--focus-outlineColor"),
+    "accent border": cssVar(out, "--borderColor-accent-emphasis"),
+    "focus ring": pick(/:focus-visible\{box-shadow:0 0 0 3px (#[0-9a-f]{6})/),
+  };
+  const text = {
+    "selected tab text": pick(/\[aria-current='page'\]\)\{color:(#[0-9a-f]{6})/),
+    link: cssVar(out, "--fgColor-link"),
+    "accent text": cssVar(out, "--fgColor-accent"),
+  };
+  for (const bg of [p.bg, p.surface, p.inset, p.raised]) {
+    for (const [name, color] of Object.entries(ui)) assert.ok(contrast(color, bg) >= 3, `${name} ${color} on ${bg}: ${contrast(color, bg).toFixed(2)}`);
+    for (const [name, color] of Object.entries(text)) assert.ok(contrast(color, bg) >= 4.5, `${name} ${color} on ${bg}: ${contrast(color, bg).toFixed(2)}`);
+  }
+  assert.ok(contrast(pick(/::selection\{background-color:(#[0-9a-f]{6})/), pick(/::selection\{[^}]*;color:(#[0-9a-f]{6})/)) >= 4.5, "selected text");
+  // The default dark Cyberpunk keeps its raw neon for these.
+  const dark = css(palette(DEFAULTS));
+  assert.equal(cssVar(dark, "--focus-outlineColor"), "#fcee0a");
+  assert.match(dark, /caret-color:#fcee0a/);
+});
+
 // sha256 of css() for every theme without effects, plus one with edited colors. It was
 // computed from main before effects existed. Change it only when you mean to change how
 // those themes look, or after regenerating extension/github-modes.js.
@@ -91,20 +146,25 @@ test("themes without effects keep exactly the CSS they had before", () => {
   assert.equal(createHash("sha256").update(outputs.join("\n---\n")).digest("hex"), PLAIN_CSS_SHA256);
 });
 
-// Removes every @media (prefers-reduced-motion: no-preference) block, braces included.
-function withoutMotionBlocks(text) {
-  const start = /@media\s*\(\s*prefers-reduced-motion\s*:\s*no-preference\s*\)\s*\{/g;
+// Splits out every @media (prefers-reduced-motion: <value>) block, braces included.
+function splitMotionBlocks(text, value) {
+  const start = new RegExp(`@media\\s*\\(\\s*prefers-reduced-motion\\s*:\\s*${value}\\s*\\)\\s*\\{`, "g");
+  const blocks = [];
   let rest = text;
   let match;
   while ((match = start.exec(rest))) {
     let depth = 1;
     let i = match.index + match[0].length;
     for (; depth && i < rest.length; i++) depth += rest[i] === "{" ? 1 : rest[i] === "}" ? -1 : 0;
+    blocks.push(rest.slice(match.index + match[0].length, i - 1));
     rest = rest.slice(0, match.index) + rest.slice(i);
     start.lastIndex = match.index;
   }
-  return rest;
+  return { blocks, rest };
 }
+
+// [selectors, declarations] for each innermost rule.
+const rules = (text) => [...text.matchAll(/([^{}]*)\{([^{}]*)\}/g)].map(([, selectors, body]) => [selectors.trim(), body]);
 
 const popupCss = readFileSync(new URL("./extension/popup.css", import.meta.url), "utf8");
 const stylesheets = () => [...THEMES.map((t) => [t.id, css(palette({ theme: t.id }))]), ["popup.css", popupCss]];
@@ -112,11 +172,19 @@ const stylesheets = () => [...THEMES.map((t) => [t.id, css(palette({ theme: t.id
 test("animations and transitions run only when reduced motion is off", () => {
   const cyberpunk = css(palette({ theme: "cyberpunk" }));
   assert.match(cyberpunk, /prefers-reduced-motion:no-preference\)\{[^]*animation:/);
-  // The popup's on/off switch has always slid. Its Cyberpunk styles start at that comment.
-  const popupEffects = popupCss.slice(popupCss.indexOf("/* Cyberpunk"));
-  assert.match(popupEffects, /animation:/);
-  for (const [name, text] of [...THEMES.map((t) => [t.id, css(palette({ theme: t.id }))]), ["popup.css", popupEffects]]) {
-    assert.doesNotMatch(withoutMotionBlocks(text), /@keyframes|animation|transition/, name);
+  assert.match(popupCss, /animation:/);
+  for (const [name, text] of stylesheets()) {
+    const { rest } = splitMotionBlocks(text.replace(/\/\*[^]*?\*\//g, ""), "no-preference");
+    const { blocks, rest: always } = splitMotionBlocks(rest, "reduce");
+    assert.doesNotMatch(always, /@keyframes|animation/, name);
+    // The popup's on/off switch has always slid. Cyberpunk turns that off under reduced motion.
+    const stopped = new Set();
+    for (const [selectors, body] of rules(blocks.join(""))) {
+      if (/transition:\s*none/.test(body)) for (const selector of selectors.split(",")) stopped.add(selector.trim());
+    }
+    for (const [selector, body] of rules(always)) {
+      if (/transition:(?!\s*none)/.test(body)) assert.ok(stopped.has(`[data-effects="cyberpunk"] ${selector}`), `${name}: ${selector}`);
+    }
   }
 });
 
