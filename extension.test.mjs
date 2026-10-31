@@ -122,7 +122,8 @@ o<span>Footer 2026</span>
 
 test("slang changes only GitHub's own labels, never what people wrote", () => {
   const out = slang(palette(DEFAULTS));
-  const selectors = [...out.matchAll(/^([^{}\n]+)\{/gm)].map(([, selector]) => selector.replace(/::(before|after)$/, ""));
+  // The rules inside an @supports are checked too, but not the @supports itself.
+  const selectors = [...out.matchAll(/^([^{}\n@][^{}\n]*)\{/gm)].map(([, selector]) => selector.replace(/::(before|after)$/, ""));
   assert.ok(selectors.length > 30, `${selectors.length} selectors`);
   // Nothing inside a README, comment, issue or pull request title, or file, gists' included, ever matches.
   const exclusion = ":not(:is(.markdown-body,.comment-body,.js-comment-body,.markdown-title,.file,.blob-wrapper,.react-code-file-contents) *)";
@@ -207,8 +208,9 @@ test("on a light edited background, Cyberpunk's neon icons, caret and marks stil
   assert.match(dark, /caret-color:#fcee0a/);
 });
 
-// Every variable css() paints a page background, surface, inset or raised panel with, links included.
-const PAGE_BGS = ["--bgColor-default", "--bgColor-muted", "--bgColor-inset", "--header-bgColor", "--headerSearch-bgColor", "--page-header-bgColor", "--card-bgColor", "--overlay-bgColor", "--control-bgColor-rest", "--button-default-bgColor-rest", "--sideNav-bgColor-selected"];
+// Every variable css() paints a page background, surface, inset or raised panel with, links included,
+// and the accent tint GitHub puts branch names and topics on in accent text.
+const PAGE_BGS = ["--bgColor-default", "--bgColor-muted", "--bgColor-inset", "--header-bgColor", "--headerSearch-bgColor", "--page-header-bgColor", "--card-bgColor", "--overlay-bgColor", "--control-bgColor-rest", "--button-default-bgColor-rest", "--sideNav-bgColor-selected", "--bgColor-accent-muted"];
 
 const LINK_VARS = new RegExp(`(${[...PAGE_BGS, "--fgColor-link", "--fgColor-accent"].join("|")}):(#[0-9a-f]{6})`, "g");
 
@@ -251,6 +253,19 @@ test("Cyberpunk links and accent text reach 4.5:1 on mid grey and mid colored ba
   assert.ok(cases > 1000, `${cases} cases`);
   // The reported case: white text on #757575 and a black accent.
   assert.ok(worstLink({ bg: "#757575", text: "#ffffff", accent: "#000000" }) >= 4.5);
+  // The accent tint is mixed from the graph color, so that changes too. The reported case: a
+  // green accent and a yellow graph on the default background, 4.15:1 on the tint.
+  assert.ok(worstLink({ bg: "#0a0a17", text: "#e4f3ff", accent: "#337755", graph: "#fcee0a" }) >= 4.5);
+  const levels = Array.from({ length: 6 }, (_, i) => (i * 51).toString(16).padStart(2, "0"));
+  for (const [bg, text] of [["#0a0a17", "#e4f3ff"], ["#ffffff", "#000000"], ["#757575", "#ffffff"], ["#808080", "#000000"], ["#3060ff", "#ffffff"]]) {
+    for (const graph of ["#fcee0a", "#ffffff", "#000000", "#39ff14", "#1b1464"]) {
+      for (const r of levels) for (const g of levels) for (const b of levels) {
+        const accent = `#${r}${g}${b}`;
+        const ratio = worstLink({ bg, text, accent, graph });
+        assert.ok(ratio >= 4.5, `${accent} and graph ${graph} with ${text} on ${bg}: ${ratio.toFixed(2)}`);
+      }
+    }
+  }
   // Where some color already reads on every surface, Cyberpunk leaves GitHub's surfaces to the palette.
   assert.doesNotMatch(css(palette(DEFAULTS)).slice(css(palette(DEFAULTS)).indexOf("reskin-effects:")), /--overlay-bgColor/);
 });
@@ -436,9 +451,8 @@ test("themes without effects keep exactly the CSS they had before", () => {
   assert.equal(createHash("sha256").update(outputs.join("\n---\n")).digest("hex"), PLAIN_CSS_SHA256);
 });
 
-// Splits out every @media (prefers-reduced-motion: <value>) block, braces included.
-function splitMotionBlocks(text, value) {
-  const start = new RegExp(`@media\\s*\\(\\s*prefers-reduced-motion\\s*:\\s*${value}\\s*\\)\\s*\\{`, "g");
+// Splits out every block that starts with the global regex `start`, braces included.
+function splitBlocks(text, start) {
   const blocks = [];
   let rest = text;
   let match;
@@ -451,6 +465,22 @@ function splitMotionBlocks(text, value) {
     start.lastIndex = match.index;
   }
   return { blocks, rest };
+}
+
+// Splits out every @media (prefers-reduced-motion: <value>) block, braces included.
+const splitMotionBlocks = (text, value) =>
+  splitBlocks(text, new RegExp(`@media\\s*\\(\\s*prefers-reduced-motion\\s*:\\s*${value}\\s*\\)\\s*\\{`, "g"));
+
+// The selectors in a list, split at commas outside parentheses.
+function selectorList(text) {
+  const list = [""];
+  let depth = 0;
+  for (const c of text) {
+    depth += c === "(" ? 1 : c === ")" ? -1 : 0;
+    if (c === "," && !depth) list.push("");
+    else list[list.length - 1] += c;
+  }
+  return list.map((selector) => selector.trim());
 }
 
 // [selectors, declarations] for each innermost rule.
@@ -488,6 +518,62 @@ test("where corner-shape doesn't draw, Gecko included, Cyberpunk's bevels become
   const gate = /@supports \(not \(corner-shape: ?bevel\)\) or \(-moz-appearance: ?none\) ?\{/;
   assert.match(css(palette({ theme: "cyberpunk" })), gate);
   assert.match(popupCss, gate);
+});
+
+test("every Cyberpunk bevel, slang's tags included, has a square fallback in Gecko's gate", () => {
+  const gate = /@supports \(not \(corner-shape: ?bevel\)\) or \(-moz-appearance: ?none\) ?\{/g;
+  const p = palette({ theme: "cyberpunk" });
+  for (const [name, text] of [["css", css(p)], ["slang", slang(p)]]) {
+    const { blocks, rest } = splitBlocks(text.replace(/\/\*[^]*?\*\//g, ""), gate);
+    assert.ok(blocks.length, name);
+    const squared = new Set(rules(blocks.join("")).filter(([, body]) => /border-radius:0( !important)?(;|$)/.test(body)).flatMap(([selectors]) => selectorList(selectors)));
+    const beveled = rules(rest).filter(([, body]) => /corner-shape:\s*bevel/.test(body)).flatMap(([selectors]) => selectorList(selectors));
+    assert.ok(beveled.length, name);
+    for (const selector of beveled) assert.ok(squared.has(selector), `${name}: ${selector}`);
+  }
+  // The choom tag and the 404 stamp glow, so they get no clip-path bevel.
+  const { blocks } = splitBlocks(slang(p), gate);
+  assert.doesNotMatch(blocks.join(""), /clip-path/);
+});
+
+test("Cyberpunk's marketing footer reads on its inset background, and only Cyberpunk has it", () => {
+  const footer = (out) => out.match(/\nfooter\[class\*='footer__'\]\[role='contentinfo'\],footer\[class\*='footer__'\]\[role='contentinfo'\] \[data-color-mode\]\{([^}]*)\}/)?.[1];
+  for (const theme of THEMES) assert.equal(Boolean(footer(css(palette({ theme: theme.id })))), theme.effects === "cyberpunk", theme.id);
+  const greys = ["#606060", "#757575", "#808080", "#8a8a8a"];
+  const customs = [
+    { bg: "#0a0a17", text: "#e4f3ff" },
+    { bg: "#ffffff", text: "#000000" },
+    { bg: "#000000", text: "#767676" },
+    ...greys.flatMap((bg) => ["#ffffff", "#000000"].filter((text) => contrast(text, bg) >= 4.5).map((text) => ({ bg, text }))),
+  ];
+  for (const custom of [null, ...customs]) {
+    for (const accent of custom ? ["#fcee0a", "#000000", "#ffffff", "#808080", "#337755"] : [null]) {
+      const settings = custom ? { theme: "cyberpunk", custom: { ...custom, accent, graph: "#fcee0a" } } : DEFAULTS;
+      const vars = Object.fromEntries([...footer(css(palette(settings))).matchAll(/(--[\w-]+):(#[0-9a-f]{6})/g)].map(([, name, value]) => [name, value]));
+      const canvas = vars["--brand-color-canvas-subtle"];
+      assert.equal(vars["--brand-color-canvas-default"], canvas);
+      assert.equal(vars["--brand-button-secondary-bgColor-rest"], canvas);
+      const pairs = [
+        ["text", "--brand-color-text-default", canvas, 4.5],
+        ["muted text", "--brand-color-text-muted", canvas, 4.5],
+        ["links", "--brand-Link-color-default", canvas, 4.5],
+        ["menu item on hover", "--brand-color-text-default", vars["--brand-ActionMenu-color-item-hover"], 4.5],
+        ["top edge and heading dot", "--brand-color-accent-primary", canvas, 3],
+        ["primary button", "--brand-button-primary-fgColor-rest", vars["--brand-button-primary-bgColor-rest"], 4.5],
+        ["primary button on hover", "--brand-button-primary-fgColor-rest", vars["--brand-button-primary-bgColor-hover"], 4.5],
+        ["primary button pressed", "--brand-button-primary-fgColor-rest", vars["--brand-button-primary-bgColor-active"], 4.5],
+        ["secondary button", "--brand-button-secondary-fgColor-rest", canvas, 4.5],
+      ];
+      for (const [what, fg, bg, min] of pairs) {
+        const ratio = contrast(vars[fg], bg);
+        assert.ok(ratio >= min, `${what} with ${JSON.stringify(settings.custom)}: ${ratio.toFixed(2)}`);
+      }
+    }
+  }
+  // The default footer uses the theme's own text and muted colors.
+  const defaults = footer(css(palette(DEFAULTS)));
+  assert.match(defaults, /--brand-color-text-default:#e4f3ff !important/);
+  assert.match(defaults, /--brand-color-text-muted:#9a9ccc !important/);
 });
 
 test("Cyberpunk issue labels follow its background, not the OS light or dark setting", () => {

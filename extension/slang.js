@@ -50,13 +50,21 @@
     ).join("\n");
     // Pinned's heading also holds GitHub's spinner and its "Order updated." note, which keep
     // their size. Then tags added next to GitHub's text: "choom" over every profile's name,
-    // a sign-off in the footer, and a stamp on the 404 picture.
+    // a sign-off in the footer, and a stamp on the 404 picture. Where corner-shape doesn't draw,
+    // Gecko included, the tag and stamp get square corners, as in themes.js, but no clip-path,
+    // which would cut off their glow.
+    const choom = `.h-card .vcard-names${OWN}::before`;
+    const stamp = `.application-main div:has(> img[data-static-error-asset='404-illustration'])${OWN}::after`;
     return `/* reskin-slang */
 ${swaps}
 .Layout-main .js-pinned-items-reorder-container > h2 > *${OWN}{font-size:12px}
-.h-card .vcard-names${OWN}::before{content:"// choom" / "";display:block;width:fit-content;margin-bottom:8px;padding:3px 8px 2px;font:600 11px/16px ${FONT_MONO};letter-spacing:.2em;text-transform:uppercase;color:var(--fgColor-accent);border:1px solid var(--fgColor-accent);border-radius:6px 0;corner-shape:bevel;box-shadow:0 0 10px ${alpha(p.accent, 35)},inset 0 0 8px ${alpha(p.accent, 15)};text-shadow:0 0 6px ${alpha(p.accent, 60)}}
+${choom}{content:"// choom" / "";display:block;width:fit-content;margin-bottom:8px;padding:3px 8px 2px;font:600 11px/16px ${FONT_MONO};letter-spacing:.2em;text-transform:uppercase;color:var(--fgColor-accent);border:1px solid var(--fgColor-accent);border-radius:6px 0;corner-shape:bevel;box-shadow:0 0 10px ${alpha(p.accent, 35)},inset 0 0 8px ${alpha(p.accent, 15)};text-shadow:0 0 6px ${alpha(p.accent, 60)}}
 footer.footer .footer-octicon + span${OWN}::after{content:"// stay preem, choom" / "";margin-left:8px;font-family:${FONT_MONO};letter-spacing:.08em;text-transform:uppercase;color:var(--fgColor-accent);text-shadow:0 0 6px ${alpha(p.accent, 50)}}
-.application-main div:has(> img[data-static-error-asset='404-illustration'])${OWN}::after{content:"Flatlined" / "";position:absolute;z-index:3;right:6%;bottom:10%;padding:4px 16px;font:700 clamp(22px,4vw,44px)/1.1 ${FONT_DISPLAY};letter-spacing:.14em;text-transform:uppercase;color:var(--fgColor-accent);background:${alpha(p.bg, 88)};border:2px solid var(--fgColor-accent);border-radius:14px 0;corner-shape:bevel;transform:rotate(-6deg);box-shadow:0 0 18px ${alpha(p.accent, 55)};text-shadow:-2px 0 ${alpha(p.graph, 70)},2px 0 ${alpha(p.accent, 50)},0 0 12px ${alpha(p.accent, 60)}}
+${stamp}{content:"Flatlined" / "";position:absolute;z-index:3;right:6%;bottom:10%;padding:4px 16px;font:700 clamp(22px,4vw,44px)/1.1 ${FONT_DISPLAY};letter-spacing:.14em;text-transform:uppercase;color:var(--fgColor-accent);background:${alpha(p.bg, 88)};border:2px solid var(--fgColor-accent);border-radius:14px 0;corner-shape:bevel;transform:rotate(-6deg);box-shadow:0 0 18px ${alpha(p.accent, 55)};text-shadow:-2px 0 ${alpha(p.graph, 70)},2px 0 ${alpha(p.accent, 50)},0 0 12px ${alpha(p.accent, 60)}}
+@supports (not (corner-shape:bevel)) or (-moz-appearance:none){
+${choom}{border-radius:0}
+${stamp}{border-radius:0}
+}
 `;
   }
 

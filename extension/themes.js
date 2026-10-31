@@ -188,13 +188,14 @@
     const buttonHover = readable(mix(neon, "#ffffff", 0.15), onNeon, awayFromText);
     const buttonActive = readable(mix(neon, "#000000", 0.12), onNeon, awayFromText);
     // The neon for links, icons, carets, the scrollbar and selection marks, mixed toward the text color
-    // until it reads on every page background. Glows and edges keep the raw neon. The scrollbar
-    // thumb and focus ring are softened only on dark pages. On a light page they would fade out.
-    let [surface, inset, raised] = [p.surface, p.inset, p.raised];
-    const worst = (color) => Math.min(...[p.bg, surface, inset, raised].map((bg) => contrast(color, bg)));
-    // On a mid-grey background the surfaces can sit either side of where black and white text
-    // cross over, so nothing reads on all of them. Then each surface that black or white, on the
-    // text's side, can't read on moves to the other side of the background, as far from it as before.
+    // until it reads on every page background, the accent tint GitHub puts branch names and topics
+    // on included. Glows and edges keep the raw neon. The scrollbar thumb and focus ring are
+    // softened only on dark pages. On a light page they would fade out.
+    let [surface, inset, raised, accentMuted] = [p.surface, p.inset, p.raised, mix(p.bg, neon2, 0.12)];
+    const worst = (color) => Math.min(...[p.bg, surface, inset, raised, accentMuted].map((bg) => contrast(color, bg)));
+    // On a mid-grey background the surfaces and the tint can sit either side of where black and
+    // white text cross over, so nothing reads on all of them. Then each one that black or white, on
+    // the text's side, can't read on moves to the other side of the background, as far from it as before.
     const straddles = worst("#000000") < 4.5 && worst("#ffffff") < 4.5;
     if (straddles) {
       const [side, away] = luminance(p.ink) > luminance(p.bg) ? ["#ffffff", "#000000"] : ["#000000", "#ffffff"];
@@ -204,7 +205,7 @@
         while (contrast(mix(p.bg, away, t), p.bg) < contrast(color, p.bg) && t < 1) t += 0.01;
         return mix(p.bg, away, Math.min(t, 1));
       };
-      [surface, inset, raised] = [surface, inset, raised].map(flip);
+      [surface, inset, raised, accentMuted] = [surface, inset, raised, accentMuted].map(flip);
     }
     const surfaces = straddles
       ? `--bgColor-muted:${surface} !important;--control-bgColor-rest:${surface} !important;--bgColor-inset:${inset} !important;--header-bgColor:${inset} !important;--overlay-bgColor:${raised} !important;--button-default-bgColor-rest:${raised} !important;--sideNav-bgColor-selected:${raised} !important;`
@@ -215,6 +216,14 @@
     let t = 0;
     while (worst(mix(neon, toward, t)) < 4.5 && t < 1) t += 0.05;
     const neonFg = mix(neon, toward, Math.min(t, 1));
+    // Logged-out pages end in GitHub's marketing footer, which takes its colors from Primer Brand's
+    // own variables instead. It gets the inset background, the text color where that reads on it,
+    // and Cyberpunk's buttons. Its language menu sets its own color mode, so that gets them too.
+    // GitHub's Markdown drops class and role, so nobody can write one.
+    const footerText = contrast(p.text, inset) >= 4.5 ? p.text : toward;
+    // A hovered language in its menu shades toward the text, or away from it where the text only just reads.
+    const footerMenuHover = [mix(inset, footerText, 0.08), mix(inset, bestOn(footerText, ["#000000", "#ffffff"]), 0.08)].find((c) => contrast(footerText, c) >= 4.5);
+    const footer = `--brand-color-canvas-subtle:${inset} !important;--brand-color-canvas-default:${inset} !important;--brand-color-text-default:${footerText} !important;--brand-color-text-muted:${readable(p.muted, inset, footerText)} !important;--brand-Link-color-default:${footerText} !important;--brand-color-border-muted:${p.border} !important;--brand-color-border-default:${p.border} !important;--brand-color-accent-primary:${neonFg} !important;--brand-color-focus:${neonFg} !important;--brand-button-primary-bgColor-rest:${neon} !important;--brand-button-primary-bgColor-hover:${buttonHover} !important;--brand-button-primary-bgColor-active:${buttonActive} !important;--brand-button-primary-borderColor-rest:${neon} !important;--brand-button-primary-borderColor-hover:${neon} !important;--brand-button-primary-borderColor-active:${neon} !important;--brand-button-primary-fgColor-rest:${onNeon} !important;--brand-button-secondary-bgColor-rest:${inset} !important;--brand-button-secondary-bgColor-hover:${inset} !important;--brand-button-secondary-bgColor-active:${inset} !important;--brand-button-secondary-borderColor-rest:${p.border} !important;--brand-button-secondary-borderColor-hover:${neonFg} !important;--brand-button-secondary-borderColor-active:${neonFg} !important;--brand-button-secondary-fgColor-rest:${footerText} !important;--brand-ActionMenu-color-item-hover:${footerMenuHover} !important`;
     const header = ":is(.AppHeader,.HeaderMktg,.Header,.gist-header-logged-out)";
     const logo = ":is(.AppHeader-logo,.Header-link,header a[aria-label='Homepage'],a[aria-label='Gist Homepage'])";
     const title = ":is([data-testid='repo-name-link'],strong[itemprop='name'] a,#repo-title-component a,.AppHeader-context-item-label,.gist-blob-name)";
@@ -244,7 +253,7 @@
     // are square, and only labels that aren't links get a clip-path bevel, which would clip focus rings.
     // The top glow covers one screen and scrolls with the page, so it ends where it has faded out.
     return `/* reskin-effects:cyberpunk */
-:root,[data-color-mode],[data-light-theme],[data-dark-theme]{${surfaces}--bgColor-accent-muted:${mix(p.bg, neon2, 0.12)} !important;--bgColor-accent-emphasis:${darkenForWhiteText(neon2)} !important;--borderColor-accent-muted:${mix(p.bg, neon2, 0.4)} !important;--button-primary-bgColor-rest:${neon} !important;--button-primary-bgColor-hover:${buttonHover} !important;--button-primary-bgColor-active:${buttonActive} !important;--button-primary-borderColor-rest:${neon} !important;--button-primary-borderColor-hover:${neon} !important;--button-primary-fgColor-rest:${onNeon} !important;--button-primary-iconColor-rest:${onNeon} !important;--underlineNav-borderColor-active:${neonFg} !important;--borderColor-accent-emphasis:${neonFg} !important;--focus-outlineColor:${neonFg} !important;--fgColor-accent:${neonFg} !important;--fgColor-link:${neonFg} !important}
+:root,[data-color-mode],[data-light-theme],[data-dark-theme]{${surfaces}--bgColor-accent-muted:${accentMuted} !important;--bgColor-accent-emphasis:${darkenForWhiteText(neon2)} !important;--borderColor-accent-muted:${mix(p.bg, neon2, 0.4)} !important;--button-primary-bgColor-rest:${neon} !important;--button-primary-bgColor-hover:${buttonHover} !important;--button-primary-bgColor-active:${buttonActive} !important;--button-primary-borderColor-rest:${neon} !important;--button-primary-borderColor-hover:${neon} !important;--button-primary-fgColor-rest:${onNeon} !important;--button-primary-iconColor-rest:${onNeon} !important;--underlineNav-borderColor-active:${neonFg} !important;--borderColor-accent-emphasis:${neonFg} !important;--focus-outlineColor:${neonFg} !important;--fgColor-accent:${neonFg} !important;--fgColor-link:${neonFg} !important}
 :root{scrollbar-color:${p.dark ? mix(p.bg, neonFg, 0.55) : neonFg} ${inset}}
 body{background-image:radial-gradient(ellipse 80% 50% at 50% -10%,${alpha(neon2, 10)},transparent 70%),linear-gradient(${alpha(neon2, 5)} 1px,transparent 1px),linear-gradient(90deg,${alpha(neon2, 5)} 1px,transparent 1px),repeating-linear-gradient(${alpha(p.ink, 2)} 0 1px,transparent 1px 3px) !important;background-size:100% 100vh,48px 48px,48px 48px,auto !important;background-repeat:no-repeat,repeat,repeat,repeat !important}
 ::selection{background-color:${neon} !important;color:${onNeon} !important}
@@ -277,6 +286,7 @@ a:hover:not(${code} a){text-shadow:0 0 8px ${alpha(p.link, 70)}}
 ${days}
 .ContributionCalendar-day{border-radius:1px !important}
 ${code},${code} *{text-shadow:none !important}
+footer[class*='footer__'][role='contentinfo'],footer[class*='footer__'][role='contentinfo'] [data-color-mode]{${footer}}
 @media (prefers-reduced-motion:no-preference){
 @keyframes reskin-glitch{0%,100%{transform:none;filter:drop-shadow(0 0 6px ${alpha(neon, 80)})}20%{transform:translate(-2px,1px);filter:drop-shadow(-2px 0 ${neon}) drop-shadow(2px 0 ${neon2})}40%{transform:translate(2px,-1px);filter:drop-shadow(2px 0 ${neon}) drop-shadow(-2px 0 ${neon2})}60%{transform:skewX(-8deg);opacity:.7}80%{transform:translate(1px,0);opacity:1}}
 @keyframes reskin-flicker{0%,100%{opacity:1}10%{opacity:.55}14%{opacity:1}40%{opacity:.8}44%{opacity:1}70%{opacity:.6}72%{opacity:1}}
