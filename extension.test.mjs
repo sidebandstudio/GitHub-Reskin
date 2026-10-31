@@ -87,7 +87,7 @@ test("only Cyberpunk swaps GitHub's labels for street slang, with its colors or 
   }
   const custom = { bg: "#101010", text: "#f0f0f0", accent: "#ff2a6d", graph: "#39ff14" };
   const out = css(palette({ theme: "cyberpunk", custom }));
-  assert.match(out, /\.vcard-names::before\{content:"\/\/ choom" \/ ""/);
+  assert.match(out, /\.vcard-names:not\([^{]*\)::before\{content:"\/\/ choom" \/ ""/);
   assert.match(out.slice(out.indexOf("reskin-slang")), /#ff2a6d/);
 });
 
@@ -103,6 +103,52 @@ test("screen readers hear GitHub's words, not the slang", () => {
   assert.ok(shrunk.length > 10, `${shrunk.length} labels`);
   for (const selector of shrunk) assert.ok(out.includes(`\n${selector}::before{content:"`), selector);
   assert.doesNotMatch(out, /@import|https?:|url\(/i);
+});
+
+// What people wrote, as GitHub's Markdown rendered it on 2026-10-31 (api.github.com/markdown),
+// made to look like the labels slang.js swaps: heading links to achievements, releases and
+// contributors, an itemprop follows link, a Pro title, the graph legend's ids and GitHub's classes.
+const AUTHORED = `<h2><a href="https://github.com/whoisaldo?tab=achievements">My personal trophies</a></h2>
+<h2><a href="https://github.com/acme/repo/releases"><span>Download version 27</span></a></h2>
+<h2><a href="https://github.com/acme/repo/graphs/contributors"><span>Top 10 contributors</span></a></h2>
+<h2>Crews I run with</h2><a itemprop="follows" href="https://github.com/acme">acme</a>
+<p><span title="Label: Pro">Pro tip 3</span> <span>Less than 5</span><span id="user-content-contribution-graph-legend-level-0">x</span><span id="user-content-contribution-graph-legend-level-4">y</span><span>More than 9</span></p>
+<div id="user-content-js-contribution-activity"><h2>Contribution activity in 2025</h2></div>
+<div><h2>Pinned 3 repos</h2></div>
+o<span>Footer 2026</span>
+<div>Card</div>
+<div><a target="_blank" rel="noopener noreferrer" href="x.png"><img src="x.png" style="max-width: 100%;"></a></div>`;
+
+test("slang changes only GitHub's own labels, never what people wrote", () => {
+  const out = slang(palette(DEFAULTS));
+  const selectors = [...out.matchAll(/^([^{}\n]+)\{/gm)].map(([, selector]) => selector.replace(/::(before|after)$/, ""));
+  assert.ok(selectors.length > 30, `${selectors.length} selectors`);
+  // Nothing inside a README, comment, issue or pull request title, or file, gists' included, ever matches.
+  const exclusion = ":not(:is(.markdown-body,.comment-body,.js-comment-body,.markdown-title,.file,.blob-wrapper,.react-code-file-contents) *)";
+  for (const selector of selectors) assert.ok(selector.endsWith(exclusion), selector);
+  // Each starts inside a part of GitHub's page named by a class, id or data attribute, never at a
+  // bare element or link someone could write, like h2 a[href$='/releases'].
+  const authored = {
+    classes: [...AUTHORED.matchAll(/class="([^"]*)"/g)].flatMap(([, value]) => value.split(" ")),
+    ids: [...AUTHORED.matchAll(/id="([^"]*)"/g)].map(([, value]) => value),
+    data: [...AUTHORED.matchAll(/(data-[\w-]+)=/g)].map(([, name]) => name),
+  };
+  assert.deepEqual(authored.classes, []);
+  assert.deepEqual(authored.data, []);
+  assert.ok(authored.ids.every((id) => id.startsWith("user-content-")));
+  for (const selector of selectors) {
+    const container = selector.split(" ")[0];
+    const names = (container.match(/[.#][\w-]+|\[data-[\w-]+/g) || []).map((token) => token.slice(1));
+    assert.ok(names.length, selector);
+    for (const name of names) assert.ok(![...authored.classes, ...authored.ids, ...authored.data].includes(name), selector);
+  }
+  // Counts beside a label keep their size: Releases' and Contributors' counters are never the label,
+  // and whatever sits in Pinned's heading beside the word, its spinner and saved note, is put back.
+  for (const link of ["/releases'", "/graphs/contributors'"]) {
+    const label = selectors.find((selector) => selector.includes(link));
+    assert.ok(label.includes("span:not(.Counter,[data-component='CounterLabel'])"), label);
+  }
+  assert.match(out, /^\.Layout-main \.js-pinned-items-reorder-container > h2 > \*:not\([^{]*\)\{font-size:12px\}$/m);
 });
 
 // The value css() gives a variable last, which is the one that applies.
