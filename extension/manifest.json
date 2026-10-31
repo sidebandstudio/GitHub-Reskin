@@ -14,7 +14,7 @@
     {
       "matches": ["https://github.com/*", "https://gist.github.com/*"],
       "run_at": "document_start",
-      "js": ["github-modes.js", "themes.js", "content.js"]
+      "js": ["github-modes.js", "themes.js", "slang.js", "content.js"]
     }
   ],
   "action": {
