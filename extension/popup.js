@@ -1,22 +1,25 @@
 // The popup card. Saves to storage.local, and the content script repaints GitHub on change.
 (function () {
   "use strict";
-  const { THEMES, DEFAULTS, EDITABLE, palette, isHex } = globalThis.GitHubReskin;
+  const { THEMES, DEFAULTS, EDITABLE, palette, load, isHex } = globalThis.GitHubReskin;
   const LABELS = { bg: "Background", text: "Text", accent: "Accent", graph: "Contribution graph" };
   const $ = (id) => document.getElementById(id);
   const currentTheme = () => THEMES.find((t) => t.id === settings.theme) || THEMES[0];
   let settings = { ...DEFAULTS };
 
+  // The theme is saved with every change. Colors edited in 1.0 have no saved theme, and load()
+  // gives them Editing Suite without saving it.
   function save(patch) {
     settings = { ...settings, ...patch };
     render();
-    chrome.storage.local.set(patch);
+    chrome.storage.local.set({ theme: settings.theme, ...patch });
   }
 
   function setColor(key, value) {
     const p = palette(settings);
     const custom = Object.fromEntries(EDITABLE.map((k) => [k, p[k]]));
-    save({ custom: { ...custom, [key]: value.toLowerCase() } });
+    // The theme is saved with the colors, so they stay on it if the default theme changes.
+    save({ theme: currentTheme().id, custom: { ...custom, [key]: value.toLowerCase() } });
   }
 
   for (const theme of THEMES) {
@@ -73,12 +76,14 @@
   function render() {
     const p = palette(settings);
     const style = document.documentElement.style;
-    for (const key of ["bg", "surface", "border", "muted", "strong"]) style.setProperty(`--${key}`, p[key]);
+    for (const key of ["bg", "surface", "border", "muted", "strong", "graph"]) style.setProperty(`--${key}`, p[key]);
     style.setProperty("--accent", p.link);
     // The popup keeps readable text even while you try a text color that isn't.
     style.setProperty("--text", p.ink);
     $("warning").hidden = p.ink === p.text;
     style.colorScheme = p.dark ? "dark" : "light";
+    // The popup takes on the theme's effects too, styled in popup.css.
+    document.body.dataset.effects = p.effects || "";
 
     $("enabled").checked = settings.enabled;
     document.body.classList.toggle("off", !settings.enabled);
@@ -97,7 +102,7 @@
   }
 
   // The card stays inert until settings load, so the load can't overwrite an early click.
-  chrome.storage.local.get(DEFAULTS).then((stored) => {
+  load(chrome.storage.local).then((stored) => {
     settings = stored;
     render();
     document.querySelector("main").inert = false;
