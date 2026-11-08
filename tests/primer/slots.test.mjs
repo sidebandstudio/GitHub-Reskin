@@ -131,6 +131,54 @@ for (const [name, engine] of [["Chromium", chromium], ["Firefox", firefox]]) {
       assert.deepEqual((await locate(PROFILE, { url: "https://github.example.com/octo-sample" })).anchors, []);
     });
 
+    test("route classification and slot discovery stay within the startup query budget", async () => {
+      const context = await browser.newContext();
+      const url = "https://github.com/octo-sample";
+      await context.route("**/*", (r) => (r.request().url() === url ? r.fulfill({ contentType: "text/html", body: PROFILE }) : r.abort()));
+      const page = await context.newPage();
+      await page.goto(url);
+      await page.addScriptTag({ content: bundle });
+      const result = await page.evaluate(() => {
+        const calls = { document: [], element: 0 };
+        for (const [proto, kind] of [[Document.prototype, "document"], [Element.prototype, "element"]]) {
+          for (const method of ["querySelector", "querySelectorAll"]) {
+            const original = proto[method];
+            proto[method] = function (selector) {
+              if (kind === "document") calls.document.push(selector);
+              else calls.element++;
+              return original.call(this, selector);
+            };
+          }
+        }
+        const G = globalThis.ReskinGitHub;
+        const route = G.classifyRoute(document);
+        const anchors = G.locateSlots(document, route);
+        return { route, anchors: anchors.length, calls };
+      });
+      await context.close();
+      assert.equal(result.route, "profile");
+      assert.equal(result.anchors, 5);
+      // One document query to classify and one to verify the route and find every candidate,
+      // within the architecture's six; each anchor's guard reads at most two small subtrees.
+      assert.equal(result.calls.document.length, 2, result.calls.document.join("\n"));
+      assert.ok(result.calls.element <= 2 * result.anchors, `${result.calls.element} element-scoped queries`);
+    });
+
+    test("too many candidates or too much time yields no anchors at all", async () => {
+      const crowd = () => {
+        const card = document.querySelector(".Layout-sidebar .h-card");
+        for (let i = 0; i < 250; i++) card.append(Object.assign(document.createElement("h2"), { textContent: `Heading ${i}` }));
+      };
+      assert.deepEqual((await locate(PROFILE, { mutate: crowd })).anchors, []);
+      // A clock that jumps 5 ms on every reading exhausts the 4 ms allowance.
+      const slowClock = () => {
+        let t = 0;
+        performance.now = () => (t += 5);
+      };
+      assert.deepEqual((await locate(PROFILE, { mutate: slowClock })).anchors, []);
+      assert.equal((await locate(PROFILE)).anchors.length, 5);
+    });
+
     test("authored copies of GitHub's structure never anchor, even with GitHub's classes", async () => {
       // GitHub strips classes from Markdown, but the guard does not rely on that.
       const forged = () => {

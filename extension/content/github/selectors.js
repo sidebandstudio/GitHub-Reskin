@@ -69,6 +69,7 @@ export const ROUTE_META = {
 };
 export const NOT_FOUND_ILLUSTRATION = "main img[data-static-error-asset='404-illustration']";
 export const PROFILE_CARD = "main .h-card[itemtype='http://schema.org/Person']";
+export const SOURCE_CODE = "[itemtype='http://schema.org/SoftwareSourceCode']";
 
 /**
  * The eight flavor slots. `scope` finds candidate guard elements; `text` is the exact English
