@@ -5,7 +5,7 @@ import { test } from "node:test";
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { adversarialThemes, run } from "../../packages/engine/checks.mjs";
+import { adversarialThemes, parseArgs, run } from "../../packages/engine/checks.mjs";
 import { graphProblems, rampDirection, repairTheme, resolveTheme } from "../../packages/engine/index.js";
 
 const ROOT = new URL("../../", import.meta.url).pathname;
@@ -52,6 +52,32 @@ test("contrast scopes: primer and the full gate need C3's mode index; unknown sc
   assert.equal((await run({ command: "contrast", args: [], root: ROOT })).exitCode, 2);
   assert.equal((await run({ command: "contrast", args: ["--scope=preview"], root: ROOT })).exitCode, 2);
   assert.equal((await run({ command: "nope", args: [], root: ROOT })).exitCode, 2);
+});
+
+test("contrast arguments are validated in full before any check runs", async () => {
+  const bad = [
+    ["--scope=engine", "--scope=primer", "--ignored-flag"],
+    ["--scope=engine", "--scope=primer"],
+    ["--scope=engine", "--scope", "engine"],
+    ["--scope=engine", "--ignored-flag"],
+    ["--scope=engine", "extra"],
+    ["--scope"],
+    ["--scope="],
+    ["--scope", "--themes", "themes/classics"],
+    ["--scope=engine", "--themes"],
+    ["--scope=engine", "--themes", "themes/classics", "--themes=themes/anime"],
+    ["--scope=engine", "--themes", "does/not/exist"],
+    ["--scope=engine", "--themes", "themes/catalog.json"],
+    ["--scope=engine", "--themes", "packages/contracts/../../scripts"],
+    ["--Scope=engine"],
+  ];
+  for (const args of bad) {
+    assert.ok(parseArgs(args, ROOT).error, JSON.stringify(args));
+    assert.deepEqual(await run({ command: "contrast", args, root: ROOT }), { exitCode: 2, testCount: 0 }, JSON.stringify(args));
+  }
+  assert.deepEqual(parseArgs([], ROOT), {});
+  assert.deepEqual(parseArgs(["--scope", "engine"], ROOT), { scope: "engine" });
+  assert.deepEqual(parseArgs(["--themes=themes/classics", "--scope=primer"], ROOT), { scope: "primer", themes: join(ROOT, "themes/classics") });
 });
 
 test("--scope=primer runs every themed seed in a ModeIndex and the full gate requires 25 themes", async () => {

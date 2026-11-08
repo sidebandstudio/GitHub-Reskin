@@ -8,8 +8,9 @@
 //                   Classics, the same fixtures and a shorter adversarial sweep.
 //   no scope        the full gate: the engine scope, then all 25 catalog themes on every production
 //                   seed. It needs the complete catalog.
-// --themes <dir> adds the theme files in another directory, such as staged content.
-import { existsSync, readFileSync, readdirSync } from "node:fs";
+// --themes <dir> adds the theme files in another directory, such as staged content. Each option
+// may appear once, as --name=value or --name value; anything else fails before any check runs.
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { catalogProblems, decodeShare, encodeShare, exportTheme, parseImport, validateTheme } from "../format/index.js";
@@ -17,6 +18,7 @@ import { graphProblems, rampDirection, repairTheme, resolveTheme, seedProblems }
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const DEFAULT_ROOT = resolve(HERE, "../..");
+const SCOPES = ["engine", "primer"];
 const SEED_NAMES = ["standard-dark", "standard-light", "colorblind-dark", "tritanopia-light"];
 const MODE_INDEX = "vendor/primer/modes.json";
 const FIXTURE_DIRS = ["tests/fixtures/roundtrip", "tests/fixtures/schema/repair", "tests/fixtures/schema/valid"];
@@ -77,11 +79,34 @@ const fileThemes = (root, entries) => entries.map((entry) => [entry.file, readJs
 function fixtureThemes(root) {
   return FIXTURE_DIRS.flatMap((dir) => readdirSync(join(root, dir)).filter((f) => f.endsWith(".reskin.json")).sort().map((f) => [`${dir}/${f}`, readJson(join(root, dir, f))]));
 }
-function extraThemes(root, args) {
-  const at = args.indexOf("--themes");
-  if (at < 0) return [];
-  const dir = resolve(root, args[at + 1]);
-  return readdirSync(dir).filter((f) => f.endsWith(".json")).sort().map((f) => [join(dir, f), readJson(join(dir, f))]);
+const themeFiles = (dir) => readdirSync(dir).filter((f) => f.endsWith(".json")).sort();
+function extraThemes(dir) {
+  return dir ? themeFiles(dir).map((f) => [join(dir, f), readJson(join(dir, f))]) : [];
+}
+
+/**
+ * Parses the whole argument list: --scope and --themes, each at most once.
+ * @returns {{scope?:string, themes?:string} | {error:string}}
+ */
+export function parseArgs(args, root) {
+  const options = {};
+  for (let i = 0; i < args.length; i++) {
+    const match = /^--(scope|themes)(?:=(.*))?$/s.exec(args[i]);
+    if (!match) return { error: `check:contrast does not take ${JSON.stringify(args[i])}. Options: --scope=engine|primer, --themes <dir>.` };
+    const [, name, inline] = match;
+    const value = inline ?? args[++i];
+    if (value === undefined || value === "" || (inline === undefined && value.startsWith("--"))) return { error: `--${name} needs a value.` };
+    if (Object.hasOwn(options, name)) return { error: `--${name} is given more than once (${options[name]}, ${value}). Run each scope separately.` };
+    options[name] = value;
+  }
+  if (options.scope !== undefined && !SCOPES.includes(options.scope)) return { error: `check:contrast has no scope ${options.scope}. Scopes: ${SCOPES.join(", ")}, or none for the full gate.` };
+  if (options.themes !== undefined) {
+    const dir = resolve(root, options.themes);
+    if (!existsSync(dir) || !statSync(dir).isDirectory()) return { error: `--themes ${options.themes} is not a directory.` };
+    if (!themeFiles(dir).length) return { error: `--themes ${options.themes} has no .json theme files.` };
+    options.themes = dir;
+  }
+  return options;
 }
 
 // The production seeds from C3's mode index, or the reason it cannot be used.
@@ -137,10 +162,10 @@ function checkThemes(sources, seeds, check) {
   }
 }
 
-function engineScope(root, args) {
+function engineScope(root, themes) {
   const { check, done } = tally("check:contrast --scope=engine");
   const seeds = SEED_NAMES.map((name) => readJson(join(root, "tests/fixtures/seeds", `${name}.json`)));
-  const sources = [...fileThemes(root, readJson(join(root, "themes/catalog.json"))), ...fixtureThemes(root), ...extraThemes(root, args), ...adversarialThemes().map((t) => [t.name, t])];
+  const sources = [...fileThemes(root, readJson(join(root, "themes/catalog.json"))), ...fixtureThemes(root), ...extraThemes(themes), ...adversarialThemes().map((t) => [t.name, t])];
   checkThemes(sources, seeds, check);
   return done(`${sources.length} themes on ${seeds.length} synthetic seeds`);
 }
@@ -150,22 +175,22 @@ function notImplemented(scope, missing) {
   return { exitCode: 2, testCount: 0 };
 }
 
-function primerScope(root, args) {
+function primerScope(root, themes) {
   const { check, done } = tally("check:contrast --scope=primer");
   const { seeds, missing } = productionSeeds(root, check);
   if (missing) return notImplemented("primer", missing);
   const classics = readJson(join(root, "themes/catalog.json")).filter((e) => e.group === "classics");
   check(classics.length === 12, `the catalog has ${classics.length} Classics; 12 are required`);
-  const sources = [...fileThemes(root, classics), ...fixtureThemes(root), ...extraThemes(root, args), ...adversarialThemes(60).map((t) => [t.name, t])];
+  const sources = [...fileThemes(root, classics), ...fixtureThemes(root), ...extraThemes(themes), ...adversarialThemes(60).map((t) => [t.name, t])];
   checkThemes(sources, seeds, check);
   return done(`${sources.length} themes on ${seeds.length} production seeds`);
 }
 
-function fullGate(root, args) {
+function fullGate(root, themes) {
   const { check, done } = tally("check:contrast");
   const { seeds, missing } = productionSeeds(root, check);
   if (missing) return notImplemented("", missing);
-  const engine = engineScope(root, args);
+  const engine = engineScope(root, themes);
   const catalog = readJson(join(root, "themes/catalog.json"));
   for (const problem of catalogProblems(catalog)) check(false, `catalog: ${problem}`);
   const counts = { anime: catalog.filter((e) => e.group === "anime").length, classics: catalog.filter((e) => e.group === "classics").length };
@@ -182,13 +207,14 @@ export async function run({ command, args = [], root = DEFAULT_ROOT }) {
     console.error(`packages/engine/checks.mjs has no ${command} check. Checks: contrast`);
     return { exitCode: 2, testCount: 0 };
   }
-  const at = args.indexOf("--scope");
-  const scope = at >= 0 ? args[at + 1] : args.find((a) => a.startsWith("--scope="))?.slice("--scope=".length);
-  if (scope === "engine") return engineScope(root, args);
-  if (scope === "primer") return primerScope(root, args);
-  if (scope === undefined) return fullGate(root, args);
-  console.error(`check:contrast has no scope ${scope}. Scopes: engine, primer, or none for the full gate.`);
-  return { exitCode: 2, testCount: 0 };
+  const options = parseArgs(args, root);
+  if (options.error) {
+    console.error(options.error);
+    return { exitCode: 2, testCount: 0 };
+  }
+  if (options.scope === "engine") return engineScope(root, options.themes);
+  if (options.scope === "primer") return primerScope(root, options.themes);
+  return fullGate(root, options.themes);
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
