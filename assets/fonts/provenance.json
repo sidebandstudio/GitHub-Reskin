@@ -1,0 +1,200 @@
+{
+  "subset": "U+0020-007E,U+00A0-00FF,U+0152-0153,U+0178,U+2010-2027,U+2030,U+2039-203A,U+20AC",
+  "tools": {
+    "fonttools": "4.60.1",
+    "python": "3.14.7"
+  },
+  "acquire": "assets/fonts/acquire.py",
+  "totalBytes": 104492,
+  "fonts": [
+    {
+      "id": "rajdhani",
+      "weight": 600,
+      "file": "rajdhani/rajdhani.woff2",
+      "bytes": 8996,
+      "sha256": "046d4a7c5108076ada8ad2bd2fdc4b92289b1c035d23bcf5dddff3a6a16eed0c",
+      "license": "OFL-1.1",
+      "licenseFile": "rajdhani/OFL.txt",
+      "licenseSha256": "f62ef357d3a1c3d27edd35a6e1ba350e8a8d13499797964eeadefbf0b3b15d1f",
+      "reservedFontName": false,
+      "internalFamily": "Rajdhani",
+      "source": {
+        "repository": "https://github.com/google/fonts",
+        "commit": "5bb28733cec313b63fbd415b574b5ae35c8aa8b8",
+        "path": "ofl/rajdhani/Rajdhani-SemiBold.ttf",
+        "url": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/rajdhani/Rajdhani-SemiBold.ttf",
+        "licenseUrl": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/rajdhani/OFL.txt",
+        "sha256": "94bbd25a18ca665999feb05a537de9fd2b860dcfb78bbe9ca00270825bf235da",
+        "version": "Version 1.201;PS 1.0;hotconv 1.0.78;makeotf.lib2.5.61930; ttfautohint (v1.1) -l 7 -r 28 -G 50 -x 13 -D latn -f deva -w G",
+        "instance": {}
+      }
+    },
+    {
+      "id": "barlow-condensed",
+      "weight": 600,
+      "file": "barlow-condensed/barlow-condensed.woff2",
+      "bytes": 12036,
+      "sha256": "3163fc2ca3dad6369394c398a23edc6eb963783e7bfeb0c561a35325fc4a9343",
+      "license": "OFL-1.1",
+      "licenseFile": "barlow-condensed/OFL.txt",
+      "licenseSha256": "186d750eb496a4c17a76385f82be6aea2ac1cf2de074a811d63786cf374ea73f",
+      "reservedFontName": false,
+      "internalFamily": "Barlow Condensed",
+      "source": {
+        "repository": "https://github.com/google/fonts",
+        "commit": "5bb28733cec313b63fbd415b574b5ae35c8aa8b8",
+        "path": "ofl/barlowcondensed/BarlowCondensed-SemiBold.ttf",
+        "url": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/barlowcondensed/BarlowCondensed-SemiBold.ttf",
+        "licenseUrl": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/barlowcondensed/OFL.txt",
+        "sha256": "7b619d14bc2327509a9ef32b0890f709626f7ecc9ff61191c2a4314c5499d2d9",
+        "version": "Version 1.408",
+        "instance": {}
+      }
+    },
+    {
+      "id": "fraunces",
+      "weight": 600,
+      "file": "fraunces/fraunces.woff2",
+      "bytes": 17308,
+      "sha256": "6f48ad7f42c96ca827589102fe53d9907f77cb4364116ea01aec8ad1959835cf",
+      "license": "OFL-1.1",
+      "licenseFile": "fraunces/OFL.txt",
+      "licenseSha256": "bdf4c22802eaf804f998195871c6b8938aac2ac14b2d78a8bd66a6f1eced833b",
+      "reservedFontName": false,
+      "internalFamily": "Fraunces",
+      "source": {
+        "repository": "https://github.com/google/fonts",
+        "commit": "5bb28733cec313b63fbd415b574b5ae35c8aa8b8",
+        "path": "ofl/fraunces/Fraunces[SOFT,WONK,opsz,wght].ttf",
+        "url": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/fraunces/Fraunces[SOFT,WONK,opsz,wght].ttf",
+        "licenseUrl": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/fraunces/OFL.txt",
+        "sha256": "177ff6c0f14e5550a3c624247cd1189611d4eb65d000b14944c63d967958abbb",
+        "version": "Version 1.000;[b76b70a41]",
+        "instance": {
+          "SOFT": 0,
+          "WONK": 0,
+          "opsz": 24,
+          "wght": 600
+        }
+      }
+    },
+    {
+      "id": "alegreya",
+      "weight": 600,
+      "file": "alegreya/alegreya.woff2",
+      "bytes": 18980,
+      "sha256": "64cce7a7f0fb0b9fec8a85cb6fd87bc608daf695fcd188c594b5a80545b10642",
+      "license": "OFL-1.1",
+      "licenseFile": "alegreya/OFL.txt",
+      "licenseSha256": "f6f60d5d4cf4f4b1fc4e41353c897a2f5a16e6396c0cd8fa8bdfd2f4586a9a68",
+      "reservedFontName": false,
+      "internalFamily": "Alegreya",
+      "source": {
+        "repository": "https://github.com/google/fonts",
+        "commit": "5bb28733cec313b63fbd415b574b5ae35c8aa8b8",
+        "path": "ofl/alegreya/Alegreya[wght].ttf",
+        "url": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/alegreya/Alegreya[wght].ttf",
+        "licenseUrl": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/alegreya/OFL.txt",
+        "sha256": "ba5564634b93a8f8ba57b48cd4f1ae7417d2b4656fbac779028679b00de3cf12",
+        "version": "Version 2.009",
+        "instance": {
+          "wght": 600
+        }
+      }
+    },
+    {
+      "id": "cormorant-garamond",
+      "weight": 700,
+      "file": "cormorant-garamond/cormorant-garamond.woff2",
+      "bytes": 16372,
+      "sha256": "f543683a1a012185dc75d37b3849a55e7f7aafcead39a2da46b7e68ba2f976b3",
+      "license": "OFL-1.1",
+      "licenseFile": "cormorant-garamond/OFL.txt",
+      "licenseSha256": "60700d351cac4650c51f3f9db318d2a420f8b45052dba2715eb5fec41f0f6956",
+      "reservedFontName": false,
+      "internalFamily": "Cormorant Garamond",
+      "source": {
+        "repository": "https://github.com/google/fonts",
+        "commit": "5bb28733cec313b63fbd415b574b5ae35c8aa8b8",
+        "path": "ofl/cormorantgaramond/CormorantGaramond[wght].ttf",
+        "url": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/cormorantgaramond/CormorantGaramond[wght].ttf",
+        "licenseUrl": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/cormorantgaramond/OFL.txt",
+        "sha256": "b20b7d9626dd956b2c5e558692ad328b1f19e3275e2782db4fa07670d83f35e0",
+        "version": "Version 4.001",
+        "instance": {
+          "wght": 700
+        }
+      }
+    },
+    {
+      "id": "josefin-sans",
+      "weight": 600,
+      "file": "josefin-sans/josefin-sans.woff2",
+      "bytes": 10784,
+      "sha256": "5a8804f0d8f0264d781c73029700bdec2e7fbee1c12cb03a403414c76a17b500",
+      "license": "OFL-1.1",
+      "licenseFile": "josefin-sans/OFL.txt",
+      "licenseSha256": "aee5a4081e8a52f80428b30f178b719d115f18dad3e1fa15a986163e1078a85b",
+      "reservedFontName": true,
+      "internalFamily": "Reskin Geometric Accent",
+      "source": {
+        "repository": "https://github.com/google/fonts",
+        "commit": "5bb28733cec313b63fbd415b574b5ae35c8aa8b8",
+        "path": "ofl/josefinsans/JosefinSans[wght].ttf",
+        "url": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/josefinsans/JosefinSans[wght].ttf",
+        "licenseUrl": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/josefinsans/OFL.txt",
+        "sha256": "9255abdb5f393bc51e101abbd07a716a977fd3e15472b1b84b260f426a342bfd",
+        "version": "Version 2.001",
+        "instance": {
+          "wght": 600
+        }
+      }
+    },
+    {
+      "id": "bungee",
+      "weight": 400,
+      "file": "bungee/bungee.woff2",
+      "bytes": 9048,
+      "sha256": "5109b408db19759b7370c9e3ba2d57c8b289e421ca107df014715895e10eabdd",
+      "license": "OFL-1.1",
+      "licenseFile": "bungee/OFL.txt",
+      "licenseSha256": "ff43f39d2143afa2ef0a7009629d25f62de23f0614ecdaea6dd07f6c58c5d2b1",
+      "reservedFontName": false,
+      "internalFamily": "Bungee",
+      "source": {
+        "repository": "https://github.com/google/fonts",
+        "commit": "5bb28733cec313b63fbd415b574b5ae35c8aa8b8",
+        "path": "ofl/bungee/Bungee-Regular.ttf",
+        "url": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/bungee/Bungee-Regular.ttf",
+        "licenseUrl": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/bungee/OFL.txt",
+        "sha256": "c4f5361ce120af3e6b9156d0bf379fa19cda2ea0cd18ac01fd99596c6bf66e3f",
+        "version": "Version 2.000",
+        "instance": {}
+      }
+    },
+    {
+      "id": "space-grotesk",
+      "weight": 600,
+      "file": "space-grotesk/space-grotesk.woff2",
+      "bytes": 10968,
+      "sha256": "bd1265d6463d723deda368bb90fe545e661f93deaa2dd5aeb7085c6f2645de93",
+      "license": "OFL-1.1",
+      "licenseFile": "space-grotesk/OFL.txt",
+      "licenseSha256": "c6dec685825f73b18c20926fddc65e8315642e12986f15db0699170940a09efc",
+      "reservedFontName": false,
+      "internalFamily": "Space Grotesk",
+      "source": {
+        "repository": "https://github.com/google/fonts",
+        "commit": "5bb28733cec313b63fbd415b574b5ae35c8aa8b8",
+        "path": "ofl/spacegrotesk/SpaceGrotesk[wght].ttf",
+        "url": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/spacegrotesk/SpaceGrotesk[wght].ttf",
+        "licenseUrl": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/spacegrotesk/OFL.txt",
+        "sha256": "acad6de1fc93436f5c0f1f4137751ef04f1aea3063e7036535970ffcfbd79f72",
+        "version": "Version 2.000",
+        "instance": {
+          "wght": 600
+        }
+      }
+    }
+  ]
+}

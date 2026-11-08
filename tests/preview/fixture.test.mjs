@@ -1,0 +1,86 @@
+// The preview's offline whoisaldo fixture, its Primer variables and its configuration contract.
+import assert from "node:assert/strict";
+import { existsSync, readFileSync } from "node:fs";
+import { test } from "node:test";
+import { FLAVOR_SLOT_IDS, PREVIEW_VIEWS } from "../../packages/contracts/index.js";
+import { repairTheme, resolveTheme } from "../../packages/engine/index.js";
+import { ASSET_DIR, DEFAULT_DORMANT_SLOTS, FIXTURE, FIXTURE_CSS, PREVIEW_VARIABLES, VIEWS, colorAt, configurePreview, createFixtureRenderer, mountPreview } from "../../packages/preview/index.js";
+import * as primer from "../fixture-app/product/primer-double.js";
+
+const ROOT = new URL("../../", import.meta.url).pathname;
+const ALLOWED = new Set(["h1", "h2", "h3", "h4", "h5", "h6", "p", "ul", "ol", "li", "a", "img", "strong", "em", "code", "br"]);
+
+test("the profile fixture keeps the capture's identity, pins and full calendar", () => {
+  const { profile, contributions, repository, source } = FIXTURE;
+  assert.equal(source.profileUrl, "https://github.com/whoisaldo");
+  assert.match(source.profileSha256, /^[0-9a-f]{64}$/);
+  assert.equal(profile.login, "whoisaldo");
+  assert.equal(profile.displayName, "Ali Younes");
+  assert.equal(profile.pinned.length, 6);
+  assert.equal(contributions.heading, "5,216 contributions in the last year");
+  assert.equal(contributions.levels.length, 365);
+  assert.equal(contributions.counts.length, 365);
+  assert.ok(contributions.levels.every((level) => Number.isInteger(level) && level >= 0 && level <= 4));
+  assert.ok(contributions.counts.every((count) => Number.isInteger(count) && count >= 0));
+  assert.equal(new Date(`${contributions.start}T00:00:00Z`).getUTCDay(), 0, "weeks start on Sunday");
+  assert.equal(`${repository.owner}/${repository.name}`, "sidebandstudio/GitHub-Reskin");
+});
+
+test("the fixture carries no email, no remote image and only allowlisted README markup", () => {
+  const text = JSON.stringify(FIXTURE);
+  assert.doesNotMatch(text, /mailto:|@[a-z0-9-]+\.(com|dev|edu|io)\b(?!")/i);
+  const walk = (nodes) => {
+    for (const node of nodes) {
+      if (typeof node === "string") continue;
+      const [tag, attrs, ...children] = node;
+      assert.ok(ALLOWED.has(tag), tag);
+      if (tag === "a") assert.match(attrs.href, /^https:\/\//);
+      if (tag === "img") {
+        assert.ok(existsSync(`${ROOT}${ASSET_DIR}${attrs.asset}`), attrs.asset);
+        if (attrs.dark) assert.ok(existsSync(`${ROOT}${ASSET_DIR}${attrs.dark}`), attrs.dark);
+        assert.ok(attrs.alt.length > 0);
+      }
+      walk(children);
+    }
+  };
+  walk(FIXTURE.profile.readme);
+  walk(FIXTURE.repository.readme);
+  assert.ok(existsSync(`${ROOT}${ASSET_DIR}${FIXTURE.profile.avatar.asset}`));
+});
+
+test("every preview variable resolves for seeds and themes, and the fixture CSS uses no others", () => {
+  const used = new Set(FIXTURE_CSS.match(/var\(--[A-Za-z0-9-]+/g).map((v) => v.slice(4)));
+  for (const name of used) assert.ok(Object.hasOwn(PREVIEW_VARIABLES, name), `${name} is not a preview variable`);
+  for (const name of Object.keys(PREVIEW_VARIABLES)) assert.ok(used.has(name), `${name} is unused`);
+  assert.doesNotMatch(FIXTURE_CSS, /url\(|@import|@font-face/);
+  for (const seed of Object.values(primer.modeIndex.modes)) {
+    for (const path of Object.values(PREVIEW_VARIABLES)) assert.match(colorAt(seed.colors, path), /^#[0-9a-f]{6}$/);
+    for (const name of Object.keys(PREVIEW_VARIABLES)) assert.ok(primer.modeIndex.nativeCss[seed.id].includes(`${name}:`), `${seed.id} lacks ${name}`);
+  }
+  const theme = JSON.parse(readFileSync(`${ROOT}themes/classics/dracula.reskin.json`, "utf8"));
+  const seed = primer.modeIndex.modes["fixture.standard-dark"];
+  const resolved = resolveTheme(repairTheme(theme, seed).theme, { seed, policy: "themed", reducedMotion: false, forcedColors: false });
+  for (const path of Object.values(PREVIEW_VARIABLES)) assert.match(colorAt(resolved, path), /^#[0-9a-f]{6}$/);
+});
+
+test("views cover the contract and anchor only real slot IDs", () => {
+  assert.deepEqual(Object.keys(VIEWS).sort(), [...PREVIEW_VIEWS].sort());
+  for (const slot of DEFAULT_DORMANT_SLOTS) assert.ok(FLAVOR_SLOT_IDS.includes(slot));
+});
+
+test("configuration is required and validated before anything mounts", () => {
+  const element = { nodeType: 1 };
+  assert.throws(() => configurePreview({ primer: {}, modeIndex: primer.modeIndex }), /selectMode/);
+  assert.throws(() => configurePreview({ primer, modeIndex: { contractVersion: 2 } }), /ModeIndex/);
+  assert.throws(() => configurePreview({ primer, modeIndex: primer.modeIndex, resources: { fontUrl() {} } }), /resource adapter/);
+  const light = Object.fromEntries(Object.entries(primer.modeIndex.modes).filter(([, m]) => m.base === "light"));
+  assert.throws(() => configurePreview({ primer, modeIndex: { ...primer.modeIndex, modes: light } }), /standard dark/);
+  configurePreview({ primer, modeIndex: primer.modeIndex });
+  const theme = JSON.parse(readFileSync(`${ROOT}themes/classics/nord.reskin.json`, "utf8"));
+  const preferences = { enabled: true, extras: true, text: true, motion: true, fonts: true, effects: true };
+  assert.throws(() => mountPreview(element, { view: "settings", theme, preferences }), /view/);
+  assert.throws(() => mountPreview(element, { view: "profile", theme: { ...theme, colors: { background: "red" } }, preferences }), /valid theme/);
+  assert.throws(() => mountPreview(element, { view: "profile", theme, preferences: { ...preferences, motion: "yes" } }), /motion/);
+  assert.throws(() => mountPreview(null, { view: "profile", theme, preferences }), /container/);
+  assert.equal(typeof createFixtureRenderer, "function");
+});
