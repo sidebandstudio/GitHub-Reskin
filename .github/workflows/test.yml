@@ -12,7 +12,11 @@ jobs:
 
       - uses: actions/setup-node@v5
         with:
-          node-version: 24
+          node-version-file: .node-version
+
+      # The tests now include the build's, which use the pinned dev dependencies.
+      - run: npm install --global npm@11.12.1
+      - run: npm ci
 
       - run: node --test
 
