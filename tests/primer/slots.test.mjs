@@ -1,0 +1,147 @@
+// Slot anchors and route guards against fixtures served at github.com URLs in Chromium and
+// Firefox, with no network. Fixtures follow the live markup recorded in slot-evidence.json and
+// add hostile authored copies of GitHub's words.
+import assert from "node:assert/strict";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
+import { after, before, describe, test } from "node:test";
+import { chromium, firefox } from "playwright";
+import { FLAVOR_SLOT_IDS } from "../../packages/contracts/index.js";
+import { dormantSlots, enabledSlots, SLOTS } from "../../extension/content/github/index.js";
+import { EMPTY_PROFILE, ISSUES, NOT_FOUND, REPOSITORY } from "./fixtures/pages.mjs";
+import { adapterBundle, readJson, readText, ROOT } from "./helpers.mjs";
+
+const PROFILE = readText("tests/primer/fixtures/profile.html");
+const bundle = await adapterBundle();
+
+test("the adapter knows exactly the eight frozen slot IDs, and its states match the dated evidence", () => {
+  assert.deepEqual(SLOTS.map((s) => s.slot).sort(), [...FLAVOR_SLOT_IDS].sort());
+  const evidence = readJson("tests/primer/slot-evidence.json");
+  assert.deepEqual(Object.keys(evidence.slots).sort(), [...FLAVOR_SLOT_IDS].sort());
+  for (const slot of enabledSlots()) {
+    const e = evidence.slots[slot];
+    assert.equal(e.status, "enabled", slot);
+    assert.match(e.date, /^\d{4}-\d{2}-\d{2}$/);
+    assert.match(e.url, /^https:\/\/github\.com\//);
+    assert.equal(e.route, SLOTS.find((s) => s.slot === slot).route);
+    assert.ok(e.screenshot && existsSync(join(ROOT, e.screenshot)), `${slot} screenshot`);
+  }
+  for (const slot of dormantSlots()) {
+    assert.equal(evidence.slots[slot].status, "dormant", slot);
+    assert.ok(evidence.slots[slot].reason, slot);
+  }
+  for (const page of evidence.pages) for (const a of page.anchors) assert.ok(!a.authored && !a.interactive, `${page.url} ${a.slot}`);
+});
+
+for (const [name, engine] of [["Chromium", chromium], ["Firefox", firefox]]) {
+  describe(`slot anchors in ${name}`, () => {
+    let browser;
+    before(async () => {
+      browser = await engine.launch();
+    });
+    after(async () => {
+      await browser?.close();
+    });
+
+    // Serves html at a github.com (or gist) URL and returns what the adapter reports there.
+    async function locate(html, { url = "https://github.com/octo-sample", route, mutate } = {}) {
+      const context = await browser.newContext();
+      await context.route("**/*", (r) => (r.request().url() === url ? r.fulfill({ contentType: "text/html", body: html }) : r.abort()));
+      const page = await context.newPage();
+      await page.goto(url);
+      await page.addScriptTag({ content: bundle });
+      if (mutate) await page.evaluate(mutate);
+      const result = await page.evaluate((route) => {
+        const G = globalThis.ReskinGitHub;
+        const before = document.documentElement.outerHTML;
+        const detected = G.classifyRoute(document);
+        const anchors = G.locateSlots(document, route ?? detected);
+        const describe = (el) => `${el.tagName.toLowerCase()}${el.id ? `#${el.id}` : ""}${el.className ? `.${String(el.className).trim().split(/\s+/)[0]}` : ""}`;
+        return {
+          route: detected,
+          anchors: anchors.map((a) => ({ slot: a.slot, insert: a.insert, host: describe(a.host), text: a.host.textContent.replace(/\s+/g, " ").trim().slice(0, 60), authored: G.insideAuthored(a.host), signature: a.nativeSignature })),
+          unchanged: document.documentElement.outerHTML === before,
+        };
+      }, route);
+      await context.close();
+      return result;
+    }
+    const slots = (r) => r.anchors.map((a) => a.slot).sort();
+
+    test("a profile gets its five evidenced anchors and nothing in the README, name, bio or activity titles", async () => {
+      const r = await locate(PROFILE);
+      assert.equal(r.route, "profile");
+      assert.deepEqual(slots(r), ["contributions.caption", "profile.activity.heading", "profile.organizations.heading", "profile.pinned.heading", "profile.tag"]);
+      const by = Object.fromEntries(r.anchors.map((a) => [a.slot, a]));
+      assert.deepEqual([by["profile.pinned.heading"].host, by["profile.pinned.heading"].insert], ["h2.f4", "append"]);
+      assert.match(by["profile.pinned.heading"].text, /^Pinned Loading/);
+      assert.deepEqual([by["profile.organizations.heading"].host, by["profile.organizations.heading"].text], ["h2.mb-2", "Organizations"]);
+      assert.deepEqual([by["profile.tag"].host, by["profile.tag"].insert], ["div.vcard-names-container", "append"]);
+      assert.deepEqual([by["contributions.caption"].host, by["contributions.caption"].insert], ["div.py-2", "after"]);
+      assert.equal(by["profile.activity.heading"].text, "Contribution activity");
+      for (const a of r.anchors) assert.equal(a.authored, false, a.slot);
+      assert.equal(r.unchanged, true, "locating anchors never edits the page");
+    });
+
+    test("an empty profile, a confirmed 404 and the issue list give exactly their evidenced or dormant results", async () => {
+      assert.deepEqual(slots(await locate(EMPTY_PROFILE, { url: "https://github.com/empty-sample" })), ["empty.pinned.caption", "profile.pinned.heading", "profile.tag"]);
+      const nf = await locate(NOT_FOUND, { url: "https://github.com/octo-sample/missing" });
+      assert.equal(nf.route, "not-found");
+      assert.deepEqual(nf.anchors.map((a) => [a.slot, a.host, a.insert]), [["error.notFound.caption", "div.position-relative", "after"]]);
+      // Dormant: the live blankslate sits in a focusable list and a live region, and even a safe
+      // copy of it stays dormant until new evidence enables the slot.
+      for (const focusable of [true, false]) {
+        const r = await locate(ISSUES(focusable), { url: "https://github.com/sample/repo/issues" });
+        assert.equal(r.route, "issues");
+        assert.deepEqual(r.anchors, []);
+      }
+      const repo = await locate(REPOSITORY, { url: "https://github.com/sample/repo" });
+      assert.equal(repo.route, "repository");
+      assert.deepEqual(repo.anchors, []);
+    });
+
+    test("changed wording, duplicates, other languages and nested controls leave a slot alone", async () => {
+      const cases = [
+        ["changed wording", () => (document.querySelector(".js-pinned-items-reorder-container > h2").firstChild.data = " Pinned repos "), "profile.pinned.heading"],
+        ["duplicate anchor", () => document.querySelector(".js-pinned-items-reorder-container").after(document.querySelector(".js-pinned-items-reorder-container").cloneNode(true)), "profile.pinned.heading"],
+        ["heading turned into a link", () => { const h = document.querySelector("#js-contribution-activity > h2"); h.innerHTML = '<a href="/x">Contribution activity</a>'; }, "profile.activity.heading"],
+        ["control inside the heading", () => document.querySelector(".js-pinned-items-reorder-container > h2").append(Object.assign(document.createElement("button"), { textContent: "Edit" })), "profile.pinned.heading"],
+        ["heading inside a control", () => { const h = [...document.querySelectorAll(".border-top > h2")].find((e) => e.textContent === "Organizations"); const b = document.createElement("div"); b.setAttribute("role", "button"); h.before(b); b.append(h, h.nextElementSibling); }, "profile.organizations.heading"],
+        ["organizations heading without organization links", () => document.querySelector("a.avatar-group-item").remove(), "profile.organizations.heading"],
+        ["contribution count reworded", () => (document.querySelector("#js-contribution-activity-description").firstChild.data = " 1,234 Beiträge "), "contributions.caption"],
+        ["graph moved", () => document.querySelector(".graph-before-activity-overview").remove(), "contributions.caption"],
+        ["anchor inside a live region", () => document.querySelector("#js-contribution-activity").setAttribute("aria-live", "polite"), "profile.activity.heading"],
+      ];
+      for (const [label, mutate, slot] of cases) {
+        const r = await locate(PROFILE, { mutate });
+        assert.ok(!slots(r).includes(slot), `${label}: ${slot} must be skipped`);
+        assert.equal(r.anchors.length, 4, `${label}: the other slots are unaffected`);
+      }
+      assert.deepEqual((await locate(PROFILE, { mutate: () => document.documentElement.setAttribute("lang", "de") })).anchors, []);
+    });
+
+    test("route guards: wrong route class, other hosts and Gist run no profile or 404 locators", async () => {
+      assert.deepEqual((await locate(PROFILE, { route: "issues" })).anchors, []);
+      assert.deepEqual((await locate(PROFILE, { mutate: () => document.querySelector("meta[name='route-controller']").setAttribute("content", "profiles_repositories") })).route, "other");
+      const gist = await locate(PROFILE, { url: "https://gist.github.com/octo-sample/0123456789abcdef0123" });
+      assert.equal(gist.route, "gist");
+      assert.deepEqual(gist.anchors, []);
+      const notFoundOnGist = await locate(NOT_FOUND, { url: "https://gist.github.com/octo-sample/missing" });
+      assert.deepEqual(notFoundOnGist.anchors, []);
+      assert.deepEqual((await locate(PROFILE, { url: "https://github.example.com/octo-sample" })).anchors, []);
+    });
+
+    test("authored copies of GitHub's structure never anchor, even with GitHub's classes", async () => {
+      // GitHub strips classes from Markdown, but the guard does not rely on that.
+      const forged = () => {
+        const readme = document.querySelector(".markdown-body");
+        readme.insertAdjacentHTML("beforeend", '<div class="js-pinned-items-reorder-container"><h2>Pinned</h2></div><div id="js-contribution-activity"><h2>Contribution activity</h2></div><img data-static-error-asset="404-illustration">');
+        document.querySelector(".Layout-main > turbo-frame .mt-4 .js-pinned-items-reorder-container").remove();
+        document.querySelector(".Layout-main #js-contribution-activity:not(.markdown-body *)").remove();
+      };
+      const r = await locate(PROFILE, { mutate: forged });
+      assert.deepEqual(slots(r), ["contributions.caption", "profile.organizations.heading", "profile.tag"]);
+      for (const a of r.anchors) assert.equal(a.authored, false);
+    });
+  });
+}
