@@ -40,7 +40,15 @@ test("the mapping's pair IDs are the C2 matrix's records for each role", () => {
 test("every reviewed mode with every Classic and fixture resolves readably, and its compiled stylesheet keeps GitHub's own pairings readable", () => {
   let resolutions = 0;
   const flagged = [];
-  for (const { id, theme, strict } of sources) {
+  for (const { id, theme: original, strict } of sources) {
+    // As in C2's contrast check, bundled and fixture themes must agree with their base, and a
+    // generated sweep theme that contradicts its base continues with the other one.
+    let theme = original;
+    const conflict = engine.basePolarityIssue?.(theme);
+    if (conflict) {
+      assert.ok(!strict, `${id}: ${conflict.message}`);
+      theme = { ...theme, base: theme.base === "dark" ? "light" : "dark" };
+    }
     const source = engine.repairTheme(theme, standardSeed(MODE_INDEX, theme.base)).theme;
     for (const mode of MODES) {
       const plan = selectMode(nativeFor(mode), theme.base, MODE_INDEX);
