@@ -1,0 +1,81 @@
+{
+  "$schema": "https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json",
+  "author": "sidebandstudio",
+  "base": "dark",
+  "colors": {
+    "accent": "#bda0ff",
+    "background": "#15101f",
+    "contribution": "#b4f05f",
+    "text": "#f4eff9"
+  },
+  "contributions": {
+    "levels": [
+      "#2b2335",
+      "#567038",
+      "#5c7f34",
+      "#79a937",
+      "#b4f05f"
+    ]
+  },
+  "description": "Aubergine panels, violet emphasis and lime activity turn GitHub into a restrained operations desk.",
+  "effects": {
+    "grid": {
+      "opacity": 0.025,
+      "size": 32
+    },
+    "rail": {
+      "opacity": 0.2,
+      "shape": "slash",
+      "thickness": 2
+    },
+    "seal": {
+      "opacity": 0.28,
+      "shape": "diamond",
+      "size": 20
+    }
+  },
+  "flavor": {
+    "enabled": true,
+    "locale": "en",
+    "slots": {
+      "contributions.caption": "A year of steady work, one contribution at a time.",
+      "empty.issues.caption": "No operations in this view.",
+      "empty.pinned.caption": "An open sector for future picks.",
+      "error.notFound.caption": "No signal from this sector.",
+      "profile.activity.heading": "Operations log",
+      "profile.organizations.heading": "Operations outposts",
+      "profile.pinned.heading": "Selected sectors",
+      "profile.tag": "// operations view"
+    }
+  },
+  "fonts": {
+    "accent": "barlow-condensed"
+  },
+  "inspiredBy": "Neon Genesis Evangelion",
+  "name": "Violet Synchrony",
+  "overrides": {
+    "accentMuted": "#302743",
+    "border": "#50405f",
+    "controlBorder": "#b6a7c7",
+    "danger": "#ff8d98",
+    "focus": "#b6a7c7",
+    "hover": "#302b39",
+    "inset": "#0e0a16",
+    "link": "#c9aff7",
+    "mutedText": "#b6a7c7",
+    "primaryBackground": "#7045ad",
+    "primaryText": "#ffffff",
+    "raised": "#272230",
+    "selectionBackground": "#7045ad",
+    "selectionText": "#ffffff",
+    "success": "#9cd86d",
+    "surface": "#23192f",
+    "warning": "#ffc777"
+  },
+  "schemaVersion": 1,
+  "tags": [
+    "anime",
+    "dark"
+  ],
+  "version": "1.0.0"
+}

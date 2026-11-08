@@ -8,10 +8,10 @@ import { ANIME_CATALOG, CLASSICS_CATALOG, catalogProblems, validateTheme } from 
 const ROOT = new URL("../../", import.meta.url).pathname;
 const catalog = JSON.parse(readFileSync(`${ROOT}themes/catalog.json`, "utf8"));
 
-test("the catalog is a valid array holding the twelve Classics in 1.x order", () => {
+test("the catalog holds all thirteen Anime followed by the twelve Classics in 1.x order", () => {
   assert.deepEqual(catalogProblems(catalog), []);
-  assert.deepEqual(catalog, CLASSICS_CATALOG);
-  assert.deepEqual(catalog.map((e) => e.id), LEGACY_CLASSIC_THEME_IDS);
+  assert.deepEqual(catalog, [...ANIME_CATALOG, ...CLASSICS_CATALOG]);
+  assert.deepEqual(catalog.filter((e) => e.group === "classics").map((e) => e.id), LEGACY_CLASSIC_THEME_IDS);
   for (const entry of catalog) assert.ok(validateTheme(JSON.parse(readFileSync(`${ROOT}${entry.file}`, "utf8"))).ok, entry.file);
 });
 

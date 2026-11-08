@@ -1,0 +1,79 @@
+{
+  "$schema": "https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json",
+  "author": "sidebandstudio",
+  "base": "dark",
+  "colors": {
+    "accent": "#65d7ff",
+    "background": "#071523",
+    "contribution": "#65d7ff",
+    "text": "#e9f4ff"
+  },
+  "contributions": {
+    "levels": [
+      "#162e43",
+      "#2e7494",
+      "#2981a8",
+      "#329dc7",
+      "#65d7ff"
+    ]
+  },
+  "description": "Deep navy, icy cyan and crisp gate-like brackets frame GitHub as a clean progress dashboard.",
+  "effects": {
+    "glow": {
+      "strength": 0.18
+    },
+    "grid": {
+      "opacity": 0.02,
+      "size": 24
+    },
+    "seal": {
+      "opacity": 0.4,
+      "shape": "brackets",
+      "size": 32
+    }
+  },
+  "flavor": {
+    "enabled": true,
+    "locale": "en",
+    "slots": {
+      "contributions.caption": "A year of progress, counted in real contributions.",
+      "empty.issues.caption": "No records in this view.",
+      "empty.pinned.caption": "Room for a first expedition.",
+      "error.notFound.caption": "This gate has no destination.",
+      "profile.activity.heading": "Progress log",
+      "profile.organizations.heading": "Guild outposts",
+      "profile.pinned.heading": "Selected gates",
+      "profile.tag": "// gate view"
+    }
+  },
+  "fonts": {
+    "accent": "rajdhani"
+  },
+  "inspiredBy": "Solo Leveling",
+  "name": "Gatewake Protocol",
+  "overrides": {
+    "accentMuted": "#163446",
+    "border": "#31516b",
+    "controlBorder": "#9fb8ce",
+    "danger": "#ff92a5",
+    "focus": "#9fb8ce",
+    "hover": "#22303d",
+    "inset": "#040d17",
+    "link": "#82dcff",
+    "mutedText": "#9fb8ce",
+    "primaryBackground": "#17668a",
+    "primaryText": "#ffffff",
+    "raised": "#192735",
+    "selectionBackground": "#17668a",
+    "selectionText": "#ffffff",
+    "success": "#6ad6bc",
+    "surface": "#0f2438",
+    "warning": "#f3cc78"
+  },
+  "schemaVersion": 1,
+  "tags": [
+    "anime",
+    "dark"
+  ],
+  "version": "1.0.0"
+}

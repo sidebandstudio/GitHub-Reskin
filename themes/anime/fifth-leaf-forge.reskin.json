@@ -1,0 +1,84 @@
+{
+  "$schema": "https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json",
+  "author": "sidebandstudio",
+  "base": "dark",
+  "colors": {
+    "accent": "#ff6570",
+    "background": "#151314",
+    "contribution": "#ff828c",
+    "text": "#f5eedf"
+  },
+  "contributions": {
+    "levels": [
+      "#35282d",
+      "#a7525a",
+      "#bd5762",
+      "#d45b68",
+      "#ff828c"
+    ]
+  },
+  "description": "Soot-dark pages, scarlet energy and spare grimoire-gold details give GitHub a determined underdog spirit.",
+  "effects": {
+    "drift": {
+      "count": 2,
+      "distance": 8,
+      "durationMs": 700,
+      "opacity": 0.06,
+      "shape": "mote"
+    },
+    "rail": {
+      "opacity": 0.28,
+      "shape": "notch",
+      "thickness": 2
+    },
+    "rules": {
+      "opacity": 0.12,
+      "spacing": 16,
+      "style": "ticks"
+    }
+  },
+  "flavor": {
+    "enabled": true,
+    "locale": "en",
+    "slots": {
+      "contributions.caption": "A year of steady training, one contribution at a time.",
+      "empty.issues.caption": "A blank page in this view.",
+      "empty.pinned.caption": "This grimoire has room for a first pick.",
+      "error.notFound.caption": "No page opens at this address.",
+      "profile.activity.heading": "Training log",
+      "profile.organizations.heading": "Squad outposts",
+      "profile.pinned.heading": "Selected grimoires",
+      "profile.tag": "// grimoire view"
+    }
+  },
+  "fonts": {
+    "accent": "cormorant-garamond"
+  },
+  "inspiredBy": "Black Clover",
+  "name": "Fifth Leaf Forge",
+  "overrides": {
+    "accentMuted": "#3a2023",
+    "border": "#95817c",
+    "controlBorder": "#95817c",
+    "danger": "#ff8e95",
+    "focus": "#ffe1b1",
+    "hover": "#302d2c",
+    "inset": "#0d0b0c",
+    "link": "#ffb4bc",
+    "mutedText": "#c4b5ad",
+    "primaryBackground": "#d8b46a",
+    "primaryText": "#20190e",
+    "raised": "#272524",
+    "selectionBackground": "#d8b46a",
+    "selectionText": "#20190e",
+    "success": "#a6d5b3",
+    "surface": "#272123",
+    "warning": "#e8c77d"
+  },
+  "schemaVersion": 1,
+  "tags": [
+    "anime",
+    "dark"
+  ],
+  "version": "1.0.0"
+}

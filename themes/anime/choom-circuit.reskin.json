@@ -1,0 +1,81 @@
+{
+  "$schema": "https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json",
+  "author": "sidebandstudio",
+  "base": "dark",
+  "colors": {
+    "accent": "#d5ff35",
+    "background": "#091312",
+    "contribution": "#d5ff35",
+    "text": "#f0f7ed"
+  },
+  "contributions": {
+    "levels": [
+      "#24372f",
+      "#4e8c60",
+      "#78b94d",
+      "#a9dc3b",
+      "#d5ff35"
+    ]
+  },
+  "description": "Acid lime, cyan signals and a brief decorative afterimage turn GitHub into a late-night city workspace.",
+  "effects": {
+    "echo": {
+      "durationMs": 160,
+      "offset": 3,
+      "opacity": 0.12
+    },
+    "rail": {
+      "opacity": 0.22,
+      "shape": "notch",
+      "thickness": 2
+    },
+    "scanlines": {
+      "opacity": 0.015,
+      "spacing": 6
+    }
+  },
+  "flavor": {
+    "enabled": true,
+    "locale": "en",
+    "slots": {
+      "contributions.caption": "A year of gigs, one contribution at a time.",
+      "empty.issues.caption": "No signals in this view.",
+      "empty.pinned.caption": "Room for a first pick.",
+      "error.notFound.caption": "This route went dark. Try a familiar path.",
+      "profile.activity.heading": "Gig log",
+      "profile.organizations.heading": "Crew outposts",
+      "profile.pinned.heading": "Signal picks",
+      "profile.tag": "// choom view"
+    }
+  },
+  "fonts": {
+    "accent": "rajdhani"
+  },
+  "inspiredBy": "Cyberpunk: Edgerunners",
+  "name": "Choom Circuit",
+  "overrides": {
+    "accentMuted": "#2a3918",
+    "border": "#6b8179",
+    "controlBorder": "#6d837b",
+    "danger": "#ff8295",
+    "focus": "#d5ff35",
+    "hover": "#252e2c",
+    "inset": "#060d0c",
+    "link": "#7de9f5",
+    "mutedText": "#aac2b7",
+    "primaryBackground": "#d5ff35",
+    "primaryText": "#10170a",
+    "raised": "#1b2524",
+    "selectionBackground": "#d5ff35",
+    "selectionText": "#10170a",
+    "success": "#8de2a2",
+    "surface": "#142622",
+    "warning": "#ffd078"
+  },
+  "schemaVersion": 1,
+  "tags": [
+    "anime",
+    "dark"
+  ],
+  "version": "1.0.0"
+}
