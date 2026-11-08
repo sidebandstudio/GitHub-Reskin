@@ -23,10 +23,11 @@ jobs:
 
       # Dependency and browser installation are the only steps that use the network.
       - run: npm ci
-      - run: npx --no-install playwright install --with-deps chromium
+      - run: npx --no-install playwright install --with-deps chromium firefox
       - run: npm run check:toolchain
 
       - run: npm test
+      - run: npm run check:harness
       - run: npm run build:stores
       - run: npm run lint:firefox
       - run: npm run lint:chrome
@@ -37,5 +38,16 @@ jobs:
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: github-reskin-packages
-          path: artifacts/
+          path: |
+            artifacts/
+            !artifacts/e2e/
+            !artifacts/reports/
           if-no-files-found: error
+
+      # Playwright traces and screenshots, kept only when a browser test fails.
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: failure()
+        with:
+          name: playwright-results
+          path: artifacts/e2e/
+          if-no-files-found: ignore

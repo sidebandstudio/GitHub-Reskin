@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile, readdir } from "node:fs/promises";
 import { join } from "node:path";
 import test from "node:test";
+import { ACCEPTED_FIREFOX_WARNINGS } from "../../scripts/check.mjs";
 import { ROOT, extensionFiles, extensionManifest, loadEntry, loadReleaseConfig, manifestPaths, manifestProblems, noticeProblems } from "../../scripts/build.mjs";
 
 const config = await loadReleaseConfig();
@@ -100,4 +101,20 @@ test("the frozen Primer-derived snapshot ships with the upstream Primer notice",
   await assert.rejects(extensionFiles("chrome", { config, entry: uncovered }), /no upstream license notice/);
   const wrong = { ...entry, notices: [{ ...entry.notices[0], covers: ["gone.js"] }] };
   assert.match(noticeProblems(wrong).join("\n"), /covers gone\.js, which the entry lacks/);
+});
+
+test("lint:firefox accepts one reviewed warning, and only for this exact desktop-only manifest", async () => {
+  assert.deepEqual(Object.keys(ACCEPTED_FIREFOX_WARNINGS), ["KEY_FIREFOX_ANDROID_UNSUPPORTED_BY_MIN_VERSION"]);
+  const { applies, reason } = ACCEPTED_FIREFOX_WARNINGS.KEY_FIREFOX_ANDROID_UNSUPPORTED_BY_MIN_VERSION;
+  assert.match(reason, /desktop-only/);
+  const firefox = await extensionManifest("firefox", config);
+  assert.equal(applies(firefox), true);
+  const gecko = firefox.browser_specific_settings.gecko;
+  for (const changed of [
+    { gecko: { ...gecko, strict_min_version: "142.0" } },
+    { gecko, gecko_android: { strict_min_version: "142.0" } },
+    { gecko: { ...gecko, data_collection_permissions: { required: ["none"], optional: ["technicalAndInteraction"] } } },
+  ]) {
+    assert.equal(applies({ ...firefox, browser_specific_settings: changed }), false, JSON.stringify(changed));
+  }
 });

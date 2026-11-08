@@ -1,0 +1,29 @@
+<!doctype html>
+<!-- The platform runner probe: a small accessible page with the root attributes and graph cell
+     the 1.1.0 content script themes. It proves the runners work; it is not product coverage. -->
+<html lang="en" data-color-mode="dark" data-dark-theme="dark" data-light-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reskin platform fixture</title>
+<style>
+  body { font: 16px/1.5 system-ui, sans-serif; margin: 2rem; color: #1f2328; background: #ffffff; }
+  a, button, input { font: inherit; }
+  :focus-visible { outline: 2px solid #0969da; outline-offset: 2px; }
+</style>
+</head>
+<body>
+<header><nav aria-label="Fixture"><a href="#graph" id="skip">Contributions</a></nav></header>
+<main>
+  <h1>Platform fixture</h1>
+  <p>Synthetic content for the runner smoke tests.</p>
+  <form>
+    <label for="name">Name</label>
+    <input id="name" name="name" type="text" autocomplete="off">
+    <button type="button" id="save">Save</button>
+  </form>
+  <h2 id="graph">Contributions</h2>
+  <svg role="img" aria-label="One contribution day" width="10" height="10"><rect class="ContributionCalendar-day" data-level="4" width="10" height="10"></rect></svg>
+</main>
+</body>
+</html>

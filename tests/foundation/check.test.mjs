@@ -7,6 +7,7 @@ import test from "node:test";
 import { promisify } from "node:util";
 import { ROOT } from "../../scripts/build.mjs";
 import { discoverTests } from "../../scripts/check.mjs";
+import { BUILTIN, ROUTES } from "../../scripts/check-routes.mjs";
 import { withTempDir } from "../helpers/tmp.mjs";
 
 // Without node:test's own context variable, so the child runs as a top-level test runner.
@@ -46,20 +47,50 @@ test("the test runner counts tests per file and fails on failures and skips", as
   });
 });
 
-test("every acceptance script exists, and unbuilt gates fail as not implemented", async () => {
+// Each file has a passing test beside the problem, so only the problem can fail the run.
+const SUITE_PROBLEMS = {
+  "a suite's after hook throws": [`describe("suite", () => { it("passes", () => {}); after(() => { throw new Error("cleanup failed"); }); });`, /suite "suite" .* failed \(hookFailed\)/],
+  "a suite's before hook throws": [`describe("suite", () => { before(() => { throw new Error("setup failed"); }); it("never runs", () => {}); });`, /1 failed|suite "suite" .* failed/],
+  "a test's beforeEach hook throws": [`describe("suite", () => { beforeEach(() => { throw new Error("setup failed"); }); it("never runs", () => {}); });`, /1 failed/],
+  "a suite callback throws while registering tests": [`describe("suite", () => { throw new Error("registration failed"); });`, /suite "suite" .* failed \(testCodeFailure\)/],
+  "a file's top-level after hook throws": [`after(() => { throw new Error("cleanup failed"); });`, /failed outside any test \(hookFailed\)/],
+  "a required suite is skipped": [`describe.skip("required", () => { it("would run", () => {}); });`, /1 skipped/],
+  "a required suite is todo": [`describe.todo("required", () => { it("would run", () => {}); });`, /skipped/],
+  "a required test is skipped": [`it.skip("required", () => {});`, /1 skipped/],
+  "a required test is todo": [`it.todo("required");`, /1 skipped/],
+};
+
+for (const [problem, [source, output]] of Object.entries(SUITE_PROBLEMS)) {
+  test(`the test runner exits nonzero when ${problem}`, async () => {
+    await withTempDir(async (tmp) => {
+      const header = `import { after, before, beforeEach, describe, it, test } from "node:test";\ntest("passes", () => {});\n`;
+      await writeFile(join(tmp, "probe.test.mjs"), `${header}${source}\n`);
+      await fails(["test", tmp], 1, output);
+    });
+  });
+}
+
+test("a suite that fails because a test in it failed counts that test once", async () => {
+  await withTempDir(async (tmp) => {
+    await writeFile(join(tmp, "probe.test.mjs"), `import { describe, it } from "node:test";\ndescribe("suite", () => { it("passes", () => {}); it("fails", () => { throw new Error("no"); }); });\n`);
+    await fails(["test", tmp], 1, /2 tests: 1 passed, 1 failed, 0 skipped/);
+  });
+});
+
+test("every acceptance script exists and runs through the check router", async () => {
   const { scripts } = JSON.parse(await readFile(join(ROOT, "package.json"), "utf8"));
   const named = [
-    "test", "test:e2e", "check:toolchain", "check:release", "check:schema", "check:themes", "check:classic-themes", "check:prompt",
+    "test", "test:e2e", "check:harness", "check:toolchain", "check:release", "check:schema", "check:themes", "check:classic-themes", "check:prompt",
     "check:primer", "check:contrast", "check:slot-contracts", "check:migrations", "check:boot", "check:fonts", "check:effects",
     "build", "build:stores", "build:shared", "build:site", "build:userscript", "check:userscript", "check:site", "check:a11y",
     "lint:chrome", "lint:firefox", "check:budgets", "package", "check:artifacts", "check:repro", "check:store-links",
     "check:video", "render:video", "verify:video", "capture:release", "qa:live", "qa:firefox", "qa:userscript", "qa:published-install",
   ];
   for (const name of named) assert.ok(scripts[name], name);
+  const commands = new Set([...BUILTIN, "e2e", "a11y", ...Object.keys(ROUTES)]);
   for (const [name, command] of Object.entries(scripts)) {
-    const pending = /^node scripts\/check\.mjs (\S+)$/.exec(command)?.[1];
-    if (!pending || ["test", "toolchain", "lint-firefox", "lint-chrome"].includes(pending)) continue;
-    await fails([pending], 2, /NOT IMPLEMENTED: .* belongs to C\d+/);
+    const routed = /^node scripts\/check\.mjs (\S+)$/.exec(command)?.[1];
+    if (routed) assert.ok(commands.has(routed), `${name} runs ${routed}, which has no route`);
   }
   await fails(["no-such-check"], 1, /Unknown check/);
 });
