@@ -15,15 +15,18 @@ inputs:
   output:
     description: Where to write the SVG.
     default: contributions.svg
+  style:
+    description: flat, or cyberpunk for a neon panel with glowing cells.
+    default: flat
   color:
-    description: Color for the busiest days. Quieter days get fainter mixes of it.
-    default: "#f2a93b"
+    description: Color for the busiest days. Quieter days get fainter mixes of it. Leave empty for the style's colors (#f2a93b for flat).
+    default: ""
   background:
-    description: Panel color.
-    default: "#0a0a0b"
+    description: Panel color. Leave empty for the style's color (#0a0a0b for flat).
+    default: ""
   text:
-    description: Text color.
-    default: "#ededea"
+    description: Text color. Leave empty for the style's color (#ededea for flat).
+    default: ""
 
 runs:
   using: node24
