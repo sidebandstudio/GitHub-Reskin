@@ -1,0 +1,30 @@
+{
+  "legacy-1.1.0": {
+    "description": "The 1.1.0 product as merged: content scripts and popup copied unchanged from extension/.",
+    "root": "extension",
+    "files": [
+      "content.js",
+      "github-modes.js",
+      "icons/icon-128.png",
+      "icons/icon-16.png",
+      "icons/icon-32.png",
+      "icons/icon-48.png",
+      "popup.css",
+      "popup.html",
+      "popup.js",
+      "slang.js",
+      "themes.js"
+    ],
+    "frozen": {
+      "github-modes.js": "52e1c0ab1130175fda22c84bf2a910899e85363a2ea2b5b82a251b06d259c669"
+    },
+    "notices": [
+      {
+        "file": "licenses/primer-primitives.txt",
+        "license": "MIT",
+        "covers": ["github-modes.js"],
+        "upstream": "https://github.com/primer/primitives"
+      }
+    ]
+  }
+}

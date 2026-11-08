@@ -1,0 +1,5 @@
+# Generated build and release output. Disposable per checkout.
+node_modules/
+dist/
+artifacts/
+.DS_Store

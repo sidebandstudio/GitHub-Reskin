@@ -1,0 +1,40 @@
+{
+  "name": "github-reskin",
+  "displayName": "GitHub Reskin",
+  "version": "1.1.0",
+  "toolchain": {
+    "node": "24.22.2",
+    "npm": "11.12.1"
+  },
+  "extension": {
+    "entry": "legacy-1.1.0",
+    "geckoId": "github-reskin@sideband.studio",
+    "permissions": ["storage"],
+    "hostMatches": ["https://github.com/*", "https://gist.github.com/*"]
+  },
+  "userscript": {
+    "builder": "scripts/userscript.mjs",
+    "output": "github-reskin.user.js"
+  },
+  "site": {
+    "origin": "https://sidebandstudio.github.io",
+    "base": "/GitHub-Reskin"
+  },
+  "support": {
+    "issues": "https://github.com/sidebandstudio/GitHub-Reskin/issues",
+    "source": "https://github.com/sidebandstudio/GitHub-Reskin"
+  },
+  "stores": {
+    "chrome": null,
+    "firefox": null
+  },
+  "video": {
+    "tiktok": "artifacts/video/github-reskin-tiktok-22s.mp4",
+    "site": "artifacts/video/github-reskin-site-30s.mp4"
+  },
+  "compatibility": {
+    "chromeMin": 120,
+    "firefoxMin": 140,
+    "claims": []
+  }
+}
