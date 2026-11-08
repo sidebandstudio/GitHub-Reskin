@@ -7,7 +7,22 @@ import validateSchema from "./schema-validator.js";
 const COLOR_PATH = /^\/(?:colors|overrides(?:\/syntax)?)\/[^/]+$|^\/contributions\/levels\/\d$/;
 const CONTROL = /[\u0000-\u001f\u007f-\u009f‪-‮⁦-⁩]/;
 // Web addresses and resource schemes. The exact $schema hint is the only URL a theme may carry.
-const RESOURCE = /[a-z][a-z0-9+.-]*:\/\/|\bwww\.[a-z0-9-]+\.[a-z]|\b(?:data|javascript|vbscript|blob|file|about):(?!\s)|\burl\s*\(|@import/i;
+// Each alternative here starts at a word boundary or a literal, so matching stays linear; a
+// scheme before "://" is found by hasScheme instead.
+const RESOURCE = /\bwww\.[a-z0-9-]+\.[a-z]|\b(?:data|javascript|vbscript|blob|file|about):(?!\s)|\burl\s*\(|@import/i;
+
+const isLetter = (c) => (c | 32) >= 97 && (c | 32) <= 122;
+const isSchemeChar = (c) => isLetter(c) || (c >= 48 && c <= 57) || c === 43 || c === 45 || c === 46;
+
+// True when some "://" follows a scheme, a letter and then [a-z0-9+.-]*. That holds exactly when
+// the run of scheme characters before "://" contains a letter. A run ends at the ":" or "/" of
+// the previous "://", so the runs never overlap and the scan is linear.
+function hasScheme(value) {
+  for (let at = value.indexOf("://"); at !== -1; at = value.indexOf("://", at + 3)) {
+    for (let i = at - 1; i >= 0 && isSchemeChar(value.charCodeAt(i)); i--) if (isLetter(value.charCodeAt(i))) return true;
+  }
+  return false;
+}
 
 const FIELD_NAMES = { background: "The background color", text: "The text color", accent: "The accent color" };
 
@@ -90,7 +105,7 @@ function valueAt(root, path) {
 // Resource-like strings anywhere except the exact $schema hint, which the schema already pins.
 function resourceIssues(value, path, out) {
   if (typeof value === "string") {
-    if (path !== "/$schema" && RESOURCE.test(value)) out.push(issue(ISSUE_CODES.resourceString, path, "Theme text can't include links, web addresses or code."));
+    if (path !== "/$schema" && (hasScheme(value) || RESOURCE.test(value))) out.push(issue(ISSUE_CODES.resourceString, path, "Theme text can't include links, web addresses or code."));
   } else if (Array.isArray(value)) value.forEach((item, index) => resourceIssues(item, pointer(path, index), out));
   else if (value && typeof value === "object") for (const [key, item] of Object.entries(value)) resourceIssues(item, pointer(path, key), out);
 }

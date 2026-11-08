@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
 import { test } from "node:test";
 import jsonc from "jsonc-parser";
-import { ISSUE_CODES, LIMITS } from "../../packages/contracts/index.js";
+import { BUDGETS, ISSUE_CODES, LIMITS } from "../../packages/contracts/index.js";
 import { colorsOnly, NOTE_CODES, normalizeTheme, parseImport, validateTheme, withoutForeignSchema } from "../../packages/format/index.js";
 import { findObjectSpans, parseJson } from "../../packages/format/json.js";
 
@@ -168,6 +168,8 @@ test("the parser matches jsonc-parser on accepted input and rejects what it reje
     '{"a":[1,2,{"b":null}],"c":true,"d":-0.5e+3, "e": "\\u00e9\\n"}',
     '{ // comment\n "a": 1, /* block */ "b": [1,2,], }',
     '{"a":"/* not a comment */","b":"// nor this"}',
+    // JSONC ends a line comment at LF, CR or CRLF.
+    ...["\n", "\r", "\r\n"].map((end) => `{ // one${end} "a": 1, // two${end}"b": [1, // three${end}2]${end}}`),
     readFileSync(`${ROOT}tests/fixtures/import/prose-jsonc.txt`, "utf8").split("```jsonc\n")[1].split("```")[0],
   ];
   for (const file of readdirSync(`${ROOT}tests/fixtures/schema/valid`)) samples.push(readFileSync(`${ROOT}tests/fixtures/schema/valid/${file}`, "utf8"));
@@ -184,6 +186,91 @@ test("the parser matches jsonc-parser on accepted input and rejects what it reje
     jsonc.parse(text, errors, { allowTrailingComma: true });
     assert.ok(errors.length || text === '{"a":"tab\there"}', `jsonc-parser accepted ${text}`);
     assert.equal(parseJson(text, { maxDepth: 12 }).ok, false, text);
+  }
+});
+
+test("CR, LF and CRLF end line comments alike in themes, prose and candidate extraction", () => {
+  const second = MINIMAL.replace("Moss", "Second");
+  for (const end of ["\n", "\r", "\r\n"]) {
+    const label = JSON.stringify(end);
+    const commented = MINIMAL.replace('"name"', `// the name${end}"name"`).replace('"colors"', `// colors${end}"colors"`);
+    const one = parseImport(commented, "text");
+    assert.ok(one.ok, `${label}: ${JSON.stringify(one)}`);
+    assert.deepEqual(codes(one), [NOTE_CODES.jsonc], label);
+    // A comment never swallows the next theme, so two themes still need a choice.
+    const two = parseImport(`${MINIMAL} // first${end}${second}`, "text");
+    assert.equal(two.ok, false, label);
+    assert.equal(two.issues[0].code, ISSUE_CODES.ambiguousCandidates, label);
+    assert.deepEqual(two.candidates.map((c) => c.name), ["Moss", "Second"], label);
+    // Inside prose the span scanner ends the comment at the same place.
+    const prose = parseImport(`Here:${end}{ // note }${end}${MINIMAL.slice(1)}${end}Enjoy.`, "text");
+    assert.ok(prose.ok, `${label}: ${JSON.stringify(prose)}`);
+    assert.deepEqual(findObjectSpans(`a {"x":1, // }${end}"y":2} b`).spans.length, 1, label);
+    // Line numbers in messages count each line end once.
+    assert.match(parseImport(`{${end}${end}"a" 1}`, "text").issues[0].message, /line 3, column 5/, label);
+  }
+});
+
+test("validation is linear on long strings: the reviewer's 120,000-letter name rejects quickly", () => {
+  for (const n of [64000, 120000]) {
+    const input = JSON.stringify({ schemaVersion: 1, name: "a".repeat(n), base: "dark", colors: { background: "#121212", text: "#eeeeee", accent: "#ff0000" } });
+    const started = performance.now();
+    const result = parseImport(input, "text");
+    assert.ok(performance.now() - started < BUDGETS.longTaskMs, `a ${n}-letter name took ${performance.now() - started} ms`);
+    assert.deepEqual(result.issues.map((i) => [i.code, i.path]), [[ISSUE_CODES.outOfBounds, "/name"]]);
+  }
+});
+
+// Each import of a maximum-size paste must finish within one long task. The fastest of three runs
+// keeps scheduling noise out while a super-linear path, which is slow on every run, still fails.
+test("every hostile shape of a maximum-size paste imports within the long-task budget", () => {
+  const MAX = LIMITS.pastedUtf8Bytes;
+  const fill = (unit, room) => unit.repeat(Math.floor(room / unit.length));
+  const inName = (unit) => {
+    const [head, tail] = MINIMAL.split("Moss");
+    return head + fill(unit, MAX - head.length - tail.length) + tail;
+  };
+  const shapes = {
+    letters: inName("a"),
+    schemeRuns: inName("a1://"),
+    digitSchemes: inName("12://"),
+    colons: inName("a:"),
+    www: inName("www."),
+    wwwDashes: inName("www-"),
+    urls: inName("url "),
+    dataWords: inName("data"),
+    escapes: inName("\\n"),
+    surrogatePairs: inName("\\ud83d\\ude00"),
+    urlSpaces: `url${" ".repeat(MAX - 4)}x`,
+    proseLetters: fill("a", MAX),
+    proseScheme: `${fill("ab1+.-", MAX - 3)}://`,
+    braces: fill("{", MAX),
+    braceQuotes: fill('{"', MAX),
+    brackets: fill("[", MAX),
+    openKeys: fill('{"a":', MAX),
+    blockComments: fill("/*", MAX),
+    lineComments: fill("//", MAX),
+    crComments: `{${fill("//\r", MAX - 2)}}`,
+    crlfComments: `{${fill("// x\r\n", MAX - 2)}}`,
+    smallObjects: fill('{"x":1} ', MAX),
+    plausibleObjects: fill('{"base":"x"} ', MAX),
+    openThemes: fill('text {"schemaVersion":1,"name":"', MAX),
+    shareLetters: `RS1.${fill("a", MAX - 4)}`,
+    shareRepeats: fill(" RS1.a", MAX),
+    fences: fill("```json\n", MAX),
+    proseFences: fill("Here {\n```", MAX),
+  };
+  parseImport(MINIMAL, "text");
+  for (const [name, input] of Object.entries(shapes)) {
+    assert.ok(input.length > MAX - 64 && input.length <= MAX, name);
+    let fastest = Infinity;
+    for (let run = 0; run < 3; run++) {
+      const started = performance.now();
+      const result = parseImport(input, "text");
+      fastest = Math.min(fastest, performance.now() - started);
+      assert.equal(typeof result.ok, "boolean", name);
+    }
+    assert.ok(fastest < BUDGETS.longTaskMs, `${name} took ${fastest.toFixed(1)} ms`);
   }
 });
 

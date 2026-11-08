@@ -17,11 +17,20 @@ class JsonError extends Error {
   }
 }
 
+// JSONC ends a line at LF, CR or CRLF. Line comments stop there and line numbers count them alike.
+const isLineEnd = (c) => c === "\n" || c === "\r";
+// Index of the line end that closes a // comment starting at `from`, or text.length.
+function lineEnd(text, from) {
+  let i = from;
+  while (i < text.length && !isLineEnd(text[i])) i++;
+  return i;
+}
+
 function lineColumn(text, offset) {
   let line = 1;
   let start = 0;
   for (let i = 0; i < offset && i < text.length; i++) {
-    if (text[i] === "\n") {
+    if (text[i] === "\n" || (text[i] === "\r" && text[i + 1] !== "\n")) {
       line++;
       start = i + 1;
     }
@@ -48,7 +57,7 @@ export function parseJson(text, { maxDepth }) {
       if (c === " " || c === "\t" || c === "\n" || c === "\r") i++;
       else if (c === "/" && text[i + 1] === "/") {
         jsonc = true;
-        while (i < text.length && text[i] !== "\n") i++;
+        i = lineEnd(text, i);
       } else if (c === "/" && text[i + 1] === "*") {
         jsonc = true;
         const end = text.indexOf("*/", i + 2);
@@ -240,7 +249,7 @@ function scan(text, from, spans) {
       for (i++; i < text.length && text[i] !== '"'; i++) if (text[i] === "\\") i++;
       if (i >= text.length) return start;
     } else if (c === "/" && text[i + 1] === "/") {
-      while (i < text.length && text[i] !== "\n") i++;
+      i = lineEnd(text, i);
     } else if (c === "/" && text[i + 1] === "*") {
       const end = text.indexOf("*/", i + 2);
       if (end < 0) return start;

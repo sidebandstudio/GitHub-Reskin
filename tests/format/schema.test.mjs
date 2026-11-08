@@ -97,6 +97,11 @@ test("links and resource strings are rejected anywhere except the exact $schema 
     ["author", "javascript:alert(1)"],
     ["inspiredBy", "data:text/html,hi"],
     ["description", "background: url(x)"],
+    // Any scheme before "://": a letter, then letters, digits, +, . or -, anywhere in the text.
+    ["description", "Mirror at git+ssh://host"],
+    ["description", "ends in 9a.b-c+d://"],
+    ["description", "A1://x"],
+    ["description", "://x then 2b://y"],
   ]) {
     const result = validateTheme({ ...minimal, [key]: value });
     assert.equal(result.ok, false, value);
@@ -106,6 +111,8 @@ test("links and resource strings are rejected anywhere except the exact $schema 
   assert.ok(validateTheme({ ...minimal, inspiredBy: "Cyberpunk: Edgerunners" }).ok);
   assert.ok(validateTheme({ ...minimal, description: "All about: quiet colors. File: notes." }).ok);
   assert.ok(validateTheme({ ...minimal, flavor: { slots: { "profile.tag": "//choom" } } }).ok);
+  // "://" after a run with no letter, or with nothing before it, is not a scheme.
+  for (const description of ["Ratio 16:9://", "Line 12+3.4-5://", "://", "Tea: hot (://) 42://"]) assert.ok(validateTheme({ ...minimal, description }).ok, description);
 });
 
 test("every effect with defaults, every font ID and every flavor slot validates", () => {
