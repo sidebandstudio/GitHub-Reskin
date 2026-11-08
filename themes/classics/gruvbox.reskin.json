@@ -1,0 +1,22 @@
+{
+  "$schema": "https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json",
+  "base": "dark",
+  "colors": {
+    "accent": "#fabd2f",
+    "background": "#282828",
+    "contribution": "#b8bb26",
+    "text": "#ebdbb2"
+  },
+  "description": "Palette from the Gruvbox color scheme, MIT license.",
+  "name": "Gruvbox",
+  "overrides": {
+    "border": "#504945",
+    "mutedText": "#bcb0a0",
+    "surface": "#32302f"
+  },
+  "schemaVersion": 1,
+  "tags": [
+    "classic",
+    "dark"
+  ]
+}

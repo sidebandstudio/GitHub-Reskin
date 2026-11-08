@@ -1,0 +1,130 @@
+{
+  "valid": [
+    "valid/minimal-light.reskin.json",
+    "valid/choom-circuit.reskin.json",
+    "valid/effect-defaults.reskin.json"
+  ],
+  "invalid": [
+    {
+      "file": "invalid/unknown-field.json",
+      "stage": "schema",
+      "path": "/css",
+      "reason": "Unknown key, never interpreted as CSS"
+    },
+    {
+      "file": "invalid/unsupported-version.json",
+      "stage": "schema",
+      "path": "/schemaVersion",
+      "reason": "V1 validator rejects future versions"
+    },
+    {
+      "file": "invalid/remote-font.json",
+      "stage": "schema",
+      "path": "/fonts/accent",
+      "reason": "Font must be bundled ID"
+    },
+    {
+      "file": "invalid/unsafe-slot.json",
+      "stage": "schema",
+      "path": "/flavor/slots/repo.code",
+      "reason": "Controls are outside the slot vocabulary"
+    },
+    {
+      "file": "invalid/unbounded-motion.json",
+      "stage": "schema",
+      "path": "/effects/drift/count",
+      "reason": "Count exceeds four"
+    },
+    {
+      "file": "invalid/effect-code.json",
+      "stage": "schema",
+      "path": "/effects/echo/selector",
+      "reason": "No selector parameters"
+    },
+    {
+      "file": "invalid/four-effects.json",
+      "stage": "schema",
+      "path": "/effects",
+      "reason": "At most three effects"
+    },
+    {
+      "file": "invalid/hex-expression.json",
+      "stage": "schema",
+      "path": "/colors/background",
+      "reason": "Only six-digit hex after normalization"
+    },
+    {
+      "file": "invalid/markup-name.json",
+      "stage": "schema",
+      "path": "/name",
+      "reason": "Metadata is plain text"
+    },
+    {
+      "file": "invalid/alpha-color.json",
+      "stage": "schema",
+      "path": "/colors/text",
+      "reason": "No alpha colors"
+    },
+    {
+      "file": "invalid/four-graph-levels.json",
+      "stage": "schema",
+      "path": "/contributions/levels",
+      "reason": "Exactly five levels"
+    },
+    {
+      "file": "invalid/derived-state.json",
+      "stage": "schema",
+      "path": "/overrides/primaryHoverBackground",
+      "reason": "Derived renderer states are not public override fields"
+    }
+  ],
+  "repair": [
+    {
+      "file": "repair/text-equals-background.reskin.json",
+      "schemaValid": true,
+      "expect": "foreground changes; repair note; source unchanged until Use theme"
+    },
+    {
+      "file": "repair/graph-collapses.reskin.json",
+      "schemaValid": true,
+      "expect": "ramp regenerated with visible repair note"
+    }
+  ],
+  "import": [
+    {
+      "file": "import/prose-jsonc.txt",
+      "expect": "one normalized valid theme; wrapper and JSONC notes"
+    },
+    {
+      "file": "import/duplicate-keys.txt",
+      "expect": "parse error; no preview or state change"
+    }
+  ],
+  "roundtrip": [
+    {
+      "file": "roundtrip/primary-states.reskin.json",
+      "schemaValid": true,
+      "case": "primary-states",
+      "expect": "Future C2 engine assertions in roundtrip/cases.json"
+    },
+    {
+      "file": "roundtrip/syntax-diff.reskin.json",
+      "schemaValid": true,
+      "case": "syntax-diff",
+      "expect": "Future C2 engine assertions in roundtrip/cases.json"
+    },
+    {
+      "file": "roundtrip/accessibility-output.reskin.json",
+      "schemaValid": true,
+      "case": "accessibility-output",
+      "expect": "Future C2 engine assertions in roundtrip/cases.json"
+    }
+  ],
+  "seeds": [
+    "seeds/standard-dark.json",
+    "seeds/standard-light.json",
+    "seeds/colorblind-dark.json",
+    "seeds/tritanopia-light.json"
+  ],
+  "pairMatrix": "contracts/pairs.json"
+}

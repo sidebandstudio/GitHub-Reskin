@@ -1,0 +1,904 @@
+{
+  "contractVersion": 1,
+  "id": "fixture.tritanopia-light",
+  "base": "light",
+  "family": "tritanopia",
+  "highContrast": false,
+  "sourceHash": "63fb9c80804a14b5bc2f81448848998f23ac2724e6a7230f66281aa79a0d4de2",
+  "colors": {
+    "tokens": {
+      "canvas": "#ffffff",
+      "surface": "#f6f8fa",
+      "inset": "#eff2f5",
+      "raised": "#f6f8fa",
+      "hover": "#eaeef2",
+      "active": "#d8dee4",
+      "text": "#1f2328",
+      "mutedText": "#57606a",
+      "link": "#0550ae",
+      "border": "#d0d7de",
+      "controlBorder": "#6e7781",
+      "accent": "#0550ae",
+      "accentMuted": "#f6f8fa",
+      "accentEmphasis": "#0550ae",
+      "emphasisText": "#ffffff",
+      "primaryBackground": "#238636",
+      "primaryHoverBackground": "#2ea043",
+      "primaryPressedBackground": "#196c2e",
+      "primaryText": "#ffffff",
+      "primaryHoverText": "#ffffff",
+      "primaryPressedText": "#ffffff",
+      "primaryBorder": "#8b949e",
+      "primaryIcon": "#ffffff",
+      "primaryCounterBackground": "#196c2e",
+      "primaryCounterText": "#ffffff",
+      "focusOuter": "#0550ae",
+      "focusInner": "#ffffff",
+      "selectionBackground": "#b6e3ff",
+      "selectionText": "#1f2328",
+      "codeBackground": "#ffffff",
+      "codeText": "#1f2328",
+      "neutralBackground": "#ffffff",
+      "neutralText": "#1f2328",
+      "diffAddedBackground": "#d5f4f0",
+      "diffAddedText": "#1f2328",
+      "diffRemovedBackground": "#ffebe9",
+      "diffRemovedText": "#1f2328",
+      "diffWordAddedBackground": "#a7ded7",
+      "diffWordAddedText": "#1f2328",
+      "diffWordRemovedBackground": "#ffc1ba",
+      "diffWordRemovedText": "#1f2328",
+      "tooltipBackground": "#242a32",
+      "tooltipText": "#ffffff",
+      "overlayBackground": "#f6f8fa",
+      "overlayText": "#1f2328",
+      "inputBackground": "#ffffff",
+      "inputText": "#1f2328",
+      "inputPlaceholder": "#1f2328",
+      "disabledBackground": "#f6f8fa",
+      "disabledText": "#1f2328",
+      "disabledBorder": "#8b949e",
+      "counterBackground": "#f6f8fa",
+      "counterText": "#1f2328",
+      "labelBackground": "#f6f8fa",
+      "labelText": "#1f2328",
+      "labelBorder": "#8b949e"
+    },
+    "semantics": {
+      "success": {
+        "text": "#0a6361",
+        "mutedBackground": "#f6f8fa",
+        "emphasisBackground": "#0a6361",
+        "onEmphasis": "#ffffff",
+        "border": "#0a6361"
+      },
+      "danger": {
+        "text": "#a40e26",
+        "mutedBackground": "#f6f8fa",
+        "emphasisBackground": "#a40e26",
+        "onEmphasis": "#ffffff",
+        "border": "#a40e26"
+      },
+      "warning": {
+        "text": "#7d4e00",
+        "mutedBackground": "#f6f8fa",
+        "emphasisBackground": "#7d4e00",
+        "onEmphasis": "#ffffff",
+        "border": "#7d4e00"
+      },
+      "done": {
+        "text": "#6639ba",
+        "mutedBackground": "#f6f8fa",
+        "emphasisBackground": "#6639ba",
+        "onEmphasis": "#ffffff",
+        "border": "#6639ba"
+      },
+      "sponsor": {
+        "text": "#99286e",
+        "mutedBackground": "#f6f8fa",
+        "emphasisBackground": "#99286e",
+        "onEmphasis": "#ffffff",
+        "border": "#99286e"
+      }
+    },
+    "syntax": {
+      "comment": "#57606a",
+      "keyword": "#a40e26",
+      "string": "#0a6361",
+      "function": "#6639ba",
+      "number": "#7d4e00",
+      "variable": "#0550ae",
+      "type": "#99286e"
+    },
+    "ansi": {
+      "black": "#0a6361",
+      "red": "#a40e26",
+      "green": "#7d4e00",
+      "yellow": "#6639ba",
+      "blue": "#99286e",
+      "magenta": "#0a6361",
+      "cyan": "#a40e26",
+      "white": "#7d4e00",
+      "brightBlack": "#6639ba",
+      "brightRed": "#99286e",
+      "brightGreen": "#0a6361",
+      "brightYellow": "#a40e26",
+      "brightBlue": "#7d4e00",
+      "brightMagenta": "#6639ba",
+      "brightCyan": "#99286e",
+      "brightWhite": "#0a6361"
+    },
+    "graph": [
+      "#ebedf0",
+      "#9be9a8",
+      "#40c463",
+      "#30a14e",
+      "#216e39"
+    ]
+  },
+  "origins": {
+    "/tokens/canvas": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-canvas",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/surface": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-surface",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/inset": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-inset",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/raised": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-raised",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/hover": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-hover",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/active": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-active",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/text": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-text",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/mutedText": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-mutedText",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/link": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-link",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/border": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-border",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/controlBorder": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-controlBorder",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/accent": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-accent",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/accentMuted": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-accentMuted",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/accentEmphasis": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-accentEmphasis",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/emphasisText": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-emphasisText",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/primaryBackground": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-primaryBackground",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/primaryHoverBackground": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-primaryHoverBackground",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/primaryPressedBackground": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-primaryPressedBackground",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/primaryText": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-primaryText",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/primaryHoverText": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-primaryHoverText",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/primaryPressedText": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-primaryPressedText",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/primaryBorder": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-primaryBorder",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/primaryIcon": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-primaryIcon",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/primaryCounterBackground": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-primaryCounterBackground",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/primaryCounterText": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-primaryCounterText",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/focusOuter": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-focusOuter",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/focusInner": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-focusInner",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/selectionBackground": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-selectionBackground",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/selectionText": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-selectionText",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/codeBackground": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-codeBackground",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/codeText": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-codeText",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/neutralBackground": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-neutralBackground",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/neutralText": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-neutralText",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/diffAddedBackground": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-diffAddedBackground",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/diffAddedText": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-diffAddedText",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/diffRemovedBackground": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-diffRemovedBackground",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/diffRemovedText": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-diffRemovedText",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/diffWordAddedBackground": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-diffWordAddedBackground",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/diffWordAddedText": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-diffWordAddedText",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/diffWordRemovedBackground": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-diffWordRemovedBackground",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/diffWordRemovedText": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-diffWordRemovedText",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/tooltipBackground": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-tooltipBackground",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/tooltipText": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-tooltipText",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/overlayBackground": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-overlayBackground",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/overlayText": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-overlayText",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/inputBackground": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-inputBackground",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/inputText": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-inputText",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/inputPlaceholder": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-inputPlaceholder",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/disabledBackground": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-disabledBackground",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/disabledText": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-disabledText",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/disabledBorder": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-disabledBorder",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/counterBackground": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-counterBackground",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/counterText": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-counterText",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/labelBackground": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-labelBackground",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/labelText": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-labelText",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/labelBorder": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-tokens-labelBorder",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/semantics/success/text": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-semantics-success-text",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/semantics/success/mutedBackground": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-semantics-success-mutedBackground",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/semantics/success/emphasisBackground": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-semantics-success-emphasisBackground",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/semantics/success/onEmphasis": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-semantics-success-onEmphasis",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/semantics/success/border": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-semantics-success-border",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/semantics/danger/text": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-semantics-danger-text",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/semantics/danger/mutedBackground": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-semantics-danger-mutedBackground",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/semantics/danger/emphasisBackground": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-semantics-danger-emphasisBackground",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/semantics/danger/onEmphasis": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-semantics-danger-onEmphasis",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/semantics/danger/border": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-semantics-danger-border",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/semantics/warning/text": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-semantics-warning-text",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/semantics/warning/mutedBackground": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-semantics-warning-mutedBackground",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/semantics/warning/emphasisBackground": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-semantics-warning-emphasisBackground",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/semantics/warning/onEmphasis": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-semantics-warning-onEmphasis",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/semantics/warning/border": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-semantics-warning-border",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/semantics/done/text": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-semantics-done-text",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/semantics/done/mutedBackground": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-semantics-done-mutedBackground",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/semantics/done/emphasisBackground": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-semantics-done-emphasisBackground",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/semantics/done/onEmphasis": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-semantics-done-onEmphasis",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/semantics/done/border": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-semantics-done-border",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/semantics/sponsor/text": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-semantics-sponsor-text",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/semantics/sponsor/mutedBackground": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-semantics-sponsor-mutedBackground",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/semantics/sponsor/emphasisBackground": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-semantics-sponsor-emphasisBackground",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/semantics/sponsor/onEmphasis": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-semantics-sponsor-onEmphasis",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/semantics/sponsor/border": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-semantics-sponsor-border",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/syntax/comment": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-syntax-comment",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/syntax/keyword": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-syntax-keyword",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/syntax/string": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-syntax-string",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/syntax/function": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-syntax-function",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/syntax/number": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-syntax-number",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/syntax/variable": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-syntax-variable",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/syntax/type": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-syntax-type",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/ansi/black": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-ansi-black",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/ansi/red": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-ansi-red",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/ansi/green": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-ansi-green",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/ansi/yellow": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-ansi-yellow",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/ansi/blue": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-ansi-blue",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/ansi/magenta": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-ansi-magenta",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/ansi/cyan": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-ansi-cyan",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/ansi/white": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-ansi-white",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/ansi/brightBlack": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-ansi-brightBlack",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/ansi/brightRed": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-ansi-brightRed",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/ansi/brightGreen": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-ansi-brightGreen",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/ansi/brightYellow": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-ansi-brightYellow",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/ansi/brightBlue": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-ansi-brightBlue",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/ansi/brightMagenta": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-ansi-brightMagenta",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/ansi/brightCyan": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-ansi-brightCyan",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/ansi/brightWhite": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-ansi-brightWhite",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/graph/0": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-graph-0",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/graph/1": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-graph-1",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/graph/2": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-graph-2",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/graph/3": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-graph-3",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/graph/4": {
+      "file": "fixtures/seeds/source/tritanopia-light.css",
+      "sha256": "b2c0082fbe5d37898289a612b2ad24093e96f9814df7f8bd9ab27fafd7657330",
+      "variable": "--fixture-graph-4",
+      "fallback": false,
+      "compositeOver": null
+    }
+  }
+}

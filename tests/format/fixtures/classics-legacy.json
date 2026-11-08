@@ -1,0 +1,247 @@
+{
+  "source": "extension/themes.js at 1.1.0 (cyberpunk excluded; it is the Choom Circuit migration alias)",
+  "classics": [
+    {
+      "id": "editing-suite",
+      "name": "Editing Suite",
+      "palette": {
+        "bg": "#0a0a0b",
+        "text": "#ededea",
+        "accent": "#f2a93b",
+        "graph": "#f2a93b"
+      },
+      "credit": "The amber and near-black from Ali Tleis's GitHub profile.",
+      "sourceRepairs": []
+    },
+    {
+      "id": "dracula",
+      "name": "Dracula",
+      "palette": {
+        "bg": "#282a36",
+        "text": "#f8f8f2",
+        "accent": "#bd93f9",
+        "graph": "#ff79c6",
+        "surface": "#21222c",
+        "border": "#44475a",
+        "muted": "#6272a4"
+      },
+      "credit": "Palette from the Dracula theme project, MIT license.",
+      "sourceRepairs": [
+        {
+          "path": "/overrides/mutedText",
+          "before": "#6272a4",
+          "after": "#b3bad3"
+        }
+      ]
+    },
+    {
+      "id": "nord",
+      "name": "Nord",
+      "palette": {
+        "bg": "#2e3440",
+        "text": "#eceff4",
+        "accent": "#88c0d0",
+        "graph": "#88c0d0",
+        "surface": "#3b4252",
+        "border": "#4c566a",
+        "muted": "#616e88"
+      },
+      "credit": "Palette from the Nord theme project, MIT license.",
+      "sourceRepairs": [
+        {
+          "path": "/overrides/mutedText",
+          "before": "#616e88",
+          "after": "#c0c5cf"
+        }
+      ]
+    },
+    {
+      "id": "catppuccin-mocha",
+      "name": "Catppuccin Mocha",
+      "palette": {
+        "bg": "#1e1e2e",
+        "text": "#cdd6f4",
+        "accent": "#cba6f7",
+        "graph": "#a6e3a1",
+        "surface": "#181825",
+        "border": "#313244",
+        "muted": "#a6adc8"
+      },
+      "credit": "Mocha palette from the Catppuccin project, MIT license.",
+      "sourceRepairs": []
+    },
+    {
+      "id": "gruvbox",
+      "name": "Gruvbox",
+      "palette": {
+        "bg": "#282828",
+        "text": "#ebdbb2",
+        "accent": "#fabd2f",
+        "graph": "#b8bb26",
+        "surface": "#32302f",
+        "border": "#504945",
+        "muted": "#a89984"
+      },
+      "credit": "Palette from the Gruvbox color scheme, MIT license.",
+      "sourceRepairs": [
+        {
+          "path": "/overrides/mutedText",
+          "before": "#a89984",
+          "after": "#bcb0a0"
+        }
+      ]
+    },
+    {
+      "id": "tokyo-night",
+      "name": "Tokyo Night",
+      "palette": {
+        "bg": "#1a1b26",
+        "text": "#c0caf5",
+        "accent": "#7aa2f7",
+        "graph": "#bb9af7",
+        "surface": "#16161e",
+        "border": "#292e42",
+        "muted": "#565f89"
+      },
+      "credit": "Palette from the Tokyo Night theme, MIT license.",
+      "sourceRepairs": [
+        {
+          "path": "/overrides/mutedText",
+          "before": "#565f89",
+          "after": "#9aa0b9"
+        }
+      ]
+    },
+    {
+      "id": "rose-pine",
+      "name": "Rosé Pine",
+      "palette": {
+        "bg": "#191724",
+        "text": "#e0def4",
+        "accent": "#c4a7e7",
+        "graph": "#ebbcba",
+        "surface": "#1f1d2e",
+        "border": "#403d52",
+        "muted": "#908caa"
+      },
+      "credit": "Palette from the Rosé Pine theme project, MIT license.",
+      "sourceRepairs": [
+        {
+          "path": "/overrides/mutedText",
+          "before": "#908caa",
+          "after": "#a29fb8"
+        }
+      ]
+    },
+    {
+      "id": "one-dark",
+      "name": "One Dark",
+      "palette": {
+        "bg": "#282c34",
+        "text": "#abb2bf",
+        "accent": "#61afef",
+        "graph": "#98c379",
+        "surface": "#21252b",
+        "border": "#3e4451",
+        "muted": "#5c6370"
+      },
+      "credit": "Palette from Atom's One Dark syntax theme, MIT license.",
+      "sourceRepairs": [
+        {
+          "path": "/overrides/mutedText",
+          "before": "#5c6370",
+          "after": "#a9adb4"
+        }
+      ]
+    },
+    {
+      "id": "solarized-dark",
+      "name": "Solarized Dark",
+      "palette": {
+        "bg": "#002b36",
+        "text": "#93a1a1",
+        "accent": "#268bd2",
+        "graph": "#2aa198",
+        "surface": "#073642",
+        "border": "#174652",
+        "muted": "#586e75"
+      },
+      "credit": "Dark palette from Ethan Schoonover's Solarized, MIT license.",
+      "sourceRepairs": [
+        {
+          "path": "/colors/text",
+          "before": "#93a1a1",
+          "after": "#98a6a6"
+        },
+        {
+          "path": "/overrides/mutedText",
+          "before": "#586e75",
+          "after": "#98a6aa"
+        }
+      ]
+    },
+    {
+      "id": "catppuccin-latte",
+      "name": "Catppuccin Latte",
+      "palette": {
+        "bg": "#eff1f5",
+        "text": "#4c4f69",
+        "accent": "#8839ef",
+        "graph": "#40a02b",
+        "surface": "#e6e9ef",
+        "border": "#ccd0da",
+        "muted": "#6c6f85"
+      },
+      "credit": "Latte palette from the Catppuccin project, MIT license.",
+      "sourceRepairs": [
+        {
+          "path": "/overrides/mutedText",
+          "before": "#6c6f85",
+          "after": "#5b5d70"
+        }
+      ]
+    },
+    {
+      "id": "rose-pine-dawn",
+      "name": "Rosé Pine Dawn",
+      "palette": {
+        "bg": "#faf4ed",
+        "text": "#575279",
+        "accent": "#907aa9",
+        "graph": "#d7827e",
+        "surface": "#fffaf3",
+        "border": "#dfdad9",
+        "muted": "#797593"
+      },
+      "credit": "Dawn palette from the Rosé Pine theme project, MIT license.",
+      "sourceRepairs": [
+        {
+          "path": "/overrides/mutedText",
+          "before": "#797593",
+          "after": "#615e76"
+        }
+      ]
+    },
+    {
+      "id": "solarized-light",
+      "name": "Solarized Light",
+      "palette": {
+        "bg": "#fdf6e3",
+        "text": "#073642",
+        "accent": "#268bd2",
+        "graph": "#2aa198",
+        "surface": "#eee8d5",
+        "border": "#ddd6c1",
+        "muted": "#657b83"
+      },
+      "credit": "Light palette from Ethan Schoonover's Solarized, MIT license.",
+      "sourceRepairs": [
+        {
+          "path": "/overrides/mutedText",
+          "before": "#657b83",
+          "after": "#4f6067"
+        }
+      ]
+    }
+  ]
+}

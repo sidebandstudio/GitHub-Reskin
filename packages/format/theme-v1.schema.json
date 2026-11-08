@@ -1,0 +1,979 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json",
+  "title": "GitHub Reskin theme v1",
+  "description": "Portable data-only theme. Validate after documented import normalization. Schema validation does not replace contrast, graph, or resource-limit checks. No remote schema is fetched. Portable exports contain source colors and representable overrides only. Derived states and accessibility-mode corrections are recomputed by renderer 1.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "const": "https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json",
+      "description": "Optional editor hint, never a fetch instruction."
+    },
+    "schemaVersion": {
+      "type": "integer",
+      "const": 1
+    },
+    "name": {
+      "type": "string",
+      "pattern": "^[^<>\\u0000-\\u001F\\u007F-\\u009F\\u202A-\\u202E\\u2066-\\u2069]*$(?![\\s\\S])",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "author": {
+      "type": "string",
+      "pattern": "^[^<>\\u0000-\\u001F\\u007F-\\u009F\\u202A-\\u202E\\u2066-\\u2069]*$(?![\\s\\S])",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "version": {
+      "type": "string",
+      "maxLength": 32,
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$(?![\\s\\S])",
+      "default": "1.0.0",
+      "description": "Theme revision, separate from schemaVersion. v1 accepts a numeric major.minor.patch triplet."
+    },
+    "description": {
+      "type": "string",
+      "pattern": "^[^<>\\u0000-\\u001F\\u007F-\\u009F\\u202A-\\u202E\\u2066-\\u2069]*$(?![\\s\\S])",
+      "minLength": 0,
+      "maxLength": 240
+    },
+    "tags": {
+      "type": "array",
+      "maxItems": 8,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 24,
+        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$(?![\\s\\S])"
+      }
+    },
+    "base": {
+      "enum": [
+        "light",
+        "dark"
+      ],
+      "description": "Explicit GitHub fallback mode. Does not change the user preference stored on GitHub."
+    },
+    "colors": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "background": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "text": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "accent": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "contribution": {
+          "$ref": "#/$defs/hexColor",
+          "description": "Optional maximum-activity color; defaults to accent."
+        }
+      },
+      "required": [
+        "background",
+        "text",
+        "accent"
+      ]
+    },
+    "overrides": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "surface": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "inset": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "raised": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "hover": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "mutedText": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "link": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "border": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "controlBorder": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "accentMuted": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "primaryBackground": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "primaryText": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "focus": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "selectionBackground": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "selectionText": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "success": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "danger": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "warning": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "done": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "syntax": {
+          "$ref": "#/$defs/syntax"
+        }
+      },
+      "minProperties": 1,
+      "description": "Optional source color requests. Standard-mode repairs to supplied fields are portable. Derived states and accessibility corrections are renderer output; do not add resolved token names here."
+    },
+    "fonts": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "accent": {
+          "enum": [
+            "system",
+            "rajdhani",
+            "barlow-condensed",
+            "fraunces",
+            "alegreya",
+            "cormorant-garamond",
+            "josefin-sans",
+            "bungee",
+            "space-grotesk"
+          ],
+          "default": "system",
+          "description": "Bundled Latin WOFF2 for extension-owned headings/tags and allowlisted noninteractive headings only. Body, controls, user content and code keep native families. system uses no file."
+        }
+      },
+      "minProperties": 1
+    },
+    "effects": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "glow": {
+          "$ref": "#/$defs/effect-glow"
+        },
+        "grid": {
+          "$ref": "#/$defs/effect-grid"
+        },
+        "scanlines": {
+          "$ref": "#/$defs/effect-scanlines"
+        },
+        "paper": {
+          "$ref": "#/$defs/effect-paper"
+        },
+        "rail": {
+          "$ref": "#/$defs/effect-rail"
+        },
+        "rules": {
+          "$ref": "#/$defs/effect-rules"
+        },
+        "orbit": {
+          "$ref": "#/$defs/effect-orbit"
+        },
+        "seal": {
+          "$ref": "#/$defs/effect-seal"
+        },
+        "drift": {
+          "$ref": "#/$defs/effect-drift"
+        },
+        "echo": {
+          "$ref": "#/$defs/effect-echo"
+        }
+      },
+      "maxProperties": 3,
+      "description": "At most three reviewed effects. Presence requests the effect, omitted parameters use explicit engine defaults. Global extras/effects/motion preferences and accessibility rules always win."
+    },
+    "flavor": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Theme capability request. Recipient local master and Text settings still apply. Missing flavor has no text capability."
+        },
+        "locale": {
+          "const": "en",
+          "default": "en",
+          "description": "V1 copy is English only. Unknown/non-English GitHub locale suppresses all flavor text."
+        },
+        "slots": {
+          "type": "object",
+          "additionalProperties": false,
+          "minProperties": 1,
+          "properties": {
+            "profile.pinned.heading": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 40,
+              "pattern": "^[^<>\\u0000-\\u001F\\u007F-\\u009F\\u202A-\\u202E\\u2066-\\u2069]*$(?![\\s\\S])",
+              "description": "Append a separate decorative span after the direct plain h2 in .js-pinned-items-reorder-container within a verified profile main. Match canonical Pinned or Popular repositories, exclude interactive descendants. Never edit its text or children."
+            },
+            "profile.activity.heading": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 40,
+              "pattern": "^[^<>\\u0000-\\u001F\\u007F-\\u009F\\u202A-\\u202E\\u2066-\\u2069]*$(?![\\s\\S])",
+              "description": "Append a decorative span after #js-contribution-activity > h2 in a verified profile main, only when its static text is Contribution activity and it has no interactive descendants."
+            },
+            "profile.organizations.heading": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 40,
+              "pattern": "^[^<>\\u0000-\\u001F\\u007F-\\u009F\\u202A-\\u202E\\u2066-\\u2069]*$(?![\\s\\S])",
+              "description": "Append a decorative span after a plain h2 within .h-card whose next element contains a known follows/organization link. Require canonical Organizations and no interactive descendants. An h2 containing an anchor is ineligible."
+            },
+            "profile.tag": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 24,
+              "pattern": "^[^<>\\u0000-\\u001F\\u007F-\\u009F\\u202A-\\u202E\\u2066-\\u2069]*$(?![\\s\\S])",
+              "description": "Insert a separate aria-hidden span immediately before .h-card .vcard-names on a verified profile page. Do not append to or replace a name, avatar, biography or earned badge. It describes the selected view, not the profile owner."
+            },
+            "error.notFound.caption": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120,
+              "pattern": "^[^<>\\u0000-\\u001F\\u007F-\\u009F\\u202A-\\u202E\\u2066-\\u2069]*$(?![\\s\\S])",
+              "description": "Insert an aria-hidden paragraph after the verified GitHub-owned 404 illustration container containing img[data-static-error-asset=\"404-illustration\"] in .application-main. Keep the real explanation and recovery links. No auth, permission or rate-limit errors."
+            },
+            "empty.pinned.caption": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120,
+              "pattern": "^[^<>\\u0000-\\u001F\\u007F-\\u009F\\u202A-\\u202E\\u2066-\\u2069]*$(?![\\s\\S])",
+              "description": "Append an aria-hidden paragraph to the GitHub-owned .blankslate inside a verified .js-pinned-items-reorder-container only when the pinned list is empty and the canonical GitHub empty heading matches the captured English fixture. No generic .blankslate matcher."
+            },
+            "empty.issues.caption": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120,
+              "pattern": "^[^<>\\u0000-\\u001F\\u007F-\\u009F\\u202A-\\u202E\\u2066-\\u2069]*$(?![\\s\\S])",
+              "description": "Append an aria-hidden paragraph to the verified issue-list empty panel in repository issues index, with native No results or No issues heading plus adjacent native filtering/creation instructions. Require route and validated issue-list container, exact recorded semantic signature, and no issue rows. Never replace the explanation or action. Selector must be captured under the release gate."
+            },
+            "contributions.caption": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120,
+              "pattern": "^[^<>\\u0000-\\u001F\\u007F-\\u009F\\u202A-\\u202E\\u2066-\\u2069]*$(?![\\s\\S])",
+              "description": "Insert one aria-hidden paragraph after .js-calendar-graph on a verified profile, outside table/svg, legend and native count/date heading. Require ContributionCalendar day data-level cells and intact native summary. Never relabel Less/More or cells."
+            }
+          }
+        }
+      },
+      "minProperties": 1,
+      "description": "Additive plain-text decorations at the fixed safe slots only. All inserted nodes are aria-hidden, noninteractive and use textContent. Canonical GitHub wording remains visible. No text replacement or CSS content strings."
+    },
+    "contributions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "levels": {
+          "type": "array",
+          "minItems": 5,
+          "maxItems": 5,
+          "uniqueItems": true,
+          "prefixItems": [
+            {
+              "$ref": "#/$defs/hexColor"
+            },
+            {
+              "$ref": "#/$defs/hexColor"
+            },
+            {
+              "$ref": "#/$defs/hexColor"
+            },
+            {
+              "$ref": "#/$defs/hexColor"
+            },
+            {
+              "$ref": "#/$defs/hexColor"
+            }
+          ],
+          "items": false,
+          "description": "Exactly five distinct normalized colors, 0 through 4. Semantic checks enforce luminance/contrast order and visible cells; native counts, legend, date labels and tooltips remain unchanged."
+        }
+      },
+      "required": [
+        "levels"
+      ]
+    },
+    "inspiredBy": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80,
+      "pattern": "^[^<>\\u0000-\\u001F\\u007F-\\u009F\\u202A-\\u202E\\u2066-\\u2069]*$(?![\\s\\S])",
+      "description": "Optional descriptive credit, displayed as inspired by <value>. Unverified metadata, never an affiliation or resource instruction."
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "name",
+    "base",
+    "colors"
+  ],
+  "$defs": {
+    "hexColor": {
+      "type": "string",
+      "pattern": "^#[0-9a-fA-F]{6}$(?![\\s\\S])",
+      "description": "Opaque six-digit sRGB hex. No alpha, CSS functions, references, URLs, or variables."
+    },
+    "syntax": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "comment": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "keyword": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "string": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "function": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "number": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "variable": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "type": {
+          "$ref": "#/$defs/hexColor"
+        }
+      },
+      "minProperties": 1,
+      "description": "Imported syntax-role requests are supported and repaired. V1 has no manual syntax editor."
+    },
+    "effect-glow": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "strength": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 0.4,
+          "default": 0.16
+        }
+      },
+      "description": "Static bounded shadow on a Reskin-owned rail or badge border. No text or per-cell glow. Resolved color sources: tokens.accent.",
+      "x-cost": "low: one static small shadow",
+      "x-reduced-motion": "Identical static shadow."
+    },
+    "effect-grid": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "opacity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 0.08,
+          "default": 0.025
+        },
+        "size": {
+          "type": "integer",
+          "minimum": 16,
+          "maximum": 80,
+          "default": 32
+        }
+      },
+      "description": "Two perpendicular repeating linear gradients in a blank decorative strip. Resolved color sources: tokens.mutedText.",
+      "x-cost": "low: one static gradient patch",
+      "x-reduced-motion": "Identical static patch."
+    },
+    "effect-scanlines": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "opacity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 0.04,
+          "default": 0.015
+        },
+        "spacing": {
+          "type": "integer",
+          "minimum": 3,
+          "maximum": 12,
+          "default": 6
+        }
+      },
+      "description": "Static horizontal repeating gradient in a blank chrome strip, never over text. Resolved color sources: tokens.mutedText.",
+      "x-cost": "low: one static patch",
+      "x-reduced-motion": "Identical static patch."
+    },
+    "effect-paper": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "texture": {
+          "enum": [
+            "grain",
+            "halftone"
+          ],
+          "default": "grain"
+        },
+        "opacity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 0.08,
+          "default": 0.035
+        },
+        "scale": {
+          "type": "integer",
+          "minimum": 4,
+          "maximum": 24,
+          "default": 8
+        }
+      },
+      "description": "Fixed radial-gradient flecks or dots in blank decoration. No bitmap, noise filter or random generator. Resolved color sources: tokens.mutedText.",
+      "x-cost": "low: one static patch",
+      "x-reduced-motion": "Identical static patch."
+    },
+    "effect-rail": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "shape": {
+          "enum": [
+            "slash",
+            "notch",
+            "tooth",
+            "wave",
+            "route"
+          ],
+          "default": "slash"
+        },
+        "opacity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 0.4,
+          "default": 0.18
+        },
+        "thickness": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4,
+          "default": 2
+        }
+      },
+      "description": "Original gradient/border rail: diagonal cable, broken notch, shallow teeth, paired wave arcs or chart route. Shape remains outside real content. Resolved color sources: tokens.accent.",
+      "x-cost": "low: at most two pseudo-elements",
+      "x-reduced-motion": "Identical static rail."
+    },
+    "effect-rules": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "style": {
+          "enum": [
+            "ruled",
+            "margin",
+            "ticks"
+          ],
+          "default": "ruled"
+        },
+        "opacity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 0.15,
+          "default": 0.06
+        },
+        "spacing": {
+          "type": "integer",
+          "minimum": 12,
+          "maximum": 40,
+          "default": 24
+        }
+      },
+      "description": "Notebook lines, one vertical margin line, or five equal horizontal 6px ticks, 1px thick, with top offsets 0, 4, 0, 4, 0px and horizontal separation from spacing. Shared static geometry in blank decoration; no per-theme tick count, length, offset or rotation. Resolved color source: tokens.primaryBackground.",
+      "x-cost": "low: one static patch",
+      "x-reduced-motion": "Identical static rules."
+    },
+    "effect-orbit": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "shape": {
+          "enum": [
+            "circle",
+            "ellipse",
+            "arc"
+          ],
+          "default": "ellipse"
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3,
+          "default": 2
+        },
+        "opacity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 0.25,
+          "default": 0.1
+        }
+      },
+      "description": "Up to three thin CSS border rings/arcs plus one dot in a blank corner. No continuous rotation. Resolved color sources: tokens.accent, tokens.primaryBackground.",
+      "x-cost": "low: at most three border elements",
+      "x-reduced-motion": "Identical static rings."
+    },
+    "effect-seal": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "shape": {
+          "enum": [
+            "diamond",
+            "brackets",
+            "compass",
+            "sprig",
+            "rosette"
+          ],
+          "default": "brackets"
+        },
+        "size": {
+          "type": "integer",
+          "minimum": 12,
+          "maximum": 32,
+          "default": 20
+        },
+        "opacity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 0.5,
+          "default": 0.25
+        }
+      },
+      "description": "Original small CSS geometry beside Reskin copy. Compass has an open circle and offset tick; sprig has three plain leaves; rosette is four offset squares. No franchise emblem. Resolved color sources: tokens.primaryBackground.",
+      "x-cost": "low: at most four small pseudo-elements",
+      "x-reduced-motion": "Identical static seal."
+    },
+    "effect-drift": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "shape": {
+          "enum": [
+            "ember",
+            "petal",
+            "mote",
+            "wisp"
+          ],
+          "default": "mote"
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4,
+          "default": 2
+        },
+        "durationMs": {
+          "type": "integer",
+          "minimum": 200,
+          "maximum": 1200,
+          "default": 600
+        },
+        "distance": {
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 16,
+          "default": 8
+        },
+        "opacity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 0.16,
+          "default": 0.08
+        }
+      },
+      "description": "Fixed-position decorative flecks, petals, dots or prepainted wisps translate and fade once on explicit selection. Never loop, move cells, or animate blur. Resolved color sources: tokens.mutedText.",
+      "x-cost": "medium: at most four transform/opacity elements, <=96px square each",
+      "x-reduced-motion": "One static fleck at a fixed resting position, no animation."
+    },
+    "effect-echo": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "offset": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 6,
+          "default": 3
+        },
+        "durationMs": {
+          "type": "integer",
+          "minimum": 80,
+          "maximum": 200,
+          "default": 160
+        },
+        "opacity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 0.24,
+          "default": 0.12
+        }
+      },
+      "description": "Two colored geometry copies behind a Reskin badge shift and settle once on explicit selection. Never copy text, an avatar, or a control. Resolved color sources: tokens.accent, tokens.primaryBackground.",
+      "x-cost": "low: two transform/opacity elements",
+      "x-reduced-motion": "Static offset rails, no animation."
+    }
+  },
+  "$comment": "Normative render/import contracts are in ARCHITECTURE.md. x-reskin is documentation metadata, not an additional validation vocabulary. All refs in this document are local.",
+  "examples": [
+    {
+      "schemaVersion": 1,
+      "name": "Moss and parchment",
+      "base": "light",
+      "colors": {
+        "background": "#f6f2e8",
+        "text": "#27372d",
+        "accent": "#446851"
+      }
+    },
+    {
+      "$schema": "https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json",
+      "schemaVersion": 1,
+      "name": "Choom Circuit",
+      "inspiredBy": "Cyberpunk: Edgerunners",
+      "author": "sidebandstudio",
+      "version": "1.0.0",
+      "description": "Acid lime, cold signal blue and a quiet afterimage. Original geometry.",
+      "tags": [
+        "anime",
+        "neon",
+        "dark"
+      ],
+      "base": "dark",
+      "colors": {
+        "background": "#091312",
+        "text": "#f0f7ed",
+        "accent": "#d5ff35",
+        "contribution": "#d5ff35"
+      },
+      "overrides": {
+        "surface": "#142622",
+        "inset": "#060d0c",
+        "mutedText": "#aac2b7",
+        "link": "#7de9f5",
+        "controlBorder": "#6b8179",
+        "primaryBackground": "#d5ff35",
+        "primaryText": "#10170a",
+        "syntax": {
+          "comment": "#aac2b7"
+        }
+      },
+      "fonts": {
+        "accent": "rajdhani"
+      },
+      "effects": {
+        "rail": {
+          "shape": "notch",
+          "opacity": 0.18,
+          "thickness": 2
+        },
+        "scanlines": {
+          "opacity": 0.015,
+          "spacing": 6
+        },
+        "echo": {
+          "offset": 3,
+          "durationMs": 160,
+          "opacity": 0.12
+        }
+      },
+      "flavor": {
+        "enabled": true,
+        "locale": "en",
+        "slots": {
+          "profile.pinned.heading": "Preem picks",
+          "profile.tag": "//choom",
+          "error.notFound.caption": "This route went dark. Try a familiar path.",
+          "contributions.caption": "A year of gigs, one contribution at a time."
+        }
+      },
+      "contributions": {
+        "levels": [
+          "#24372f",
+          "#4e8c60",
+          "#78b94d",
+          "#a9dc3b",
+          "#d5ff35"
+        ]
+      }
+    }
+  ],
+  "x-reskin": {
+    "rendererVersion": 1,
+    "maxEffects": 3,
+    "effectTargets": [
+      "owned-badge",
+      "owned-margin-strip",
+      "owned-caption-edge"
+    ],
+    "effectGlobalLimits": {
+      "maxOwnedNodesPerDocument": 24,
+      "maxAnimatedNodes": 6,
+      "maxPatchWidthPx": 360,
+      "maxPatchHeightPx": 96,
+      "maxAnimatedElementPx": 96,
+      "maxAnimationTotalMs": 1200,
+      "loops": false
+    },
+    "effects": {
+      "glow": {
+        "draws": "Static bounded shadow on a Reskin-owned rail or badge border. No text or per-cell glow.",
+        "cost": "low: one static small shadow",
+        "reducedMotion": "Identical static shadow.",
+        "resolvedColorSources": [
+          "tokens.accent"
+        ]
+      },
+      "grid": {
+        "draws": "Two perpendicular repeating linear gradients in a blank decorative strip.",
+        "cost": "low: one static gradient patch",
+        "reducedMotion": "Identical static patch.",
+        "resolvedColorSources": [
+          "tokens.mutedText"
+        ]
+      },
+      "scanlines": {
+        "draws": "Static horizontal repeating gradient in a blank chrome strip, never over text.",
+        "cost": "low: one static patch",
+        "reducedMotion": "Identical static patch.",
+        "resolvedColorSources": [
+          "tokens.mutedText"
+        ]
+      },
+      "paper": {
+        "draws": "Fixed radial-gradient flecks or dots in blank decoration. No bitmap, noise filter or random generator.",
+        "cost": "low: one static patch",
+        "reducedMotion": "Identical static patch.",
+        "resolvedColorSources": [
+          "tokens.mutedText"
+        ]
+      },
+      "rail": {
+        "draws": "Original gradient/border rail: diagonal cable, broken notch, shallow teeth, paired wave arcs or chart route. Shape remains outside real content.",
+        "cost": "low: at most two pseudo-elements",
+        "reducedMotion": "Identical static rail.",
+        "resolvedColorSources": [
+          "tokens.accent"
+        ]
+      },
+      "rules": {
+        "draws": "Notebook lines, one vertical margin line, or five equal horizontal 6px ticks, 1px thick, with top offsets 0, 4, 0, 4, 0px and horizontal separation from spacing. Shared static geometry in blank decoration; no per-theme tick count, length, offset or rotation.",
+        "cost": "low: one static patch",
+        "reducedMotion": "Identical static rules.",
+        "resolvedColorSources": [
+          "tokens.primaryBackground"
+        ]
+      },
+      "orbit": {
+        "draws": "Up to three thin CSS border rings/arcs plus one dot in a blank corner. No continuous rotation.",
+        "cost": "low: at most three border elements",
+        "reducedMotion": "Identical static rings.",
+        "resolvedColorSources": [
+          "tokens.accent",
+          "tokens.primaryBackground"
+        ],
+        "colorAssignment": "Rings/arcs use tokens.accent; dot uses tokens.primaryBackground."
+      },
+      "seal": {
+        "draws": "Original small CSS geometry beside Reskin copy. Compass has an open circle and offset tick; sprig has three plain leaves; rosette is four offset squares. No franchise emblem.",
+        "cost": "low: at most four small pseudo-elements",
+        "reducedMotion": "Identical static seal.",
+        "resolvedColorSources": [
+          "tokens.primaryBackground"
+        ]
+      },
+      "drift": {
+        "draws": "Fixed-position decorative flecks, petals, dots or prepainted wisps translate and fade once on explicit selection. Never loop, move cells, or animate blur.",
+        "cost": "medium: at most four transform/opacity elements, <=96px square each",
+        "reducedMotion": "One static fleck at a fixed resting position, no animation.",
+        "resolvedColorSources": [
+          "tokens.mutedText"
+        ]
+      },
+      "echo": {
+        "draws": "Two colored geometry copies behind a Reskin badge shift and settle once on explicit selection. Never copy text, an avatar, or a control.",
+        "cost": "low: two transform/opacity elements",
+        "reducedMotion": "Static offset rails, no animation.",
+        "resolvedColorSources": [
+          "tokens.accent",
+          "tokens.primaryBackground"
+        ],
+        "colorAssignment": "The two geometry copies use tokens.accent and tokens.primaryBackground respectively."
+      }
+    },
+    "fontBudget": {
+      "families": 8,
+      "weightsPerFamily": 1,
+      "totalWoff2Bytes": 245760,
+      "maxPerFamilyBytes": 30720,
+      "subset": "Latin U+0020-007E, U+00A0-00FF, U+0152-0153, U+0178, U+2010-2027, U+2030, U+2039-203A, U+20AC",
+      "delivery": "packaged WOFF2; fonts are never fetched from a web font service; native fallback for missing glyphs or blocked fonts"
+    },
+    "fonts": [
+      {
+        "id": "rajdhani",
+        "family": "Rajdhani",
+        "weight": 600,
+        "minimumAccentPx": 18,
+        "license": "OFL-1.1",
+        "sourceDirectory": "https://github.com/google/fonts/tree/main/ofl/rajdhani",
+        "licenseUrl": "https://raw.githubusercontent.com/google/fonts/main/ofl/rajdhani/OFL.txt",
+        "maxBytes": 30720
+      },
+      {
+        "id": "barlow-condensed",
+        "family": "Barlow Condensed",
+        "weight": 600,
+        "minimumAccentPx": 18,
+        "license": "OFL-1.1",
+        "sourceDirectory": "https://github.com/google/fonts/tree/main/ofl/barlowcondensed",
+        "licenseUrl": "https://raw.githubusercontent.com/google/fonts/main/ofl/barlowcondensed/OFL.txt",
+        "maxBytes": 30720
+      },
+      {
+        "id": "fraunces",
+        "family": "Fraunces",
+        "weight": 600,
+        "minimumAccentPx": 20,
+        "license": "OFL-1.1",
+        "sourceDirectory": "https://github.com/google/fonts/tree/main/ofl/fraunces",
+        "licenseUrl": "https://raw.githubusercontent.com/google/fonts/main/ofl/fraunces/OFL.txt",
+        "maxBytes": 30720
+      },
+      {
+        "id": "alegreya",
+        "family": "Alegreya",
+        "weight": 600,
+        "minimumAccentPx": 20,
+        "license": "OFL-1.1",
+        "sourceDirectory": "https://github.com/google/fonts/tree/main/ofl/alegreya",
+        "licenseUrl": "https://raw.githubusercontent.com/google/fonts/main/ofl/alegreya/OFL.txt",
+        "maxBytes": 30720
+      },
+      {
+        "id": "cormorant-garamond",
+        "family": "Cormorant Garamond",
+        "weight": 700,
+        "minimumAccentPx": 22,
+        "license": "OFL-1.1",
+        "sourceDirectory": "https://github.com/google/fonts/tree/main/ofl/cormorantgaramond",
+        "licenseUrl": "https://raw.githubusercontent.com/google/fonts/main/ofl/cormorantgaramond/OFL.txt",
+        "maxBytes": 30720
+      },
+      {
+        "id": "josefin-sans",
+        "family": "Josefin Sans",
+        "weight": 600,
+        "minimumAccentPx": 18,
+        "license": "OFL-1.1",
+        "sourceDirectory": "https://github.com/google/fonts/tree/main/ofl/josefinsans",
+        "licenseUrl": "https://raw.githubusercontent.com/google/fonts/main/ofl/josefinsans/OFL.txt",
+        "maxBytes": 30720
+      },
+      {
+        "id": "bungee",
+        "family": "Bungee",
+        "weight": 400,
+        "minimumAccentPx": 22,
+        "license": "OFL-1.1",
+        "sourceDirectory": "https://github.com/google/fonts/tree/main/ofl/bungee",
+        "licenseUrl": "https://raw.githubusercontent.com/google/fonts/main/ofl/bungee/OFL.txt",
+        "maxBytes": 30720
+      },
+      {
+        "id": "space-grotesk",
+        "family": "Space Grotesk",
+        "weight": 600,
+        "minimumAccentPx": 18,
+        "license": "OFL-1.1",
+        "sourceDirectory": "https://github.com/google/fonts/tree/main/ofl/spacegrotesk",
+        "licenseUrl": "https://raw.githubusercontent.com/google/fonts/main/ofl/spacegrotesk/OFL.txt",
+        "maxBytes": 30720
+      }
+    ],
+    "slotContract": {
+      "mode": "append-only",
+      "insertedAriaHidden": true,
+      "canonicalWordsRemainVisible": true,
+      "unknownMarkup": "skip",
+      "nonEnglish": "skip",
+      "selectorsAreNotThemeData": true
+    },
+    "flavorSlots": {
+      "profile.pinned.heading": "Append a separate decorative span after the direct plain h2 in .js-pinned-items-reorder-container within a verified profile main. Match canonical Pinned or Popular repositories, exclude interactive descendants. Never edit its text or children.",
+      "profile.activity.heading": "Append a decorative span after #js-contribution-activity > h2 in a verified profile main, only when its static text is Contribution activity and it has no interactive descendants.",
+      "profile.organizations.heading": "Append a decorative span after a plain h2 within .h-card whose next element contains a known follows/organization link. Require canonical Organizations and no interactive descendants. An h2 containing an anchor is ineligible.",
+      "profile.tag": "Insert a separate aria-hidden span immediately before .h-card .vcard-names on a verified profile page. Do not append to or replace a name, avatar, biography or earned badge. It describes the selected view, not the profile owner.",
+      "error.notFound.caption": "Insert an aria-hidden paragraph after the verified GitHub-owned 404 illustration container containing img[data-static-error-asset=\"404-illustration\"] in .application-main. Keep the real explanation and recovery links. No auth, permission or rate-limit errors.",
+      "empty.pinned.caption": "Append an aria-hidden paragraph to the GitHub-owned .blankslate inside a verified .js-pinned-items-reorder-container only when the pinned list is empty and the canonical GitHub empty heading matches the captured English fixture. No generic .blankslate matcher.",
+      "empty.issues.caption": "Append an aria-hidden paragraph to the verified issue-list empty panel in repository issues index, with native No results or No issues heading plus adjacent native filtering/creation instructions. Require route and validated issue-list container, exact recorded semantic signature, and no issue rows. Never replace the explanation or action. Selector must be captured under the release gate.",
+      "contributions.caption": "Insert one aria-hidden paragraph after .js-calendar-graph on a verified profile, outside table/svg, legend and native count/date heading. Require ContributionCalendar day data-level cells and intact native summary. Never relabel Less/More or cells."
+    },
+    "inputLimits": {
+      "fileUtf8Bytes": 65536,
+      "pastedUtf8Bytes": 131072,
+      "compressedBytes": 16384,
+      "expandedBytes": 65536,
+      "maxDepth": 12,
+      "maxCustomThemes": 50
+    },
+    "forbidden": [
+      "raw CSS",
+      "selectors",
+      "resource URLs except exact $schema hint",
+      "HTML",
+      "JavaScript",
+      "remote fonts",
+      "remote code",
+      "runtime outbound requests",
+      "control-label swaps",
+      "user-content edits"
+    ],
+    "exportPolicy": {
+      "sourceRoleMapping": "ARCHITECTURE.md#source-colors-and-repaired-exports",
+      "portableRepairSeed": "same-base standard ModeSeed, independent of display mode",
+      "persist": "existing colors/overrides fields and a repaired supplied contributions.levels ramp only",
+      "renderOnly": [
+        "omitted default roles",
+        "primary hover/pressed states",
+        "code/diff backgrounds",
+        "component pairs",
+        "accessibility-mode corrections"
+      ],
+      "repeatExport": "canonical JSON and RS1 stable under renderer 1 and the same frozen standard seed"
+    },
+    "effectColorPolicy": "Use resolved roles after repair and apply the effect opacity or glow strength. No independent color, geometry, path, rotation or tick-count input. Reviewed public theme JSON controls effect choices. flavor.enabled gates text only; preferences and native policy gate decoration."
+  }
+}

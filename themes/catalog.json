@@ -1,0 +1,86 @@
+[
+  {
+    "id": "editing-suite",
+    "slug": "editing-suite",
+    "group": "classics",
+    "file": "themes/classics/editing-suite.reskin.json",
+    "order": 1
+  },
+  {
+    "id": "dracula",
+    "slug": "dracula",
+    "group": "classics",
+    "file": "themes/classics/dracula.reskin.json",
+    "order": 2
+  },
+  {
+    "id": "nord",
+    "slug": "nord",
+    "group": "classics",
+    "file": "themes/classics/nord.reskin.json",
+    "order": 3
+  },
+  {
+    "id": "catppuccin-mocha",
+    "slug": "catppuccin-mocha",
+    "group": "classics",
+    "file": "themes/classics/catppuccin-mocha.reskin.json",
+    "order": 4
+  },
+  {
+    "id": "gruvbox",
+    "slug": "gruvbox",
+    "group": "classics",
+    "file": "themes/classics/gruvbox.reskin.json",
+    "order": 5
+  },
+  {
+    "id": "tokyo-night",
+    "slug": "tokyo-night",
+    "group": "classics",
+    "file": "themes/classics/tokyo-night.reskin.json",
+    "order": 6
+  },
+  {
+    "id": "rose-pine",
+    "slug": "rose-pine",
+    "group": "classics",
+    "file": "themes/classics/rose-pine.reskin.json",
+    "order": 7
+  },
+  {
+    "id": "one-dark",
+    "slug": "one-dark",
+    "group": "classics",
+    "file": "themes/classics/one-dark.reskin.json",
+    "order": 8
+  },
+  {
+    "id": "solarized-dark",
+    "slug": "solarized-dark",
+    "group": "classics",
+    "file": "themes/classics/solarized-dark.reskin.json",
+    "order": 9
+  },
+  {
+    "id": "catppuccin-latte",
+    "slug": "catppuccin-latte",
+    "group": "classics",
+    "file": "themes/classics/catppuccin-latte.reskin.json",
+    "order": 10
+  },
+  {
+    "id": "rose-pine-dawn",
+    "slug": "rose-pine-dawn",
+    "group": "classics",
+    "file": "themes/classics/rose-pine-dawn.reskin.json",
+    "order": 11
+  },
+  {
+    "id": "solarized-light",
+    "slug": "solarized-light",
+    "group": "classics",
+    "file": "themes/classics/solarized-light.reskin.json",
+    "order": 12
+  }
+]

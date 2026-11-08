@@ -1,0 +1,136 @@
+{
+  "note": "Golden RS1 vectors. `code` is this encoder's output (fflate 0.8.3, level 9). `python` holds codes for the same canonical bytes from CPython's zlib at several levels; every one must decode to the same theme. Python decoded each `code` to the identical canonical bytes when these vectors were made.",
+  "vectors": [
+    {
+      "name": "minimal-light",
+      "theme": {
+        "schemaVersion": 1,
+        "name": "Moss and parchment",
+        "base": "light",
+        "colors": {
+          "background": "#f6f2e8",
+          "text": "#27372d",
+          "accent": "#446851"
+        }
+      },
+      "canonical": "{\"base\":\"light\",\"colors\":{\"accent\":\"#446851\",\"background\":\"#f6f2e8\",\"text\":\"#27372d\"},\"name\":\"Moss and parchment\",\"schemaVersion\":1}",
+      "code": "RS1.eNodjEEOgyAQAL9itlcuUquGP_Ta-7qsYirQsDQxMf5d8DozmQMmFAYD27q4DAoobjEJmAOQiEMu6tF1_fhqi5yQvkuK_2ArnvtZ81hw5v3u9PActIVTQUBfp-8o0mCwzQ8TOV93CoQce_xwkjUGMO15AW2aKQo.eaed7600",
+      "python": {
+        "level9": "RS1.eNodjEEOgyAQAL9itlcuUquGP3jtfV1WMQo0LCZNjH8v9DozmQtmFAYDx7a6DAooHjEJmAuQiEMu6tF1_fhqi5yR9jXFM9iKl37RPBac-fvv9PActIVbQUBfp1MUaTDY5oOJnK87BUKOPb45yRYDmPb-AW2aKQo.eaed7600",
+        "level6": "RS1.eJwdjEEOgyAQAL9itlcuUquGP3jtfV1WMQo0LCZNjH8v9DozmQtmFAYDx7a6DAooHjEJmAuQiEMu6tF1_fhqi5yR9jXFM9iKl37RPBac-fvv9PActIVbQUBfp1MUaTDY5oOJnK87BUKOPb45yRYDmPb-AW2aKQo.eaed7600",
+        "level1": "RS1.eAEdjEEOgyAQAL9itlcuUquGP3jtfV1WMQo0LCZNjH8v9DozmQtmFAYDx7a6DAooHjEJmAuQiEMu6tF1_fhqi5yR9jXFM9iKl37RPBac-fvv9PActIVbQUBfp1MUaTDY5oOJnK87BUKOPb45yRYDmPb-AW2aKQo.eaed7600",
+        "level0": "RS1.eAEBhAB7_3siYmFzZSI6ImxpZ2h0IiwiY29sb3JzIjp7ImFjY2VudCI6IiM0NDY4NTEiLCJiYWNrZ3JvdW5kIjoiI2Y2ZjJlOCIsInRleHQiOiIjMjczNzJkIn0sIm5hbWUiOiJNb3NzIGFuZCBwYXJjaG1lbnQiLCJzY2hlbWFWZXJzaW9uIjoxfW2aKQo.eaed7600"
+      }
+    },
+    {
+      "name": "choom-circuit",
+      "theme": {
+        "$schema": "https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json",
+        "schemaVersion": 1,
+        "name": "Choom Circuit",
+        "inspiredBy": "Cyberpunk: Edgerunners",
+        "author": "sidebandstudio",
+        "version": "1.0.0",
+        "description": "Acid lime, cold signal blue and a quiet afterimage. Original geometry.",
+        "tags": [
+          "anime",
+          "neon",
+          "dark"
+        ],
+        "base": "dark",
+        "colors": {
+          "background": "#091312",
+          "text": "#f0f7ed",
+          "accent": "#d5ff35",
+          "contribution": "#d5ff35"
+        },
+        "overrides": {
+          "surface": "#142622",
+          "inset": "#060d0c",
+          "mutedText": "#aac2b7",
+          "link": "#7de9f5",
+          "controlBorder": "#6b8179",
+          "primaryBackground": "#d5ff35",
+          "primaryText": "#10170a",
+          "syntax": {
+            "comment": "#aac2b7"
+          }
+        },
+        "fonts": {
+          "accent": "rajdhani"
+        },
+        "effects": {
+          "rail": {
+            "shape": "notch",
+            "opacity": 0.18,
+            "thickness": 2
+          },
+          "scanlines": {
+            "opacity": 0.015,
+            "spacing": 6
+          },
+          "echo": {
+            "offset": 3,
+            "durationMs": 160,
+            "opacity": 0.12
+          }
+        },
+        "flavor": {
+          "enabled": true,
+          "locale": "en",
+          "slots": {
+            "profile.pinned.heading": "Preem picks",
+            "profile.tag": "//choom",
+            "error.notFound.caption": "This route went dark. Try a familiar path.",
+            "contributions.caption": "A year of gigs, one contribution at a time."
+          }
+        },
+        "contributions": {
+          "levels": [
+            "#24372f",
+            "#4e8c60",
+            "#78b94d",
+            "#a9dc3b",
+            "#d5ff35"
+          ]
+        }
+      },
+      "canonical": "{\"$schema\":\"https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json\",\"author\":\"sidebandstudio\",\"base\":\"dark\",\"colors\":{\"accent\":\"#d5ff35\",\"background\":\"#091312\",\"contribution\":\"#d5ff35\",\"text\":\"#f0f7ed\"},\"contributions\":{\"levels\":[\"#24372f\",\"#4e8c60\",\"#78b94d\",\"#a9dc3b\",\"#d5ff35\"]},\"description\":\"Acid lime, cold signal blue and a quiet afterimage. Original geometry.\",\"effects\":{\"echo\":{\"durationMs\":160,\"offset\":3,\"opacity\":0.12},\"rail\":{\"opacity\":0.18,\"shape\":\"notch\",\"thickness\":2},\"scanlines\":{\"opacity\":0.015,\"spacing\":6}},\"flavor\":{\"enabled\":true,\"locale\":\"en\",\"slots\":{\"contributions.caption\":\"A year of gigs, one contribution at a time.\",\"error.notFound.caption\":\"This route went dark. Try a familiar path.\",\"profile.pinned.heading\":\"Preem picks\",\"profile.tag\":\"//choom\"}},\"fonts\":{\"accent\":\"rajdhani\"},\"inspiredBy\":\"Cyberpunk: Edgerunners\",\"name\":\"Choom Circuit\",\"overrides\":{\"controlBorder\":\"#6b8179\",\"inset\":\"#060d0c\",\"link\":\"#7de9f5\",\"mutedText\":\"#aac2b7\",\"primaryBackground\":\"#d5ff35\",\"primaryText\":\"#10170a\",\"surface\":\"#142622\",\"syntax\":{\"comment\":\"#aac2b7\"}},\"schemaVersion\":1,\"tags\":[\"anime\",\"neon\",\"dark\"],\"version\":\"1.0.0\"}",
+      "code": "RS1.eNpdVMlu2zAQ_RWC7tGVJdvxdmuCLpeiRRH0UuQwIofSxBSpkpQbI8i_dyi7id2TyOFs780bPct3UbXYgdzJNqU-7mazSBprcDqmQZMvGkrtUBfkZ58pfRnq9z8w7snNTnFxlviD7w9VcTIUj9E7OZUwpNYHTnudjl9qiMh2DWHPN-WtD1HuniUohS7xy0TfGLO4GV3Vvgl-cDqby221qOZjjEuB6iERl7r0T_g0JjClWaOWL9euYxWLB7R8-iUn8-ViPTccNlniRq3KfFpv6u1S5xNstVrU-XRO_8DpNEYVqD8X_qBIC0sdTgXD0CJS48CK2g4oGLEA8XsgTAJMwkAdNFiIb4Eayl4N-g5TOBZcAo1Blcb-ULU-f_UQIJf5ytZqVU6lNyYio1vwsQdF6Sh3ZVHNuasAZHPMpX0zlbGFPjPtfFJtZqcltXcYOWOOigqcJb7_F1pWN_yY766Ru9ULuxoLhzxMbs9BbZnaXQoDTqX1CmyugXnm0foTiCvWCwWvhIkjQhDeiIaaOBXeITP35iuAyRKJGR1ZCcGHgrv_lBVwkea-pShYFgnFH5aMyFIqxH04crCBjixxkR5Sm7P0wRuyWPTkHOqiRdAjMPk9IHaiZ07ihVuC_Dab8Rh8J0fw3OC1QAM86hYcZYGRiz0F1LfMnbw71hj6we134qNuMAxcksU9lQ66zNJdTiruKKiBEpv9gTHyfryR5u2tDxrz4kxW9aZab9mNa-TJ8wasSl0qtvDc9tmw1rg1Wfkdk6Hvz_IHUPN6PYJi1YXj7dUavW7L-fVfVFVW6xLyGIdgQOV-J9VyvprnlYtHl-Dp1GbXnff0XCeTdFr-n4x2HFHFaoNmXDPmibEzBTj-F8a1f5hKRn5ylVXBmpMvfwG6j3vl.a1859936",
+      "python": {
+        "level9": "RS1.eNpdVEtv2zAM_iuCumPq2Ema120t9rgMG4Zil6EHWqJtNrLkSXLWYMh_H6WkXbKTKb758aP_yHdBddiD3MouxiFsp9NAGmuwOsRRkytait1YF-Smnyh-Huvb7xh2ZKenuDCN_MHbfVWcFMVzcFZOJIyxc57TXqdjSw0BWa_B7_ilnHE-yO0fCUqhjWy50XdNM7_LrmrXejdandTlpppXsxxjo6d6jMSlLv0jvuQETdmsUMvjtWuuYnCPhqWf8ma2mK9mDYfdLHCtlmWSVut6s9BJgo1W8zpJ5_RPnE5jUJ6Gc-H3irQw1ONE8BhaBGotGFGbEQVPLED8GgmjgCaipx5aLMRXTy0lrxZdj9EfCi6BTYMq5v5QdS599eghlfnC2mpZTqRrmoA83ZzFARTFg9yWRTXjrjyQSTGX-vVEhg6GhLR1UXUJnY7UzmLgjCkqKLCG-P1faFndsTG9bSu3yyO7Ngb2aZncnoXaMLTb6EecSOMUmFQD086DcachrlAvFLwBJg4IXrhGtNSGiXAWxaWvAAZLREY0o-K98wV3_zEx4CLNY0dBMC0iit9MGZGoVIhHf-DgBnoyxEUGiF3KMnjXkMFiIGtRFx2CzoPJbx6xFwNjEi7cIiTbdMprcL3Mw3OD1wT18Kw7sJQIRjYM5FHfM3by4VCjH0a724oPukU_ckmfslvoE0oPKal4IK9Giqx2e56R7-MfaM7cO68xHc7Nsl5Xq43MNTDzulyWulSs4b3tkmKlcdMk5vcMhn480x9AzepVHopZ5w_3V2f0di1n62tUVVarEtIaR9-AwqxbzJazdHLhYCO8nNrs-_OdnuscM5nS8f_gafOKKmYbtPnMGCeenSHA_F_IZ_80kftXV1kVzDl5_Au6j3vl.a1859936",
+        "level6": "RS1.eJxdVEtv2zAM_iuCumPq2Ema120t9rgMG4Zil6EHWqJtNrLkSXLWYMh_H6WkXbKTKb758aP_yHdBddiD3MouxiFsp9NAGmuwOsRRkytait1YF-Smnyh-Huvb7xh2ZKenuDCN_MHbfVWcFMVzcFZOJIyxc57TXqdjSw0BWa_B7_ilnHE-yO0fCUqhjWy50XdNM7_LrmrXejdandTlpppXsxxjo6d6jMSlLv0jvuQETdmsUMvjtWuuYnCPhqWf8ma2mK9mDYfdLHCtlmWSVut6s9BJgo1W8zpJ5_RPnE5jUJ6Gc-H3irQw1ONE8BhaBGotGFGbEQVPLED8GgmjgCaipx5aLMRXTy0lrxZdj9EfCi6BTYMq5v5QdS599eghlfnC2mpZTqRrmoA83ZzFARTFg9yWRTXjrjyQSTGX-vVEhg6GhLR1UXUJnY7UzmLgjCkqKLCG-P1faFndsTG9bSu3yyO7Ngb2aZncnoXaMLTb6EecSOMUmFQD086DcachrlAvFLwBJg4IXrhGtNSGiXAWxaWvAAZLREY0o-K98wV3_zEx4CLNY0dBMC0iit9MGZGoVIhHf-DgBnoyxEUGiF3KMnjXkMFiIGtRFx2CzoPJbx6xFwNjEi7cIiTbdMprcL3Mw3OD1wT18Kw7sJQIRjYM5FHfM3by4VCjH0a724oPukU_ckmfslvoE0oPKal4IK9Giqx2e56R7-MfaM7cO68xHc7Nsl5Xq43MNTDzulyWulSs4b3tkmKlcdMk5vcMhn480x9AzepVHopZ5w_3V2f0di1n62tUVVarEtIaR9-AwqxbzJazdHLhYCO8nNrs-_OdnuscM5nS8f_gafOKKmYbtPnMGCeenSHA_F_IZ_80kftXV1kVzDl5_Au6j3vl.a1859936",
+        "level1": "RS1.eAFdVE1v2zAM_SuCsmPq2Emar9ta7OMybBiKXYoeaImy2ciSJ8lZg6L_fZSTteluNEW-Rz6SfpYfomqxA7mTbUp93M1mkTTW4HRMgyZfNJTaoS7Iz75Q-jrUVz8x7snNTnlxljgdrw5VcXIUj9E7OZUwpNYHhn0Pxy81RGS_hrDnL-WtD1HuniUohS7xy0RfG7O4HkPVvgl-cDq7y221qOZjjkuB6iERU13GJ3waAUxp1qjlS4Z_Cx1ZLB7QsnUvJ_PlYj03jDdZ4katymytN_V2qbMFW60WdbbO5TwwnMaoAvVn4o-KtLDU4VRwG1pEahxYUdsBBQsoQPweCJMAkzBQBw0W4nughnJUg77DFI4FU6AxqNJYH6rWZzX0ECDTfGNvtSqn0hsTkbtbsNmDonSUu7Ko5lxVALI559K_mcrYQp-Vdj6plllSS2rvMDJizooKnCX-_i-1rK75MVO4Ru5WLxxqLBzyMJ8lOqgtS7tLYcCptF6BzRyYZx6tPzXxTvVCwatg4ogQhDeioSZOhXfIyr1NSACLJRIrOqoSgg8FV_85b8AFzF1LUfBaJBR_eGVEXqVC3IUjJxvoyBKT9JDajNIHb8hi0ZNzqIsWQY-NyR8BsRM9axIvwhJw03I24zH4To7Nc4GjRq8LGuBRt-AoLxi52FNAfcPjkLfHGkM_uP1OfNINhoEpebmn0kGXVbrNoOKWghoosdsfMAQ-txF-FMLbGx805sOZrOpNtd5yGHPkyfMFrEpdKvbw3PbZsda4NflSOhZD353XH0DN6zV7-7x14XgDl2f0el3n139ZVVmtS-CsOAQDKtc7qZbz1TyfXDy6BE95A5TvuvOdnnmySKfj_8XdjjdZ8bZBw23dS9aJe2cJcPwvjGf_MJXc-SlUVkVZlPLlL7qPe-U.a1859936",
+        "level0": "RS1.eAEBiwR0-3siJHNjaGVtYSI6Imh0dHBzOi8vc2lkZWJhbmRzdHVkaW8uZ2l0aHViLmlvL0dpdEh1Yi1SZXNraW4vc2NoZW1hcy90aGVtZS12MS5zY2hlbWEuanNvbiIsImF1dGhvciI6InNpZGViYW5kc3R1ZGlvIiwiYmFzZSI6ImRhcmsiLCJjb2xvcnMiOnsiYWNjZW50IjoiI2Q1ZmYzNSIsImJhY2tncm91bmQiOiIjMDkxMzEyIiwiY29udHJpYnV0aW9uIjoiI2Q1ZmYzNSIsInRleHQiOiIjZjBmN2VkIn0sImNvbnRyaWJ1dGlvbnMiOnsibGV2ZWxzIjpbIiMyNDM3MmYiLCIjNGU4YzYwIiwiIzc4Yjk0ZCIsIiNhOWRjM2IiLCIjZDVmZjM1Il19LCJkZXNjcmlwdGlvbiI6IkFjaWQgbGltZSwgY29sZCBzaWduYWwgYmx1ZSBhbmQgYSBxdWlldCBhZnRlcmltYWdlLiBPcmlnaW5hbCBnZW9tZXRyeS4iLCJlZmZlY3RzIjp7ImVjaG8iOnsiZHVyYXRpb25NcyI6MTYwLCJvZmZzZXQiOjMsIm9wYWNpdHkiOjAuMTJ9LCJyYWlsIjp7Im9wYWNpdHkiOjAuMTgsInNoYXBlIjoibm90Y2giLCJ0aGlja25lc3MiOjJ9LCJzY2FubGluZXMiOnsib3BhY2l0eSI6MC4wMTUsInNwYWNpbmciOjZ9fSwiZmxhdm9yIjp7ImVuYWJsZWQiOnRydWUsImxvY2FsZSI6ImVuIiwic2xvdHMiOnsiY29udHJpYnV0aW9ucy5jYXB0aW9uIjoiQSB5ZWFyIG9mIGdpZ3MsIG9uZSBjb250cmlidXRpb24gYXQgYSB0aW1lLiIsImVycm9yLm5vdEZvdW5kLmNhcHRpb24iOiJUaGlzIHJvdXRlIHdlbnQgZGFyay4gVHJ5IGEgZmFtaWxpYXIgcGF0aC4iLCJwcm9maWxlLnBpbm5lZC5oZWFkaW5nIjoiUHJlZW0gcGlja3MiLCJwcm9maWxlLnRhZyI6Ii8vY2hvb20ifX0sImZvbnRzIjp7ImFjY2VudCI6InJhamRoYW5pIn0sImluc3BpcmVkQnkiOiJDeWJlcnB1bms6IEVkZ2VydW5uZXJzIiwibmFtZSI6IkNob29tIENpcmN1aXQiLCJvdmVycmlkZXMiOnsiY29udHJvbEJvcmRlciI6IiM2YjgxNzkiLCJpbnNldCI6IiMwNjBkMGMiLCJsaW5rIjoiIzdkZTlmNSIsIm11dGVkVGV4dCI6IiNhYWMyYjciLCJwcmltYXJ5QmFja2dyb3VuZCI6IiNkNWZmMzUiLCJwcmltYXJ5VGV4dCI6IiMxMDE3MGEiLCJzdXJmYWNlIjoiIzE0MjYyMiIsInN5bnRheCI6eyJjb21tZW50IjoiI2FhYzJiNyJ9fSwic2NoZW1hVmVyc2lvbiI6MSwidGFncyI6WyJhbmltZSIsIm5lb24iLCJkYXJrIl0sInZlcnNpb24iOiIxLjAuMCJ9uo975Q.a1859936"
+      }
+    },
+    {
+      "name": "unicode",
+      "theme": {
+        "schemaVersion": 1,
+        "name": "Café ☕ 夜 🌙",
+        "description": "Rosé, naïve,  and \"quotes\" \\ slash",
+        "base": "dark",
+        "colors": {
+          "background": "#101418",
+          "text": "#f4f6f8",
+          "accent": "#ca84ff"
+        },
+        "effects": {
+          "glow": {
+            "strength": 0.1
+          },
+          "drift": {}
+        }
+      },
+      "canonical": "{\"base\":\"dark\",\"colors\":{\"accent\":\"#ca84ff\",\"background\":\"#101418\",\"text\":\"#f4f6f8\"},\"description\":\"Rosé, naïve,  and \\\"quotes\\\" \\\\ slash\",\"effects\":{\"drift\":{},\"glow\":{\"strength\":0.1}},\"name\":\"Café ☕ 夜 🌙\",\"schemaVersion\":1}",
+      "code": "RS1.eNodjrFKxEAQhl9lGdsgtxAkpPUNLKzSzO3OJOFyu7qzp0LIG9gKCoIWNlf5DuZNhOvvEW6S9vuGb_4RtigENXhMOyjAxSEmgXoEdI5CVnPlsCqZVW7R7doUD8Ev2G5saSvFmV7WOy75hiuYCvAkLvUPuY9BxV2U-ViYgPPvExXm7xuDNw08HmImacA0jZEBpdMUMZPL63-fetbsqLl2iM8LkpwotLmDenNtJxUB98v2W-T5aP7f38zp59Ocv14_NCWuoz3eU5J1hZ0ujPJRNw.f01877f7",
+      "python": {
+        "level9": "RS1.eNodjk1KxEAQRq_SlNsg0xAkZOsNXLjKpqa7KgmT6daunh8IuYFbQUHQhZtZeQdzE8G9R7CS7XvFq2-ELQpBDR7TDgpwcYhJoB4BnaOQ1Vw5rEpmlVt0uzbFQ_ALthtb2kpxpvN6xyXfcAVTAZ7Epf4h9zGouIsyXwoTcP46UmG-PzB408DjIWaSBkzTGBlQOk0RM7m8_vepZ82OmmuHeFqQ5EShzR3Um2s7qQi4X7bfIs8X8_PybH4_38zf-9OrpsR1tMd7SrKusNM_jPJRNw.f01877f7",
+        "level6": "RS1.eJwdjk1KxEAQRq_SlNsg0xAkZOsNXLjKpqa7KgmT6daunh8IuYFbQUHQhZtZeQdzE8G9R7CS7XvFq2-ELQpBDR7TDgpwcYhJoB4BnaOQ1Vw5rEpmlVt0uzbFQ_ALthtb2kpxpvN6xyXfcAVTAZ7Epf4h9zGouIsyXwoTcP46UmG-PzB408DjIWaSBkzTGBlQOk0RM7m8_vepZ82OmmuHeFqQ5EShzR3Um2s7qQi4X7bfIs8X8_PybH4_38zf-9OrpsR1tMd7SrKusNM_jPJRNw.f01877f7",
+        "level1": "RS1.eAEdjk1KxEAQha_SlNsg0xAkZOsNXLjKpqa7KgmT6daunh8IuYFbQUHQhZtZeQdzE8G9R7CS7fse33sjbFEIavCYdlCAi0NMAvUI6ByFrOTKYVUyK9yi27UpHoJfYruxpa00znRee1zyDVcwFeBJXOofch-DNu-izJfCBJy_jlSY7w8M3jTweIiZpAHTNEYGlE5VxEwur_s-9azaUXXtEE_LJcmJQps7qDfXdlIQcL98v0WeL-bn5dn8fr6Zv_enV1WJ62iP95RkfWGnf4zyUTc.f01877f7",
+        "level0": "RS1.eAEB6wAU_3siYmFzZSI6ImRhcmsiLCJjb2xvcnMiOnsiYWNjZW50IjoiI2NhODRmZiIsImJhY2tncm91bmQiOiIjMTAxNDE4IiwidGV4dCI6IiNmNGY2ZjgifSwiZGVzY3JpcHRpb24iOiJSb3PDqSwgbmHDr3ZlLCDCoGFuZCBcInF1b3Rlc1wiIFxcIHNsYXNoIiwiZWZmZWN0cyI6eyJkcmlmdCI6e30sImdsb3ciOnsic3RyZW5ndGgiOjAuMX19LCJuYW1lIjoiQ2Fmw6kg4piVIOWknCDwn4yZIiwic2NoZW1hVmVyc2lvbiI6MX2M8lE3.f01877f7"
+      }
+    }
+  ]
+}
