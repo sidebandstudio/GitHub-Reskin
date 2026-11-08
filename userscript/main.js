@@ -9,10 +9,13 @@ const notify = () => listeners.forEach((listener) => listener({}, "local"));
 const chrome = {
   storage: {
     local: {
-      async get(defaults) {
-        const keys = Object.keys(defaults);
+      // Like chrome.storage, get takes a list of keys and returns only the saved ones, so load()
+      // can tell a missing theme from a saved one, or takes defaults for the keys not saved.
+      async get(request) {
+        const defaults = Array.isArray(request) ? {} : request;
+        const keys = Array.isArray(request) ? request : Object.keys(request);
         const values = await Promise.all(keys.map((key) => GM.getValue(key, defaults[key])));
-        return Object.fromEntries(keys.map((key, i) => [key, values[i]]));
+        return Object.fromEntries(keys.map((key, i) => [key, values[i]]).filter(([, value]) => value !== undefined));
       },
       async set(patch) {
         await Promise.all(Object.entries(patch).map(([key, value]) => GM.setValue(key, value)));

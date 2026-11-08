@@ -1,7 +1,7 @@
 // Paints GitHub with the chosen theme. Runs at document_start on github.com.
 (function () {
   "use strict";
-  const { DEFAULTS, palette, css } = globalThis.GitHubReskin;
+  const { palette, css, load } = globalThis.GitHubReskin;
   const CACHE = "github-reskin-css";
 
   const style = document.createElement("style");
@@ -25,8 +25,18 @@
     cache(() => (text ? localStorage.setItem(CACHE, text) : localStorage.removeItem(CACHE)));
   }
 
-  chrome.storage.local.get(DEFAULTS).then(apply);
+  // Reads can finish out of order, so only the latest one paints. An older read would bring back
+  // settings that have since changed.
+  let reads = 0;
+  function refresh() {
+    const read = ++reads;
+    load(chrome.storage.local).then((settings) => {
+      if (read === reads) apply(settings);
+    });
+  }
+
+  refresh();
   chrome.storage.onChanged.addListener((changes, area) => {
-    if (area === "local") chrome.storage.local.get(DEFAULTS).then(apply);
+    if (area === "local") refresh();
   });
 })();
