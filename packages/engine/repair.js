@@ -57,8 +57,8 @@ function round(theme, seed) {
 
 /**
  * @param {import("../contracts/index.js").ThemeV1} theme
- * @param {object} standardSeed a same-base, standard-family, non-high-contrast ModeSeed
- * @returns {{theme: import("../contracts/index.js").ThemeV1, repairs: readonly object[]}}
+ * @param {import("../contracts/index.js").ModeSeed} standardSeed a same-base, standard-family, non-high-contrast seed
+ * @returns {{theme: import("../contracts/index.js").ThemeV1, repairs: readonly import("../contracts/index.js").Repair[]}}
  */
 export function repairTheme(theme, standardSeed) {
   assertTheme(theme, "repairTheme");

@@ -79,7 +79,11 @@ function parseText(source, text, notes) {
   return fail([error(ISSUE_CODES.noCandidate, "No theme was found in this text. Copy the chatbot's full answer, including the lines with { and }.")]);
 }
 
-/** Decodes a share code into a validated, normalized theme. */
+/**
+ * Decodes a share code into a validated, normalized theme.
+ * @param {string} code
+ * @returns {import("../contracts/index.js").ImportResult}
+ */
 export function decodeShare(code) {
   const unpacked = unpackShare(code);
   if (!unpacked.ok) return fail([unpacked.issue]);

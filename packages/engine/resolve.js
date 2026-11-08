@@ -349,7 +349,8 @@ export function assertBasePolarity(theme) {
 
 /**
  * @param {import("../contracts/index.js").ThemeV1} theme
- * @param {{seed:object|null, policy:string, reducedMotion:boolean, forcedColors:boolean}} context
+ * @param {import("../contracts/index.js").ResolveContext} context
+ * @returns {import("../contracts/index.js").ResolvedTheme}
  */
 export function resolveTheme(theme, context) {
   assertTheme(theme, "resolveTheme");

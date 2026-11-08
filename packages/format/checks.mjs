@@ -7,7 +7,7 @@ import { createHash } from "node:crypto";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { DEFAULT_THEME_ID, EFFECT_IDS, FLAVOR_SLOT_IDS, FONT_IDS, LEGACY_CLASSIC_THEME_IDS, LEGACY_THEME_ALIASES, LIMITS, OVERRIDE_COLOR_ROLES, SYNTAX_ROLES, THEME_SCHEMA_URL } from "../contracts/index.js";
+import { DEFAULT_THEME_ID, EFFECT_IDS, FLAVOR_SLOT_IDS, FONT_IDS, LEGACY_CLASSIC_THEME_IDS, LEGACY_THEME_ALIASES, LIMITS, OVERRIDE_COLOR_ROLES, RENDERER_VERSION, SYNTAX_ROLES, THEME_SCHEMA_URL } from "../contracts/index.js";
 import { ANIME_CATALOG, CLASSICS_CATALOG, catalogProblems, exportTheme, makeAiPrompt, parseImport, validateTheme } from "./index.js";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -64,6 +64,7 @@ async function checkSchema(root) {
   check(same(Object.keys(schema.$defs.syntax.properties), SYNTAX_ROLES), "SYNTAX_ROLES differ from the schema");
   for (const [key, value] of Object.entries(schema["x-reskin"].inputLimits)) check(LIMITS[key] === value, `LIMITS.${key} is ${LIMITS[key]}, schema says ${value}`);
   check(LIMITS.maxEffectsPerTheme === schema.properties.effects.maxProperties, "LIMITS.maxEffectsPerTheme differs from the schema");
+  check(RENDERER_VERSION === schema["x-reskin"].rendererVersion, "RENDERER_VERSION differs from the schema");
 
   const classify = (label, value, expectValid, expectPath) => {
     const result = validateTheme(value);

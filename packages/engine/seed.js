@@ -1,8 +1,8 @@
 // Runtime checks for the immutable inputs: ModeSeed records, ResolveContext and the pair matrix.
 // A template type cannot prove a string is a color, so every leaf is checked once per object.
-import { SYNTAX_ROLES } from "../contracts/index.js";
+import { MODE_FAMILIES, MODE_POLICIES, PAIR_MATRIX_VERSION, SYNTAX_ROLES } from "../contracts/index.js";
 import { isHex } from "./color.js";
-import { ANSI_ROLES, COLOR_PATHS, FAMILIES, PAIR_MATRIX_VERSION, PLAN_POLICIES, SEMANTIC_FIELDS, SEMANTIC_ROLES, TOKEN_KEYS } from "./vocabulary.js";
+import { ANSI_ROLES, COLOR_PATHS, SEMANTIC_FIELDS, SEMANTIC_ROLES, TOKEN_KEYS } from "./vocabulary.js";
 
 const checked = new WeakSet();
 const isObject = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
@@ -30,7 +30,7 @@ export function seedProblems(seed) {
   if (seed.contractVersion !== 1) problems.push("seed.contractVersion must be 1");
   if (typeof seed.id !== "string" || !seed.id) problems.push("seed.id must be a mode ID");
   if (seed.base !== "dark" && seed.base !== "light") problems.push("seed.base must be dark or light");
-  if (!FAMILIES.includes(seed.family)) problems.push(`seed.family must be one of ${FAMILIES.join(", ")}`);
+  if (!MODE_FAMILIES.includes(seed.family)) problems.push(`seed.family must be one of ${MODE_FAMILIES.join(", ")}`);
   if (typeof seed.highContrast !== "boolean") problems.push("seed.highContrast must be a boolean");
   if (typeof seed.sourceHash !== "string" || !/^[0-9a-f]{64}$/.test(seed.sourceHash)) problems.push("seed.sourceHash must be a SHA-256 hex digest");
   const colors = seed.colors;
@@ -63,7 +63,7 @@ export function assertSeed(seed) {
 
 export function assertContext(context) {
   if (!isObject(context)) throw new TypeError("ResolveContext must be an object");
-  if (!PLAN_POLICIES.includes(context.policy)) throw new TypeError(`ResolveContext.policy must be one of ${PLAN_POLICIES.join(", ")}`);
+  if (!MODE_POLICIES.includes(context.policy)) throw new TypeError(`ResolveContext.policy must be one of ${MODE_POLICIES.join(", ")}`);
   if (typeof context.reducedMotion !== "boolean" || typeof context.forcedColors !== "boolean") throw new TypeError("ResolveContext.reducedMotion and forcedColors must be booleans");
   if (context.seed !== null) assertSeed(context.seed);
 }

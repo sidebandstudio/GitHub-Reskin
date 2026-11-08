@@ -112,8 +112,6 @@ export function generateRegistry() {
 
 export const SCHEMA_SHA256 = ${JSON.stringify(sha256)};
 export const SCHEMA_ID = ${JSON.stringify(schema.$id)};
-export const RENDERER_VERSION = ${x.rendererVersion};
-export const MAX_EFFECTS = ${schema.properties.effects.maxProperties};
 
 // Effect parameters in schema order, with bounds and the engine default for an omitted value.
 export const EFFECT_PARAMETERS = ${round(effects)};
@@ -124,8 +122,6 @@ export const FONTS = ${round(fonts)};
 export const FLAVOR_SLOTS = ${round(slots)};
 
 export const TEXT_LIMITS = ${round(text)};
-
-export const INPUT_LIMITS = ${round(x.inputLimits)};
 
 // The minimal embedded example, used by the AI prompt.
 export const MINIMAL_EXAMPLE = ${JSON.stringify(schema.examples[0])};

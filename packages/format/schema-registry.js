@@ -3,8 +3,6 @@
 
 export const SCHEMA_SHA256 = "df64fccabea82f125b7c11b9fa80623b6f0a685249ae8e99afef18ac7a002083";
 export const SCHEMA_ID = "https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json";
-export const RENDERER_VERSION = 1;
-export const MAX_EFFECTS = 3;
 
 // Effect parameters in schema order, with bounds and the engine default for an omitted value.
 export const EFFECT_PARAMETERS = {
@@ -316,15 +314,6 @@ export const TEXT_LIMITS = {
     "maxItems": 8,
     "maxLength": 24
   }
-};
-
-export const INPUT_LIMITS = {
-  "fileUtf8Bytes": 65536,
-  "pastedUtf8Bytes": 131072,
-  "compressedBytes": 16384,
-  "expandedBytes": 65536,
-  "maxDepth": 12,
-  "maxCustomThemes": 50
 };
 
 // The minimal embedded example, used by the AI prompt.

@@ -5,7 +5,8 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { EFFECT_PARAMETERS, FLAVOR_SLOTS, FONTS, MAX_EFFECTS, MINIMAL_EXAMPLE, TEXT_LIMITS } from "../packages/format/schema-registry.js";
+import { LIMITS } from "../packages/contracts/index.js";
+import { EFFECT_PARAMETERS, FLAVOR_SLOTS, FONTS, MINIMAL_EXAMPLE, TEXT_LIMITS } from "../packages/format/schema-registry.js";
 
 export const PROMPT_TEMPLATE_PATH = join(dirname(fileURLToPath(import.meta.url)), "../packages/format/prompt-template.js");
 export const IDEA_PLACEHOLDER = "{{IDEA}}";
@@ -39,7 +40,7 @@ Required keys:
 Optional keys:
 - "description" (at most ${TEXT_LIMITS.description.maxLength} characters), "inspiredBy" (at most ${TEXT_LIMITS.inspiredBy.maxLength}), "tags" (up to ${TEXT_LIMITS.tags.maxItems} lowercase-hyphen tags of at most ${TEXT_LIMITS.tags.maxLength} characters).
 - "fonts": {"accent": ID} with one of these IDs: ${fonts}. It styles only small decorative headings; GitHub's body text and code keep their fonts.
-- "effects": at most ${WORDS[MAX_EFFECTS]}, or omit it. Each effect is an object with only its listed settings; an empty object {} uses every default. Stay at or below the defaults.
+- "effects": at most ${WORDS[LIMITS.maxEffectsPerTheme]}, or omit it. Each effect is an object with only its listed settings; an empty object {} uses every default. Stay at or below the defaults.
 ${effects}
 - "flavor": {"enabled": true, "slots": {SLOT: "text"}} adds short plain-English captions beside GitHub's own words, which stay visible. Slots and maximum lengths: ${slots}. No quotes from a show, links, instructions or claims about the account. Omit flavor unless it suits the idea.
 
