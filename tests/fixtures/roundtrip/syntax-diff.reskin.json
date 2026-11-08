@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "name": "Syntax on diff round trip",
+  "base": "light",
+  "colors": {
+    "background": "#faf8f1",
+    "text": "#222222",
+    "accent": "#406044"
+  },
+  "overrides": {
+    "syntax": {
+      "comment": "#eeeeee",
+      "keyword": "#eeeeee",
+      "string": "#eeeeee",
+      "function": "#eeeeee",
+      "number": "#eeeeee",
+      "variable": "#eeeeee",
+      "type": "#eeeeee"
+    }
+  }
+}

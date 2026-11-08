@@ -1,0 +1,22 @@
+{
+  "$schema": "https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json",
+  "base": "light",
+  "colors": {
+    "accent": "#268bd2",
+    "background": "#fdf6e3",
+    "contribution": "#2aa198",
+    "text": "#073642"
+  },
+  "description": "Light palette from Ethan Schoonover's Solarized, MIT license.",
+  "name": "Solarized Light",
+  "overrides": {
+    "border": "#ddd6c1",
+    "mutedText": "#4f6067",
+    "surface": "#eee8d5"
+  },
+  "schemaVersion": 1,
+  "tags": [
+    "classic",
+    "light"
+  ]
+}

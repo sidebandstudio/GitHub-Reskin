@@ -1,0 +1,9 @@
+Here is your theme:
+```jsonc
+{
+ // a local theme
+ "schemaVersion": 1, "name": "Tolerant moss", "base": "light",
+ "colors": {"background":"#f6f2e8", "text":"#27372d", "accent":"#446851",},
+}
+```
+Try it in the preview.

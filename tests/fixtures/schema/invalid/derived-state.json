@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "name": "Primary state round trip",
+  "base": "dark",
+  "colors": {
+    "background": "#101418",
+    "text": "#f4f6f8",
+    "accent": "#e9f24a"
+  },
+  "overrides": {
+    "primaryBackground": "#e9f24a",
+    "primaryText": "#e9f24a",
+    "primaryHoverBackground": "#123456"
+  }
+}

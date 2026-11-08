@@ -1,0 +1,22 @@
+{
+  "$schema": "https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json",
+  "base": "dark",
+  "colors": {
+    "accent": "#268bd2",
+    "background": "#002b36",
+    "contribution": "#2aa198",
+    "text": "#98a6a6"
+  },
+  "description": "Dark palette from Ethan Schoonover's Solarized, MIT license.",
+  "name": "Solarized Dark",
+  "overrides": {
+    "border": "#174652",
+    "mutedText": "#98a6aa",
+    "surface": "#073642"
+  },
+  "schemaVersion": 1,
+  "tags": [
+    "classic",
+    "dark"
+  ]
+}

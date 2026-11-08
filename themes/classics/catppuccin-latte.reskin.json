@@ -1,0 +1,22 @@
+{
+  "$schema": "https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json",
+  "base": "light",
+  "colors": {
+    "accent": "#8839ef",
+    "background": "#eff1f5",
+    "contribution": "#40a02b",
+    "text": "#4c4f69"
+  },
+  "description": "Latte palette from the Catppuccin project, MIT license.",
+  "name": "Catppuccin Latte",
+  "overrides": {
+    "border": "#ccd0da",
+    "mutedText": "#5b5d70",
+    "surface": "#e6e9ef"
+  },
+  "schemaVersion": 1,
+  "tags": [
+    "classic",
+    "light"
+  ]
+}

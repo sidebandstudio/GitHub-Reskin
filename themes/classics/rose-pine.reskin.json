@@ -1,0 +1,22 @@
+{
+  "$schema": "https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json",
+  "base": "dark",
+  "colors": {
+    "accent": "#c4a7e7",
+    "background": "#191724",
+    "contribution": "#ebbcba",
+    "text": "#e0def4"
+  },
+  "description": "Palette from the Rosé Pine theme project, MIT license.",
+  "name": "Rosé Pine",
+  "overrides": {
+    "border": "#403d52",
+    "mutedText": "#a29fb8",
+    "surface": "#1f1d2e"
+  },
+  "schemaVersion": 1,
+  "tags": [
+    "classic",
+    "dark"
+  ]
+}

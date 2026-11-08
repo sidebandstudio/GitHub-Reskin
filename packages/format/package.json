@@ -1,0 +1,13 @@
+{
+  "name": "@github-reskin/format",
+  "version": "1.0.0",
+  "private": true,
+  "description": "GitHub Reskin theme format v1: schema, tolerant import, normalization, canonical export, RS1 share codes and the AI prompt.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./index.js",
+    "./theme-v1.schema.json": "./theme-v1.schema.json"
+  },
+  "sideEffects": false
+}

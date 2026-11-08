@@ -1,0 +1,22 @@
+{
+  "$schema": "https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json",
+  "base": "light",
+  "colors": {
+    "accent": "#907aa9",
+    "background": "#faf4ed",
+    "contribution": "#d7827e",
+    "text": "#575279"
+  },
+  "description": "Dawn palette from the Rosé Pine theme project, MIT license.",
+  "name": "Rosé Pine Dawn",
+  "overrides": {
+    "border": "#dfdad9",
+    "mutedText": "#615e76",
+    "surface": "#fffaf3"
+  },
+  "schemaVersion": 1,
+  "tags": [
+    "classic",
+    "light"
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "$schema": "https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json",
+  "base": "dark",
+  "colors": {
+    "accent": "#61afef",
+    "background": "#282c34",
+    "contribution": "#98c379",
+    "text": "#abb2bf"
+  },
+  "description": "Palette from Atom's One Dark syntax theme, MIT license.",
+  "name": "One Dark",
+  "overrides": {
+    "border": "#3e4451",
+    "mutedText": "#a9adb4",
+    "surface": "#21252b"
+  },
+  "schemaVersion": 1,
+  "tags": [
+    "classic",
+    "dark"
+  ]
+}
