@@ -6,7 +6,7 @@ import { cpSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writ
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { adversarialThemes, parseArgs, run } from "../../packages/engine/checks.mjs";
-import { graphProblems, rampDirection, repairTheme, resolveTheme } from "../../packages/engine/index.js";
+import { basePolarityIssue, graphProblems, repairTheme, resolveTheme } from "../../packages/engine/index.js";
 
 const ROOT = new URL("../../", import.meta.url).pathname;
 const json = (path) => JSON.parse(readFileSync(path, "utf8"));
@@ -22,7 +22,7 @@ for (const entry of catalog) {
     for (const seed of matching) {
       const resolved = resolveTheme(theme, themed(seed));
       assert.deepEqual(resolved.pairAudit.filter((r) => !r.passed), [], seed.id);
-      assert.deepEqual(graphProblems(resolved.graph, resolved.tokens.canvas, rampDirection(theme.base, resolved.tokens.canvas)), [], seed.id);
+      assert.deepEqual(graphProblems(resolved.graph, resolved.tokens.canvas, theme.base === "dark" ? "up" : "down"), [], seed.id);
       if (theme.contributions) assert.deepEqual(resolved.graph, theme.contributions.levels, `${seed.id}: supplied ramp kept`);
     }
     assert.deepEqual(repairTheme(theme, matching.find((s) => s.family === "standard")).repairs, []);
@@ -32,7 +32,15 @@ for (const entry of catalog) {
 test("the deterministic adversarial sweep passes every pair and graph rule", () => {
   const themes = adversarialThemes(60);
   assert.equal(JSON.stringify(adversarialThemes(60)), JSON.stringify(themes));
-  for (const theme of themes) {
+  let switched = 0;
+  for (let theme of themes) {
+    // A base the colors contradict is refused, then checked with the other base a person would choose.
+    const conflict = basePolarityIssue(theme);
+    if (conflict) {
+      assert.throws(() => repairTheme(theme, seeds.find((s) => s.base === theme.base && s.family === "standard")), (error) => error.code === conflict.code, theme.name);
+      theme = { ...theme, base: theme.base === "dark" ? "light" : "dark" };
+      switched++;
+    }
     const standard = seeds.find((s) => s.base === theme.base && s.family === "standard");
     const { theme: repaired } = repairTheme(theme, standard);
     assert.deepEqual(repairTheme(repaired, standard).repairs, [], theme.name);
@@ -40,10 +48,11 @@ test("the deterministic adversarial sweep passes every pair and graph rule", () 
       for (const seed of seeds.filter((s) => s.base === theme.base)) {
         const resolved = resolveTheme(source, themed(seed));
         assert.deepEqual(resolved.pairAudit.filter((r) => !r.passed), [], `${theme.name} on ${seed.id}`);
-        assert.deepEqual(graphProblems(resolved.graph, resolved.tokens.canvas, rampDirection(theme.base, resolved.tokens.canvas)), [], `${theme.name} on ${seed.id}`);
+        assert.deepEqual(graphProblems(resolved.graph, resolved.tokens.canvas, theme.base === "dark" ? "up" : "down"), [], `${theme.name} on ${seed.id}`);
       }
     }
   }
+  assert.ok(switched > 0 && switched < themes.length, `${switched} of ${themes.length} sweep themes contradict their base`);
 });
 
 test("contrast scopes: primer and the full gate need C3's mode index; unknown scopes fail", async () => {

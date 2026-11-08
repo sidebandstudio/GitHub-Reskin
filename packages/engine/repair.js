@@ -3,7 +3,7 @@
 // supplied contribution ramp. Repair repeats until a fixed point, so repairing again is a no-op.
 import { SYNTAX_ROLES } from "../contracts/index.js";
 import { validateTheme } from "../format/index.js";
-import { assertTheme, deepFreeze, deriveColors } from "./resolve.js";
+import { assertBasePolarity, assertTheme, deepFreeze, deriveColors } from "./resolve.js";
 import { assertSeed } from "./seed.js";
 
 // Portable field -> resolved ColorPath it persists from.
@@ -65,6 +65,7 @@ export function repairTheme(theme, standardSeed) {
   assertSeed(standardSeed);
   if (standardSeed.family !== "standard" || standardSeed.highContrast) throw new TypeError("repairTheme needs a standard, non-high-contrast seed");
   if (standardSeed.base !== theme.base) throw new TypeError(`repairTheme needs a ${theme.base} seed; ${standardSeed.id} is ${standardSeed.base}`);
+  assertBasePolarity(theme);
 
   let current = clone(theme);
   const first = new Map();

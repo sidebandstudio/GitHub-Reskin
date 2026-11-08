@@ -116,7 +116,7 @@ async function checkPrompt(root) {
 // Rebuilds each Classic from its 1.x palette and compares it with the checked-in document.
 async function checkClassics(root) {
   const { check, done } = tally("check:classic-themes");
-  const { repairTheme, resolveTheme, graphProblems, rampDirection } = await import("../engine/index.js");
+  const { repairTheme, resolveTheme, graphProblems } = await import("../engine/index.js");
   const reference = readJson(join(root, "tests/format/fixtures/classics-legacy.json")).classics;
   const catalog = readJson(join(root, "themes/catalog.json"));
   const seeds = Object.fromEntries(["standard-dark", "standard-light", "colorblind-dark", "tritanopia-light"].map((n) => [n, readJson(join(root, "tests/fixtures/seeds", `${n}.json`))]));
@@ -156,7 +156,7 @@ async function checkClassics(root) {
       const resolved = resolveTheme(doc, { seed, policy: "themed", reducedMotion: false, forcedColors: false });
       const failed = resolved.pairAudit.filter((r) => !r.passed);
       check(!failed.length, `${ref.id} on ${seed.id}: ${failed.map((r) => `${r.id}@${r.background} ${r.ratio.toFixed(2)}`).join(", ")}`);
-      check(!graphProblems(resolved.graph, resolved.tokens.canvas, rampDirection(base, resolved.tokens.canvas)).length, `${ref.id} on ${seed.id}: graph ramp invalid`);
+      check(!graphProblems(resolved.graph, resolved.tokens.canvas, base === "dark" ? "up" : "down").length, `${ref.id} on ${seed.id}: graph ramp invalid`);
       console.log(`  ${ref.id} on ${seed.id}: ${resolved.repairs.length} preview adjustments${resolved.repairs.length ? ` (${resolved.repairs.map((r) => r.path.split("/").slice(-2).join(".")).join(", ")})` : ""}`);
     }
   }

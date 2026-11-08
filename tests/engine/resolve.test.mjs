@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { canonicalize, EFFECT_PARAMETERS } from "../../packages/format/index.js";
-import { ACCESSIBILITY_NOTICE, auditPairs, COLOR_PATHS, contrast, resolveTheme, sha256, TOKEN_KEYS } from "../../packages/engine/index.js";
+import { ISSUE_CODES } from "../../packages/contracts/index.js";
+import { ACCESSIBILITY_NOTICE, auditPairs, basePolarityIssue, COLOR_PATHS, contrast, resolveTheme, sha256, TOKEN_KEYS } from "../../packages/engine/index.js";
 
 const TESTS = new URL("../", import.meta.url).pathname;
 const json = (path) => JSON.parse(readFileSync(path, "utf8"));
@@ -146,6 +147,8 @@ test("accessibility families suppress supplied status inks, render-only, with th
 });
 
 test("adversarial mid-gray, straddling and contradictory themes still pass every pair", () => {
+  // The four themes whose base contradicts their colors resolve after the caller switches it.
+  const contradictory = [0, 4, 5, 6];
   const cases = [
     { base: "dark", colors: { background: "#777777", text: "#808080", accent: "#7a7a7a" } },
     { base: "light", colors: { background: "#767676", text: "#767676", accent: "#767676" } },
@@ -157,7 +160,9 @@ test("adversarial mid-gray, straddling and contradictory themes still pass every
     { base: "light", colors: { background: "#faf8f1", text: "#222222", accent: "#406044" }, overrides: { syntax: { comment: "#faf8f1", keyword: "#000000", string: "#ffffff" } } },
   ];
   for (const [i, partial] of cases.entries()) {
-    const theme = { schemaVersion: 1, name: `Adversarial ${i}`, ...partial };
+    let theme = { schemaVersion: 1, name: `Adversarial ${i}`, ...partial };
+    assert.equal(basePolarityIssue(theme)?.code, contradictory.includes(i) ? ISSUE_CODES.basePolarity : undefined, theme.name);
+    if (contradictory.includes(i)) theme = { ...theme, base: theme.base === "dark" ? "light" : "dark" };
     for (const s of [darkSeed, lightSeed, colorblindSeed, tritanopiaSeed].filter((x) => x.base === theme.base)) {
       const resolved = resolveTheme(theme, themed(s));
       const failed = resolved.pairAudit.filter((r) => !r.passed);

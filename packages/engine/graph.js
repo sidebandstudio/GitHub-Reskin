@@ -8,14 +8,10 @@ export const GRAPH_MIN_CONTRAST = 3;
 export const GRAPH_MIN_OKLAB_STEP = 0.04;
 const DERIVED_STEPS = [0.35, 0.55, 0.78, 1];
 
-// Lightness direction of the ramp. A base that contradicts the canvas cannot hold a visible ramp
-// in its own direction, so the canvas decides then.
-export function rampDirection(base, canvas) {
-  const canvasIsDark = contrast(WHITE, canvas) >= contrast(BLACK, canvas);
-  if (base === "dark" && canvasIsDark) return "up";
-  if (base === "light" && !canvasIsDark) return "down";
-  return canvasIsDark ? "up" : "down";
-}
+// Lightness direction of the ramp, from the explicit base alone: increasing luminance on dark
+// bases, decreasing on light. A base that contradicts its colors never reaches the ramp; the
+// engine refuses it with a base-polarity issue so the caller can offer the other base.
+export const rampDirection = (base) => (base === "dark" ? "up" : "down");
 
 const lightnessCache = new Map();
 function lightness(hex) {
@@ -65,7 +61,7 @@ function spacedRamp(canvas, text, seed) {
  * @returns {{levels:string[], method:string, problems:string[]}}
  */
 export function resolveRamp({ supplied, canvas, text, seed, base, fallback }) {
-  const direction = rampDirection(base, canvas);
+  const direction = rampDirection(base);
   const ok = (levels) => !graphProblems(levels, canvas, direction, { first: true }).length;
   if (supplied && ok(supplied)) return { levels: supplied.map((c) => c.toLowerCase()), method: "supplied", problems: [] };
   const derived = deriveRamp(canvas, text, seed);

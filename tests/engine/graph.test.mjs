@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { contrast, deriveRamp, graphProblems, oklab, rampDirection, repairTheme, resolveTheme } from "../../packages/engine/index.js";
+import { ISSUE_CODES } from "../../packages/contracts/index.js";
+import { basePolarityIssue, contrast, deriveRamp, graphProblems, oklab, rampDirection, repairTheme, resolveTheme } from "../../packages/engine/index.js";
 
 const TESTS = new URL("../", import.meta.url).pathname;
 const json = (path) => JSON.parse(readFileSync(path, "utf8"));
@@ -30,7 +31,7 @@ test("OKLab steps and contrast order hold on every resolved ramp", () => {
   ]) {
     const seed = theme.base === "dark" ? dark : light;
     const { graph, tokens } = resolveTheme(theme, themed(seed));
-    assert.deepEqual(graphProblems(graph, tokens.canvas, rampDirection(theme.base, tokens.canvas)), [], theme.colors.accent);
+    assert.deepEqual(graphProblems(graph, tokens.canvas, theme.base === "dark" ? "up" : "down"), [], theme.colors.accent);
     for (let i = 1; i < 5; i++) {
       assert.ok(Math.abs(oklab(graph[i])[0] - oklab(graph[i - 1])[0]) >= 0.04);
       assert.ok(contrast(graph[i], tokens.canvas) >= 3);
@@ -70,9 +71,40 @@ test("the derived ramp starts from mix(canvas, text, 0.09) and the contribution 
   assert.deepEqual(resolved.repairs.filter((r) => r.path.startsWith("/graph/")).map((r) => r.path), ["/graph/1", "/graph/2", "/graph/3"]);
 });
 
-test("a base that contradicts the canvas still gets a visible ramp", () => {
-  assert.equal(rampDirection("dark", "#ffffff"), "down");
-  assert.equal(rampDirection("light", "#000000"), "up");
-  const resolved = resolveTheme(base("dark", { background: "#ffffff", text: "#111111", accent: "#ffff00" }), themed(dark));
-  assert.deepEqual(graphProblems(resolved.graph, "#ffffff", "down"), []);
+test("the ramp direction comes from the explicit base alone", () => {
+  assert.equal(rampDirection("dark"), "up");
+  assert.equal(rampDirection("light"), "down");
+  // A dark base on a light-ish canvas that still holds white text keeps an increasing ramp.
+  const darkOnMid = resolveTheme(base("dark", { background: "#5a5a5a", text: "#ffffff", accent: "#b5352f" }), themed(dark));
+  assert.deepEqual(graphProblems(darkOnMid.graph, darkOnMid.tokens.canvas, "up"), []);
+  const lightOnMid = resolveTheme(base("light", { background: "#9a9a9a", text: "#000000", accent: "#b5352f" }), themed(light));
+  assert.deepEqual(graphProblems(lightOnMid.graph, lightOnMid.tokens.canvas, "down"), []);
+});
+
+test("a base its colors contradict is refused with a base-polarity issue, never resolved in reverse", () => {
+  // The reviewer's cases: a dark base on white and a light base on black.
+  for (const [b, colors, seed] of [
+    ["dark", { background: "#ffffff", text: "#ffffff", accent: "#b5352f" }, dark],
+    ["light", { background: "#000000", text: "#000000", accent: "#b5352f" }, light],
+    ["dark", { background: "#ffffff", text: "#111111", accent: "#ffff00" }, dark],
+    ["dark", { background: "#777777", text: "#808080", accent: "#7a7a7a" }, dark],
+    ["light", { background: "#1c1c1c", text: "#eeeeee", accent: "#7a7a7a" }, light],
+  ]) {
+    const theme = base(b, colors);
+    const issue = basePolarityIssue(theme);
+    assert.deepEqual({ ...issue, message: typeof issue.message }, { code: ISSUE_CODES.basePolarity, path: "/base", message: "string", severity: "error" }, colors.background);
+    assert.match(issue.message, new RegExp(`Switch the base to ${b === "dark" ? "light" : "dark"}`));
+    const refused = (error) => error.code === ISSUE_CODES.basePolarity && error.issue.path === "/base";
+    assert.throws(() => repairTheme(theme, seed), refused);
+    assert.throws(() => resolveTheme(theme, themed(seed)), refused);
+    // Native policies render no theme colors, so they need no base decision.
+    assert.equal(resolveTheme(theme, { seed, policy: "native-unknown", reducedMotion: false, forcedColors: false }).policy, "native-unknown");
+    // The caller's choice of the other base clears the conflict and resolves in that direction.
+    const other = b === "dark" ? "light" : "dark";
+    const switched = { ...theme, base: other };
+    assert.equal(basePolarityIssue(switched), null);
+    const resolved = resolveTheme(repairTheme(switched, other === "dark" ? dark : light).theme, themed(other === "dark" ? dark : light));
+    assert.deepEqual(graphProblems(resolved.graph, resolved.tokens.canvas, other === "dark" ? "up" : "down"), []);
+  }
+  assert.throws(() => basePolarityIssue({ base: "dark" }), TypeError);
 });

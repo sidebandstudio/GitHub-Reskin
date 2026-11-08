@@ -14,7 +14,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { catalogProblems, decodeShare, encodeShare, exportTheme, parseImport, validateTheme } from "../format/index.js";
-import { graphProblems, rampDirection, repairTheme, resolveTheme, seedProblems } from "./index.js";
+import { basePolarityIssue, graphProblems, repairTheme, resolveTheme, seedProblems } from "./index.js";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const DEFAULT_ROOT = resolve(HERE, "../..");
@@ -136,11 +136,30 @@ function standardSeeds(seeds) {
   return { dark: pick("dark"), light: pick("light") };
 }
 
-function checkThemes(sources, seeds, check) {
+const refuses = (fn, code) => {
+  try {
+    fn();
+    return false;
+  } catch (error) {
+    return error.code === code;
+  }
+};
+
+// Bundled and supplied themes must agree with their base. A generated sweep theme that does not
+// is checked for refusal, then continues with the other base, as a person choosing it would.
+function checkThemes(sources, seeds, check, { switchConflictingBase = false } = {}) {
   const standard = standardSeeds(seeds);
-  for (const [label, theme] of sources) {
+  for (let [label, theme] of sources) {
     if (!check(validateTheme(theme).ok, `${label} is not schema-valid`)) continue;
     if (!check(standard[theme.base], `no standard ${theme.base} seed for ${label}`)) continue;
+    const conflict = basePolarityIssue(theme);
+    if (conflict) {
+      if (!check(switchConflictingBase, `${label}: ${conflict.message}`)) continue;
+      const seed = standard[theme.base];
+      check(refuses(() => repairTheme(theme, seed), conflict.code) && refuses(() => resolveTheme(theme, context(seed)), conflict.code), `${label}: the engine accepted a base its colors contradict`);
+      theme = { ...theme, base: theme.base === "dark" ? "light" : "dark" };
+      if (!check(!basePolarityIssue(theme), `${label}: switching the base did not clear the conflict`)) continue;
+    }
     const { theme: repaired, repairs } = repairTheme(theme, standard[theme.base]);
     check(repairTheme(repaired, standard[theme.base]).repairs.length === 0, `${label}: source repair is not a fixed point`);
     // Export, share and reimport are byte-stable.
@@ -154,7 +173,7 @@ function checkThemes(sources, seeds, check) {
       const resolved = resolveTheme(repaired, context(seed));
       const failed = resolved.pairAudit.filter((r) => !r.passed);
       check(!failed.length, `${label} on ${seed.id}: ${failed.slice(0, 4).map((r) => `${r.id}@${r.background} ${r.ratio.toFixed(3)}`).join(", ")}`);
-      const graph = graphProblems(resolved.graph, resolved.tokens.canvas, rampDirection(theme.base, resolved.tokens.canvas));
+      const graph = graphProblems(resolved.graph, resolved.tokens.canvas, theme.base === "dark" ? "up" : "down");
       check(!graph.length, `${label} on ${seed.id}: ${graph.join("; ")}`);
       if (theme.contributions && !repairs.some((r) => r.path === "/contributions/levels")) check(JSON.stringify(resolved.graph) === JSON.stringify(theme.contributions.levels.map((c) => c.toLowerCase())), `${label} on ${seed.id}: a valid supplied ramp changed`);
       check(JSON.stringify(resolveTheme(repaired, context(seed))) === JSON.stringify(resolved), `${label} on ${seed.id}: resolution is not deterministic`);
@@ -165,9 +184,11 @@ function checkThemes(sources, seeds, check) {
 function engineScope(root, themes) {
   const { check, done } = tally("check:contrast --scope=engine");
   const seeds = SEED_NAMES.map((name) => readJson(join(root, "tests/fixtures/seeds", `${name}.json`)));
-  const sources = [...fileThemes(root, readJson(join(root, "themes/catalog.json"))), ...fixtureThemes(root), ...extraThemes(themes), ...adversarialThemes().map((t) => [t.name, t])];
+  const sources = [...fileThemes(root, readJson(join(root, "themes/catalog.json"))), ...fixtureThemes(root), ...extraThemes(themes)];
+  const sweep = adversarialThemes().map((t) => [t.name, t]);
   checkThemes(sources, seeds, check);
-  return done(`${sources.length} themes on ${seeds.length} synthetic seeds`);
+  checkThemes(sweep, seeds, check, { switchConflictingBase: true });
+  return done(`${sources.length + sweep.length} themes on ${seeds.length} synthetic seeds`);
 }
 
 function notImplemented(scope, missing) {
@@ -181,9 +202,11 @@ function primerScope(root, themes) {
   if (missing) return notImplemented("primer", missing);
   const classics = readJson(join(root, "themes/catalog.json")).filter((e) => e.group === "classics");
   check(classics.length === 12, `the catalog has ${classics.length} Classics; 12 are required`);
-  const sources = [...fileThemes(root, classics), ...fixtureThemes(root), ...extraThemes(themes), ...adversarialThemes(60).map((t) => [t.name, t])];
+  const sources = [...fileThemes(root, classics), ...fixtureThemes(root), ...extraThemes(themes)];
+  const sweep = adversarialThemes(60).map((t) => [t.name, t]);
   checkThemes(sources, seeds, check);
-  return done(`${sources.length} themes on ${seeds.length} production seeds`);
+  checkThemes(sweep, seeds, check, { switchConflictingBase: true });
+  return done(`${sources.length + sweep.length} themes on ${seeds.length} production seeds`);
 }
 
 function fullGate(root, themes) {

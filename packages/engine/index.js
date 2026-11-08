@@ -1,7 +1,7 @@
 // GitHub Reskin color engine, renderer 1. Resolves portable source against one immutable GitHub
 // mode seed into readable tokens, repairs portable source and audits the frozen pair matrix.
 // Pure and deterministic: no DOM, storage, network, randomness or browser globals.
-export { resolveTheme, auditPairs, sourceHash, PAIR_MATRIX } from "./resolve.js";
+export { resolveTheme, auditPairs, basePolarityIssue, sourceHash, PAIR_MATRIX } from "./resolve.js";
 export { repairTheme } from "./repair.js";
 export { contrast, luminance, mix, oklab, bestInk, fit } from "./color.js";
 export { graphProblems, rampDirection, deriveRamp } from "./graph.js";

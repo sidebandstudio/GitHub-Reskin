@@ -1,7 +1,7 @@
 // resolveTheme: a pure, deterministic derivation of every renderer-1 color from portable source
 // and one immutable ModeSeed, followed by the frozen contrast repairs. See "Resolution and
 // contrast" in ARCHITECTURE.md for the initial values and the repair order implemented here.
-import { SYNTAX_ROLES } from "../contracts/index.js";
+import { ISSUE_CODES, SYNTAX_ROLES } from "../contracts/index.js";
 import { canonicalize, validateTheme, EFFECT_PARAMETERS } from "../format/index.js";
 import { BLACK, WHITE, bestInk, contrast, fit, luminance, mix } from "./color.js";
 import { deriveRamp, resolveRamp } from "./graph.js";
@@ -314,6 +314,40 @@ export function assertTheme(theme, caller) {
 }
 
 /**
+ * Step 1 of resolution: the explicit base is honored, never inferred. When readable core text on
+ * the background has to sit on the other side of it (darker than the background on a dark base,
+ * lighter on a light one), the base contradicts the colors. This returns that conflict as an Issue
+ * at /base for the caller to offer the other base, or null. Switching the base always clears it.
+ * @param {import("../contracts/index.js").ThemeV1} theme
+ * @returns {import("../contracts/index.js").Issue | null}
+ */
+export function basePolarityIssue(theme) {
+  assertTheme(theme, "basePolarityIssue");
+  return polarityIssue(theme);
+}
+
+function polarityIssue(theme) {
+  const { base } = theme;
+  const canvas = lower(theme.colors.background);
+  const text = fit(lower(theme.colors.text), [canvas], 4.5, base);
+  if (luminance(text) > luminance(canvas) === (base === "dark")) return null;
+  const other = base === "dark" ? "light" : "dark";
+  return {
+    code: ISSUE_CODES.basePolarity,
+    path: "/base",
+    message: `This theme's base is ${base}, but text can only be read on its background as ${base === "dark" ? "dark text on a light" : "light text on a dark"} background. Switch the base to ${other}, or choose a ${base === "dark" ? "darker" : "lighter"} background.`,
+    severity: "error",
+  };
+}
+
+// Engine entry points refuse a contradictory base in an already validated theme; the error carries
+// the Issue to show.
+export function assertBasePolarity(theme) {
+  const issue = polarityIssue(theme);
+  if (issue) throw Object.assign(new Error(issue.message), { code: issue.code, issue });
+}
+
+/**
  * @param {import("../contracts/index.js").ThemeV1} theme
  * @param {{seed:object|null, policy:string, reducedMotion:boolean, forcedColors:boolean}} context
  */
@@ -346,6 +380,7 @@ export function resolveTheme(theme, context) {
   if (!seed) throw new TypeError("A themed ResolveContext needs a seed");
   if (seed.base !== theme.base) throw new TypeError(`Seed ${seed.id} is ${seed.base}; the theme's base is ${theme.base}`);
   if (seed.highContrast) throw new TypeError(`Seed ${seed.id} is high contrast; high-contrast modes stay native`);
+  assertBasePolarity(theme);
   const { colors } = deriveColors(theme, seed);
   const set = colorSet(colors);
   return deepFreeze({
