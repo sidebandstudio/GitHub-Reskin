@@ -294,7 +294,9 @@ function fakeStorage(data, deferred = false) {
 }
 
 // Just enough of the DOM for popup.js. Returns the popup's controls once settings have loaded.
-async function openPopup(storage) {
+// With `frame`, popup.js runs on a GitHub page, as in the userscript, and the card goes into a
+// frame's document. The page's own document then throws if the card touches it.
+async function openPopup(storage, { frame = false } = {}) {
   const all = [];
   const element = (tag) => {
     const listeners = {};
@@ -317,7 +319,7 @@ async function openPopup(storage) {
   const ids = Object.fromEntries(["themes", "colors", "enabled", "reset", "warning", "status"].map((id) => [id, element("div")]));
   const main = element("main");
   main.inert = true;
-  const document = {
+  const cardDocument = {
     documentElement: element("html"),
     body: element("body"),
     activeElement: null,
@@ -325,8 +327,16 @@ async function openPopup(storage) {
     getElementById: (id) => ids[id],
     querySelector: () => main,
   };
+  const page = new Proxy({}, { get: (_, key) => assert.fail(`The card used the page's document.${String(key)}`) });
+  const document = frame ? page : cardDocument;
+  const location = { protocol: frame ? "https:" : "chrome-extension:" };
   const chrome = { storage: { local: storage } };
-  vm.runInNewContext(readFileSync(new URL("./extension/popup.js", import.meta.url), "utf8"), { GitHubReskin: globalThis.GitHubReskin, document, chrome });
+  vm.runInNewContext(readFileSync(new URL("./extension/popup.js", import.meta.url), "utf8"), { GitHubReskin: globalThis.GitHubReskin, document, location, chrome });
+  if (frame) {
+    // On a GitHub page, popup.js waits for the userscript to give it the frame.
+    assert.equal(ids.themes.children.length, 0);
+    globalThis.GitHubReskin.card(cardDocument);
+  }
   const loaded = async () => {
     while (main.inert) await new Promise((resolve) => setTimeout(resolve));
   };
@@ -387,6 +397,21 @@ test("every popup change saves the theme it was made on", async () => {
     act(popup);
     assert.deepEqual(storage.saved, [expected], name);
   }
+});
+
+test("in a userscript frame, the card saves the same way and never uses GitHub's page", async () => {
+  const custom = { bg: "#101010", text: "#f0f0f0", accent: "#ff2a6d", graph: "#39ff14" };
+  const storage = fakeStorage({ custom: { ...custom } });
+  const card = await openPopup(storage, { frame: true });
+  await card.loaded();
+  card.setColor("graph", "#00F0FF");
+  card.toggle(false);
+  card.pick("nord");
+  assert.deepEqual(storage.saved, [
+    { theme: "editing-suite", custom: { ...custom, graph: "#00f0ff" } },
+    { theme: "editing-suite", enabled: false },
+    { theme: "nord", custom: null },
+  ]);
 });
 
 test("a late load in another tab can't undo a theme picked in the popup", async () => {
