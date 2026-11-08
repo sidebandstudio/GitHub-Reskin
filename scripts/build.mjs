@@ -2,14 +2,15 @@
 // no network, no clock and no file discovery. release.config.json picks an entry in
 // extension/manifests/entries.json, and that entry lists every file a browser package gets.
 // Run: node scripts/build.mjs --target chrome,firefox,userscript [--out dist]
-// --target all builds every target and fails while any of them is not implemented yet.
+//      node scripts/build.mjs --target shared [--scope engine|primer|preview]
+// --target all builds every target and fails with exit 2 while any of them is not implemented yet.
 import { createHash } from "node:crypto";
-import { realpathSync } from "node:fs";
+import { existsSync, realpathSync } from "node:fs";
 import { mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
-import { BUILD_TARGETS, GECKO_ID } from "../packages/contracts/index.js";
+import { BUILD_TARGETS, GECKO_ID, SHARED_BUILD_SCOPES as BUILD_SCOPES } from "../packages/contracts/index.js";
 
 export const ROOT = fileURLToPath(new URL("..", import.meta.url));
 // Files every browser package carries besides its entry and the entry's upstream notices.
@@ -19,8 +20,8 @@ const TEXT = /\.(js|mjs|css|html|json|txt|md|svg)$/;
 const LOCAL_MATCH = /^http:\/\/(127\.0\.0\.1|localhost)\/\*$/;
 
 export class NotImplementedError extends Error {
-  constructor(target, owner) {
-    super(`${target} is not implemented yet (${owner})`);
+  constructor(target, owner, why) {
+    super(`${target} (owner ${owner})${why ? `: ${why}` : ""}`);
     this.target = target;
     this.owner = owner;
   }
@@ -209,25 +210,35 @@ async function buildUserscript({ outDir, releaseConfig }) {
   return { target: "userscript", dir, files: hashes(files) };
 }
 
-// Bundles each shared package for browsers. A package opts in with its own package.json, whose
-// "." export is the entry. Platform-neutral, so a package that reaches for Node built-ins fails here.
-async function buildShared({ outDir }) {
+// Shared build scopes. Each lists every package it bundles, so it builds all of its real
+// prerequisites, and each package's owner; `inputs` are data files the scope also requires.
+// Without a scope, every shared package is built. A missing package or input makes the scope
+// not implemented yet rather than quietly smaller.
+export const SHARED_SCOPES = {
+  engine: { packages: [["contracts", "C1"], ["format", "C2"], ["engine", "C2"]], inputs: [] },
+  primer: { packages: [["contracts", "C1"], ["format", "C2"], ["engine", "C2"], ["primer", "C3"]], inputs: [["vendor/primer/modes.json", "C3"]] },
+  preview: {
+    packages: [["contracts", "C1"], ["format", "C2"], ["engine", "C2"], ["primer", "C3"], ["appearance", "C5"], ["preview", "C5"]],
+    inputs: [["vendor/primer/modes.json", "C3"]],
+  },
+};
+const ALL_SHARED = {
+  packages: [...SHARED_SCOPES.preview.packages, ["settings", "C4"], ["ui", "C6"]],
+  inputs: SHARED_SCOPES.preview.inputs,
+};
+
+// Bundles packages/<name> for browsers, in root. A package's package.json "." export is its entry.
+// Platform-neutral, so a package that reaches for Node built-ins fails here.
+export async function bundlePackages(names, { root = ROOT } = {}) {
   const { build: esbuild } = await import("esbuild");
-  const names = [];
-  for (const name of (await readdir(join(ROOT, "packages"))).sort()) {
-    try {
-      await readFile(join(ROOT, "packages", name, "package.json"));
-      names.push(name);
-    } catch {}
-  }
   const files = {};
   for (const name of names) {
-    const exported = (await readJson(`packages/${name}/package.json`)).exports?.["."];
+    const exported = JSON.parse(await readFile(join(root, "packages", name, "package.json"), "utf8")).exports?.["."];
     const entry = typeof exported === "string" ? exported : exported?.default;
     if (!entry) throw new Error(`packages/${name}/package.json needs an "exports" "." entry`);
     const result = await esbuild({
       entryPoints: [`packages/${name}/${entry}`],
-      absWorkingDir: ROOT,
+      absWorkingDir: root,
       bundle: true,
       format: "esm",
       platform: "neutral",
@@ -237,11 +248,58 @@ async function buildShared({ outDir }) {
       write: false,
       logLevel: "silent",
     });
-    files[`${name}.js`] = Buffer.from(result.outputFiles[0].contents);
+    const bytes = Buffer.from(result.outputFiles[0].contents);
+    if (!bytes.length) throw new Error(`packages/${name} bundled to nothing`);
+    files[`${name}.js`] = bytes;
   }
+  return files;
+}
+
+async function buildShared({ outDir, scope }) {
+  if (scope !== undefined && !Object.hasOwn(SHARED_SCOPES, scope)) throw new Error(`Unknown shared scope ${scope}. Scopes: ${BUILD_SCOPES.join(", ")}`);
+  const { packages, inputs } = scope ? SHARED_SCOPES[scope] : ALL_SHARED;
+  const label = scope ? `shared --scope=${scope}` : "shared";
+  const missing = [
+    ...packages.filter(([name]) => !existsSync(join(ROOT, "packages", name, "package.json"))).map(([name, owner]) => [`packages/${name}`, owner]),
+    ...inputs.filter(([path]) => !existsSync(join(ROOT, path))),
+  ];
+  if (missing.length) {
+    const owners = [...new Set(missing.map(([, owner]) => owner))].join(", ");
+    throw new NotImplementedError(label, owners, `needs ${missing.map(([path, owner]) => `${path} (${owner})`).join(", ")}`);
+  }
+  const files = await bundlePackages(packages.map(([name]) => name));
   const dir = await freshDir(outDir, "shared");
   await writeTree(dir, files);
-  return { target: "shared", dir, files: hashes(files) };
+  return { target: "shared", scope: scope ?? null, dir, files: hashes(files) };
+}
+
+// The site is C7's: site/build.mjs exports build({ outDir, config }) and writes the static site
+// into outDir, which this empties first. Until that export exists the target is not implemented.
+const SITE_BUILDER = "site/build.mjs";
+
+async function buildSite({ outDir, releaseConfig }) {
+  const path = join(ROOT, SITE_BUILDER);
+  if (!existsSync(path)) throw new NotImplementedError("site", "C7", `${SITE_BUILDER} does not exist`);
+  const { build: buildSiteFiles } = await import(pathToFileURL(path).href);
+  if (typeof buildSiteFiles !== "function") throw new NotImplementedError("site", "C7", `${SITE_BUILDER} has no build export`);
+  const dir = await freshDir(outDir, "site");
+  await buildSiteFiles({ outDir: dir, config: releaseConfig });
+  const files = await readTree(dir);
+  if (!Object.keys(files).length) throw new Error(`${SITE_BUILDER} wrote nothing to ${dir}`);
+  return { target: "site", dir, files: hashes(files) };
+}
+
+async function readTree(dir) {
+  const files = {};
+  const walk = async (at) => {
+    for (const item of await readdir(at, { withFileTypes: true })) {
+      const path = join(at, item.name);
+      if (item.isDirectory()) await walk(path);
+      else files[relative(dir, path).split("\\").join("/")] = await readFile(path);
+    }
+  };
+  await walk(dir);
+  return files;
 }
 
 const BUILDERS = {
@@ -249,25 +307,25 @@ const BUILDERS = {
   firefox: (options) => buildExtension("firefox", options),
   userscript: buildUserscript,
   shared: buildShared,
-  site: async () => {
-    throw new NotImplementedError("site", "C7 Showcase site");
-  },
+  site: buildSite,
 };
 
 /** @param {import("../packages/contracts/index.js").BuildOptions} options */
-export async function build({ target, outDir = "dist", releaseConfig, testFixture }) {
+export async function build({ target, outDir = "dist", releaseConfig, scope, testFixture }) {
   if (!Object.hasOwn(BUILDERS, target)) throw new Error(`Unknown target ${target}. Targets: ${BUILD_TARGETS.join(", ")}`);
-  return BUILDERS[target]({ outDir, releaseConfig: releaseConfig || (await loadReleaseConfig()), testFixture });
+  if (scope !== undefined && target !== "shared") throw new Error(`--scope applies to the shared target, not ${target}`);
+  return BUILDERS[target]({ outDir, releaseConfig: releaseConfig || (await loadReleaseConfig()), scope, testFixture });
 }
 
 if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const { values } = parseArgs({ options: { target: { type: "string", default: "all" }, out: { type: "string", default: "dist" } } });
+  const { values } = parseArgs({ options: { target: { type: "string", default: "all" }, out: { type: "string", default: "dist" }, scope: { type: "string" } } });
   const targets = values.target === "all" ? BUILD_TARGETS : values.target.split(",");
+  if (values.scope && !targets.includes("shared")) throw new Error("--scope applies to the shared target");
   const releaseConfig = await loadReleaseConfig();
   const missing = [];
   for (const target of targets) {
     try {
-      const result = await build({ target, outDir: values.out, releaseConfig });
+      const result = await build({ target, outDir: values.out, releaseConfig, scope: target === "shared" ? values.scope : undefined });
       console.log(`built ${relative(process.cwd(), result.dir)}: ${Object.keys(result.files).length} files, tree ${treeHash(result.files).slice(0, 12)}`);
     } catch (error) {
       if (!(error instanceof NotImplementedError)) throw error;
@@ -275,7 +333,7 @@ if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.me
     }
   }
   if (missing.length) {
-    console.error(`NOT IMPLEMENTED: ${missing.join("; ")}. This build is incomplete.`);
+    console.error(`${missing.map((message) => `NOT IMPLEMENTED: ${message}`).join("\n")}\nThis build is incomplete.`);
     process.exit(2);
   }
 }
