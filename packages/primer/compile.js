@@ -5,17 +5,19 @@ import { ENGINE_VERSION, PAIR_MATRIX_VERSION, RENDERER_VERSION } from "../contra
 import { MODE_INDEX } from "./data.js";
 import MAPPINGS from "./mappings.json" with { type: "json" };
 import { coveredModes } from "./modes.js";
-import { scopeSelectors, scoped } from "./selectors.js";
+import { BRAND_FOOTER, islandScope } from "./selectors.js";
 
 export const COMPILER_VERSION = 1;
 const HEX6 = /^#[0-9a-f]{6}$/;
 const NATIVE_DECLARATION = /^--[A-Za-z0-9_-]+:[^;{}<>\\@]+$/;
 const PREFERENCE_KEYS = ["enabled", "extras", "text", "motion", "fonts", "effects"];
-// The Primer Brand marketing footer: a color-mode island without GitHub theme attributes whose
-// direct child is the page's contentinfo footer, plus color-mode islands nested in it (its
-// language menu). Structural only; no hashed class names.
-const BRAND_FOOTER = ':is([data-color-mode]:not([data-light-theme],[data-dark-theme]) > footer[role="contentinfo"])';
-const BRAND_TARGETS = [BRAND_FOOTER, `${BRAND_FOOTER} [data-color-mode]`];
+// The Primer Brand footer and the islands without theme attributes nested in it (its language
+// menu). An island with theme attributes there follows its own mode.
+const BRAND_TARGET = `:is(${BRAND_FOOTER},[data-color-mode]:not([data-light-theme],[data-dark-theme]):is(${BRAND_FOOTER} *))`;
+// The activity overview's highlight shape, whose seasonal color is an attribute, and the profile
+// timeline's commit-share bars, which GitHub paints with an inline green. Only an explicit rule
+// recolors them. Widths, labels and content stay GitHub's.
+const GRAPH_TARGET = ':is(.js-highlight-blob,.Progress-item:is(main #js-contribution-activity .Progress[role="img"] > *):not(.markdown-body *))';
 
 // GitHub's own issue-label formulas, copied from its application stylesheet. GitHub picks one by
 // the native theme name, so a light theme over a native dark mode would get translucent labels
@@ -24,6 +26,13 @@ const ISSUE_LABEL = {
   light: "--lightness-threshold:.453;--border-threshold:.96;--border-alpha:max(0, min(calc((var(--perceived-lightness) - var(--border-threshold)) * 100), 1));color:hsl(0deg, 0%, calc(var(--lightness-switch) * 100%));background:rgb(var(--label-r), var(--label-g), var(--label-b));border-color:hsla(var(--label-h), calc(var(--label-s) * 1%), calc((var(--label-l) - 25) * 1%), var(--border-alpha))",
   dark: "--lightness-threshold:.6;--background-alpha:.18;--border-alpha:.3;--lighten-by:calc(((var(--lightness-threshold) - var(--perceived-lightness)) * 100) * var(--lightness-switch));color:hsl(var(--label-h), calc(var(--label-s) * 1%), calc((var(--label-l) + var(--lighten-by)) * 1%));background:rgba(var(--label-r), var(--label-g), var(--label-b), var(--background-alpha));border-color:hsla(var(--label-h), calc(var(--label-s) * 1%), calc((var(--label-l) + var(--lighten-by)) * 1%), var(--border-alpha))",
 };
+// Reskin-owned inherited properties. Themed islands set them and native islands clear them, so
+// every element sees its nearest island's: whether it is themed, and its selection colors.
+const ON = "--reskin-on";
+const SELECTION_TEXT = "--reskin-selection-text";
+const SELECTION_BACKGROUND = "--reskin-selection-background";
+// Gecko matches these selectors; other engines use the style queries below.
+const GECKO = "selector(:-moz-focusring)";
 const important = (declarations) => declarations.replace(/;/g, " !important;") + " !important";
 
 const checkedBaselines = new WeakMap();
@@ -133,7 +142,9 @@ export function compileGitHub(resolved, modePlan, prefs, index = MODE_INDEX) {
   const colors = emittedColors(resolved, MAPPINGS.emit, warnings);
   const brand = emittedColors(resolved, MAPPINGS.brandFooter, warnings);
   const blob = colorAt(resolved, "/graph/4");
+  const bar = colorAt(resolved, "/graph/3");
   const selectionText = colorAt(resolved, "/tokens/selectionText");
+  const selectionBackground = colorAt(resolved, "/tokens/selectionBackground");
   const dark = seed.base === "dark";
   const declarations = [
     ...nativeBaseline(index, seed.id).map((d) => `${d} !important`),
@@ -142,20 +153,40 @@ export function compileGitHub(resolved, modePlan, prefs, index = MODE_INDEX) {
     `--lightningcss-light:${dark ? " " : "initial"} !important`,
     `--lightningcss-dark:${dark ? "initial" : " "} !important`,
     `color-scheme:${seed.base} !important`,
+    `${ON}:1 !important`,
+    `${SELECTION_TEXT}:${selectionText} !important`,
+    `${SELECTION_BACKGROUND}:${selectionBackground} !important`,
   ].join(";");
   const brandDeclarations = [...brand].map(([name, value]) => `${name}:${value} !important`).join(";");
 
-  const scope = scopeSelectors(coveredModes(index, seed.id), (mode) => index.modes[mode]?.base);
-  const branch = (name) => [
-    `${scope[name].join(",")}{${declarations}}`,
-    // The activity overview's highlight shape carries its seasonal color in an attribute.
-    `${scoped(".js-highlight-blob", scope[name], name)}{fill:${blob} !important;stroke:${blob} !important}`,
-    `${scoped("*", scope[name], name)}::selection{color:${selectionText}}`,
-    `${scoped(".hx_IssueLabel", scope[name], name)}{${important(ISSUE_LABEL[seed.base])}}`,
-    `${BRAND_TARGETS.map((t) => scoped(t, scope[name], name)).join(",")}{${brandDeclarations}}`,
-  ].join("\n");
+  const covered = coveredModes(index, seed.id);
+  const baseOf = (mode) => index.modes[mode]?.base;
+  // Rules that are not inherited custom properties, for elements whose nearest island is themed.
+  const component = (target) => [
+    // Fill and stroke paint the blob, background-color the bar.
+    [GRAPH_TARGET, `fill:${blob} !important;stroke:${blob} !important;background-color:${bar} !important`],
+    [".hx_IssueLabel", important(ISSUE_LABEL[seed.base])],
+    [BRAND_TARGET, brandDeclarations],
+  ].map(([selector, body]) => `${target(selector)}{${body}}`).join("\n");
+  const branch = (name) => {
+    const scope = islandScope(covered, Object.keys(index.modes), baseOf, name);
+    return [
+      `${scope.islands}{${declarations}}`,
+      `:is(${scope.native}){${ON}:initial !important;${SELECTION_TEXT}:initial !important;${SELECTION_BACKGROUND}:initial !important}`,
+      `@supports ${GECKO}{`,
+      component(scope.within),
+      "}",
+      // Chromium's highlight styles inherit from the parent's, and only an element whose
+      // ancestors have no selection rule paints the browser's own selection, whose dark-scheme and
+      // inactive-window colors no keyword reproduces. So the themed selection is set once on the
+      // body of a themed root, for the page to inherit, and only while no native island exists.
+      // It is gated by selector: Chromium does not pass a style-queried highlight rule on to
+      // children when the stylesheet changes.
+      `@supports not ${GECKO}{${scope.gate}${scope.themed} > body:not(:has(${scope.nativeModes}))::selection{color:${selectionText};background-color:${selectionBackground}}}`,
+    ].join("\n");
+  };
   const css = [
-    `/* GitHub Reskin: ${seed.id} seed for ${coveredModes(index, seed.id).join(", ")} */`,
+    `/* GitHub Reskin: ${seed.id} seed for ${covered.join(", ")} */`,
     "@media not all and (forced-colors: active){",
     "@media not all and (prefers-color-scheme: dark){",
     branch("light"),
@@ -163,6 +194,17 @@ export function compileGitHub(resolved, modePlan, prefs, index = MODE_INDEX) {
     "@media (prefers-color-scheme: dark){",
     branch("dark"),
     "}",
+    // Chromium re-runs the island gate's :has() for every gated rule after each DOM change, so
+    // outside Gecko the component rules read the nearest island's switch with a style query,
+    // which reads the parent's. An engine with neither keeps GitHub's components.
+    `@supports not ${GECKO}{`,
+    `@container style(${ON}: 1){`,
+    component((selector) => selector),
+    "}",
+    "}",
+    // Gecko matches selection per element and paints HighlightText on Highlight by default, which
+    // an element outside every themed island keeps.
+    `@supports ${GECKO}{::selection{color:var(${SELECTION_TEXT},HighlightText);background-color:var(${SELECTION_BACKGROUND},Highlight)}}`,
     "}",
     "",
   ].join("\n");

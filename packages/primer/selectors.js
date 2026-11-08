@@ -39,17 +39,76 @@ export function scopeSelectors(modes, baseOf = (mode) => POLICY.modes[mode]?.bas
   };
 }
 
-/** Any element that is a GitHub mode island in a branch: color mode plus the theme attribute it reads. */
-export const ISLAND = Object.freeze({
-  light: "[data-color-mode=light][data-light-theme],[data-color-mode=dark][data-dark-theme],[data-color-mode=auto][data-light-theme]",
-  dark: "[data-color-mode=light][data-light-theme],[data-color-mode=dark][data-dark-theme],[data-color-mode=auto][data-dark-theme]",
-});
+// GitHub's selectors need a color mode and the theme attribute it reads. An island without theme
+// attributes matches none of them, so it inherits its parent's mode.
+const ATTRIBUTED = "[data-color-mode]:is([data-light-theme],[data-dark-theme])";
+const LOOSE = "[data-color-mode]:not([data-light-theme],[data-dark-theme])";
+const CONTENTINFO = 'footer[role="contentinfo"]';
 
 /**
- * A selector for `target` inside a themed island and outside any island of another mode, for
- * rules that are not inherited custom properties. `scope` is the branch's themed selector list.
+ * The Primer Brand marketing footer: a color-mode island without GitHub theme attributes whose
+ * direct child is the page's contentinfo footer. Structural only; no hashed class names. That
+ * island, and islands without theme attributes nested in the footer (its language menu), are
+ * recognized and pass their parent's mode through, as they do natively.
  */
-export function scoped(target, scope, branch) {
-  const themed = scope.join(",");
-  return `:is(${themed}) ${target}:not(:is(:is(${ISLAND[branch]}):not(${themed})) ${target})`;
+export const BRAND_FOOTER = `:is(${LOOSE} > ${CONTENTINFO})`;
+
+// How many themed and native islands, counted from the root, may enclose a target: themed, native,
+// themed. Deeper alternation fails closed and keeps GitHub's styles.
+const NESTING = 3;
+
+// The elements of scopeSelectors(modes)[branch], grouped by attribute into one shorter selector.
+function grouped(modes, baseOf, branch) {
+  const parts = [];
+  for (const base of ["light", "dark"]) {
+    const own = modes.filter((m) => baseOf(m) === base);
+    if (own.length) parts.push(`[data-color-mode=${base}]:is(${own.map((m) => `[data-${base}-theme=${m}]`).join(",")})`);
+  }
+  parts.push(`[data-color-mode=auto]:is(${modes.map((m) => `[data-${branch}-theme=${m}]`).join(",")})`);
+  return `:is(${parts.join(",")})`;
+}
+
+/**
+ * Selectors for one color-scheme branch of a themed stylesheet. `covered` are the plan's modes,
+ * `known` every mode of the ModeIndex.
+ *
+ * - `gate` matches the root only while every island in the document is recognized: a known mode
+ *   combination, the Brand footer's island without theme attributes, or one inside that footer.
+ *   An island of an unknown mode, a color mode without the theme attribute it reads, a stray value
+ *   or any other island without theme attributes leaves the whole document native, because its
+ *   native reset cannot be proved and the root is its ancestor. An island without theme
+ *   attributes that has no element children is not detected; nothing below it can hold another
+ *   mode. Browsers without :has() drop every gated rule, which also leaves GitHub native.
+ * - `themed` matches the plan's islands; `islands` matches them behind the gate, for the inherited
+ *   custom properties.
+ * - `native` matches islands of the other known modes, all that remain while the gate is open, and
+ *   `nativeModes` lists the same islands by mode.
+ * - `within(target)` matches `target`, a compound selector, when its nearest island with theme
+ *   attributes, itself included, is themed. A native island is its own boundary, and a themed
+ *   island nested in it starts a fresh scope. For rules that are not inherited custom properties.
+ *
+ * Chromium re-runs the gate's :has() after any DOM change for every rule whose matched elements
+ * depend on it, so the compiler keeps gated rules few and their targets specific.
+ */
+export function islandScope(covered, known, baseOf, branch) {
+  const themed = grouped(covered, baseOf, branch);
+  const loose = `${LOOSE}:not(${BRAND_FOOTER} *)`;
+  const gate = `:root:not(:has(${ATTRIBUTED}:not(${grouped(known, baseOf, branch)}),${loose} > :not(${CONTENTINFO})))`;
+  const native = `${ATTRIBUTED}:not(${themed})`;
+  // The same islands listed by mode, without negation, for :has() arguments: Chromium re-checks a
+  // :has() whose argument holds :not() after any DOM change, but keys a positive one to attributes.
+  const nativeModes = grouped(known.filter((m) => !covered.includes(m)), baseOf, branch);
+  // A target's attributed islands, innermost last, alternate between themed and native runs. The
+  // innermost is themed exactly when an alternating chain ending in a themed island encloses the
+  // target and the same chain followed by a native island does not.
+  const chains = [];
+  for (let k = 1; k < NESTING; k++) chains.push(Array.from({ length: k }, (_, i) => ((k - i) % 2 ? themed : `:is(${native})`)).join(" "));
+  return {
+    gate,
+    themed,
+    islands: `${gate}${themed},${gate} ${themed}`,
+    native,
+    nativeModes,
+    within: (target) => `${gate} :is(${[`${target}${themed}`, ...chains.map((c) => `${c} ${target}:not(${ATTRIBUTED}):not(${c} :is(${native}) ${target})`)].join(",")})`,
+  };
 }

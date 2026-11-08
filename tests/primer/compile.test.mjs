@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { parseStylesheet } from "../../packages/primer/css.js";
-import { colorAt, compileGitHub, emittedColors, MODE_INDEX, modeSelectors, selectMode } from "../../packages/primer/index.js";
+import { colorAt, compileGitHub, coveredModes, emittedColors, islandScope, MODE_INDEX, modeSelectors, selectMode } from "../../packages/primer/index.js";
 import { EXTRAS_OFF, nativeResolved, PREFS, readJson, resolvedFromSeed } from "./helpers.mjs";
 
 const mappings = readJson("packages/primer/mappings.json");
@@ -10,6 +10,17 @@ const themed = (seedMode) => {
   const p = { seedMode, policy: "themed" };
   return [resolvedFromSeed(MODE_INDEX.modes[seedMode]), p];
 };
+
+// The compounds a grouped island selector such as :is([data-color-mode=dark]:is([data-dark-theme=dark]))
+// stands for, in GitHub's own [data-color-mode=x][data-y-theme=z] form.
+function compounds(grouped) {
+  const out = [];
+  for (const [, mode, list] of grouped.matchAll(/\[data-color-mode=(\w+)\]:is\(((?:\[data-\w+-theme=\w+\],?)+)\)/g)) {
+    for (const [attr] of list.matchAll(/\[data-\w+-theme=\w+\]/g)) out.push(`[data-color-mode=${mode}]${attr}`);
+  }
+  return out;
+}
+const scopeOf = (seedMode, branch) => islandScope(coveredModes(MODE_INDEX, seedMode), Object.keys(MODE_INDEX.modes), (m) => MODE_INDEX.modes[m].base, branch);
 
 // The innermost rules of a compiled stylesheet: [selectors, declarations, media path].
 function rules(css) {
@@ -64,26 +75,104 @@ test("theme scope covers exactly the plan's modes; high-contrast and other famil
   const main = rules(css).filter((r) => r.declarations.some((d) => d.name === "--bgColor-default"));
   const [lightBranch, darkBranch] = main;
   assert.deepEqual(lightBranch.media[1], "not all and (prefers-color-scheme: dark)");
-  assert.deepEqual(lightBranch.selectors, [
+  for (const [rule, branch] of [[lightBranch, "light"], [darkBranch, "dark"]]) {
+    const scope = scopeOf("dark", branch);
+    // The root itself and every nested island, both behind the island gate.
+    assert.deepEqual(rule.selectors, scope.islands.split(/,(?=:root)/));
+    assert.ok(rule.selectors[0].startsWith(`${scope.gate}:is(`) && rule.selectors[1].startsWith(`${scope.gate} :is(`));
+  }
+  const themedOf = (rule) => compounds(rule.selectors[0].slice(scopeOf("dark", "light").gate.length));
+  assert.deepEqual(themedOf(lightBranch).sort(), [
     "[data-color-mode=light][data-light-theme=light]", "[data-color-mode=dark][data-dark-theme=dark]", "[data-color-mode=dark][data-dark-theme=dark_dimmed]",
     "[data-color-mode=auto][data-light-theme=light]", "[data-color-mode=auto][data-light-theme=dark]", "[data-color-mode=auto][data-light-theme=dark_dimmed]",
-  ]);
-  assert.deepEqual(darkBranch.selectors.slice(3), ["[data-color-mode=auto][data-dark-theme=light]", "[data-color-mode=auto][data-dark-theme=dark]", "[data-color-mode=auto][data-dark-theme=dark_dimmed]"]);
+  ].sort());
+  assert.deepEqual(themedOf(darkBranch).filter((c) => c.startsWith("[data-color-mode=auto]")).sort(), ["[data-color-mode=auto][data-dark-theme=light]", "[data-color-mode=auto][data-dark-theme=dark]", "[data-color-mode=auto][data-dark-theme=dark_dimmed]"].sort());
   // No blanket rule on every theme attribute and no substring matching.
   assert.doesNotMatch(css, /\[data-(?:light|dark)-theme\]\s*\{|:root\s*[,{]|\*=|\^=|\$=/);
   for (const sel of modeSelectors().filter((s) => s.policy !== "themed" || !["light", "dark", "dark_dimmed"].includes(s.mode))) {
-    for (const rule of main) assert.ok(!rule.selectors.includes(sel.selector), `${sel.selector} is not themed by the standard plan`);
+    for (const rule of main) assert.ok(!themedOf(rule).includes(sel.selector), `${sel.selector} is not themed by the standard plan`);
   }
 });
 
-test("non-inherited rules stay out of islands of any other mode", () => {
+test("the island gate recognizes every frozen mode combination and nothing else", () => {
+  for (const branch of ["light", "dark"]) {
+    const { gate } = scopeOf("dark", branch);
+    const known = compounds(gate.slice(0, gate.indexOf("),[data-color-mode]:not(")));
+    const expected = Object.keys(MODE_INDEX.modes).flatMap((m) => {
+      const base = MODE_INDEX.modes[m].base;
+      return [`[data-color-mode=${base}][data-${base}-theme=${m}]`, `[data-color-mode=auto][data-${branch}-theme=${m}]`];
+    });
+    assert.deepEqual(known.sort(), expected.sort(), branch);
+    // An island without theme attributes counts only as the Brand footer's or inside that footer.
+    assert.ok(gate.endsWith(`> :not(footer[role="contentinfo"])))`), branch);
+  }
+});
+
+test("component rules use the island gate in Gecko and the nearest island's switch elsewhere", () => {
   const [resolved, p] = themed("light");
   const { css } = compileGitHub(resolved, p, PREFS);
-  const blob = rules(css).filter((r) => r.selectors.some((s) => s.includes(".js-highlight-blob")));
-  assert.equal(blob.length, 2);
-  for (const r of blob) assert.match(r.selectors[0], /^:is\(.+\) \.js-highlight-blob:not\(:is\(:is\(.+\):not\(.+\)\) \.js-highlight-blob\)$/);
-  const graph4 = colorAt(resolved, "/graph/4");
-  assert.equal(blob[0].declarations.find((d) => d.name === "fill").value, graph4);
+  const all = rules(css);
+  const graph = all.filter((r) => r.selectors.some((s) => s.includes(".js-highlight-blob")));
+  assert.equal(graph.length, 3);
+  const gecko = graph.filter((r) => r.media.includes("selector(:-moz-focusring)"));
+  assert.equal(gecko.length, 2);
+  for (const [r, branch] of [[gecko[0], "light"], [gecko[1], "dark"]]) assert.ok(r.selectors[0].startsWith(`${scopeOf("light", branch).gate} :is(`), branch);
+  const queried = graph.find((r) => r.media.includes("not selector(:-moz-focusring)"));
+  assert.deepEqual(queried.media, ["not all and (forced-colors: active)", "not selector(:-moz-focusring)", "style(--reskin-on: 1)"]);
+  assert.equal(queried.selectors.length, 1);
+  assert.doesNotMatch(queried.selectors[0], /data-color-mode=|:has/);
+  const values = Object.fromEntries(queried.declarations.map((d) => [d.name, d.value]));
+  assert.deepEqual(values, { fill: colorAt(resolved, "/graph/4"), stroke: colorAt(resolved, "/graph/4"), "background-color": colorAt(resolved, "/graph/3") });
+  // Themed islands raise the switch and carry the selection colors; native islands clear them.
+  const main = all.find((r) => r.declarations.some((d) => d.name === "--bgColor-default"));
+  const decl = Object.fromEntries(main.declarations.map((d) => [d.name, d.value]));
+  assert.equal(decl["--reskin-on"], "1");
+  assert.equal(decl["--reskin-selection-text"], colorAt(resolved, "/tokens/selectionText"));
+  assert.equal(decl["--reskin-selection-background"], colorAt(resolved, "/tokens/selectionBackground"));
+  const reset = all.filter((r) => r.declarations.some((d) => d.name === "--reskin-on" && d.value === "initial"));
+  assert.equal(reset.length, 2);
+  for (const r of reset) {
+    assert.deepEqual(r.selectors, [`:is(${scopeOf("light", r.media[1].startsWith("not") ? "light" : "dark").native})`]);
+    assert.deepEqual(r.declarations.map((d) => [d.name, d.value]), [["--reskin-on", "initial"], ["--reskin-selection-text", "initial"], ["--reskin-selection-background", "initial"]]);
+  }
+});
+
+test("the activity timeline's commit bars are recolored only through their verified structure", () => {
+  const [resolved, p] = themed("dark");
+  const { css } = compileGitHub(resolved, p, PREFS);
+  const bars = rules(css).filter((r) => r.selectors.some((s) => s.includes(".Progress-item")));
+  assert.equal(bars.length, 3);
+  for (const r of bars) {
+    assert.match(r.selectors[0], /\.Progress-item:is\(main #js-contribution-activity \.Progress\[role="img"\] > \*\):not\(\.markdown-body \*\)/);
+    assert.equal(r.declarations.find((d) => d.name === "background-color").value, colorAt(resolved, "/graph/3"));
+    assert.equal(r.declarations.find((d) => d.name === "background-color").important, true);
+    assert.ok(!r.declarations.some((d) => /^(width|content)$/.test(d.name)));
+  }
+});
+
+test("selection: Gecko reads each island's colors per element; Chromium sets them once on the body of a page without native islands", () => {
+  const [resolved, p] = themed("dark");
+  const all = rules(compileGitHub(resolved, p, PREFS).css);
+  const text = colorAt(resolved, "/tokens/selectionText");
+  const background = colorAt(resolved, "/tokens/selectionBackground");
+  const gecko = all.filter((r) => r.selectors.includes("::selection"));
+  assert.deepEqual(gecko.map((r) => [r.media, Object.fromEntries(r.declarations.map((d) => [d.name, d.value]))]), [
+    [["not all and (forced-colors: active)", "selector(:-moz-focusring)"], { color: "var(--reskin-selection-text,HighlightText)", "background-color": "var(--reskin-selection-background,Highlight)" }],
+  ]);
+  const chromium = all.filter((r) => r.selectors.some((s) => s.includes(" > body:not(:has(")));
+  assert.equal(chromium.length, 2);
+  for (const r of chromium) {
+    const branch = r.media[1].startsWith("not") ? "light" : "dark";
+    const scope = scopeOf("dark", branch);
+    // Gated by selector, not a style query: Chromium does not pass a style-queried highlight
+    // rule on to children when the stylesheet changes.
+    assert.deepEqual(r.media.slice(2), ["not selector(:-moz-focusring)"]);
+    assert.deepEqual(r.selectors, [`${scope.gate}${scope.themed} > body:not(:has(${scope.nativeModes}))::selection`]);
+    // A positive :has() argument, so Chromium keys its invalidation to the mode attributes.
+    assert.doesNotMatch(scopeOf("dark", branch).nativeModes, /:not\(/);
+    assert.deepEqual(Object.fromEntries(r.declarations.map((d) => [d.name, d.value])), { color: text, "background-color": background });
+  }
+  assert.deepEqual(compounds(scopeOf("dark", "light").nativeModes).sort(), compounds(scopeOf("dark", "light").gate).filter((c) => !compounds(scopeOf("dark", "light").themed).includes(c)).sort());
 });
 
 test("the compiler interpolates only validated colors, never metadata, flavor or URLs", () => {
@@ -130,7 +219,7 @@ test("the Primer Brand footer gets its own mapped variables, scoped by structure
   const [resolved, p] = themed("dark");
   const { css } = compileGitHub(resolved, p, PREFS);
   const brand = rules(css).filter((r) => r.declarations.some((d) => d.name === "--brand-color-text-default"));
-  assert.equal(brand.length, 2);
+  assert.equal(brand.length, 3);
   for (const r of brand) {
     assert.ok(r.selectors.every((s) => s.includes('footer[role="contentinfo"]')));
     assert.doesNotMatch(r.selectors.join(","), /class/);
@@ -142,11 +231,10 @@ test("issue labels use GitHub's formula for the theme's base, not the native mod
   for (const [seedMode, threshold] of [["dark", ".6"], ["light", ".453"]]) {
     const [resolved, p] = themed(seedMode);
     const labels = rules(compileGitHub(resolved, p, PREFS).css).filter((r) => r.selectors.some((s) => s.includes(".hx_IssueLabel")));
-    assert.equal(labels.length, 2, seedMode);
+    assert.equal(labels.length, 3, seedMode);
     for (const r of labels) {
       assert.equal(r.declarations.find((d) => d.name === "--lightness-threshold").value, threshold);
       assert.ok(r.declarations.every((d) => d.important));
-      assert.match(r.selectors[0], /:not\(:is\(:is\(.+\):not\(.+\)\) \.hx_IssueLabel\)$/);
     }
   }
 });
