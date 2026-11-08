@@ -1,0 +1,22 @@
+{
+  "$schema": "https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json",
+  "base": "dark",
+  "colors": {
+    "accent": "#88c0d0",
+    "background": "#2e3440",
+    "contribution": "#88c0d0",
+    "text": "#eceff4"
+  },
+  "description": "Palette from the Nord theme project, MIT license.",
+  "name": "Nord",
+  "overrides": {
+    "border": "#4c566a",
+    "mutedText": "#c0c5cf",
+    "surface": "#3b4252"
+  },
+  "schemaVersion": 1,
+  "tags": [
+    "classic",
+    "dark"
+  ]
+}

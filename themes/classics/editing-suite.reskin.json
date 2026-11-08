@@ -1,0 +1,17 @@
+{
+  "$schema": "https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json",
+  "base": "dark",
+  "colors": {
+    "accent": "#f2a93b",
+    "background": "#0a0a0b",
+    "contribution": "#f2a93b",
+    "text": "#ededea"
+  },
+  "description": "The amber and near-black from Ali Tleis's GitHub profile.",
+  "name": "Editing Suite",
+  "schemaVersion": 1,
+  "tags": [
+    "classic",
+    "dark"
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "$schema": "https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json",
+  "base": "dark",
+  "colors": {
+    "accent": "#7aa2f7",
+    "background": "#1a1b26",
+    "contribution": "#bb9af7",
+    "text": "#c0caf5"
+  },
+  "description": "Palette from the Tokyo Night theme, MIT license.",
+  "name": "Tokyo Night",
+  "overrides": {
+    "border": "#292e42",
+    "mutedText": "#9aa0b9",
+    "surface": "#16161e"
+  },
+  "schemaVersion": 1,
+  "tags": [
+    "classic",
+    "dark"
+  ]
+}

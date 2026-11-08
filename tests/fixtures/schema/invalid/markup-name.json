@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "name": "<img onerror=alert(1)>",
+  "base": "light",
+  "colors": {
+    "background": "#f6f2e8",
+    "text": "#27372d",
+    "accent": "#446851"
+  }
+}

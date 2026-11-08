@@ -1,0 +1,95 @@
+{
+  "rendererVersion": 1,
+  "cases": [
+    {
+      "id": "primary-states",
+      "file": "roundtrip/primary-states.reskin.json",
+      "standardSeed": "seeds/standard-dark.json",
+      "previewSeeds": [
+        "seeds/standard-dark.json"
+      ],
+      "expectSourceChanges": [
+        "/overrides/primaryText"
+      ],
+      "mustRemainAbsent": [
+        "/overrides/primaryHoverBackground",
+        "/overrides/primaryPressedBackground",
+        "/overrides/active"
+      ],
+      "pairIds": [
+        "primaryText",
+        "primaryHoverText",
+        "primaryPressedText",
+        "primaryIcon",
+        "primaryCounterText"
+      ]
+    },
+    {
+      "id": "syntax-diff",
+      "file": "roundtrip/syntax-diff.reskin.json",
+      "standardSeed": "seeds/standard-light.json",
+      "previewSeeds": [
+        "seeds/standard-light.json",
+        "seeds/tritanopia-light.json"
+      ],
+      "expectSourceChanges": [
+        "/overrides/syntax/comment",
+        "/overrides/syntax/keyword",
+        "/overrides/syntax/string",
+        "/overrides/syntax/function",
+        "/overrides/syntax/number",
+        "/overrides/syntax/variable",
+        "/overrides/syntax/type"
+      ],
+      "mustRemainAbsent": [
+        "/overrides/diffAddedBackground",
+        "/overrides/diffRemovedBackground"
+      ],
+      "pairIds": [
+        "syntax.comment",
+        "syntax.keyword",
+        "syntax.string",
+        "syntax.function",
+        "syntax.number",
+        "syntax.variable",
+        "syntax.type"
+      ]
+    },
+    {
+      "id": "accessibility-output",
+      "file": "roundtrip/accessibility-output.reskin.json",
+      "standardSeed": "seeds/standard-dark.json",
+      "previewSeeds": [
+        "seeds/standard-dark.json",
+        "seeds/colorblind-dark.json"
+      ],
+      "alsoPolicies": [
+        "native-high-contrast",
+        "native-unknown",
+        "forced-colors"
+      ],
+      "expectSourceChanges": [],
+      "mustRemainAbsent": [
+        "/overrides/sponsor",
+        "/overrides/diffWordAddedBackground"
+      ],
+      "pairIds": [
+        "semantic.success.text",
+        "semantic.danger.text",
+        "semantic.warning.text",
+        "semantic.done.text",
+        "semantic.sponsor.text"
+      ],
+      "assert": "After standard source repair, alternate display policies cannot change canonical JSON or RS1; colorblind output suppresses supplied semantic inks and native policies emit null colors."
+    }
+  ],
+  "commonAssertions": [
+    "input and seeds unchanged",
+    "portable repair fixed point",
+    "exported JSON passes public schema",
+    "encode/decode/repair/export JSON and RS1 byte stability",
+    "same context yields identical resolved colors after round trip",
+    "all listed and affected syntax/diff PairResults pass unrounded thresholds",
+    "only permitted source fields change; renderer fields never serialized"
+  ]
+}

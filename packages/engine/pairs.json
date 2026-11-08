@@ -1,0 +1,828 @@
+{
+  "version": 1,
+  "records": [
+    {
+      "id": "text",
+      "foreground": "/tokens/text",
+      "backgrounds": [
+        "/tokens/canvas",
+        "/tokens/surface",
+        "/tokens/inset",
+        "/tokens/raised",
+        "/tokens/hover",
+        "/tokens/active"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "mutedText",
+      "foreground": "/tokens/mutedText",
+      "backgrounds": [
+        "/tokens/canvas",
+        "/tokens/surface",
+        "/tokens/inset",
+        "/tokens/raised",
+        "/tokens/hover",
+        "/tokens/active"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "link",
+      "foreground": "/tokens/link",
+      "backgrounds": [
+        "/tokens/canvas",
+        "/tokens/surface",
+        "/tokens/inset",
+        "/tokens/raised",
+        "/tokens/hover",
+        "/tokens/active"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "primaryText",
+      "foreground": "/tokens/primaryText",
+      "backgrounds": [
+        "/tokens/primaryBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "primaryHoverText",
+      "foreground": "/tokens/primaryHoverText",
+      "backgrounds": [
+        "/tokens/primaryHoverBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "primaryPressedText",
+      "foreground": "/tokens/primaryPressedText",
+      "backgrounds": [
+        "/tokens/primaryPressedBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "primaryCounterText",
+      "foreground": "/tokens/primaryCounterText",
+      "backgrounds": [
+        "/tokens/primaryCounterBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "selectionText",
+      "foreground": "/tokens/selectionText",
+      "backgrounds": [
+        "/tokens/selectionBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "emphasisText",
+      "foreground": "/tokens/emphasisText",
+      "backgrounds": [
+        "/tokens/accentEmphasis"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "codeText",
+      "foreground": "/tokens/codeText",
+      "backgrounds": [
+        "/tokens/codeBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "neutralText",
+      "foreground": "/tokens/neutralText",
+      "backgrounds": [
+        "/tokens/neutralBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "diffAddedText",
+      "foreground": "/tokens/diffAddedText",
+      "backgrounds": [
+        "/tokens/diffAddedBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "diffRemovedText",
+      "foreground": "/tokens/diffRemovedText",
+      "backgrounds": [
+        "/tokens/diffRemovedBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "diffWordAddedText",
+      "foreground": "/tokens/diffWordAddedText",
+      "backgrounds": [
+        "/tokens/diffWordAddedBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "diffWordRemovedText",
+      "foreground": "/tokens/diffWordRemovedText",
+      "backgrounds": [
+        "/tokens/diffWordRemovedBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "tooltipText",
+      "foreground": "/tokens/tooltipText",
+      "backgrounds": [
+        "/tokens/tooltipBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "overlayText",
+      "foreground": "/tokens/overlayText",
+      "backgrounds": [
+        "/tokens/overlayBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "inputText",
+      "foreground": "/tokens/inputText",
+      "backgrounds": [
+        "/tokens/inputBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "inputPlaceholder",
+      "foreground": "/tokens/inputPlaceholder",
+      "backgrounds": [
+        "/tokens/inputBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "disabledText",
+      "foreground": "/tokens/disabledText",
+      "backgrounds": [
+        "/tokens/disabledBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "counterText",
+      "foreground": "/tokens/counterText",
+      "backgrounds": [
+        "/tokens/counterBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "labelText",
+      "foreground": "/tokens/labelText",
+      "backgrounds": [
+        "/tokens/labelBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "primaryIcon",
+      "foreground": "/tokens/primaryIcon",
+      "backgrounds": [
+        "/tokens/primaryBackground",
+        "/tokens/primaryHoverBackground",
+        "/tokens/primaryPressedBackground"
+      ],
+      "minimum": 3,
+      "purpose": "boundary"
+    },
+    {
+      "id": "syntax.comment",
+      "foreground": "/syntax/comment",
+      "backgrounds": [
+        "/tokens/codeBackground",
+        "/tokens/neutralBackground",
+        "/tokens/diffAddedBackground",
+        "/tokens/diffRemovedBackground",
+        "/tokens/diffWordAddedBackground",
+        "/tokens/diffWordRemovedBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "syntax.keyword",
+      "foreground": "/syntax/keyword",
+      "backgrounds": [
+        "/tokens/codeBackground",
+        "/tokens/neutralBackground",
+        "/tokens/diffAddedBackground",
+        "/tokens/diffRemovedBackground",
+        "/tokens/diffWordAddedBackground",
+        "/tokens/diffWordRemovedBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "syntax.string",
+      "foreground": "/syntax/string",
+      "backgrounds": [
+        "/tokens/codeBackground",
+        "/tokens/neutralBackground",
+        "/tokens/diffAddedBackground",
+        "/tokens/diffRemovedBackground",
+        "/tokens/diffWordAddedBackground",
+        "/tokens/diffWordRemovedBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "syntax.function",
+      "foreground": "/syntax/function",
+      "backgrounds": [
+        "/tokens/codeBackground",
+        "/tokens/neutralBackground",
+        "/tokens/diffAddedBackground",
+        "/tokens/diffRemovedBackground",
+        "/tokens/diffWordAddedBackground",
+        "/tokens/diffWordRemovedBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "syntax.number",
+      "foreground": "/syntax/number",
+      "backgrounds": [
+        "/tokens/codeBackground",
+        "/tokens/neutralBackground",
+        "/tokens/diffAddedBackground",
+        "/tokens/diffRemovedBackground",
+        "/tokens/diffWordAddedBackground",
+        "/tokens/diffWordRemovedBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "syntax.variable",
+      "foreground": "/syntax/variable",
+      "backgrounds": [
+        "/tokens/codeBackground",
+        "/tokens/neutralBackground",
+        "/tokens/diffAddedBackground",
+        "/tokens/diffRemovedBackground",
+        "/tokens/diffWordAddedBackground",
+        "/tokens/diffWordRemovedBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "syntax.type",
+      "foreground": "/syntax/type",
+      "backgrounds": [
+        "/tokens/codeBackground",
+        "/tokens/neutralBackground",
+        "/tokens/diffAddedBackground",
+        "/tokens/diffRemovedBackground",
+        "/tokens/diffWordAddedBackground",
+        "/tokens/diffWordRemovedBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "ansi.black",
+      "foreground": "/ansi/black",
+      "backgrounds": [
+        "/tokens/codeBackground",
+        "/tokens/neutralBackground",
+        "/tokens/diffAddedBackground",
+        "/tokens/diffRemovedBackground",
+        "/tokens/diffWordAddedBackground",
+        "/tokens/diffWordRemovedBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "ansi.red",
+      "foreground": "/ansi/red",
+      "backgrounds": [
+        "/tokens/codeBackground",
+        "/tokens/neutralBackground",
+        "/tokens/diffAddedBackground",
+        "/tokens/diffRemovedBackground",
+        "/tokens/diffWordAddedBackground",
+        "/tokens/diffWordRemovedBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "ansi.green",
+      "foreground": "/ansi/green",
+      "backgrounds": [
+        "/tokens/codeBackground",
+        "/tokens/neutralBackground",
+        "/tokens/diffAddedBackground",
+        "/tokens/diffRemovedBackground",
+        "/tokens/diffWordAddedBackground",
+        "/tokens/diffWordRemovedBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "ansi.yellow",
+      "foreground": "/ansi/yellow",
+      "backgrounds": [
+        "/tokens/codeBackground",
+        "/tokens/neutralBackground",
+        "/tokens/diffAddedBackground",
+        "/tokens/diffRemovedBackground",
+        "/tokens/diffWordAddedBackground",
+        "/tokens/diffWordRemovedBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "ansi.blue",
+      "foreground": "/ansi/blue",
+      "backgrounds": [
+        "/tokens/codeBackground",
+        "/tokens/neutralBackground",
+        "/tokens/diffAddedBackground",
+        "/tokens/diffRemovedBackground",
+        "/tokens/diffWordAddedBackground",
+        "/tokens/diffWordRemovedBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "ansi.magenta",
+      "foreground": "/ansi/magenta",
+      "backgrounds": [
+        "/tokens/codeBackground",
+        "/tokens/neutralBackground",
+        "/tokens/diffAddedBackground",
+        "/tokens/diffRemovedBackground",
+        "/tokens/diffWordAddedBackground",
+        "/tokens/diffWordRemovedBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "ansi.cyan",
+      "foreground": "/ansi/cyan",
+      "backgrounds": [
+        "/tokens/codeBackground",
+        "/tokens/neutralBackground",
+        "/tokens/diffAddedBackground",
+        "/tokens/diffRemovedBackground",
+        "/tokens/diffWordAddedBackground",
+        "/tokens/diffWordRemovedBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "ansi.white",
+      "foreground": "/ansi/white",
+      "backgrounds": [
+        "/tokens/codeBackground",
+        "/tokens/neutralBackground",
+        "/tokens/diffAddedBackground",
+        "/tokens/diffRemovedBackground",
+        "/tokens/diffWordAddedBackground",
+        "/tokens/diffWordRemovedBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "ansi.brightBlack",
+      "foreground": "/ansi/brightBlack",
+      "backgrounds": [
+        "/tokens/codeBackground",
+        "/tokens/neutralBackground",
+        "/tokens/diffAddedBackground",
+        "/tokens/diffRemovedBackground",
+        "/tokens/diffWordAddedBackground",
+        "/tokens/diffWordRemovedBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "ansi.brightRed",
+      "foreground": "/ansi/brightRed",
+      "backgrounds": [
+        "/tokens/codeBackground",
+        "/tokens/neutralBackground",
+        "/tokens/diffAddedBackground",
+        "/tokens/diffRemovedBackground",
+        "/tokens/diffWordAddedBackground",
+        "/tokens/diffWordRemovedBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "ansi.brightGreen",
+      "foreground": "/ansi/brightGreen",
+      "backgrounds": [
+        "/tokens/codeBackground",
+        "/tokens/neutralBackground",
+        "/tokens/diffAddedBackground",
+        "/tokens/diffRemovedBackground",
+        "/tokens/diffWordAddedBackground",
+        "/tokens/diffWordRemovedBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "ansi.brightYellow",
+      "foreground": "/ansi/brightYellow",
+      "backgrounds": [
+        "/tokens/codeBackground",
+        "/tokens/neutralBackground",
+        "/tokens/diffAddedBackground",
+        "/tokens/diffRemovedBackground",
+        "/tokens/diffWordAddedBackground",
+        "/tokens/diffWordRemovedBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "ansi.brightBlue",
+      "foreground": "/ansi/brightBlue",
+      "backgrounds": [
+        "/tokens/codeBackground",
+        "/tokens/neutralBackground",
+        "/tokens/diffAddedBackground",
+        "/tokens/diffRemovedBackground",
+        "/tokens/diffWordAddedBackground",
+        "/tokens/diffWordRemovedBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "ansi.brightMagenta",
+      "foreground": "/ansi/brightMagenta",
+      "backgrounds": [
+        "/tokens/codeBackground",
+        "/tokens/neutralBackground",
+        "/tokens/diffAddedBackground",
+        "/tokens/diffRemovedBackground",
+        "/tokens/diffWordAddedBackground",
+        "/tokens/diffWordRemovedBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "ansi.brightCyan",
+      "foreground": "/ansi/brightCyan",
+      "backgrounds": [
+        "/tokens/codeBackground",
+        "/tokens/neutralBackground",
+        "/tokens/diffAddedBackground",
+        "/tokens/diffRemovedBackground",
+        "/tokens/diffWordAddedBackground",
+        "/tokens/diffWordRemovedBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "ansi.brightWhite",
+      "foreground": "/ansi/brightWhite",
+      "backgrounds": [
+        "/tokens/codeBackground",
+        "/tokens/neutralBackground",
+        "/tokens/diffAddedBackground",
+        "/tokens/diffRemovedBackground",
+        "/tokens/diffWordAddedBackground",
+        "/tokens/diffWordRemovedBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "semantic.success.text",
+      "foreground": "/semantics/success/text",
+      "backgrounds": [
+        "/tokens/canvas",
+        "/tokens/surface",
+        "/tokens/inset",
+        "/tokens/raised",
+        "/tokens/hover",
+        "/tokens/active",
+        "/semantics/success/mutedBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "semantic.success.emphasis",
+      "foreground": "/semantics/success/onEmphasis",
+      "backgrounds": [
+        "/semantics/success/emphasisBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "semantic.success.border",
+      "foreground": "/semantics/success/border",
+      "backgrounds": [
+        "/tokens/canvas",
+        "/tokens/surface",
+        "/tokens/inset",
+        "/tokens/raised",
+        "/tokens/hover",
+        "/tokens/active",
+        "/semantics/success/mutedBackground"
+      ],
+      "minimum": 3,
+      "purpose": "boundary"
+    },
+    {
+      "id": "semantic.danger.text",
+      "foreground": "/semantics/danger/text",
+      "backgrounds": [
+        "/tokens/canvas",
+        "/tokens/surface",
+        "/tokens/inset",
+        "/tokens/raised",
+        "/tokens/hover",
+        "/tokens/active",
+        "/semantics/danger/mutedBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "semantic.danger.emphasis",
+      "foreground": "/semantics/danger/onEmphasis",
+      "backgrounds": [
+        "/semantics/danger/emphasisBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "semantic.danger.border",
+      "foreground": "/semantics/danger/border",
+      "backgrounds": [
+        "/tokens/canvas",
+        "/tokens/surface",
+        "/tokens/inset",
+        "/tokens/raised",
+        "/tokens/hover",
+        "/tokens/active",
+        "/semantics/danger/mutedBackground"
+      ],
+      "minimum": 3,
+      "purpose": "boundary"
+    },
+    {
+      "id": "semantic.warning.text",
+      "foreground": "/semantics/warning/text",
+      "backgrounds": [
+        "/tokens/canvas",
+        "/tokens/surface",
+        "/tokens/inset",
+        "/tokens/raised",
+        "/tokens/hover",
+        "/tokens/active",
+        "/semantics/warning/mutedBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "semantic.warning.emphasis",
+      "foreground": "/semantics/warning/onEmphasis",
+      "backgrounds": [
+        "/semantics/warning/emphasisBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "semantic.warning.border",
+      "foreground": "/semantics/warning/border",
+      "backgrounds": [
+        "/tokens/canvas",
+        "/tokens/surface",
+        "/tokens/inset",
+        "/tokens/raised",
+        "/tokens/hover",
+        "/tokens/active",
+        "/semantics/warning/mutedBackground"
+      ],
+      "minimum": 3,
+      "purpose": "boundary"
+    },
+    {
+      "id": "semantic.done.text",
+      "foreground": "/semantics/done/text",
+      "backgrounds": [
+        "/tokens/canvas",
+        "/tokens/surface",
+        "/tokens/inset",
+        "/tokens/raised",
+        "/tokens/hover",
+        "/tokens/active",
+        "/semantics/done/mutedBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "semantic.done.emphasis",
+      "foreground": "/semantics/done/onEmphasis",
+      "backgrounds": [
+        "/semantics/done/emphasisBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "semantic.done.border",
+      "foreground": "/semantics/done/border",
+      "backgrounds": [
+        "/tokens/canvas",
+        "/tokens/surface",
+        "/tokens/inset",
+        "/tokens/raised",
+        "/tokens/hover",
+        "/tokens/active",
+        "/semantics/done/mutedBackground"
+      ],
+      "minimum": 3,
+      "purpose": "boundary"
+    },
+    {
+      "id": "semantic.sponsor.text",
+      "foreground": "/semantics/sponsor/text",
+      "backgrounds": [
+        "/tokens/canvas",
+        "/tokens/surface",
+        "/tokens/inset",
+        "/tokens/raised",
+        "/tokens/hover",
+        "/tokens/active",
+        "/semantics/sponsor/mutedBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "semantic.sponsor.emphasis",
+      "foreground": "/semantics/sponsor/onEmphasis",
+      "backgrounds": [
+        "/semantics/sponsor/emphasisBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "semantic.sponsor.border",
+      "foreground": "/semantics/sponsor/border",
+      "backgrounds": [
+        "/tokens/canvas",
+        "/tokens/surface",
+        "/tokens/inset",
+        "/tokens/raised",
+        "/tokens/hover",
+        "/tokens/active",
+        "/semantics/sponsor/mutedBackground"
+      ],
+      "minimum": 3,
+      "purpose": "boundary"
+    },
+    {
+      "id": "controlBorder",
+      "foreground": "/tokens/controlBorder",
+      "backgrounds": [
+        "/tokens/canvas",
+        "/tokens/surface",
+        "/tokens/inset",
+        "/tokens/raised",
+        "/tokens/hover",
+        "/tokens/active",
+        "/tokens/inputBackground"
+      ],
+      "minimum": 3,
+      "purpose": "boundary"
+    },
+    {
+      "id": "primaryBorder",
+      "foreground": "/tokens/primaryBorder",
+      "backgrounds": [
+        "/tokens/canvas",
+        "/tokens/surface",
+        "/tokens/inset",
+        "/tokens/raised",
+        "/tokens/hover",
+        "/tokens/active"
+      ],
+      "minimum": 3,
+      "purpose": "boundary"
+    },
+    {
+      "id": "disabledBorder",
+      "foreground": "/tokens/disabledBorder",
+      "backgrounds": [
+        "/tokens/disabledBackground",
+        "/tokens/canvas",
+        "/tokens/surface",
+        "/tokens/inset",
+        "/tokens/raised",
+        "/tokens/hover",
+        "/tokens/active"
+      ],
+      "minimum": 3,
+      "purpose": "boundary"
+    },
+    {
+      "id": "labelBorder",
+      "foreground": "/tokens/labelBorder",
+      "backgrounds": [
+        "/tokens/labelBackground",
+        "/tokens/canvas",
+        "/tokens/surface",
+        "/tokens/inset",
+        "/tokens/raised",
+        "/tokens/hover",
+        "/tokens/active"
+      ],
+      "minimum": 3,
+      "purpose": "boundary"
+    },
+    {
+      "id": "focusOuter",
+      "foreground": "/tokens/focusOuter",
+      "backgrounds": [
+        "/tokens/canvas",
+        "/tokens/surface",
+        "/tokens/inset",
+        "/tokens/raised",
+        "/tokens/hover",
+        "/tokens/active"
+      ],
+      "minimum": 3,
+      "purpose": "focus"
+    },
+    {
+      "id": "focusInner",
+      "foreground": "/tokens/focusInner",
+      "backgrounds": [
+        "/tokens/focusOuter"
+      ],
+      "minimum": 3,
+      "purpose": "focus"
+    }
+  ]
+}
