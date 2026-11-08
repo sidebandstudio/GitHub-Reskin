@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFile, readdir } from "node:fs/promises";
 import { join } from "node:path";
 import test from "node:test";
-import { ROOT, extensionFiles, extensionManifest, loadEntry, loadReleaseConfig, manifestPaths, manifestProblems } from "../../scripts/build.mjs";
+import { ROOT, extensionFiles, extensionManifest, loadEntry, loadReleaseConfig, manifestPaths, manifestProblems, noticeProblems } from "../../scripts/build.mjs";
 
 const config = await loadReleaseConfig();
 const entry = await loadEntry(config);
@@ -84,4 +84,20 @@ test("the frozen mode snapshot cannot change under the build", async () => {
   await assert.rejects(extensionFiles("firefox", { config, entry: { ...entry, files: [...entry.files, "../package.json"] } }), /must stay inside/);
   const missing = { ...entry, files: entry.files.filter((path) => path !== "popup.html") };
   await assert.rejects(extensionFiles("chrome", { config, entry: missing }), /names files the entry lacks: popup\.html/);
+});
+
+test("the frozen Primer-derived snapshot ships with the upstream Primer notice", async () => {
+  assert.deepEqual(noticeProblems(entry), []);
+  assert.deepEqual(entry.notices.map((n) => [n.file, n.license, n.covers]), [["licenses/primer-primitives.txt", "MIT", ["github-modes.js"]]]);
+  const notice = await readFile(join(ROOT, "licenses/primer-primitives.txt"), "utf8");
+  assert.match(notice, /Copyright \(c\) 2018 GitHub Inc\./);
+  assert.match(notice, /The above copyright notice and this permission notice shall be included/);
+  const { files } = await extensionFiles("firefox", { config, entry });
+  assert.equal(files["licenses/primer-primitives.txt"].toString(), notice);
+
+  const uncovered = { ...entry, notices: [] };
+  assert.match(noticeProblems(uncovered).join("\n"), /frozen extension\/github-modes\.js has no upstream license notice/);
+  await assert.rejects(extensionFiles("chrome", { config, entry: uncovered }), /no upstream license notice/);
+  const wrong = { ...entry, notices: [{ ...entry.notices[0], covers: ["gone.js"] }] };
+  assert.match(noticeProblems(wrong).join("\n"), /covers gone\.js, which the entry lacks/);
 });

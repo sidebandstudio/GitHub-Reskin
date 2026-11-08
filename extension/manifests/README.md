@@ -9,9 +9,10 @@ browser's `manifest.json` from them:
 - The version comes from `release.config.json`.
 
 `entries.json` lists runtime entries. `release.config.json` `extension.entry` picks one. An entry
-names its source `root`, every runtime `file` the package gets, and the sha256 of `frozen` inputs
-the build must not see change. The build copies exactly those files plus `LICENSE` and the
-manifest. It does not discover files, so a file missing from the list is missing from the
+names its source `root`, every runtime `file` the package gets, the sha256 of `frozen` inputs
+the build must not see change, and the upstream license `notices` for material it ships. Each
+frozen input must be covered by a notice. The build copies exactly those files plus `LICENSE`,
+each notice file at its repository path, and the manifest. It does not discover files, so a file missing from the list is missing from the
 package, and the build fails when the manifest names a file the entry lacks.
 
 ## Moving to the new extension (C6)
@@ -24,7 +25,8 @@ manifests equal to it while that entry is selected.
 To switch:
 
 1. Add a new entry to `entries.json` whose files are the built outputs C4 to C6 provide (background
-   script, content entry, pages, fonts, icons).
+   script, content entry, pages, fonts, icons), with notices for the frozen Primer data (C3's
+   `vendor/primer/` licenses) and the font OFL files.
 2. Update `base.json` to reference them, and the overlays for the background: Chrome
    `{"background": {"service_worker": ...}}`, Firefox `{"background": {"scripts": [...]}}`.
    Font files go in `web_accessible_resources` for the two GitHub origins only.

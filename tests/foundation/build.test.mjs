@@ -24,10 +24,11 @@ test("two builds of each target write the same files", async () => {
 test("the browser packages carry the 1.1.0 files unchanged", async () => {
   await withTempDir(async (tmp) => {
     const { dir, files } = await build({ target: "firefox", outDir: tmp });
-    for (const path of Object.keys(files).filter((p) => p !== "manifest.json" && p !== "LICENSE")) {
+    const licenses = ["LICENSE", "licenses/primer-primitives.txt"];
+    for (const path of Object.keys(files).filter((p) => p !== "manifest.json" && !licenses.includes(p))) {
       assert.deepEqual(await readFile(join(dir, path)), await readFile(join(ROOT, "extension", path)), path);
     }
-    assert.deepEqual(await readFile(join(dir, "LICENSE")), await readFile(join(ROOT, "LICENSE")));
+    for (const path of licenses) assert.deepEqual(await readFile(join(dir, path)), await readFile(join(ROOT, path)), path);
   });
 });
 

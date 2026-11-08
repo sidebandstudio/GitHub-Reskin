@@ -8,7 +8,7 @@ import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { unzipSync } from "fflate";
-import { LICENSE_FILES, ROOT, extensionManifest, loadEntry, loadReleaseConfig, manifestPaths, manifestProblems, sha256 } from "./build.mjs";
+import { ROOT, extensionManifest, licenseFiles, loadEntry, loadReleaseConfig, manifestPaths, manifestProblems, noticeProblems, readSource, sha256 } from "./build.mjs";
 import { artifactName } from "./package.mjs";
 
 const DOS_1980_01_01 = (0 << 9) | (1 << 5) | 1;
@@ -106,8 +106,19 @@ export async function verifyArtifacts(dir = "artifacts") {
     return (contents[name] = files);
   };
 
+  // License files, checked-in bytes. Each must ship unchanged in both packages and the source archive.
+  for (const problem of noticeProblems(entry)) fail(problem);
+  const licenses = {};
+  for (const path of licenseFiles(entry)) licenses[path] = sha256(await readSource(path));
+  const licensesIn = (name, files) => {
+    for (const [path, hash] of Object.entries(licenses)) {
+      if (!files[path]?.length) fail(`${name}: license file ${path} is missing`);
+      else if (sha256(files[path]) !== hash) fail(`${name}: ${path} differs from the checked-in notice`);
+    }
+  };
+
   // Browser packages.
-  const allowed = [...entry.files, ...LICENSE_FILES, "manifest.json"].sort();
+  const allowed = [...entry.files, ...Object.keys(licenses), "manifest.json"].sort();
   const manifests = {};
   for (const browser of ["chrome", "firefox"]) {
     const name = artifactName(version, browser);
@@ -123,7 +134,7 @@ export async function verifyArtifacts(dir = "artifacts") {
     for (const path of manifestPaths(manifest)) if (!files[path]) fail(`${name}: the manifest names ${path}, which is missing`);
     const paths = Object.keys(files).sort();
     if (JSON.stringify(paths) !== JSON.stringify(allowed)) fail(`${name}: files ${paths.join(", ")} differ from the entry allowlist ${allowed.join(", ")}`);
-    for (const license of LICENSE_FILES) if (!files[license]?.length) fail(`${name}: ${license} is missing`);
+    licensesIn(name, files);
     for (const problem of remoteResourceProblems(files)) fail(`${name}: ${problem}`);
   }
   // The two packages hold the same files; only the manifest may differ.
@@ -159,6 +170,7 @@ export async function verifyArtifacts(dir = "artifacts") {
       const file = source[`${entry.root}/${path}`];
       if (file && sha256(file) !== hash) fail(`the source archive's ${entry.root}/${path} is not the frozen snapshot`);
     }
+    licensesIn("the source archive", source);
   }
 
   // build-info agrees with the release and the files.
@@ -171,7 +183,13 @@ export async function verifyArtifacts(dir = "artifacts") {
       fail(`built with Node ${info.toolchain?.node} and npm ${info.toolchain?.npm}; the release toolchain is Node ${config.toolchain.node} and npm ${config.toolchain.npm}`);
     }
     for (const [name, { sha256: hash }] of Object.entries(info.artifacts || {})) if (bytes[name] && sha256(bytes[name]) !== hash) fail(`build-info's hash of ${name} is wrong`);
-    if (info.licenses?.[0]?.file !== "LICENSE") fail("build-info has no license inventory");
+    const inventory = new Map((info.licenses || []).map((item) => [item.file, item]));
+    for (const [path, hash] of Object.entries(licenses)) {
+      const item = inventory.get(path);
+      if (!item) fail(`build-info's license inventory lacks ${path}`);
+      else if (item.sha256 !== hash || JSON.stringify(item.in) !== JSON.stringify(["chrome", "firefox", "amo-source"])) fail(`build-info's inventory entry for ${path} is wrong`);
+    }
+    for (const path of inventory.keys()) if (!licenses[path]) fail(`build-info lists ${path}, which no package carries`);
   }
 
   // A release tag must name the release version.

@@ -17,6 +17,14 @@
     ],
     "frozen": {
       "github-modes.js": "52e1c0ab1130175fda22c84bf2a910899e85363a2ea2b5b82a251b06d259c669"
-    }
+    },
+    "notices": [
+      {
+        "file": "licenses/primer-primitives.txt",
+        "license": "MIT",
+        "covers": ["github-modes.js"],
+        "upstream": "https://github.com/primer/primitives"
+      }
+    ]
   }
 }

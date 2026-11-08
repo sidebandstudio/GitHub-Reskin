@@ -3,7 +3,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import test from "node:test";
 import { strToU8, unzipSync, zipSync } from "fflate";
-import { loadReleaseConfig, sha256 } from "../../scripts/build.mjs";
+import { ROOT, loadReleaseConfig, sha256 } from "../../scripts/build.mjs";
 import { artifactName, packageRelease, zip } from "../../scripts/package.mjs";
 import { verifyArtifacts, zipEntries } from "../../scripts/verify-artifacts.mjs";
 import { withTempDir } from "../helpers/tmp.mjs";
@@ -75,10 +75,20 @@ test("package writes versioned ZIPs, the userscript, a source archive, checksums
     const source = unzipSync(await readFile(join(out, artifactName(version, "amo-source"))));
     for (const path of ["BUILDING.md", "package-lock.json", "extension/github-modes.js", "scripts/build.mjs"]) assert.ok(source[path], path);
     assert.ok(!Object.keys(source).some((path) => /^(node_modules|dist|artifacts)\//.test(path)));
+    const notice = await readFile(join(ROOT, "licenses/primer-primitives.txt"));
+    assert.deepEqual(Buffer.from(source["licenses/primer-primitives.txt"]), notice);
     for (const browser of ["chrome", "firefox"]) {
       const files = unzipSync(await readFile(join(out, artifactName(version, browser))));
       assert.ok(files["manifest.json"] && files.LICENSE, browser);
+      assert.deepEqual(Buffer.from(files["licenses/primer-primitives.txt"]), notice, browser);
     }
+    assert.deepEqual(
+      info.licenses.map((item) => [item.file, item.license, item.covers, item.in]),
+      [
+        ["LICENSE", "MIT", ["GitHub Reskin"], ["chrome", "firefox", "amo-source"]],
+        ["licenses/primer-primitives.txt", "MIT", ["extension/github-modes.js"], ["chrome", "firefox", "amo-source"]],
+      ],
+    );
 
     // The checks pass on real output when the toolchain is the pinned one.
     const problems = await verifyArtifacts(out);
@@ -98,7 +108,11 @@ test("check:artifacts catches new permissions, wrong Gecko IDs, stray files, dat
     await plant(out, firefox, editManifest((m) => ({ ...m, browser_specific_settings: { gecko: { ...m.browser_specific_settings.gecko, id: "x@y" } } })));
     await plant(out, chrome, (files) => (files["notes.txt"] = strToU8("hi")));
     await plant(out, firefox, (files) => (files["popup.js"] = strToU8(`fetch("https://example.com/theme.json");\n`)));
+    await plant(out, firefox, (files) => delete files["licenses/primer-primitives.txt"]);
+    await plant(out, artifactName(version, "amo-source"), (files) => (files["licenses/primer-primitives.txt"] = strToU8("MIT\n")));
     const problems = (await verifyArtifacts(out)).join("\n");
+    assert.match(problems, /firefox\.zip: license file licenses\/primer-primitives\.txt is missing/);
+    assert.match(problems, /the source archive: licenses\/primer-primitives\.txt differs from the checked-in notice/);
     assert.match(problems, /chrome\.zip: permissions/);
     assert.match(problems, /firefox\.zip: the Gecko ID/);
     assert.match(problems, /chrome\.zip: files .*notes\.txt/);

@@ -12,7 +12,7 @@ import { parseArgs } from "node:util";
 import { BUILD_TARGETS, GECKO_ID } from "../packages/contracts/index.js";
 
 export const ROOT = fileURLToPath(new URL("..", import.meta.url));
-// Files every browser package carries besides its entry.
+// Files every browser package carries besides its entry and the entry's upstream notices.
 export const LICENSE_FILES = ["LICENSE"];
 const TEXT = /\.(js|mjs|css|html|json|txt|md|svg)$/;
 // Test-only content-script matches. Production manifests never contain them.
@@ -51,6 +51,25 @@ export async function loadEntry(config) {
   const entry = Object.hasOwn(entries, config.extension.entry) && entries[config.extension.entry];
   if (!entry) throw new Error(`release.config.json names extension entry "${config.extension.entry}", which entries.json lacks`);
   return entry;
+}
+
+// The license files a package of this entry carries: the project's own, then each upstream notice.
+export const licenseFiles = (entry) => [...LICENSE_FILES, ...entry.notices.map((notice) => notice.file)];
+
+// Problems with an entry's notices, as messages. Every frozen input is upstream material, so each
+// needs a notice that covers it, and each notice must cover files the entry really has.
+export function noticeProblems(entry) {
+  const problems = [];
+  const covered = new Set();
+  for (const notice of entry.notices || []) {
+    if (!notice.file || !notice.license || !notice.upstream || !notice.covers?.length) problems.push(`notice ${JSON.stringify(notice)} needs file, license, upstream and covers`);
+    for (const path of notice.covers || []) {
+      if (!entry.files.includes(path)) problems.push(`notice ${notice.file} covers ${path}, which the entry lacks`);
+      covered.add(path);
+    }
+  }
+  for (const path of Object.keys(entry.frozen)) if (!covered.has(path)) problems.push(`frozen ${entry.root}/${path} has no upstream license notice`);
+  return problems;
 }
 
 // Objects merge key by key; anything else in the overlay replaces the base value.
@@ -155,7 +174,12 @@ export async function extensionFiles(browser, { config, entry, testFixture }) {
       throw new Error(`${entry.root}/${path} is frozen for this entry and has changed. The build never regenerates it.`);
     }
   }
-  for (const path of LICENSE_FILES) files[path] = await readSource(path);
+  const notices = noticeProblems(entry);
+  if (notices.length) throw new Error(`extension entry:\n  ${notices.join("\n  ")}`);
+  for (const path of licenseFiles(entry)) {
+    if (files[path]) throw new Error(`License file ${path} collides with an entry file`);
+    files[path] = await readSource(path);
+  }
 
   const manifest = await extensionManifest(browser, config);
   if (testMatches.length) for (const script of manifest.content_scripts) script.matches = [...script.matches, ...testMatches];

@@ -10,7 +10,7 @@ import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { zipSync } from "fflate";
-import { ROOT, build, extensionManifest, loadEntry, loadReleaseConfig, readSource, sha256, treeHash } from "./build.mjs";
+import { LICENSE_FILES, ROOT, build, extensionManifest, loadEntry, loadReleaseConfig, readSource, sha256, treeHash } from "./build.mjs";
 
 const ZIP_FILE_MODE = (0o100644 << 16) >>> 0;
 const UNIX = 3;
@@ -75,7 +75,17 @@ The extension entry is "${config.extension.entry}": ${entry.description} The fil
 extension/manifests/entries.json and copied without transformation. extension/github-modes.js is a
 frozen, checked-in snapshot of GitHub's mode colors; the build checks its hash and never regenerates it.
 scripts/github-modes.mjs is a separate maintenance tool that fetches github.com, and no build step runs it.
+
+Licenses: LICENSE covers GitHub Reskin. ${entry.notices.map((n) => `${n.file} is the ${n.license} notice for ${n.covers.map((p) => `${entry.root}/${p}`).join(", ")} (${n.upstream})`).join("; ")}. Both browser packages carry them at the same paths.
 `;
+
+// Every license file the packages carry, with what it covers and where it ships.
+async function licenseInventory(entry) {
+  const packages = ["chrome", "firefox", "amo-source"];
+  const own = LICENSE_FILES.map((file) => ({ file, license: "MIT", covers: ["GitHub Reskin"], upstream: null }));
+  const notices = entry.notices.map(({ file, license, covers, upstream }) => ({ file, license, covers: covers.map((path) => `${entry.root}/${path}`), upstream }));
+  return Promise.all([...own, ...notices].map(async (item) => ({ ...item, sha256: sha256(await readSource(item.file)), in: packages })));
+}
 
 async function sourceFiles(config, entry) {
   const listed = git("ls-files", "-z", "--cached", "--others", "--exclude-standard");
@@ -134,7 +144,7 @@ export async function packageRelease({ outDir = "artifacts", distDir = "dist", s
       engine: null,
     },
     manifestDifferences: differences(await extensionManifest("chrome", config), await extensionManifest("firefox", config)),
-    licenses: [{ file: "LICENSE", license: "MIT", in: ["chrome", "firefox", "amo-source"] }],
+    licenses: await licenseInventory(entry),
     artifacts: Object.fromEntries(Object.keys(artifacts).sort().map((name) => [name, { bytes: artifacts[name].length, sha256: sha256(artifacts[name]) }])),
   };
   artifacts["build-info.json"] = Buffer.from(`${JSON.stringify(info, null, 2)}\n`);
