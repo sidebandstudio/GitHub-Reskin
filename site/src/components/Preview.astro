@@ -1,0 +1,160 @@
+---
+// The interactive preview: an inert, GitHub-like rendering of the offline whoisaldo fixture with
+// profile, code and diff views. It is pre-rendered in the given theme so it works without
+// JavaScript; the client script mounts the preview engine on it to switch themes and views.
+// Fixture links are inert text with their destinations kept as data. No controls live inside.
+import Icon from "./Icon.astro";
+import { ADAPTER_ID, DEFAULT_PREFERENCES, declarations, resolvePreview } from "../engine.mjs";
+import { DIFF, LANGUAGE_COLORS, asset, calendarWeeks, formatCount, formatDate, profile } from "../lib/fixture.mjs";
+
+interface Props { id: string; theme: any; label: string; views?: string[]; calendar?: boolean; crop?: boolean; preferences?: any }
+const { id, theme, label, views = ["profile", "repo", "diff"], calendar = true, crop = false, preferences = DEFAULT_PREFERENCES } = Astro.props;
+
+const state = resolvePreview(theme, preferences);
+const flavor = state.flavor;
+const { header, pinnedRepositories, organizations, contributions, repository: repo } = profile;
+const weeks = calendar ? calendarWeeks() : [];
+const bio = header.bio.split(/\r?\n/).map((line: string) => line.trim());
+const range = `${formatDate(contributions.rangeStart)} to ${formatDate(contributions.rangeEnd)}`;
+const COMPACT_WEEKS = 26;
+const dirsFirst = repo.files;
+---
+<div
+  class:list={["pv", { "pv--crop": crop }]}
+  id={id}
+  role="region"
+  aria-label={label}
+  data-preview
+  data-adapter={ADAPTER_ID}
+  data-view="profile"
+  {...state.attrs}
+  style={declarations(state.vars)}
+>
+  <div class="pv-fx" aria-hidden="true">
+    <span class="pv-fx-rail"></span>
+    <span class="pv-fx-rules"><i></i><i></i><i></i><i></i><i></i></span>
+    <span class="pv-fx-orbit"><i></i><i></i></span>
+    <span class="pv-fx-seal"></span>
+    <span class="pv-fx-drift">{Array.from({ length: 12 }, () => <i></i>)}</span>
+  </div>
+
+  <div class="pv-chrome" aria-hidden="true">
+    <span class="pv-burger"><i></i><i></i><i></i></span>
+    <span class="pv-crumb"><span data-crumb="profile">whoisaldo</span><span data-crumb="repo">sidebandstudio / <b>GitHub-Reskin</b></span></span>
+    <span class="pv-search">Type / to search</span>
+  </div>
+
+  {views.includes("profile") && (
+    <section class="pv-view pv-profile" data-pv-view="profile" aria-label="Profile">
+      <div class="pv-tabs" aria-hidden="true">
+        <span class="is-on">Overview</span><span>Repositories <em>{header.publicRepositories}</em></span><span>Projects</span><span>Packages</span><span>Stars</span>
+      </div>
+      <div class="pv-profile-grid">
+        <div class="pv-side">
+          <img class="pv-avatar" src={asset(header.avatar.path)} width="128" height="128" alt={header.avatar.alt} decoding="async" fetchpriority={crop ? "low" : "high"} />
+          <div class="pv-names">
+            <p class="pv-name">{header.displayName}</p>
+            <p class="pv-login">{header.login}</p>
+            <span class="pv-tag" data-slot="profile.tag" aria-hidden="true" hidden={!flavor["profile.tag"]}>{flavor["profile.tag"]}</span>
+          </div>
+          <p class="pv-bio">{bio.map((line: string, i: number) => <>{i > 0 && <br />}{line}</>)}</p>
+          <p class="pv-follow"><Icon name="people" /> <b>{header.followers}</b> followers · <b>{header.following}</b> following</p>
+          <ul class="pv-details">
+            <li><Icon name="building" /> {header.company}</li>
+            <li><Icon name="pin" /> {header.location}</li>
+            {header.links.map((link: any) => <li><Icon name="link" /> <span class="pv-a" data-href={link.url}>{link.label}</span></li>)}
+          </ul>
+          {organizations.length > 0 && (
+            <div class="pv-orgs">
+              <p class="pv-h pv-h-sm">Organizations</p>
+              {organizations.map((org: any) => <img src={asset(org.avatarPath)} width="32" height="32" alt={`@${org.login}`} loading="lazy" decoding="async" />)}
+            </div>
+          )}
+        </div>
+        <div class="pv-main">
+          <p class="pv-h">{profile.pinnedHeading}<span class="pv-flavor" data-slot="profile.pinned.heading" aria-hidden="true" hidden={!flavor["profile.pinned.heading"]}>{flavor["profile.pinned.heading"]}</span></p>
+          <ol class="pv-pins">
+            {pinnedRepositories.slice(0, 4).map((pin: any) => (
+              <li class="pv-card">
+                <p class="pv-card-head"><Icon name="book" /> <span class="pv-a pv-repo" data-href={pin.url}>{pin.name}</span> <span class="pv-label">{pin.visibility}</span></p>
+                {pin.description && <p class="pv-desc">{pin.description}</p>}
+                <p class="pv-card-meta">
+                  {pin.language && <span><i class="pv-lang" style={`--lang:${LANGUAGE_COLORS[pin.language] || "#8b949e"}`}></i>{pin.language}</span>}
+                  <span><Icon name="star" label="Stars" /> {formatCount(pin.stars)}</span>
+                  <span><Icon name="fork" label="Forks" /> {formatCount(pin.forks)}</span>
+                </p>
+              </li>
+            ))}
+          </ol>
+          {calendar && (
+            <div class="pv-contrib">
+              <p class="pv-h pv-h-sm">{contributions.nativeHeading}</p>
+              <div class="pv-cal-box">
+                <div class="pv-cal" role="img" aria-label={`Contribution calendar from ${range}. Each square's color shows that day's activity level, from less to more.`} style={`--weeks:${weeks.length};--compact:${COMPACT_WEEKS}`}>
+                  {weeks.map((week) => <span class="pv-w">{week.map((day) => day ? <i data-l={day.level}></i> : <i class="pv-pad"></i>)}</span>)}
+                </div>
+                <div class="pv-cal-foot">
+                  <span class="pv-cal-range" data-full={range}>Last {COMPACT_WEEKS} weeks shown</span>
+                  <span class="pv-legend" aria-hidden="true">Less <i data-l="0"></i><i data-l="1"></i><i data-l="2"></i><i data-l="3"></i><i data-l="4"></i> More</span>
+                </div>
+              </div>
+              <p class="pv-caption" data-slot="contributions.caption" aria-hidden="true" hidden={!flavor["contributions.caption"]}>{flavor["contributions.caption"]}</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  )}
+
+  {views.includes("repo") && (
+    <section class="pv-view pv-repo" data-pv-view="repo" aria-label="Repository code view" hidden>
+      <div class="pv-repo-head">
+        <p class="pv-repo-title"><Icon name="book" /> <span class="pv-a" data-href={`https://github.com/${repo.owner}`}>{repo.owner}</span> / <b class="pv-a" data-href={repo.url}>{repo.name}</b> <span class="pv-label">{repo.visibility}</span></p>
+        <div class="pv-tabs" aria-hidden="true"><span class="is-on">Code</span><span>Issues</span><span>Pull requests</span><span>Actions</span></div>
+      </div>
+      <div class="pv-repo-grid">
+        <div class="pv-files">
+          <p class="pv-files-head"><span class="pv-branch">{repo.defaultBranch}</span><span>{repo.files.length} items</span></p>
+          <ul>
+            {dirsFirst.map((file: any) => <li><Icon name={file.type === "dir" ? "folder" : "file"} /> <span class="pv-a" data-href={file.url}>{file.name}</span></li>)}
+          </ul>
+        </div>
+        <div class="pv-about">
+          <p class="pv-h pv-h-sm">About</p>
+          <p class="pv-desc">{repo.about.description}</p>
+          <p class="pv-card-meta pv-about-meta">
+            <span><Icon name="book" /> {repo.about.license.name}</span>
+            <span><Icon name="star" /> {repo.counts.stars} stars</span>
+            <span><Icon name="fork" /> {repo.counts.forks} fork</span>
+          </p>
+          <p class="pv-h pv-h-sm">Languages</p>
+          <p class="pv-langbar" aria-hidden="true">{repo.languages.map((l: any) => <i style={`--lang:${LANGUAGE_COLORS[l.name]};flex:${l.percentage}`}></i>)}</p>
+          <ul class="pv-langs">{repo.languages.map((l: any) => <li><i class="pv-lang" style={`--lang:${LANGUAGE_COLORS[l.name]}`}></i>{l.name} <span>{l.percentage}%</span></li>)}</ul>
+        </div>
+      </div>
+    </section>
+  )}
+
+  {views.includes("diff") && (
+    <section class="pv-view pv-diff" data-pv-view="diff" aria-label="Example diff" hidden>
+      <div class="pv-diff-file">
+        <p class="pv-diff-head"><span class="pv-diff-name">{DIFF.file}</span><span class="pv-diff-stat"><span class="pv-plus">+{DIFF.additions}</span> <span class="pv-minus">−{DIFF.deletions}</span></span><span class="pv-diff-note">Example change</span></p>
+        <div class="pv-diff-scroll" tabindex="0" role="group" aria-label={`Diff of ${DIFF.file}. Scrolls sideways on narrow screens.`}>
+          <table class="pv-diff-table">
+            <tbody>
+              {DIFF.lines.map((line: any) => line.kind === "hunk" ? (
+                <tr class="pv-hunk"><td colspan="3">{line.text}</td></tr>
+              ) : (
+                <tr class={`pv-${line.kind}`}>
+                  <td class="pv-ln">{line.old ?? ""}</td>
+                  <td class="pv-ln">{line.new ?? ""}</td>
+                  <td class="pv-code"><span class="pv-sign" aria-hidden="true">{line.kind === "add" ? "+" : line.kind === "del" ? "−" : " "}</span>{line.kind !== "ctx" && <span class="sr-only">{line.kind === "add" ? "Added: " : "Removed: "}</span>}{line.code.map(([k, t]: [string, string]) => k ? <span class={`pv-syn-${k}`}>{t}</span> : t)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  )}
+</div>

@@ -1,0 +1,82 @@
+{
+  "$schema": "https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json",
+  "schemaVersion": 1,
+  "name": "Peanut Dossier",
+  "author": "sidebandstudio",
+  "version": "1.0.0",
+  "description": "Mint paper, berry accents and a tidy dossier stamp give GitHub a playful retro-agency look.",
+  "inspiredBy": "Spy x Family",
+  "tags": [
+    "anime",
+    "light"
+  ],
+  "base": "light",
+  "colors": {
+    "background": "#eaf7ef",
+    "text": "#21382e",
+    "accent": "#a32678",
+    "contribution": "#285c40"
+  },
+  "overrides": {
+    "surface": "#f7fff9",
+    "inset": "#d8ebdd",
+    "raised": "#dae8e0",
+    "hover": "#d2e0d8",
+    "mutedText": "#4a6152",
+    "link": "#8c3249",
+    "border": "#aabda8",
+    "controlBorder": "#4d6555",
+    "accentMuted": "#dfd6dc",
+    "primaryBackground": "#86205e",
+    "primaryText": "#ffffff",
+    "focus": "#536d5d",
+    "selectionBackground": "#86205e",
+    "selectionText": "#ffffff",
+    "success": "#286344",
+    "danger": "#a82e47",
+    "warning": "#77570f"
+  },
+  "fonts": {
+    "accent": "josefin-sans"
+  },
+  "effects": {
+    "paper": {
+      "texture": "halftone",
+      "opacity": 0.035,
+      "scale": 12
+    },
+    "rules": {
+      "style": "ticks",
+      "opacity": 0.08,
+      "spacing": 24
+    },
+    "seal": {
+      "shape": "brackets",
+      "size": 20,
+      "opacity": 0.3
+    }
+  },
+  "flavor": {
+    "enabled": true,
+    "locale": "en",
+    "slots": {
+      "profile.pinned.heading": "Selected dossiers",
+      "profile.activity.heading": "Mission log",
+      "profile.organizations.heading": "Agency outposts",
+      "profile.tag": "// dossier desk",
+      "error.notFound.caption": "No dossier at this address.",
+      "empty.pinned.caption": "Room for a first dossier.",
+      "empty.issues.caption": "No dossiers in this view.",
+      "contributions.caption": "A year of field notes, one contribution at a time."
+    }
+  },
+  "contributions": {
+    "levels": [
+      "#e0ebdd",
+      "#628e6d",
+      "#50845a",
+      "#407850",
+      "#285c40"
+    ]
+  }
+}

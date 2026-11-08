@@ -1,0 +1,45 @@
+---
+import { SUPPORT, href } from "../lib/site.mjs";
+---
+<section class="section" id="faq" aria-labelledby="faq-title">
+  <div class="wrap faq">
+    <div class="section-head">
+      <h2 id="faq-title">Questions before you install.</h2>
+      <p>Anything else? <a href={SUPPORT.issues}>Open an issue on GitHub</a>.</p>
+    </div>
+    <div class="faq-list">
+      <details>
+        <summary>Does this change what other people see?</summary>
+        <div><p>No. GitHub Reskin changes how GitHub and Gist look in your own browser. Your profile, repositories and contribution counts look normal to everyone else.</p></div>
+      </details>
+      <details>
+        <summary>Can I turn off the fonts, effects and theme lines?</summary>
+        <div><p>Yes. Flavor extras start on and one switch turns them all off while keeping the theme's colors. Separate switches cover text, motion, fonts and effects. Motion also follows your device's reduced-motion setting.</p></div>
+      </details>
+      <details>
+        <summary>Will code and diffs stay readable?</summary>
+        <div><p>Yes. Code, diffs and body text keep their native fonts. Theme colors are checked for contrast, and colors are adjusted where a theme would be hard to read. GitHub's high-contrast modes keep their own colors.</p></div>
+      </details>
+      <details>
+        <summary>What permissions does it need?</summary>
+        <div><p>It asks only for storage, to remember your choices, and runs only on github.com and gist.github.com. It has no telemetry or analytics and makes no network requests of its own. Read the <a href={href("privacy/")}>privacy policy</a>.</p></div>
+      </details>
+      <details>
+        <summary>Does it work on my phone?</summary>
+        <div><p>The extension runs in Chrome and Firefox on desktop. On a phone you can try every theme here and keep the link for your computer. Firefox for Android is not supported yet.</p></div>
+      </details>
+      <details>
+        <summary>How does the AI theme builder work?</summary>
+        <div><p>You copy a prompt, paste it into any chatbot with your idea, and paste its answer back into GitHub Reskin. Nothing connects to a chatbot for you, and no API key is needed. You see a preview and any readability fixes before you use the theme.</p></div>
+      </details>
+      <details>
+        <summary>How do I reset or uninstall?</summary>
+        <div><p>Reset all in the extension's settings clears your themes and preferences. Turning the extension off restores GitHub's own look right away. Removing it from your browser removes its stored settings.</p></div>
+      </details>
+      <details>
+        <summary>What happens when GitHub changes its pages?</summary>
+        <div><p>Colors follow GitHub's own color system, so most changes keep working. If a decoration no longer fits, it stays hidden instead of breaking the page. <a href={SUPPORT.issues}>Report anything that looks wrong</a>.</p></div>
+      </details>
+    </div>
+  </div>
+</section>

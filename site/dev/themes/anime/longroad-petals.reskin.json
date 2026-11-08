@@ -1,0 +1,84 @@
+{
+  "$schema": "https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json",
+  "schemaVersion": 1,
+  "name": "Longroad Petals",
+  "author": "sidebandstudio",
+  "version": "1.0.0",
+  "description": "Silver-lilac paper, a small geometric rosette and petal details give GitHub a quiet travel-journal style.",
+  "inspiredBy": "Frieren",
+  "tags": [
+    "anime",
+    "light"
+  ],
+  "base": "light",
+  "colors": {
+    "background": "#f1f0fa",
+    "text": "#303647",
+    "accent": "#655080",
+    "contribution": "#472c5e"
+  },
+  "overrides": {
+    "surface": "#fbfaff",
+    "inset": "#e3e0ef",
+    "raised": "#e2e1ec",
+    "hover": "#dadae5",
+    "mutedText": "#5f5964",
+    "link": "#495b81",
+    "border": "#81796f",
+    "controlBorder": "#7d756c",
+    "accentMuted": "#dbd6e6",
+    "primaryBackground": "#655080",
+    "primaryText": "#ffffff",
+    "focus": "#655080",
+    "selectionBackground": "#655080",
+    "selectionText": "#ffffff",
+    "success": "#306544",
+    "danger": "#9d384b",
+    "warning": "#765614"
+  },
+  "fonts": {
+    "accent": "alegreya"
+  },
+  "effects": {
+    "paper": {
+      "texture": "grain",
+      "opacity": 0.025,
+      "scale": 12
+    },
+    "seal": {
+      "shape": "rosette",
+      "size": 20,
+      "opacity": 0.22
+    },
+    "drift": {
+      "shape": "petal",
+      "count": 2,
+      "durationMs": 1000,
+      "distance": 6,
+      "opacity": 0.07
+    }
+  },
+  "flavor": {
+    "enabled": true,
+    "locale": "en",
+    "slots": {
+      "profile.pinned.heading": "Collected favorites",
+      "profile.activity.heading": "Journey log",
+      "profile.organizations.heading": "Journal waystations",
+      "profile.tag": "// travel journal",
+      "error.notFound.caption": "This path ends here. There are other roads.",
+      "empty.pinned.caption": "Room for small discoveries.",
+      "empty.issues.caption": "A quiet stop along the road.",
+      "contributions.caption": "A year of small discoveries, one contribution at a time."
+    }
+  },
+  "contributions": {
+    "levels": [
+      "#e3e0e8",
+      "#8f77a9",
+      "#7b5c9b",
+      "#60437c",
+      "#472c5e"
+    ]
+  }
+}

@@ -1,0 +1,81 @@
+{
+  "$schema": "https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json",
+  "schemaVersion": 1,
+  "name": "Choom Circuit",
+  "author": "sidebandstudio",
+  "version": "1.0.0",
+  "description": "Acid lime, cyan signals and a brief decorative afterimage turn GitHub into a late-night city workspace.",
+  "inspiredBy": "Cyberpunk: Edgerunners",
+  "tags": [
+    "anime",
+    "dark"
+  ],
+  "base": "dark",
+  "colors": {
+    "background": "#091312",
+    "text": "#f0f7ed",
+    "accent": "#d5ff35",
+    "contribution": "#d5ff35"
+  },
+  "overrides": {
+    "surface": "#142622",
+    "inset": "#060d0c",
+    "raised": "#1b2524",
+    "hover": "#252e2c",
+    "mutedText": "#aac2b7",
+    "link": "#7de9f5",
+    "border": "#6b8179",
+    "controlBorder": "#6d837b",
+    "accentMuted": "#2a3918",
+    "primaryBackground": "#d5ff35",
+    "primaryText": "#10170a",
+    "focus": "#d5ff35",
+    "selectionBackground": "#d5ff35",
+    "selectionText": "#10170a",
+    "success": "#8de2a2",
+    "danger": "#ff8295",
+    "warning": "#ffd078"
+  },
+  "fonts": {
+    "accent": "rajdhani"
+  },
+  "effects": {
+    "rail": {
+      "shape": "notch",
+      "opacity": 0.22,
+      "thickness": 2
+    },
+    "scanlines": {
+      "opacity": 0.015,
+      "spacing": 6
+    },
+    "echo": {
+      "offset": 3,
+      "durationMs": 160,
+      "opacity": 0.12
+    }
+  },
+  "flavor": {
+    "enabled": true,
+    "locale": "en",
+    "slots": {
+      "profile.pinned.heading": "Signal picks",
+      "profile.activity.heading": "Gig log",
+      "profile.organizations.heading": "Crew outposts",
+      "profile.tag": "// choom view",
+      "error.notFound.caption": "This route went dark. Try a familiar path.",
+      "empty.pinned.caption": "Room for a first pick.",
+      "empty.issues.caption": "No signals in this view.",
+      "contributions.caption": "A year of gigs, one contribution at a time."
+    }
+  },
+  "contributions": {
+    "levels": [
+      "#24372f",
+      "#4e8c60",
+      "#78b94d",
+      "#a9dc3b",
+      "#d5ff35"
+    ]
+  }
+}

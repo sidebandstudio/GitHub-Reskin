@@ -1,0 +1,84 @@
+{
+  "$schema": "https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json",
+  "schemaVersion": 1,
+  "name": "Wisteria Emberline",
+  "author": "sidebandstudio",
+  "version": "1.0.0",
+  "description": "Warm ink, ember-colored activity and a small botanical mark give GitHub a quiet training-journal atmosphere.",
+  "inspiredBy": "Demon Slayer",
+  "tags": [
+    "anime",
+    "dark"
+  ],
+  "base": "dark",
+  "colors": {
+    "background": "#191317",
+    "text": "#f8eee5",
+    "accent": "#ff9478",
+    "contribution": "#ffd8a2"
+  },
+  "overrides": {
+    "surface": "#2a1f27",
+    "inset": "#110d10",
+    "raised": "#2b2527",
+    "hover": "#342d30",
+    "mutedText": "#c6b0b9",
+    "link": "#ffb49c",
+    "border": "#947883",
+    "controlBorder": "#957a84",
+    "accentMuted": "#3e2827",
+    "primaryBackground": "#ff9478",
+    "primaryText": "#26120d",
+    "focus": "#ffd3b5",
+    "selectionBackground": "#ff9478",
+    "selectionText": "#26120d",
+    "success": "#98d7af",
+    "danger": "#ff8ca7",
+    "warning": "#f4cb83"
+  },
+  "fonts": {
+    "accent": "cormorant-garamond"
+  },
+  "effects": {
+    "rail": {
+      "shape": "wave",
+      "opacity": 0.18,
+      "thickness": 1
+    },
+    "seal": {
+      "shape": "sprig",
+      "size": 24,
+      "opacity": 0.3
+    },
+    "drift": {
+      "shape": "ember",
+      "count": 2,
+      "durationMs": 800,
+      "distance": 10,
+      "opacity": 0.08
+    }
+  },
+  "flavor": {
+    "enabled": true,
+    "locale": "en",
+    "slots": {
+      "profile.pinned.heading": "Treasured journals",
+      "profile.activity.heading": "Practice log",
+      "profile.organizations.heading": "Training outposts",
+      "profile.tag": "// ember journal",
+      "error.notFound.caption": "No path here. Return to the trail.",
+      "empty.pinned.caption": "This journal has room for a first pick.",
+      "empty.issues.caption": "A quiet page in the journal.",
+      "contributions.caption": "A year of practice, one contribution at a time."
+    }
+  },
+  "contributions": {
+    "levels": [
+      "#33242b",
+      "#b76c55",
+      "#d68a64",
+      "#f6af7b",
+      "#ffd8a2"
+    ]
+  }
+}

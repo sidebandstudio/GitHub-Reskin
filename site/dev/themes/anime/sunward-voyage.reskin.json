@@ -1,0 +1,80 @@
+{
+  "$schema": "https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json",
+  "schemaVersion": 1,
+  "name": "Sunward Voyage",
+  "author": "sidebandstudio",
+  "version": "1.0.0",
+  "description": "Ocean blue, warm gold and an original chart route bring a sense of open-sea adventure to GitHub.",
+  "inspiredBy": "One Piece",
+  "tags": [
+    "anime",
+    "dark"
+  ],
+  "base": "dark",
+  "colors": {
+    "background": "#0c3153",
+    "text": "#fff2d7",
+    "accent": "#ffcf4a",
+    "contribution": "#ffe0a0"
+  },
+  "overrides": {
+    "surface": "#174365",
+    "inset": "#091b33",
+    "raised": "#1f405e",
+    "hover": "#294863",
+    "mutedText": "#b5becd",
+    "link": "#8fcff0",
+    "border": "#7d8da2",
+    "controlBorder": "#8e9cae",
+    "accentMuted": "#334a52",
+    "primaryBackground": "#ffcf4a",
+    "primaryText": "#172438",
+    "focus": "#f7d992",
+    "selectionBackground": "#ffcf4a",
+    "selectionText": "#172438",
+    "success": "#9cd3a5",
+    "danger": "#ffa79a",
+    "warning": "#f3cf84"
+  },
+  "fonts": {
+    "accent": "fraunces"
+  },
+  "effects": {
+    "rail": {
+      "shape": "route",
+      "opacity": 0.26,
+      "thickness": 2
+    },
+    "seal": {
+      "shape": "compass",
+      "size": 28,
+      "opacity": 0.35
+    },
+    "glow": {
+      "strength": 0.1
+    }
+  },
+  "flavor": {
+    "enabled": true,
+    "locale": "en",
+    "slots": {
+      "profile.pinned.heading": "Prized finds",
+      "profile.activity.heading": "Voyage log",
+      "profile.organizations.heading": "Harbor outposts",
+      "profile.tag": "// chart room",
+      "error.notFound.caption": "No island at these coordinates. Return to known waters.",
+      "empty.pinned.caption": "A shelf for future finds.",
+      "empty.issues.caption": "No routes on this chart.",
+      "contributions.caption": "A year at sea, charted one contribution at a time."
+    }
+  },
+  "contributions": {
+    "levels": [
+      "#29354a",
+      "#a78547",
+      "#c7a153",
+      "#e3bc68",
+      "#ffe0a0"
+    ]
+  }
+}

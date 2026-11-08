@@ -1,0 +1,84 @@
+{
+  "$schema": "https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json",
+  "schemaVersion": 1,
+  "name": "Wallward Scout",
+  "author": "sidebandstudio",
+  "version": "1.0.0",
+  "description": "Olive field notes, pale limestone details and fine cable lines give GitHub an expedition-ready look.",
+  "inspiredBy": "Attack on Titan",
+  "tags": [
+    "anime",
+    "dark"
+  ],
+  "base": "dark",
+  "colors": {
+    "background": "#161a16",
+    "text": "#f0eddf",
+    "accent": "#b7c991",
+    "contribution": "#dfe9b8"
+  },
+  "overrides": {
+    "surface": "#20261f",
+    "inset": "#10130f",
+    "raised": "#272b26",
+    "hover": "#30332e",
+    "mutedText": "#b1b6a5",
+    "link": "#d0dbae",
+    "border": "#727d69",
+    "controlBorder": "#7e8875",
+    "accentMuted": "#30362a",
+    "primaryBackground": "#b7c991",
+    "primaryText": "#151a11",
+    "focus": "#d5e3b8",
+    "selectionBackground": "#b7c991",
+    "selectionText": "#151a11",
+    "success": "#aad39a",
+    "danger": "#f28e83",
+    "warning": "#e3c274"
+  },
+  "fonts": {
+    "accent": "barlow-condensed"
+  },
+  "effects": {
+    "rail": {
+      "shape": "slash",
+      "opacity": 0.2,
+      "thickness": 2
+    },
+    "orbit": {
+      "shape": "arc",
+      "count": 1,
+      "opacity": 0.1
+    },
+    "drift": {
+      "shape": "wisp",
+      "count": 2,
+      "durationMs": 900,
+      "distance": 8,
+      "opacity": 0.06
+    }
+  },
+  "flavor": {
+    "enabled": true,
+    "locale": "en",
+    "slots": {
+      "profile.pinned.heading": "Selected expeditions",
+      "profile.activity.heading": "Expedition log",
+      "profile.organizations.heading": "Field outposts",
+      "profile.tag": "// field journal",
+      "error.notFound.caption": "No route here. Return to familiar ground.",
+      "empty.pinned.caption": "A shelf for future expeditions.",
+      "empty.issues.caption": "No field notes in this view.",
+      "contributions.caption": "A year of expeditions, one contribution at a time."
+    }
+  },
+  "contributions": {
+    "levels": [
+      "#2b3328",
+      "#738455",
+      "#97a86c",
+      "#bbcd8b",
+      "#dfe9b8"
+    ]
+  }
+}

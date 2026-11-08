@@ -1,0 +1,2295 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-11-08T20:15:15Z",
+  "referenceOrder": 1,
+  "profileUrl": "https://github.com/whoisaldo",
+  "sourceIds": [
+    "whoisaldo.page",
+    "whoisaldo.user"
+  ],
+  "header": {
+    "displayName": "Ali Younes",
+    "login": "whoisaldo",
+    "bio": "Northeastern '27 | incoming AWS SDE \r\nCoding, Fitness, Cars, and more!!",
+    "company": "@aws",
+    "location": "Boston, MA",
+    "followers": 28,
+    "following": 18,
+    "publicRepositories": 31,
+    "links": [
+      {
+        "label": "https://aliyounes.dev",
+        "url": "https://aliyounes.dev"
+      },
+      {
+        "label": "in/alialdoyounes",
+        "url": "https://www.linkedin.com/in/alialdoyounes"
+      }
+    ],
+    "avatar": {
+      "path": "assets/avatar-whoisaldo.webp",
+      "width": 256,
+      "height": 256,
+      "maxDisplaySizeCssPx": 128,
+      "alt": "@whoisaldo"
+    }
+  },
+  "pinnedHeading": "Pinned",
+  "pinnedRepositories": [
+    {
+      "name": "EternalMonitor",
+      "fullName": "sidebandstudio/EternalMonitor",
+      "url": "https://github.com/sidebandstudio/EternalMonitor",
+      "description": "Use your iPad as a second screen for Windows. Mirror or extend over Wi-Fi or USB, with touch, keyboard, Apple Pencil and PC audio.",
+      "language": "Rust",
+      "stars": 140,
+      "forks": 8,
+      "visibility": "Public",
+      "sourceIds": [
+        "whoisaldo.page",
+        "whoisaldo.pin.1"
+      ]
+    },
+    {
+      "name": "Eternal-Rich-Presence",
+      "fullName": "sidebandstudio/Eternal-Rich-Presence",
+      "url": "https://github.com/sidebandstudio/Eternal-Rich-Presence",
+      "description": "Discord Rich Presence bridge for Apple Music and Spotify with live cover art and a cross-platform \"Listen Along\" sync feature.",
+      "language": "Python",
+      "stars": 22,
+      "forks": 1,
+      "visibility": "Public",
+      "sourceIds": [
+        "whoisaldo.page",
+        "whoisaldo.pin.2"
+      ]
+    },
+    {
+      "name": "gpubridge",
+      "fullName": "sidebandstudio/gpubridge",
+      "url": "https://github.com/sidebandstudio/gpubridge",
+      "description": "Run one PyTorch training job across NVIDIA and AMD GPUs at once: native NCCL/RCCL per vendor, joined by a CPU bridge.",
+      "language": "Python",
+      "stars": 0,
+      "forks": 1,
+      "visibility": "Public",
+      "sourceIds": [
+        "whoisaldo.page",
+        "whoisaldo.pin.3"
+      ]
+    },
+    {
+      "name": "t3code",
+      "fullName": "pingdotgg/t3code",
+      "url": "https://github.com/pingdotgg/t3code",
+      "description": null,
+      "language": "TypeScript",
+      "stars": 52313,
+      "forks": 9993,
+      "visibility": "Public",
+      "sourceIds": [
+        "whoisaldo.page",
+        "whoisaldo.pin.4"
+      ]
+    },
+    {
+      "name": "Exerly-Fitness",
+      "fullName": "sidebandstudio/Exerly-Fitness",
+      "url": "https://github.com/sidebandstudio/Exerly-Fitness",
+      "description": "Fitness app for iOS and web: SwiftUI client, Node.js API and a Gemini coach.",
+      "language": "Swift",
+      "stars": 0,
+      "forks": 0,
+      "visibility": "Public",
+      "sourceIds": [
+        "whoisaldo.page",
+        "whoisaldo.pin.5"
+      ]
+    },
+    {
+      "name": "aldos-agentic-workflow",
+      "fullName": "whoisaldo/aldos-agentic-workflow",
+      "url": "https://github.com/whoisaldo/aldos-agentic-workflow",
+      "description": "A configurable fleet of machines and AI coding accounts that works like a small dev team: a coordinator agent hands builds and reviews across Claude and Codex, fails over when usage runs out, pages the owner only when blocked, and syncs skills and secrets.",
+      "language": "Python",
+      "stars": 0,
+      "forks": 0,
+      "visibility": "Public",
+      "sourceIds": [
+        "whoisaldo.page",
+        "whoisaldo.pin.6"
+      ]
+    }
+  ],
+  "organizationsHeadingVisible": true,
+  "organizations": [
+    {
+      "login": "sidebandstudio",
+      "url": "https://github.com/sidebandstudio",
+      "sourceId": "whoisaldo.page",
+      "avatarPath": "assets/organization-sidebandstudio.webp"
+    }
+  ],
+  "achievements": {
+    "visible": true,
+    "items": [
+      {
+        "name": "Pair Extraordinaire",
+        "tierLabel": "x4"
+      },
+      {
+        "name": "Pull Shark",
+        "tierLabel": "x3"
+      },
+      {
+        "name": "Starstruck",
+        "tierLabel": "x2"
+      },
+      {
+        "name": "Quickdraw",
+        "tierLabel": null
+      },
+      {
+        "name": "YOLO",
+        "tierLabel": null
+      }
+    ],
+    "sourceId": "whoisaldo.page",
+    "renderingNote": "Observed public presence only. Badge images are not bundled; do not invent or restyle achievement/Pro badges."
+  },
+  "contributions": {
+    "sourceId": "whoisaldo.contributions",
+    "method": "Public logged-out contributions HTML. Join data-date/data-level cells to tool-tip[for=cell-id]; parse exact English counts. No GraphQL or extra scopes.",
+    "rangeStart": "2025-11-09",
+    "rangeEnd": "2026-11-08",
+    "dayCount": 365,
+    "weekStartsOn": "Sunday",
+    "reportedTotal": 5216,
+    "sumDailyCounts": 5208,
+    "reportedTotalMatchesDays": false,
+    "consistencyNote": "The public response's heading and day-cell sum differ. Both are preserved exactly; no counts were adjusted. Cause not established. Treat today as partial and values as frozen capture data.",
+    "nativeHeading": "5,216 contributions in the last year",
+    "levels": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "days": [
+      {
+        "date": "2025-11-09",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2025-11-10",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2025-11-11",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2025-11-12",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2025-11-13",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2025-11-14",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2025-11-15",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2025-11-16",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2025-11-17",
+        "count": 5,
+        "level": 1
+      },
+      {
+        "date": "2025-11-18",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2025-11-19",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2025-11-20",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2025-11-21",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2025-11-22",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2025-11-23",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2025-11-24",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2025-11-25",
+        "count": 2,
+        "level": 1
+      },
+      {
+        "date": "2025-11-26",
+        "count": 4,
+        "level": 1
+      },
+      {
+        "date": "2025-11-27",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2025-11-28",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2025-11-29",
+        "count": 1,
+        "level": 1
+      },
+      {
+        "date": "2025-11-30",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2025-12-01",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2025-12-02",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2025-12-03",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2025-12-04",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2025-12-05",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2025-12-06",
+        "count": 5,
+        "level": 1
+      },
+      {
+        "date": "2025-12-07",
+        "count": 1,
+        "level": 1
+      },
+      {
+        "date": "2025-12-08",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2025-12-09",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2025-12-10",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2025-12-11",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2025-12-12",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2025-12-13",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2025-12-14",
+        "count": 4,
+        "level": 1
+      },
+      {
+        "date": "2025-12-15",
+        "count": 1,
+        "level": 1
+      },
+      {
+        "date": "2025-12-16",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2025-12-17",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2025-12-18",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2025-12-19",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2025-12-20",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2025-12-21",
+        "count": 1,
+        "level": 1
+      },
+      {
+        "date": "2025-12-22",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2025-12-23",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2025-12-24",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2025-12-25",
+        "count": 15,
+        "level": 1
+      },
+      {
+        "date": "2025-12-26",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2025-12-27",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2025-12-28",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2025-12-29",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2025-12-30",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2025-12-31",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-01-01",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-01-02",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-01-03",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-01-04",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-01-05",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-01-06",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-01-07",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-01-08",
+        "count": 1,
+        "level": 1
+      },
+      {
+        "date": "2026-01-09",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-01-10",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-01-11",
+        "count": 7,
+        "level": 1
+      },
+      {
+        "date": "2026-01-12",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-01-13",
+        "count": 1,
+        "level": 1
+      },
+      {
+        "date": "2026-01-14",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-01-15",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-01-16",
+        "count": 1,
+        "level": 1
+      },
+      {
+        "date": "2026-01-17",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-01-18",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-01-19",
+        "count": 1,
+        "level": 1
+      },
+      {
+        "date": "2026-01-20",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-01-21",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-01-22",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-01-23",
+        "count": 2,
+        "level": 1
+      },
+      {
+        "date": "2026-01-24",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-01-25",
+        "count": 1,
+        "level": 1
+      },
+      {
+        "date": "2026-01-26",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-01-27",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-01-28",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-01-29",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-01-30",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-01-31",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-02-01",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-02-02",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-02-03",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-02-04",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-02-05",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-02-06",
+        "count": 1,
+        "level": 1
+      },
+      {
+        "date": "2026-02-07",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-02-08",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-02-09",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-02-10",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-02-11",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-02-12",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-02-13",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-02-14",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-02-15",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-02-16",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-02-17",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-02-18",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-02-19",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-02-20",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-02-21",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-02-22",
+        "count": 15,
+        "level": 1
+      },
+      {
+        "date": "2026-02-23",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-02-24",
+        "count": 5,
+        "level": 1
+      },
+      {
+        "date": "2026-02-25",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-02-26",
+        "count": 1,
+        "level": 1
+      },
+      {
+        "date": "2026-02-27",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-02-28",
+        "count": 2,
+        "level": 1
+      },
+      {
+        "date": "2026-03-01",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-03-02",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-03-03",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-03-04",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-03-05",
+        "count": 2,
+        "level": 1
+      },
+      {
+        "date": "2026-03-06",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-03-07",
+        "count": 2,
+        "level": 1
+      },
+      {
+        "date": "2026-03-08",
+        "count": 1,
+        "level": 1
+      },
+      {
+        "date": "2026-03-09",
+        "count": 1,
+        "level": 1
+      },
+      {
+        "date": "2026-03-10",
+        "count": 1,
+        "level": 1
+      },
+      {
+        "date": "2026-03-11",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-03-12",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-03-13",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-03-14",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-03-15",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-03-16",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-03-17",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-03-18",
+        "count": 1,
+        "level": 1
+      },
+      {
+        "date": "2026-03-19",
+        "count": 1,
+        "level": 1
+      },
+      {
+        "date": "2026-03-20",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-03-21",
+        "count": 7,
+        "level": 1
+      },
+      {
+        "date": "2026-03-22",
+        "count": 5,
+        "level": 1
+      },
+      {
+        "date": "2026-03-23",
+        "count": 1,
+        "level": 1
+      },
+      {
+        "date": "2026-03-24",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-03-25",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-03-26",
+        "count": 1,
+        "level": 1
+      },
+      {
+        "date": "2026-03-27",
+        "count": 1,
+        "level": 1
+      },
+      {
+        "date": "2026-03-28",
+        "count": 3,
+        "level": 1
+      },
+      {
+        "date": "2026-03-29",
+        "count": 2,
+        "level": 1
+      },
+      {
+        "date": "2026-03-30",
+        "count": 8,
+        "level": 1
+      },
+      {
+        "date": "2026-03-31",
+        "count": 1,
+        "level": 1
+      },
+      {
+        "date": "2026-04-01",
+        "count": 11,
+        "level": 1
+      },
+      {
+        "date": "2026-04-02",
+        "count": 9,
+        "level": 1
+      },
+      {
+        "date": "2026-04-03",
+        "count": 64,
+        "level": 1
+      },
+      {
+        "date": "2026-04-04",
+        "count": 33,
+        "level": 1
+      },
+      {
+        "date": "2026-04-05",
+        "count": 11,
+        "level": 1
+      },
+      {
+        "date": "2026-04-06",
+        "count": 9,
+        "level": 1
+      },
+      {
+        "date": "2026-04-07",
+        "count": 2,
+        "level": 1
+      },
+      {
+        "date": "2026-04-08",
+        "count": 1,
+        "level": 1
+      },
+      {
+        "date": "2026-04-09",
+        "count": 2,
+        "level": 1
+      },
+      {
+        "date": "2026-04-10",
+        "count": 1,
+        "level": 1
+      },
+      {
+        "date": "2026-04-11",
+        "count": 1,
+        "level": 1
+      },
+      {
+        "date": "2026-04-12",
+        "count": 2,
+        "level": 1
+      },
+      {
+        "date": "2026-04-13",
+        "count": 1,
+        "level": 1
+      },
+      {
+        "date": "2026-04-14",
+        "count": 1,
+        "level": 1
+      },
+      {
+        "date": "2026-04-15",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-04-16",
+        "count": 1,
+        "level": 1
+      },
+      {
+        "date": "2026-04-17",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-04-18",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-04-19",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-04-20",
+        "count": 8,
+        "level": 1
+      },
+      {
+        "date": "2026-04-21",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-04-22",
+        "count": 5,
+        "level": 1
+      },
+      {
+        "date": "2026-04-23",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-04-24",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-04-25",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-04-26",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-04-27",
+        "count": 9,
+        "level": 1
+      },
+      {
+        "date": "2026-04-28",
+        "count": 3,
+        "level": 1
+      },
+      {
+        "date": "2026-04-29",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-04-30",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-05-01",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-05-02",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-05-03",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-05-04",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-05-05",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-05-06",
+        "count": 4,
+        "level": 1
+      },
+      {
+        "date": "2026-05-07",
+        "count": 1,
+        "level": 1
+      },
+      {
+        "date": "2026-05-08",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-05-09",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-05-10",
+        "count": 1,
+        "level": 1
+      },
+      {
+        "date": "2026-05-11",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-05-12",
+        "count": 3,
+        "level": 1
+      },
+      {
+        "date": "2026-05-13",
+        "count": 25,
+        "level": 1
+      },
+      {
+        "date": "2026-05-14",
+        "count": 5,
+        "level": 1
+      },
+      {
+        "date": "2026-05-15",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-05-16",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-05-17",
+        "count": 3,
+        "level": 1
+      },
+      {
+        "date": "2026-05-18",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-05-19",
+        "count": 3,
+        "level": 1
+      },
+      {
+        "date": "2026-05-20",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-05-21",
+        "count": 7,
+        "level": 1
+      },
+      {
+        "date": "2026-05-22",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-05-23",
+        "count": 1,
+        "level": 1
+      },
+      {
+        "date": "2026-05-24",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-05-25",
+        "count": 8,
+        "level": 1
+      },
+      {
+        "date": "2026-05-26",
+        "count": 1,
+        "level": 1
+      },
+      {
+        "date": "2026-05-27",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-05-28",
+        "count": 3,
+        "level": 1
+      },
+      {
+        "date": "2026-05-29",
+        "count": 9,
+        "level": 1
+      },
+      {
+        "date": "2026-05-30",
+        "count": 3,
+        "level": 1
+      },
+      {
+        "date": "2026-05-31",
+        "count": 4,
+        "level": 1
+      },
+      {
+        "date": "2026-06-01",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-06-02",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-06-03",
+        "count": 8,
+        "level": 1
+      },
+      {
+        "date": "2026-06-04",
+        "count": 1,
+        "level": 1
+      },
+      {
+        "date": "2026-06-05",
+        "count": 3,
+        "level": 1
+      },
+      {
+        "date": "2026-06-06",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-06-07",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-06-08",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-06-09",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-06-10",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-06-11",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-06-12",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-06-13",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-06-14",
+        "count": 11,
+        "level": 1
+      },
+      {
+        "date": "2026-06-15",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-06-16",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-06-17",
+        "count": 1,
+        "level": 1
+      },
+      {
+        "date": "2026-06-18",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-06-19",
+        "count": 11,
+        "level": 1
+      },
+      {
+        "date": "2026-06-20",
+        "count": 16,
+        "level": 1
+      },
+      {
+        "date": "2026-06-21",
+        "count": 11,
+        "level": 1
+      },
+      {
+        "date": "2026-06-22",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-06-23",
+        "count": 1,
+        "level": 1
+      },
+      {
+        "date": "2026-06-24",
+        "count": 22,
+        "level": 1
+      },
+      {
+        "date": "2026-06-25",
+        "count": 1,
+        "level": 1
+      },
+      {
+        "date": "2026-06-26",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-06-27",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-06-28",
+        "count": 3,
+        "level": 1
+      },
+      {
+        "date": "2026-06-29",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-06-30",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-07-01",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-07-02",
+        "count": 25,
+        "level": 1
+      },
+      {
+        "date": "2026-07-03",
+        "count": 37,
+        "level": 1
+      },
+      {
+        "date": "2026-07-04",
+        "count": 12,
+        "level": 1
+      },
+      {
+        "date": "2026-07-05",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-07-06",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-07-07",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-07-08",
+        "count": 11,
+        "level": 1
+      },
+      {
+        "date": "2026-07-09",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-07-10",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-07-11",
+        "count": 3,
+        "level": 1
+      },
+      {
+        "date": "2026-07-12",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-07-13",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-07-14",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-07-15",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-07-16",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-07-17",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-07-18",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-07-19",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-07-20",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-07-21",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-07-22",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-07-23",
+        "count": 5,
+        "level": 1
+      },
+      {
+        "date": "2026-07-24",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-07-25",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-07-26",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-07-27",
+        "count": 2,
+        "level": 1
+      },
+      {
+        "date": "2026-07-28",
+        "count": 1,
+        "level": 1
+      },
+      {
+        "date": "2026-07-29",
+        "count": 10,
+        "level": 1
+      },
+      {
+        "date": "2026-07-30",
+        "count": 3,
+        "level": 1
+      },
+      {
+        "date": "2026-07-31",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-08-01",
+        "count": 1,
+        "level": 1
+      },
+      {
+        "date": "2026-08-02",
+        "count": 12,
+        "level": 1
+      },
+      {
+        "date": "2026-08-03",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-08-04",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-08-05",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-08-06",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-08-07",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-08-08",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-08-09",
+        "count": 2,
+        "level": 1
+      },
+      {
+        "date": "2026-08-10",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-08-11",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-08-12",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-08-13",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-08-14",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-08-15",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-08-16",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-08-17",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-08-18",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-08-19",
+        "count": 7,
+        "level": 1
+      },
+      {
+        "date": "2026-08-20",
+        "count": 17,
+        "level": 1
+      },
+      {
+        "date": "2026-08-21",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-08-22",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-08-23",
+        "count": 20,
+        "level": 1
+      },
+      {
+        "date": "2026-08-24",
+        "count": 2,
+        "level": 1
+      },
+      {
+        "date": "2026-08-25",
+        "count": 19,
+        "level": 1
+      },
+      {
+        "date": "2026-08-26",
+        "count": 36,
+        "level": 1
+      },
+      {
+        "date": "2026-08-27",
+        "count": 16,
+        "level": 1
+      },
+      {
+        "date": "2026-08-28",
+        "count": 23,
+        "level": 1
+      },
+      {
+        "date": "2026-08-29",
+        "count": 17,
+        "level": 1
+      },
+      {
+        "date": "2026-08-30",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-08-31",
+        "count": 1,
+        "level": 1
+      },
+      {
+        "date": "2026-09-01",
+        "count": 1,
+        "level": 1
+      },
+      {
+        "date": "2026-09-02",
+        "count": 2,
+        "level": 1
+      },
+      {
+        "date": "2026-09-03",
+        "count": 9,
+        "level": 1
+      },
+      {
+        "date": "2026-09-04",
+        "count": 7,
+        "level": 1
+      },
+      {
+        "date": "2026-09-05",
+        "count": 7,
+        "level": 1
+      },
+      {
+        "date": "2026-09-06",
+        "count": 2,
+        "level": 1
+      },
+      {
+        "date": "2026-09-07",
+        "count": 3,
+        "level": 1
+      },
+      {
+        "date": "2026-09-08",
+        "count": 4,
+        "level": 1
+      },
+      {
+        "date": "2026-09-09",
+        "count": 3,
+        "level": 1
+      },
+      {
+        "date": "2026-09-10",
+        "count": 0,
+        "level": 0
+      },
+      {
+        "date": "2026-09-11",
+        "count": 16,
+        "level": 1
+      },
+      {
+        "date": "2026-09-12",
+        "count": 20,
+        "level": 1
+      },
+      {
+        "date": "2026-09-13",
+        "count": 3,
+        "level": 1
+      },
+      {
+        "date": "2026-09-14",
+        "count": 6,
+        "level": 1
+      },
+      {
+        "date": "2026-09-15",
+        "count": 3,
+        "level": 1
+      },
+      {
+        "date": "2026-09-16",
+        "count": 29,
+        "level": 1
+      },
+      {
+        "date": "2026-09-17",
+        "count": 16,
+        "level": 1
+      },
+      {
+        "date": "2026-09-18",
+        "count": 20,
+        "level": 1
+      },
+      {
+        "date": "2026-09-19",
+        "count": 8,
+        "level": 1
+      },
+      {
+        "date": "2026-09-20",
+        "count": 2,
+        "level": 1
+      },
+      {
+        "date": "2026-09-21",
+        "count": 16,
+        "level": 1
+      },
+      {
+        "date": "2026-09-22",
+        "count": 44,
+        "level": 1
+      },
+      {
+        "date": "2026-09-23",
+        "count": 30,
+        "level": 1
+      },
+      {
+        "date": "2026-09-24",
+        "count": 57,
+        "level": 1
+      },
+      {
+        "date": "2026-09-25",
+        "count": 90,
+        "level": 2
+      },
+      {
+        "date": "2026-09-26",
+        "count": 13,
+        "level": 1
+      },
+      {
+        "date": "2026-09-27",
+        "count": 3,
+        "level": 1
+      },
+      {
+        "date": "2026-09-28",
+        "count": 31,
+        "level": 1
+      },
+      {
+        "date": "2026-09-29",
+        "count": 85,
+        "level": 2
+      },
+      {
+        "date": "2026-09-30",
+        "count": 36,
+        "level": 1
+      },
+      {
+        "date": "2026-10-01",
+        "count": 5,
+        "level": 1
+      },
+      {
+        "date": "2026-10-02",
+        "count": 11,
+        "level": 1
+      },
+      {
+        "date": "2026-10-03",
+        "count": 7,
+        "level": 1
+      },
+      {
+        "date": "2026-10-04",
+        "count": 1,
+        "level": 1
+      },
+      {
+        "date": "2026-10-05",
+        "count": 4,
+        "level": 1
+      },
+      {
+        "date": "2026-10-06",
+        "count": 199,
+        "level": 3
+      },
+      {
+        "date": "2026-10-07",
+        "count": 89,
+        "level": 2
+      },
+      {
+        "date": "2026-10-08",
+        "count": 7,
+        "level": 1
+      },
+      {
+        "date": "2026-10-09",
+        "count": 167,
+        "level": 3
+      },
+      {
+        "date": "2026-10-10",
+        "count": 87,
+        "level": 2
+      },
+      {
+        "date": "2026-10-11",
+        "count": 143,
+        "level": 2
+      },
+      {
+        "date": "2026-10-12",
+        "count": 401,
+        "level": 4
+      },
+      {
+        "date": "2026-10-13",
+        "count": 211,
+        "level": 3
+      },
+      {
+        "date": "2026-10-14",
+        "count": 89,
+        "level": 2
+      },
+      {
+        "date": "2026-10-15",
+        "count": 65,
+        "level": 1
+      },
+      {
+        "date": "2026-10-16",
+        "count": 133,
+        "level": 2
+      },
+      {
+        "date": "2026-10-17",
+        "count": 145,
+        "level": 2
+      },
+      {
+        "date": "2026-10-18",
+        "count": 43,
+        "level": 1
+      },
+      {
+        "date": "2026-10-19",
+        "count": 261,
+        "level": 4
+      },
+      {
+        "date": "2026-10-20",
+        "count": 111,
+        "level": 2
+      },
+      {
+        "date": "2026-10-21",
+        "count": 221,
+        "level": 3
+      },
+      {
+        "date": "2026-10-22",
+        "count": 96,
+        "level": 2
+      },
+      {
+        "date": "2026-10-23",
+        "count": 101,
+        "level": 2
+      },
+      {
+        "date": "2026-10-24",
+        "count": 3,
+        "level": 1
+      },
+      {
+        "date": "2026-10-25",
+        "count": 46,
+        "level": 1
+      },
+      {
+        "date": "2026-10-26",
+        "count": 134,
+        "level": 2
+      },
+      {
+        "date": "2026-10-27",
+        "count": 205,
+        "level": 3
+      },
+      {
+        "date": "2026-10-28",
+        "count": 60,
+        "level": 1
+      },
+      {
+        "date": "2026-10-29",
+        "count": 296,
+        "level": 4
+      },
+      {
+        "date": "2026-10-30",
+        "count": 162,
+        "level": 3
+      },
+      {
+        "date": "2026-10-31",
+        "count": 122,
+        "level": 2
+      },
+      {
+        "date": "2026-11-01",
+        "count": 37,
+        "level": 1
+      },
+      {
+        "date": "2026-11-02",
+        "count": 44,
+        "level": 1
+      },
+      {
+        "date": "2026-11-03",
+        "count": 61,
+        "level": 1
+      },
+      {
+        "date": "2026-11-04",
+        "count": 19,
+        "level": 1
+      },
+      {
+        "date": "2026-11-05",
+        "count": 6,
+        "level": 1
+      },
+      {
+        "date": "2026-11-06",
+        "count": 11,
+        "level": 1
+      },
+      {
+        "date": "2026-11-07",
+        "count": 47,
+        "level": 1
+      },
+      {
+        "date": "2026-11-08",
+        "count": 51,
+        "level": 1
+      }
+    ]
+  },
+  "slotObservations": {
+    "profile.pinned.heading": true,
+    "profile.activity.heading": false,
+    "profile.organizations.heading": true,
+    "profile.tag": false,
+    "contributions.caption": true,
+    "empty.pinned.caption": false,
+    "empty.issues.caption": false,
+    "error.notFound.caption": false
+  },
+  "readme": {
+    "sourceId": "whoisaldo.page",
+    "url": "https://github.com/whoisaldo/Whoisaldo/blob/24fb7c993b5a27189d45a8fcf1112d8383b0978b/README.md",
+    "repository": "whoisaldo/Whoisaldo",
+    "commit": "24fb7c993b5a27189d45a8fcf1112d8383b0978b",
+    "blobSha": "aed8bd8a67b7c6f48cbd31e0ad73bf31ee26ee21",
+    "html": "<p><a href=\"https://aliyounes.dev\"><img src=\"assets/whoisaldo-readme-hero.webp\" alt=\"Ali Younes, software engineer: systems, infrastructure, AI tooling and backend. Boston, MA. His 2013 Audi S4 and 2013 Audi S6 turn side by side on a yellow ring.\"></a></p>\n<p>\n  <a href=\"https://aliyounes.dev\"><strong>aliyounes.dev</strong></a>  · \n  <a href=\"https://aliyounes.dev/blog/\">Writing</a>  · \n  <a href=\"https://aliyounes.dev/resume.pdf\">Resume</a>  · \n  <a href=\"https://sideband.studio\">Sideband Studio</a>  · \n  <a href=\"https://x.com/whoisaldooo\">X</a>  · \n  <a href=\"https://www.linkedin.com/in/alialdoyounes/\">LinkedIn</a></p>\n<p>Hi! I&#x27;m Ali, or you can call me Aldo. I&#x27;m a fourth year studying computer science and political science at Northeastern University in Boston, MA 📍.</p>\n<p>I like to work with deeply architected systems. Most of my work tends to revolve around automating, but I usually just kinda build a solution to anything really 🤷‍♂️. The work I did at Philips and AWS is what I&#x27;ve enjoyed the most so far.</p>\n<p>I have a 2013 Audi S4 that makes around 540 whp. It&#x27;s on a Jackal Stage 2+ tune and I love to work on it myself :p. I also have a 2013 Audi S6 with the 4.0 twin-turbo V8, on a Stage 1 Integrated Engineering tune. It runs Virtual Link, the lowering module I&#x27;m lead engineer on at Pinnatec.</p>\n<p>Check out my portfolio, it&#x27;s pretty cool, especially if you&#x27;re a cyberpunk fan 👇</p>\n<p><a href=\"https://aliyounes.dev/playground/\"><img src=\"assets/whoisaldo-readme-city.webp\" alt=\"The intro of the playground at aliyounes.dev/playground: the S4 drifts through a neon city at night. Enter the playground.\"></a></p>\n<h3>History</h3>\n<ul><li><img src=\"assets/whoisaldo-readme-logos-aws.webp\" alt=\"AWS\"> · <a href=\"https://github.com/aws\"><strong>Amazon Web Services</strong></a> · SDE, Amazon Dedicated Cloud · Incoming FTE July 2027</li><li><a href=\"https://github.com/whoisaldo/Whoisaldo/blob/main/logos/philips.png\"><img src=\"assets/whoisaldo-readme-logos-philips.webp\" alt=\"Philips\"></a> · <a href=\"https://github.com/philips-software\"><strong>Philips</strong></a> · SDE Co-op, back part-time · Aug 2026 to now</li><li><img src=\"assets/whoisaldo-readme-logos-pinnatec.webp\" alt=\"Pinnatec Auto\"> · <a href=\"https://pinnatecauto.com/\"><strong>Pinnatec Auto</strong></a> · Lead Full Stack Engineer, Virtual Link · Sep 2026 to now</li><li><a href=\"https://github.com/whoisaldo/Whoisaldo/blob/main/logos/pawtograder.png\"><img src=\"assets/whoisaldo-readme-logos-pawtograder.webp\" alt=\"Pawtograder\"></a> · <a href=\"https://github.com/pawtograder\"><strong>Pawtograder</strong></a> · Backend Engineer, grading server · Aug 2026 to now</li><li><img src=\"assets/whoisaldo-readme-logos-aws.webp\" alt=\"AWS\"> · <a href=\"https://github.com/aws\"><strong>Amazon Web Services</strong></a> · SDE Intern, CloudFormation Registry · Jun to Sep 2026</li><li><a href=\"https://github.com/whoisaldo/Whoisaldo/blob/main/logos/philips.png\"><img src=\"assets/whoisaldo-readme-logos-philips.webp\" alt=\"Philips\"></a> · <a href=\"https://github.com/philips-software\"><strong>Philips</strong></a> · SDE Co-op, System Integration · Jan to Jun 2026</li><li><a href=\"https://github.com/whoisaldo/Whoisaldo/blob/main/logos/topchoice.png\"><img src=\"assets/whoisaldo-readme-logos-topchoice.webp\" alt=\"Top Choice Realty\"></a> · <a href=\"https://topchoicerealtyny.com/\"><strong>Top Choice Realty</strong></a> · Frontend Developer Intern · Apr to Aug 2024</li><li><a href=\"https://github.com/whoisaldo/Whoisaldo/blob/main/logos/northeastern.png\"><img src=\"assets/whoisaldo-readme-logos-northeastern.webp\" alt=\"Northeastern University\"></a> · <a href=\"https://github.com/northeastern\"><strong>Northeastern University</strong></a> · CS and Political Science, B.S. · Class of 2027</li></ul>\n<p><a href=\"https://github.com/whoisaldo?tab=repositories&amp;sort=stargazers\"><img src=\"assets/whoisaldo-readme-panel.svg\" alt=\"My GitHub stats: contributions over the last year, public commits, active days and current streak; stargazers across my repos. Updated daily.\"></a></p>\n",
+    "imageReferences": [
+      {
+        "originalSrc": "/whoisaldo/Whoisaldo/raw/main/hero.webp",
+        "localPath": "assets/whoisaldo-readme-hero.webp",
+        "alt": "Ali Younes, software engineer: systems, infrastructure, AI tooling and backend. Boston, MA. His 2013 Audi S4 and 2013 Audi S6 turn side by side on a yellow ring.",
+        "sourceUrl": "https://raw.githubusercontent.com/whoisaldo/Whoisaldo/24fb7c993b5a27189d45a8fcf1112d8383b0978b/hero.webp"
+      },
+      {
+        "originalSrc": "/whoisaldo/Whoisaldo/raw/main/city.webp",
+        "localPath": "assets/whoisaldo-readme-city.webp",
+        "alt": "The intro of the playground at aliyounes.dev/playground: the S4 drifts through a neon city at night. Enter the playground.",
+        "sourceUrl": "https://raw.githubusercontent.com/whoisaldo/Whoisaldo/24fb7c993b5a27189d45a8fcf1112d8383b0978b/city.webp"
+      },
+      {
+        "originalSrc": "/whoisaldo/Whoisaldo/raw/main/logos/aws.png",
+        "localPath": "assets/whoisaldo-readme-logos-aws.webp",
+        "alt": "AWS",
+        "sourceUrl": "https://raw.githubusercontent.com/whoisaldo/Whoisaldo/24fb7c993b5a27189d45a8fcf1112d8383b0978b/logos/aws.png"
+      },
+      {
+        "originalSrc": "/whoisaldo/Whoisaldo/raw/main/logos/philips.png",
+        "localPath": "assets/whoisaldo-readme-logos-philips.webp",
+        "alt": "Philips",
+        "sourceUrl": "https://raw.githubusercontent.com/whoisaldo/Whoisaldo/24fb7c993b5a27189d45a8fcf1112d8383b0978b/logos/philips.png"
+      },
+      {
+        "originalSrc": "/whoisaldo/Whoisaldo/raw/main/logos/pinnatec.png",
+        "localPath": "assets/whoisaldo-readme-logos-pinnatec.webp",
+        "alt": "Pinnatec Auto",
+        "sourceUrl": "https://raw.githubusercontent.com/whoisaldo/Whoisaldo/24fb7c993b5a27189d45a8fcf1112d8383b0978b/logos/pinnatec.png"
+      },
+      {
+        "originalSrc": "/whoisaldo/Whoisaldo/raw/main/logos/pawtograder.png",
+        "localPath": "assets/whoisaldo-readme-logos-pawtograder.webp",
+        "alt": "Pawtograder",
+        "sourceUrl": "https://raw.githubusercontent.com/whoisaldo/Whoisaldo/24fb7c993b5a27189d45a8fcf1112d8383b0978b/logos/pawtograder.png"
+      },
+      {
+        "originalSrc": "/whoisaldo/Whoisaldo/raw/main/logos/topchoice.png",
+        "localPath": "assets/whoisaldo-readme-logos-topchoice.webp",
+        "alt": "Top Choice Realty",
+        "sourceUrl": "https://raw.githubusercontent.com/whoisaldo/Whoisaldo/24fb7c993b5a27189d45a8fcf1112d8383b0978b/logos/topchoice.png"
+      },
+      {
+        "originalSrc": "/whoisaldo/Whoisaldo/raw/main/logos/northeastern.png",
+        "localPath": "assets/whoisaldo-readme-logos-northeastern.webp",
+        "alt": "Northeastern University",
+        "sourceUrl": "https://raw.githubusercontent.com/whoisaldo/Whoisaldo/24fb7c993b5a27189d45a8fcf1112d8383b0978b/logos/northeastern.png"
+      },
+      {
+        "originalSrc": "/whoisaldo/Whoisaldo/raw/main/panel.svg",
+        "localPath": "assets/whoisaldo-readme-panel.svg",
+        "alt": "My GitHub stats: contributions over the last year, public commits, active days and current streak; stargazers across my repos. Updated daily.",
+        "sourceUrl": "https://raw.githubusercontent.com/whoisaldo/Whoisaldo/24fb7c993b5a27189d45a8fcf1112d8383b0978b/panel.svg"
+      },
+      {
+        "originalSrc": "/whoisaldo/Whoisaldo/raw/main/logos/aws-dark.png",
+        "localPath": "assets/whoisaldo-readme-logos-aws-dark.webp",
+        "media": "(prefers-color-scheme: dark)",
+        "sourceUrl": "https://raw.githubusercontent.com/whoisaldo/Whoisaldo/24fb7c993b5a27189d45a8fcf1112d8383b0978b/logos/aws-dark.png"
+      },
+      {
+        "originalSrc": "/whoisaldo/Whoisaldo/raw/main/logos/pinnatec-dark.png",
+        "localPath": "assets/whoisaldo-readme-logos-pinnatec-dark.webp",
+        "media": "(prefers-color-scheme: dark)",
+        "sourceUrl": "https://raw.githubusercontent.com/whoisaldo/Whoisaldo/24fb7c993b5a27189d45a8fcf1112d8383b0978b/logos/pinnatec-dark.png"
+      }
+    ],
+    "transformations": [
+      "Only headings, paragraphs, lists, links, local image references, strong/em/code/br survive.",
+      "History table becomes a list with original cell order/text/images.",
+      "Mailto/public email link and its trailing separator removed.",
+      "GitHub heading permalink widgets, layout attributes, inline styles and SVG icons removed.",
+      "Animated hero asset uses source frame 0; city uses frame 30. Stats panel SVG keeps authored text/geometry; opacity reveals freeze at final values and CSS blink is removed.",
+      "Default logo variants appear in HTML; imageReferences includes the two authored dark variants."
+    ],
+    "omissions": [
+      "Public email/mailto link omitted by request."
+    ],
+    "license": null
+  },
+  "repository": {
+    "schemaVersion": 1,
+    "capturedAt": "2026-11-08T20:17:18Z",
+    "url": "https://github.com/sidebandstudio/GitHub-Reskin",
+    "fullName": "sidebandstudio/GitHub-Reskin",
+    "owner": "sidebandstudio",
+    "name": "GitHub-Reskin",
+    "visibility": "Public",
+    "defaultBranch": "main",
+    "commit": "1a67a0508e97121acea07b33eba7dc89147f9e6e",
+    "counts": {
+      "stars": 0,
+      "forks": 1,
+      "watchers": 0,
+      "releases": 0,
+      "contributors": 2
+    },
+    "files": [
+      {
+        "name": ".github",
+        "path": ".github",
+        "type": "dir",
+        "bytes": 0,
+        "url": "https://github.com/sidebandstudio/GitHub-Reskin/tree/1a67a0508e97121acea07b33eba7dc89147f9e6e/.github",
+        "sha": "c2eb411627feca4dbca15fb58d0d3545b6f1c7e6"
+      },
+      {
+        "name": "extension",
+        "path": "extension",
+        "type": "dir",
+        "bytes": 0,
+        "url": "https://github.com/sidebandstudio/GitHub-Reskin/tree/1a67a0508e97121acea07b33eba7dc89147f9e6e/extension",
+        "sha": "7b7100ed751964b9fb1c54170ce4e1f924a0051f"
+      },
+      {
+        "name": "fixtures",
+        "path": "fixtures",
+        "type": "dir",
+        "bytes": 0,
+        "url": "https://github.com/sidebandstudio/GitHub-Reskin/tree/1a67a0508e97121acea07b33eba7dc89147f9e6e/fixtures",
+        "sha": "d8760ccdf4ab4b1efb6e061c8457662ea94a7d93"
+      },
+      {
+        "name": "scripts",
+        "path": "scripts",
+        "type": "dir",
+        "bytes": 0,
+        "url": "https://github.com/sidebandstudio/GitHub-Reskin/tree/1a67a0508e97121acea07b33eba7dc89147f9e6e/scripts",
+        "sha": "a1b19129687b2ee5b222db5d1496c650f627f077"
+      },
+      {
+        "name": "userscript",
+        "path": "userscript",
+        "type": "dir",
+        "bytes": 0,
+        "url": "https://github.com/sidebandstudio/GitHub-Reskin/tree/1a67a0508e97121acea07b33eba7dc89147f9e6e/userscript",
+        "sha": "be651397da2b0fd6fcc3e8c1e52aeafd5328710c"
+      },
+      {
+        "name": "action.yml",
+        "path": "action.yml",
+        "type": "file",
+        "bytes": 1025,
+        "url": "https://github.com/sidebandstudio/GitHub-Reskin/blob/1a67a0508e97121acea07b33eba7dc89147f9e6e/action.yml",
+        "sha": "3a77b3802e3686f582ad2c8e87013c4bc532c238"
+      },
+      {
+        "name": "extension.test.mjs",
+        "path": "extension.test.mjs",
+        "type": "file",
+        "bytes": 33551,
+        "url": "https://github.com/sidebandstudio/GitHub-Reskin/blob/1a67a0508e97121acea07b33eba7dc89147f9e6e/extension.test.mjs",
+        "sha": "6a1ab0615e67a5fe38c18a15c36529671214f5bb"
+      },
+      {
+        "name": "index.mjs",
+        "path": "index.mjs",
+        "type": "file",
+        "bytes": 11214,
+        "url": "https://github.com/sidebandstudio/GitHub-Reskin/blob/1a67a0508e97121acea07b33eba7dc89147f9e6e/index.mjs",
+        "sha": "2988c03b6e3040d779afd192c0cc4b5efdc89985"
+      },
+      {
+        "name": "LICENSE",
+        "path": "LICENSE",
+        "type": "file",
+        "bytes": 1066,
+        "url": "https://github.com/sidebandstudio/GitHub-Reskin/blob/1a67a0508e97121acea07b33eba7dc89147f9e6e/LICENSE",
+        "sha": "1affe5d599f142871da5e59e5d3427d021cf0f53"
+      },
+      {
+        "name": "README.md",
+        "path": "README.md",
+        "type": "file",
+        "bytes": 11125,
+        "url": "https://github.com/sidebandstudio/GitHub-Reskin/blob/1a67a0508e97121acea07b33eba7dc89147f9e6e/README.md",
+        "sha": "b920c5772ad6da4fe0435b461098cd307421754a"
+      },
+      {
+        "name": "test.mjs",
+        "path": "test.mjs",
+        "type": "file",
+        "bytes": 8092,
+        "url": "https://github.com/sidebandstudio/GitHub-Reskin/blob/1a67a0508e97121acea07b33eba7dc89147f9e6e/test.mjs",
+        "sha": "cb3f3573dacb3897d6a274663a3c18ebda6c1def"
+      },
+      {
+        "name": "userscript.test.mjs",
+        "path": "userscript.test.mjs",
+        "type": "file",
+        "bytes": 6379,
+        "url": "https://github.com/sidebandstudio/GitHub-Reskin/blob/1a67a0508e97121acea07b33eba7dc89147f9e6e/userscript.test.mjs",
+        "sha": "e6ae6f3c19a5bab676ba3c982539ab82406ae6cf"
+      }
+    ],
+    "about": {
+      "description": "Themes for GitHub with a color picker, plus your contribution graph in any color for your profile README.",
+      "website": null,
+      "topics": [],
+      "license": {
+        "name": "MIT License",
+        "spdx_id": "MIT",
+        "url": "https://api.github.com/licenses/mit"
+      },
+      "archived": false
+    },
+    "languages": [
+      {
+        "name": "JavaScript",
+        "bytes": 104813,
+        "percentage": 92.05
+      },
+      {
+        "name": "CSS",
+        "bytes": 7835,
+        "percentage": 6.88
+      },
+      {
+        "name": "HTML",
+        "bytes": 1217,
+        "percentage": 1.07
+      }
+    ],
+    "releases": [],
+    "contributors": [
+      {
+        "contributions": 19,
+        "html_url": "https://github.com/whoisaldo",
+        "login": "whoisaldo",
+        "type": "User"
+      },
+      {
+        "contributions": 16,
+        "html_url": "https://github.com/Alitleis123",
+        "login": "Alitleis123",
+        "type": "User"
+      }
+    ],
+    "readme": {
+      "sourceId": "repository.readme.html",
+      "url": "https://github.com/sidebandstudio/GitHub-Reskin/blob/1a67a0508e97121acea07b33eba7dc89147f9e6e/README.md",
+      "html": "<h1>GitHub Reskin</h1>\n<p>A browser extension that themes GitHub. Click it, pick a theme or set your own colors, and every open GitHub tab repaints. That includes the contribution graph, which normally stays green or switches to whatever GitHub picks for a holiday.</p>\n<p>The repo also has a GitHub Action that draws your contribution graph as an SVG in your colors, so visitors to your profile see them too.</p>\n<h2>Install</h2>\n<p>The extension isn&#x27;t in the Chrome Web Store or on Firefox Add-ons yet. To load it from this repo in Chrome, Edge, Brave or Arc:</p>\n<ol>\n<li>On the repo page, click Code, then Download ZIP, and unzip it.</li>\n<li>Open <code>chrome://extensions</code>, turn on Developer mode, click Load unpacked and pick the <code>extension</code> folder.</li>\n<li>Reload any GitHub or Gist tabs you already had open, then click GitHub Reskin in your browser&#x27;s extensions menu to pick a theme.</li>\n</ol>\n<h3>Firefox, Safari and other browsers</h3>\n<p>Firefox only keeps an unsigned extension until it restarts, and Safari can&#x27;t load one at all. For those browsers, GitHub Reskin also comes as a userscript with the same themes and color card, and it stays installed.</p>\n<ol>\n<li>Install a userscript manager. In Firefox, use <a href=\"https://violentmonkey.github.io\">Violentmonkey</a> or <a href=\"https://www.tampermonkey.net\">Tampermonkey</a>. In Safari on a Mac, iPhone or iPad, use <a href=\"https://github.com/quoid/userscripts\">Userscripts</a> or Tampermonkey. Safari asks you to turn the extension on in its settings and allow it on github.com.</li>\n<li>Open <a href=\"https://raw.githubusercontent.com/sidebandstudio/GitHub-Reskin/main/userscript/github-reskin.user.js\">github-reskin.user.js</a> and install it from your manager&#x27;s prompt. In Userscripts, the prompt is under its toolbar button.</li>\n<li>Reload any GitHub or Gist tabs you already had open.</li>\n</ol>\n<p>To pick a theme, choose Theme and colors from your manager&#x27;s menu. Userscripts has no menu, so open <code>https://github.com/#reskin</code> instead. Click outside the card or press Escape to close it. Other GitHub tabs pick up your change when you switch back to them.</p>\n<p>You can also try the extension itself in Firefox 140 or newer. Open <code>about:debugging#/runtime/this-firefox</code>, click Load Temporary Add-on and pick <code>extension/manifest.json</code>. Firefox removes it when it restarts.</p>\n<h2>Themes and colors</h2>\n<p>Thirteen themes come with it. Cyberpunk is the default. The other dark ones are Editing Suite, Dracula, Nord, Catppuccin Mocha, Gruvbox, Tokyo Night, Rosé Pine, One Dark and Solarized Dark. The light ones are Catppuccin Latte, Rosé Pine Dawn and Solarized Light.</p>\n<p>Cyberpunk is electric yellow and cyan on a near-black blue-violet, and it changes more than colors:</p>\n<ul>\n<li>Headings, the header, tabs, buttons, counters and labels use condensed and monospace system fonts. Font sizes and spacing stay as GitHub has them.</li>\n<li>Headings, the selected tab, primary buttons, focus rings, hovered links and contribution graph cells glow. Busier days glow more. Code, diffs and body text don&#x27;t.</li>\n<li>Buttons, labels, boxes and menus get beveled corners instead of round ones. Firefox and Zen, and other browsers that don&#x27;t draw <code>corner-shape</code>, get square corners instead, and labels and counters that aren&#x27;t links keep their cut corners through a clip path.</li>\n<li>A faint grid and scanlines sit behind the page, and the header has a neon edge. Scrollbars, selected text and the text cursor use the accent.</li>\n<li>The GitHub logo and the repo title glitch when you hover them. If your system is set to reduce motion, nothing moves.</li>\n<li>The popup takes on the same look.</li>\n</ul>\n<p>The effects use whatever colors you set, so editing Cyberpunk&#x27;s colors keeps the effects in your colors.</p>\n<p>Cyberpunk also swaps some of GitHub&#x27;s own labels for street slang, set in <a href=\"https://github.com/sidebandstudio/GitHub-Reskin/blob/1a67a0508e97121acea07b33eba7dc89147f9e6e/extension/slang.js\"><code>extension/slang.js</code></a>. Profiles get a &quot;choom&quot; tag over the name, Pinned becomes Preem picks, Achievements becomes Street cred, the Code button says Jack in, Sponsor says Send eddies, Releases become Drops, and a missing page is stamped Flatlined. Names, numbers and anything people wrote stay as they are, and screen readers still hear GitHub&#x27;s words.</p>\n<p>Under the themes you can change four colors: background, text, accent and the contribution graph. GitHub Reskin works out the rest, like borders, muted text and button colors. &quot;Reset to theme&quot; puts the theme&#x27;s colors back, and the switch at the top turns the theme off.</p>\n<p>It adjusts the colors it works out so they stay readable:</p>\n<ul>\n<li>Muted text and links move toward your text color until they reach WCAG AA contrast, 4.5:1.</li>\n<li>Primary buttons get a darker shade of your accent when GitHub&#x27;s white button text wouldn&#x27;t read on the accent itself. Cyberpunk instead fills them with the accent and uses black, white or your background color for the button text, whichever reads best.</li>\n<li>If your text color is hard to read on your background, the popup warns you. GitHub&#x27;s main text still uses your color, but borders, muted text and links are then worked out from black or white instead.</li>\n</ul>\n",
+      "included": "Title, introduction, first two h2 sections, including their subsections.",
+      "omissions": []
+    },
+    "slotObservations": {
+      "profile.pinned.heading": false,
+      "profile.activity.heading": false,
+      "profile.organizations.heading": false,
+      "profile.tag": false,
+      "contributions.caption": false,
+      "empty.pinned.caption": false,
+      "empty.issues.caption": false,
+      "error.notFound.caption": false
+    },
+    "sourceIds": [
+      "repository.metadata",
+      "repository.revision",
+      "repository.files",
+      "repository.languages",
+      "repository.releases.1",
+      "repository.contributors.1",
+      "repository.readme.html"
+    ],
+    "countNotes": {
+      "contributors": "Exact size of paginated public contributors REST list, anon=false; excludes anonymous/email-only contributors. No email identities captured.",
+      "releases": "Published non-draft releases, including prereleases. No private drafts retained.",
+      "files": "Literal top-level contents, directories first. GitHub may visually compact a chain such as .github/workflows; do not invent last-commit metadata."
+    }
+  }
+}

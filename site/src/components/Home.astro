@@ -1,0 +1,219 @@
+---
+// The home page argument, used by / and by every /themes/<slug>/ page with that theme selected.
+// Everything is pre-rendered in the selected theme; the client script adds switching.
+import Icon from "./Icon.astro";
+import Preview from "./Preview.astro";
+import ThemeCard from "./ThemeCard.astro";
+import KeepSheet from "./KeepSheet.astro";
+import Faq from "./Faq.astro";
+import { AI_PROMPT } from "../engine.mjs";
+import { CATALOG_SOURCE } from "../catalog.mjs";
+import { ANIME, BASE, BROWSERS, CANONICAL, CLASSICS, THEMES, creditLine, href, pageTitle, themeBySlug } from "../lib/site.mjs";
+
+interface Props { slug: string }
+const { slug } = Astro.props;
+const theme = themeBySlug(slug);
+const isClassic = theme.group === "classics";
+const swatch = (doc: any) => [doc.colors.background, doc.colors.accent, doc.colors.contribution || doc.colors.accent];
+const data = {
+  base: BASE,
+  canonical: CANONICAL,
+  initial: slug,
+  themes: THEMES.map((t) => ({ slug: t.slug, group: t.group, name: t.name, title: pageTitle(t), credit: creditLine(t), description: t.description, doc: t.doc })),
+};
+---
+<section class="hero" aria-labelledby="hero-title">
+  <div class="wrap hero-top">
+    <h1 id="hero-title">Your GitHub.<br /> Your world.</h1>
+    <div>
+      <p class="hero-lede">A free browser extension that re-themes GitHub for you. Tap a theme to try it.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="#install">Install on your browser</a>
+        <a class="btn" href={href("make/")}>Make a theme</a>
+      </div>
+      <p class="hero-compat">For Chrome and Firefox on desktop. Store listings are coming soon.</p>
+    </div>
+  </div>
+
+  <div class="wrap-stage stage" id="preview">
+    <div class="picker">
+      <h2 class="picker-title" id="picker-title">Anime themes</h2>
+      <ul class="picker-list" aria-labelledby="picker-title">
+        {ANIME.map((t) => (
+          <li>
+            <button class="chip" type="button" data-theme={t.slug} aria-pressed={t.slug === slug ? "true" : "false"}>
+              <span class="swatch" aria-hidden="true">{swatch(t.doc).map((c) => <i style={`--c:${c}`}></i>)}</span>
+              <span>{t.name}</span>
+              <span class="chip-check"><Icon name="check" /></span>
+            </button>
+          </li>
+        ))}
+      </ul>
+      <a class="picker-more" href="#classics" data-open-classics>Plus 12 Classics <Icon name="arrow" /></a>
+    </div>
+
+    <div class="viewer">
+      <div class="viewer-bar">
+        <p class="viewer-label">Interactive preview of github.com/whoisaldo</p>
+        <div class="viewer-controls needs-js">
+          <fieldset class="seg">
+            <legend>Preview page</legend>
+            <label><input type="radio" name="view" value="profile" checked /><span>Profile</span></label>
+            <label><input type="radio" name="view" value="repo" /><span>Code</span></label>
+            <label><input type="radio" name="view" value="diff" /><span>Diff</span></label>
+          </fieldset>
+          <fieldset class="seg">
+            <legend>Theme on or off</legend>
+            <label><input type="radio" name="before" value="before" /><span>Before</span></label>
+            <label><input type="radio" name="before" value="after" checked /><span>After</span></label>
+          </fieldset>
+        </div>
+      </div>
+      <Preview id="hero-preview" theme={theme.doc} label="Interactive preview of github.com/whoisaldo" />
+      <div class="selected">
+        <div>
+          <p class="selected-name" data-selected="name">{theme.name}</p>
+          <p class="selected-credit" data-selected="credit">{creditLine(theme)}</p>
+          <p class="selected-desc" data-selected="description">{theme.description}</p>
+        </div>
+        <div class="selected-actions">
+          <button class="btn btn-primary nav-keep needs-js" type="button" data-open-keep>Keep this theme for desktop</button>
+          <a class="btn btn-primary nav-install" href="#install">Install GitHub Reskin</a>
+        </div>
+      </div>
+      <p class="nojs-note">Switching themes needs JavaScript. Every theme also has its own page in the gallery below.</p>
+      <p class="sr-only" role="status" aria-live="polite" data-status></p>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="themes" aria-labelledby="themes-title">
+  <div class="wrap">
+    <div class="section-head">
+      <h2 id="themes-title">Pick a different atmosphere.</h2>
+      <p>Thirteen anime-inspired themes, each with an original name and a credit for what inspired it. Every card shows the same repository, so you can compare.</p>
+    </div>
+    <ul class="gallery">
+      {ANIME.map((t) => <ThemeCard theme={t} selected={t.slug === slug} />)}
+    </ul>
+    <details class="classics" id="classics" open={isClassic}>
+      <summary>Classics: 12 themes</summary>
+      <ul class="gallery">
+        {CLASSICS.map((t) => <ThemeCard theme={t} selected={t.slug === slug} />)}
+      </ul>
+    </details>
+  </div>
+</section>
+
+<section class="section" id="extras" aria-labelledby="extras-title">
+  <div class="wrap split">
+    <div>
+      <div class="section-head">
+        <h2 id="extras-title">Still your GitHub.</h2>
+        <p>Themes change colors, the contribution graph and a few decorative extras. Your repositories, buttons and code stay as they are.</p>
+      </div>
+      <div class="switch-row needs-js">
+        <span class="switch"><input type="checkbox" role="switch" id="extras-switch" checked aria-describedby="extras-desc" /><span></span></span>
+        <div class="switch-text">
+          <label for="extras-switch">Flavor extras</label>
+          <p id="extras-desc">Accent fonts, small effects and theme lines such as the profile tag. On by default, one switch to turn off.</p>
+        </div>
+      </div>
+      <ul class="facts">
+        <li><Icon name="check" /><span><b>Buttons keep their words.</b> GitHub's own labels, such as Pinned, Code and Pull requests, stay visible.</span></li>
+        <li><Icon name="check" /><span><b>Code stays readable.</b> Code and diffs keep their native fonts, and theme colors are checked for contrast. <a class="text-link needs-js" href="#preview" data-show-diff>See a diff</a></span></li>
+        <li><Icon name="check" /><span><b>Only you see it.</b> The theme changes how GitHub looks in your browser, not your profile for anyone else.</span></li>
+      </ul>
+    </div>
+    <Preview id="extras-preview" theme={theme.doc} label="Profile preview with flavor extras" views={["profile"]} calendar={false} crop />
+  </div>
+</section>
+
+<section class="section" id="make" aria-labelledby="make-title">
+  <div class="wrap">
+    <div class="builder">
+      <div>
+        <div class="section-head">
+          <h2 id="make-title">Make a theme from an idea.</h2>
+          <p>Copy the prompt into any chatbot, describe a mood, then paste its answer into GitHub Reskin. You see the preview before you use it.</p>
+        </div>
+        <div class="prompt-actions">
+          <button class="btn btn-primary needs-js" type="button" data-copy-prompt><Icon name="copy" /> Copy AI prompt</button>
+          <a class="btn" href={`${href("make/")}#sample`}>Try a sample answer</a>
+        </div>
+        <p class="copy-status" role="status" aria-live="polite" data-copy-status></p>
+        <div class="prompt-box" data-prompt-fallback hidden>
+          <label for="prompt-text">Select prompt</label>
+          <textarea id="prompt-text" readonly rows="10">{AI_PROMPT}</textarea>
+        </div>
+        <noscript><p class="hero-compat">The prompt is on the <a href={href("make/")}>Make a theme</a> page.</p></noscript>
+      </div>
+      <ol class="steps">
+        <li><div><b>Copy the prompt</b><p>It describes the theme format and its limits.</p></div></li>
+        <li><div><b>Describe your theme</b><p>Paste it into ChatGPT, Gemini, Claude, Copilot or another chatbot, and add your idea.</p></div></li>
+        <li><div><b>Paste its answer here</b><p>Import in GitHub Reskin shows the preview and any readability fixes before you choose Use theme.</p></div></li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="film" aria-labelledby="film-title">
+  <div class="wrap film-split">
+    <div class="section-head">
+      <h2 id="film-title">Watch it on GitHub.</h2>
+      <p>A 30-second film of the extension on real GitHub pages, with sound off by default.</p>
+    </div>
+    <div class="film">
+      <div class="film-poster">
+        <img src={href("icon.svg")} width="56" height="56" alt="" />
+        <p class="film-title">The film arrives with the release.</p>
+        <p>Until then, the preview above shows each theme on the same profile.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="install" aria-labelledby="install-title">
+  <div class="wrap">
+    <div class="section-head">
+      <h2 id="install-title">Install on your browser.</h2>
+      <p>GitHub Reskin is free. Store listings are being prepared. Until they are live, developers can build it from source.</p>
+    </div>
+    <div class="install-grid">
+      {BROWSERS.map((b) => (
+        <div class="browser" data-browser={b.id}>
+          <p class="likely">Your browser</p>
+          <h3>{b.name}</h3>
+          {b.store
+            ? <a class="btn btn-primary" href={b.store}>Get it from {b.storeName}</a>
+            : <p class="store-state">Store listing coming soon</p>}
+          <p>{b.also}</p>
+          <a class="text-link" href={`${href("install/")}#developer-preview`}>Developer preview help</a>
+        </div>
+      ))}
+      <div class="browser" data-browser="safari">
+        <p class="likely">Your browser</p>
+        <h3>Safari</h3>
+        <p class="store-state">Advanced: userscript</p>
+        <p>Safari can run GitHub Reskin as a userscript in a userscript manager. Instructions arrive with the release.</p>
+        <a class="text-link" href={`${href("install/")}#userscript`}>Userscript help</a>
+      </div>
+    </div>
+    <div class="phone-path" data-phone-path>
+      <div>
+        <h3>On your phone?</h3>
+        <p>Browser extensions run on desktop. Keep the theme you like and open the link on your computer.</p>
+      </div>
+      <button class="btn btn-primary needs-js" type="button" data-open-keep>Keep this theme for desktop</button>
+    </div>
+  </div>
+</section>
+
+<Faq />
+
+<KeepSheet name={theme.name} url={`${CANONICAL}themes/${slug}/`} />
+
+<script type="application/json" id="reskin-data" data-catalog-source={CATALOG_SOURCE} set:html={JSON.stringify(data).replace(/</g, "\\u003c")} />
+<script>
+  import "../scripts/home.mjs";
+</script>

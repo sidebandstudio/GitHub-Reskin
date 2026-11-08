@@ -1,0 +1,12 @@
+---
+import Base from "./Base.astro";
+interface Props { title: string; heading: string; description: string; path: string; lede?: string }
+const { title, heading, description, path, lede } = Astro.props;
+---
+<Base title={title} description={description} path={path}>
+  <article class="wrap-prose page">
+    <h1>{heading}</h1>
+    {lede && <p class="lede">{lede}</p>}
+    <div class="prose"><slot /></div>
+  </article>
+</Base>

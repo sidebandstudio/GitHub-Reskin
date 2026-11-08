@@ -1,0 +1,81 @@
+{
+  "$schema": "https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json",
+  "schemaVersion": 1,
+  "name": "Violet Synchrony",
+  "author": "sidebandstudio",
+  "version": "1.0.0",
+  "description": "Aubergine panels, violet emphasis and lime activity turn GitHub into a restrained operations desk.",
+  "inspiredBy": "Neon Genesis Evangelion",
+  "tags": [
+    "anime",
+    "dark"
+  ],
+  "base": "dark",
+  "colors": {
+    "background": "#15101f",
+    "text": "#f4eff9",
+    "accent": "#bda0ff",
+    "contribution": "#b4f05f"
+  },
+  "overrides": {
+    "surface": "#23192f",
+    "inset": "#0e0a16",
+    "raised": "#272230",
+    "hover": "#302b39",
+    "mutedText": "#b6a7c7",
+    "link": "#c9aff7",
+    "border": "#50405f",
+    "controlBorder": "#b6a7c7",
+    "accentMuted": "#302743",
+    "primaryBackground": "#7045ad",
+    "primaryText": "#ffffff",
+    "focus": "#b6a7c7",
+    "selectionBackground": "#7045ad",
+    "selectionText": "#ffffff",
+    "success": "#9cd86d",
+    "danger": "#ff8d98",
+    "warning": "#ffc777"
+  },
+  "fonts": {
+    "accent": "barlow-condensed"
+  },
+  "effects": {
+    "rail": {
+      "shape": "slash",
+      "opacity": 0.2,
+      "thickness": 2
+    },
+    "grid": {
+      "opacity": 0.025,
+      "size": 32
+    },
+    "seal": {
+      "shape": "diamond",
+      "size": 20,
+      "opacity": 0.28
+    }
+  },
+  "flavor": {
+    "enabled": true,
+    "locale": "en",
+    "slots": {
+      "profile.pinned.heading": "Selected sectors",
+      "profile.activity.heading": "Operations log",
+      "profile.organizations.heading": "Operations outposts",
+      "profile.tag": "// operations view",
+      "error.notFound.caption": "No signal from this sector.",
+      "empty.pinned.caption": "An open sector for future picks.",
+      "empty.issues.caption": "No operations in this view.",
+      "contributions.caption": "A year of steady work, one contribution at a time."
+    }
+  },
+  "contributions": {
+    "levels": [
+      "#2b2335",
+      "#567038",
+      "#5c7f34",
+      "#79a937",
+      "#b4f05f"
+    ]
+  }
+}

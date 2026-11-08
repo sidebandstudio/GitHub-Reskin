@@ -1,0 +1,82 @@
+{
+  "$schema": "https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json",
+  "schemaVersion": 1,
+  "name": "Ripcord Bureau",
+  "author": "sidebandstudio",
+  "version": "1.0.0",
+  "description": "Bone paper, charcoal ink and rust-colored activity give GitHub the feel of an industrial case-file desk.",
+  "inspiredBy": "Chainsaw Man",
+  "tags": [
+    "anime",
+    "light"
+  ],
+  "base": "light",
+  "colors": {
+    "background": "#f5f0e5",
+    "text": "#24221e",
+    "accent": "#a33f12",
+    "contribution": "#8f3d17"
+  },
+  "overrides": {
+    "surface": "#fffcf5",
+    "inset": "#e8e1d3",
+    "raised": "#e4e0d5",
+    "hover": "#dcd7cd",
+    "mutedText": "#61574c",
+    "link": "#943f1b",
+    "border": "#b8a997",
+    "controlBorder": "#6b6053",
+    "accentMuted": "#e8d4c3",
+    "primaryBackground": "#84320f",
+    "primaryText": "#ffffff",
+    "focus": "#6b6053",
+    "selectionBackground": "#84320f",
+    "selectionText": "#ffffff",
+    "success": "#356240",
+    "danger": "#a7292f",
+    "warning": "#75530a"
+  },
+  "fonts": {
+    "accent": "barlow-condensed"
+  },
+  "effects": {
+    "paper": {
+      "texture": "grain",
+      "opacity": 0.04,
+      "scale": 6
+    },
+    "rail": {
+      "shape": "tooth",
+      "opacity": 0.2,
+      "thickness": 2
+    },
+    "echo": {
+      "offset": 2,
+      "durationMs": 140,
+      "opacity": 0.1
+    }
+  },
+  "flavor": {
+    "enabled": true,
+    "locale": "en",
+    "slots": {
+      "profile.pinned.heading": "Selected case files",
+      "profile.activity.heading": "Case log",
+      "profile.organizations.heading": "Bureau outposts",
+      "profile.tag": "// casework desk",
+      "error.notFound.caption": "No case file at this address.",
+      "empty.pinned.caption": "Room for a first case file.",
+      "empty.issues.caption": "No case files in this view.",
+      "contributions.caption": "A year of casework, one contribution at a time."
+    }
+  },
+  "contributions": {
+    "levels": [
+      "#e3dccf",
+      "#b37046",
+      "#ad5f2d",
+      "#a34f1f",
+      "#8f3d17"
+    ]
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "$schema": "https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json",
+  "schemaVersion": 1,
+  "name": "Shinigami Margins",
+  "author": "sidebandstudio",
+  "version": "1.0.0",
+  "description": "Cool gray paper, graphite activity and a spare margin rule give GitHub an investigative notebook style.",
+  "inspiredBy": "Death Note",
+  "tags": [
+    "anime",
+    "light"
+  ],
+  "base": "light",
+  "colors": {
+    "background": "#f4f5f6",
+    "text": "#201f1d",
+    "accent": "#33363b",
+    "contribution": "#282522"
+  },
+  "overrides": {
+    "surface": "#ffffff",
+    "inset": "#e0e3e6",
+    "raised": "#e3e4e5",
+    "hover": "#dbdbdc",
+    "mutedText": "#565c63",
+    "link": "#3d4c61",
+    "border": "#b2aaa0",
+    "controlBorder": "#575d64",
+    "accentMuted": "#d5d6d8",
+    "primaryBackground": "#292c31",
+    "primaryText": "#ffffff",
+    "focus": "#676159",
+    "selectionBackground": "#292c31",
+    "selectionText": "#ffffff",
+    "success": "#3d6246",
+    "danger": "#a42b36",
+    "warning": "#735617"
+  },
+  "fonts": {
+    "accent": "cormorant-garamond"
+  },
+  "effects": {
+    "paper": {
+      "texture": "grain",
+      "opacity": 0.02,
+      "scale": 8
+    },
+    "rules": {
+      "style": "margin",
+      "opacity": 0.1,
+      "spacing": 28
+    }
+  },
+  "flavor": {
+    "enabled": true,
+    "locale": "en",
+    "slots": {
+      "profile.pinned.heading": "Selected notebooks",
+      "profile.activity.heading": "Entry log",
+      "profile.organizations.heading": "Archive outposts",
+      "profile.tag": "// notebook view",
+      "error.notFound.caption": "No entry matches this address.",
+      "empty.pinned.caption": "Room for a first notebook.",
+      "empty.issues.caption": "No notes in this view.",
+      "contributions.caption": "A year of entries, counted in real contributions."
+    }
+  },
+  "contributions": {
+    "levels": [
+      "#dddad4",
+      "#85817b",
+      "#7a756e",
+      "#5b5751",
+      "#282522"
+    ]
+  }
+}

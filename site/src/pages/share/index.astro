@@ -1,0 +1,14 @@
+---
+// Shared preview links: /share/#RS1... The fragment stays in the browser and is read only by this
+// page. Decoding arrives with the shared theme engine.
+import Prose from "../../layouts/Prose.astro";
+import { href } from "../../lib/site.mjs";
+---
+<Prose title="Shared theme · GitHub Reskin" heading="Shared theme" description="Open a GitHub Reskin theme someone shared with you." path="share/" lede="A shared link carries its theme after the # in the address. Your browser keeps that part to itself; it is not sent to any server.">
+  <p data-share-state>Shared links open here once the site's theme reader is released. Until then, ask for the theme's .reskin.json file and import it in GitHub Reskin.</p>
+  <p><a href={href()}>Browse the bundled themes</a> or <a href={href("make/")}>make your own</a>.</p>
+  <script>
+    const state = document.querySelector("[data-share-state]");
+    if (location.hash.startsWith("#RS1.")) state.textContent = "This link contains a shared theme. Shared links open here once the site's theme reader is released. Until then, ask for the theme's .reskin.json file and import it in GitHub Reskin.";
+  </script>
+</Prose>

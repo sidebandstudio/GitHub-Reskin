@@ -1,0 +1,84 @@
+{
+  "$schema": "https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json",
+  "schemaVersion": 1,
+  "name": "Fifth Leaf Forge",
+  "author": "sidebandstudio",
+  "version": "1.0.0",
+  "description": "Soot-dark pages, scarlet energy and spare grimoire-gold details give GitHub a determined underdog spirit.",
+  "inspiredBy": "Black Clover",
+  "tags": [
+    "anime",
+    "dark"
+  ],
+  "base": "dark",
+  "colors": {
+    "background": "#151314",
+    "text": "#f5eedf",
+    "accent": "#ff6570",
+    "contribution": "#ff828c"
+  },
+  "overrides": {
+    "surface": "#272123",
+    "inset": "#0d0b0c",
+    "raised": "#272524",
+    "hover": "#302d2c",
+    "mutedText": "#c4b5ad",
+    "link": "#ffb4bc",
+    "border": "#95817c",
+    "controlBorder": "#95817c",
+    "accentMuted": "#3a2023",
+    "primaryBackground": "#d8b46a",
+    "primaryText": "#20190e",
+    "focus": "#ffe1b1",
+    "selectionBackground": "#d8b46a",
+    "selectionText": "#20190e",
+    "success": "#a6d5b3",
+    "danger": "#ff8e95",
+    "warning": "#e8c77d"
+  },
+  "fonts": {
+    "accent": "cormorant-garamond"
+  },
+  "effects": {
+    "rules": {
+      "style": "ticks",
+      "opacity": 0.12,
+      "spacing": 16
+    },
+    "rail": {
+      "shape": "notch",
+      "opacity": 0.28,
+      "thickness": 2
+    },
+    "drift": {
+      "shape": "mote",
+      "count": 2,
+      "durationMs": 700,
+      "distance": 8,
+      "opacity": 0.06
+    }
+  },
+  "flavor": {
+    "enabled": true,
+    "locale": "en",
+    "slots": {
+      "profile.pinned.heading": "Selected grimoires",
+      "profile.activity.heading": "Training log",
+      "profile.organizations.heading": "Squad outposts",
+      "profile.tag": "// grimoire view",
+      "error.notFound.caption": "No page opens at this address.",
+      "empty.pinned.caption": "This grimoire has room for a first pick.",
+      "empty.issues.caption": "A blank page in this view.",
+      "contributions.caption": "A year of steady training, one contribution at a time."
+    }
+  },
+  "contributions": {
+    "levels": [
+      "#35282d",
+      "#a7525a",
+      "#bd5762",
+      "#d45b68",
+      "#ff828c"
+    ]
+  }
+}

@@ -1,0 +1,27 @@
+---
+// The phone handoff: the selected theme's canonical link with Copy link, native Share where the
+// browser has it, and the link as selectable text. No email, sign-in or QR-only path.
+import Icon from "./Icon.astro";
+
+interface Props { name: string; url: string }
+const { name, url } = Astro.props;
+---
+<dialog class="sheet" id="keep-sheet" aria-labelledby="keep-title">
+  <div class="sheet-in">
+    <div class="sheet-head">
+      <h2 id="keep-title">Keep this theme for desktop</h2>
+      <button class="btn sheet-close" type="button" data-close-keep aria-label="Close"><Icon name="close" size={18} /></button>
+    </div>
+    <p>Open this link on your computer to see <b data-keep-name>{name}</b> again, then install GitHub Reskin there.</p>
+    <div class="field">
+      <label for="keep-link">Theme link</label>
+      <input id="keep-link" type="text" readonly value={url} data-keep-link spellcheck="false" />
+    </div>
+    <div class="sheet-actions">
+      <button class="btn btn-primary" type="button" data-copy-link><Icon name="copy" /> Copy link</button>
+      <button class="btn" type="button" data-share-link hidden><Icon name="share" /> Share</button>
+    </div>
+    <p role="status" aria-live="polite" data-keep-status></p>
+    <p>A theme picked on this site does not change an installed extension. Pick <span data-keep-name>{name}</span> in Reskin after installing.</p>
+  </div>
+</dialog>

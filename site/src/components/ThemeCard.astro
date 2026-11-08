@@ -1,0 +1,41 @@
+---
+// A gallery card: the same small repository crop in each theme, its name, credit and actions.
+// Preview updates the hero in place; View in preview is an ordinary link that also works without JS.
+import Icon from "./Icon.astro";
+import { declarations, resolvePreview } from "../engine.mjs";
+import { creditLine, href, themePath } from "../lib/site.mjs";
+import { profile } from "../lib/fixture.mjs";
+
+interface Props { theme: any; selected: boolean }
+const { theme, selected } = Astro.props;
+const { vars, flavor } = resolvePreview(theme.doc);
+const pin = profile.pinnedRepositories[0];
+const days = profile.contributions.days.slice(-36);
+---
+<li class:list={["card", { "is-selected": selected }]} data-card={theme.slug}>
+  <div class="mini" style={declarations(vars)} aria-hidden="true">
+    <div class="mini-card">
+      <p class="mini-name">{pin.name}</p>
+      <p class="mini-desc">{pin.language} · Public</p>
+      <span class="mini-btn">Code</span>
+    </div>
+    <p class="mini-graph">{days.map((day: any) => <i data-l={day.level}></i>)}</p>
+    {flavor["profile.tag"] && <span class="mini-tag">{flavor["profile.tag"]}</span>}
+  </div>
+  <div class="card-body">
+    <h3>{theme.name}</h3>
+    <p class="card-credit">{creditLine(theme)}</p>
+    {theme.description && <p class="card-desc">{theme.description}</p>}
+    <div class="card-actions">
+      <button class="btn btn-small needs-js" type="button" data-theme={theme.slug} aria-pressed={selected ? "true" : "false"}>
+        <span class="when-off">Preview</span><span class="when-on"><Icon name="check" /> Previewing</span><span class="sr-only"> {theme.name}</span>
+      </button>
+      <a href={`${href(themePath(theme.slug))}#preview`} data-jump={theme.slug}>View in preview</a>
+    </div>
+  </div>
+</li>
+<style>
+  .when-on { display: none; align-items: center; gap: 6px; }
+  [aria-pressed="true"] .when-on { display: inline-flex; }
+  [aria-pressed="true"] .when-off { display: none; }
+</style>

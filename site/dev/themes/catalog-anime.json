@@ -1,0 +1,93 @@
+[
+  {
+    "id": "anime.cyberpunk-edgerunners",
+    "slug": "choom-circuit",
+    "group": "anime",
+    "file": "themes/anime/choom-circuit.reskin.json",
+    "order": 1
+  },
+  {
+    "id": "anime.evangelion",
+    "slug": "violet-synchrony",
+    "group": "anime",
+    "file": "themes/anime/violet-synchrony.reskin.json",
+    "order": 2
+  },
+  {
+    "id": "anime.dandadan",
+    "slug": "occult-orbit",
+    "group": "anime",
+    "file": "themes/anime/occult-orbit.reskin.json",
+    "order": 3
+  },
+  {
+    "id": "anime.solo-leveling",
+    "slug": "gatewake-protocol",
+    "group": "anime",
+    "file": "themes/anime/gatewake-protocol.reskin.json",
+    "order": 4
+  },
+  {
+    "id": "anime.demon-slayer",
+    "slug": "wisteria-emberline",
+    "group": "anime",
+    "file": "themes/anime/wisteria-emberline.reskin.json",
+    "order": 5
+  },
+  {
+    "id": "anime.one-piece",
+    "slug": "sunward-voyage",
+    "group": "anime",
+    "file": "themes/anime/sunward-voyage.reskin.json",
+    "order": 6
+  },
+  {
+    "id": "anime.black-clover",
+    "slug": "fifth-leaf-forge",
+    "group": "anime",
+    "file": "themes/anime/fifth-leaf-forge.reskin.json",
+    "order": 7
+  },
+  {
+    "id": "anime.jujutsu-kaisen",
+    "slug": "cursed-aperture",
+    "group": "anime",
+    "file": "themes/anime/cursed-aperture.reskin.json",
+    "order": 8
+  },
+  {
+    "id": "anime.spy-family",
+    "slug": "peanut-dossier",
+    "group": "anime",
+    "file": "themes/anime/peanut-dossier.reskin.json",
+    "order": 9
+  },
+  {
+    "id": "anime.attack-on-titan",
+    "slug": "wallward-scout",
+    "group": "anime",
+    "file": "themes/anime/wallward-scout.reskin.json",
+    "order": 10
+  },
+  {
+    "id": "anime.frieren",
+    "slug": "longroad-petals",
+    "group": "anime",
+    "file": "themes/anime/longroad-petals.reskin.json",
+    "order": 11
+  },
+  {
+    "id": "anime.chainsaw-man",
+    "slug": "ripcord-bureau",
+    "group": "anime",
+    "file": "themes/anime/ripcord-bureau.reskin.json",
+    "order": 12
+  },
+  {
+    "id": "anime.death-note",
+    "slug": "shinigami-margins",
+    "group": "anime",
+    "file": "themes/anime/shinigami-margins.reskin.json",
+    "order": 13
+  }
+]

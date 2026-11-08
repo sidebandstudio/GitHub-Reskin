@@ -1,0 +1,66 @@
+---
+// Make a theme: the Copy AI prompt workflow and a local sample importer. It previews an answer and
+// offers its file; it never applies anything to an installed extension.
+import Base from "../../layouts/Base.astro";
+import Icon from "../../components/Icon.astro";
+import Preview from "../../components/Preview.astro";
+import { AI_PROMPT, SAMPLE_ANSWER } from "../../engine.mjs";
+import { DEFAULT_SLUG, themeBySlug } from "../../lib/site.mjs";
+
+const initial = themeBySlug(DEFAULT_SLUG);
+---
+<Base title="Make a theme · GitHub Reskin" description="Copy the GitHub Reskin AI prompt into any chatbot, describe a theme, and preview its answer here." path="make/">
+  <div class="wrap page">
+    <h1>Make a theme from an idea.</h1>
+    <p class="lede">Copy the prompt into any chatbot, describe a mood, then paste its answer here to preview it. Nothing is uploaded; the answer is read in this page.</p>
+
+    <div class="make">
+      <div>
+        <h2 class="sr-only">Copy the prompt</h2>
+        <ol class="steps">
+          <li><div><b>Copy the prompt</b><p>It describes the theme format and its limits.</p></div></li>
+          <li><div><b>Describe your theme</b><p>Paste it into ChatGPT, Gemini, Claude, Copilot or another chatbot, and add your idea.</p></div></li>
+          <li><div><b>Paste its answer here</b><p>Chatbot answers sometimes need fixes. The preview shows what was found.</p></div></li>
+        </ol>
+        <div class="prompt-actions">
+          <button class="btn btn-primary needs-js" type="button" data-copy-prompt><Icon name="copy" /> Copy AI prompt</button>
+        </div>
+        <p class="copy-status" role="status" aria-live="polite" data-copy-status></p>
+        <details class="prompt-box faq-list" data-prompt-details>
+          <summary>Show the prompt</summary>
+          <div>
+            <label for="prompt-text">Select prompt</label>
+            <textarea id="prompt-text" readonly rows="12">{AI_PROMPT}</textarea>
+          </div>
+        </details>
+
+        <h2 class="sr-only" id="sample">Preview an answer</h2>
+        <div class="field" style="margin-top: 32px">
+          <label for="answer">Chatbot answer</label>
+          <textarea id="answer" spellcheck="false" aria-describedby="answer-help" placeholder="Paste the chatbot's full answer here."></textarea>
+          <p id="answer-help" class="hero-compat">Comments and code fences are okay. Up to 128 KB.</p>
+        </div>
+        <div class="prompt-actions needs-js">
+          <button class="btn btn-primary" type="button" data-preview-answer>Preview theme</button>
+          <button class="btn" type="button" data-sample>Use a sample answer</button>
+        </div>
+        <p class="import-result" role="status" aria-live="polite" data-import-status></p>
+        <ul class="issues" data-import-issues hidden></ul>
+        <div class="prompt-actions" data-candidates hidden></div>
+        <div class="prompt-actions">
+          <button class="btn" type="button" data-download hidden><Icon name="arrow" /> Download .reskin.json</button>
+        </div>
+        <noscript><p class="hero-compat">Previewing an answer needs JavaScript.</p></noscript>
+      </div>
+      <div>
+        <Preview id="make-preview" theme={initial.doc} label="Interactive preview of the pasted theme" />
+        <p class="selected-credit" style="margin-top: 12px" data-make-name>Showing {initial.name} until you preview an answer.</p>
+        <p class="hero-compat">To use a theme, import it in GitHub Reskin's settings. A theme previewed here is not sent to the extension.</p>
+      </div>
+    </div>
+  </div>
+  <script type="application/json" id="make-data" set:html={JSON.stringify({ sample: SAMPLE_ANSWER }).replace(/</g, "\\u003c")} />
+  <script>
+    import "../../scripts/make.mjs";
+  </script>
+</Base>

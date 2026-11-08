@@ -1,0 +1,31 @@
+---
+// The privacy policy, from the reviewed content/privacy.md (S2), November 8, 2026.
+import Prose from "../../layouts/Prose.astro";
+---
+<Prose title="Privacy policy · GitHub Reskin" heading="Privacy policy" description="GitHub Reskin collects no data. What stays in your browser, and how to clear it." path="privacy/" lede="Sideband Studio. Last updated November 8, 2026.">
+  <p>GitHub Reskin changes the appearance of GitHub and Gist in your browser. The extension and userscript do not collect or send data to Sideband Studio. They have no telemetry, analytics, advertising or data-collection server. The extension and userscript make no network requests of their own.</p>
+  <h2>What stays in your browser</h2>
+  <p>GitHub Reskin saves your selected theme, enabled state, display preferences and custom themes locally. It also keeps a recoverable editor draft, import text while you work on it, and limited recovery information so you can undo or recover a choice. A theme may include a name and optional author credit that you enter.</p>
+  <p>The extension uses browser-local extension storage, not browser sync. The userscript uses your userscript manager's local storage when that capability is available. Their settings are separate. A manager without persistent storage can offer a session preview and export instead.</p>
+  <p>GitHub Reskin reads the current GitHub or Gist page's color-mode attributes, route and limited page structure to apply colors and place eligible decoration. It does not save a browsing-history log, record your typing, or extract a copy of your repositories, messages or comments. It does not ask for your GitHub password or token.</p>
+  <h2>Imported files and AI prompts</h2>
+  <p>When you select a theme file or paste a theme, GitHub Reskin reads and checks it locally. It does not upload the file, filename, import text or GitHub page to Sideband Studio or an AI service. Imported theme values and an unfinished import may remain in local saved themes or the recoverable draft until you replace or clear them.</p>
+  <p>The AI prompt is text you choose to copy. GitHub Reskin does not connect to a chatbot. If you paste the prompt, an image or any other material into a chatbot, that service handles what you submit under its own terms and privacy policy. You choose what to send there.</p>
+  <p>Fonts, effects and built-in themes are included with the extension or userscript. They are not fetched from a font service or theme server.</p>
+  <h2>Exporting and sharing</h2>
+  <p>Downloading JSON or copying a share code does not upload a theme to Sideband Studio. A theme file, code or preview link contains the theme's values and metadata, including any author credit or flavor text you added. Anyone you share it with can read those values. Share codes are not encrypted.</p>
+  <p>Custom preview links put the theme in the part of the URL after #. The showcase page reads that part locally; the browser does not include it in the page's HTTP request. A recipient or the service you use to send the full link can still read it. Opening a preview link does not change an installed extension automatically.</p>
+  <h2>Clearing local data</h2>
+  <p>Delete an individual custom theme or use Reset all in GitHub Reskin's settings to clear saved settings, custom themes, drafts and recovery records. Export anything you want to keep first. Turning the extension off stops theming but retains your choices.</p>
+  <p>Removing the extension normally removes its extension-managed storage according to your browser's behavior. For the userscript, remove the script and its stored values through the manager. Exported files, copied codes, links, browser backups and copies you sent to other people are separate; delete those where they are stored.</p>
+  <p>Older versions stored generated styling under the github-reskin-css key in GitHub's and Gist's own site storage. The relaunch removes that key when you visit each site and does not store new themes there. An old copy on an unvisited site can remain after uninstalling. To remove it, use your browser's site-data controls for github.com and gist.github.com. Clearing a site's data can also sign you out and remove that site's preferences.</p>
+  <h2>Websites, stores and support</h2>
+  <p>GitHub and Gist, browser extension stores and their update services, and your userscript manager operate separately. A manager may check the published script URL for updates. Their network requests are not requests made by the theme script.</p>
+  <p>The showcase and privacy pages are hosted on GitHub Pages. Visiting them sends ordinary web requests to the host. The showcase uses its bundled assets and has no analytics or theme-upload service. GitHub's handling of hosted-page requests follows <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">GitHub's privacy statement</a>.</p>
+  <p>Support is through <a href="https://github.com/sidebandstudio/GitHub-Reskin/issues">GitHub Issues</a>. If you open an issue, GitHub hosts what you submit and Sideband Studio uses it to investigate and answer your request. Issues are public. Include only information you want to publish. Support information you deliberately send is separate from automatic extension data collection.</p>
+  <p>The repository also includes an optional contribution-graph GitHub Action. It runs in your GitHub Actions workflow, uses the GitHub API and writes an SVG to your repository. It is separate from the browser extension and its no-network behavior. Its output and workflow logs follow your repository's visibility and GitHub's practices.</p>
+  <h2>Limited use and changes</h2>
+  <p>GitHub Reskin's use of information complies with the Chrome Web Store User Data Policy, including its Limited Use requirements. We do not sell information or use it for advertising, unrelated purposes, or creditworthiness and lending decisions.</p>
+  <p>We will date policy updates here and disclose changes in extension data handling before introducing them.</p>
+  <p>For a question about this policy, open a <a href="https://github.com/sidebandstudio/GitHub-Reskin/issues">GitHub issue</a>.</p>
+</Prose>

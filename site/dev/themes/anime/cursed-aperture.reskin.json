@@ -1,0 +1,80 @@
+{
+  "$schema": "https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json",
+  "schemaVersion": 1,
+  "name": "Cursed Aperture",
+  "author": "sidebandstudio",
+  "version": "1.0.0",
+  "description": "Ink-blue records, periwinkle activity and spare barrier geometry give GitHub an occult technical edge.",
+  "inspiredBy": "Jujutsu Kaisen",
+  "tags": [
+    "anime",
+    "dark"
+  ],
+  "base": "dark",
+  "colors": {
+    "background": "#0b101b",
+    "text": "#f0f3fa",
+    "accent": "#9193ff",
+    "contribution": "#a0a3ff"
+  },
+  "overrides": {
+    "surface": "#151e2d",
+    "inset": "#070b12",
+    "raised": "#1d222d",
+    "hover": "#262b36",
+    "mutedText": "#a0aec4",
+    "link": "#b9beff",
+    "border": "#354258",
+    "controlBorder": "#a0aec4",
+    "accentMuted": "#20253f",
+    "primaryBackground": "#4649b9",
+    "primaryText": "#ffffff",
+    "focus": "#a0aec4",
+    "selectionBackground": "#4649b9",
+    "selectionText": "#ffffff",
+    "success": "#76d9a3",
+    "danger": "#ff8b94",
+    "warning": "#efcb78"
+  },
+  "fonts": {
+    "accent": "cormorant-garamond"
+  },
+  "effects": {
+    "orbit": {
+      "shape": "arc",
+      "count": 2,
+      "opacity": 0.16
+    },
+    "rail": {
+      "shape": "slash",
+      "opacity": 0.16,
+      "thickness": 1
+    },
+    "glow": {
+      "strength": 0.12
+    }
+  },
+  "flavor": {
+    "enabled": true,
+    "locale": "en",
+    "slots": {
+      "profile.pinned.heading": "Selected domains",
+      "profile.activity.heading": "Field record log",
+      "profile.organizations.heading": "Record outposts",
+      "profile.tag": "// barrier records",
+      "error.notFound.caption": "No trace of a domain at this address.",
+      "empty.pinned.caption": "Room for a first field record.",
+      "empty.issues.caption": "No field records in this view.",
+      "contributions.caption": "A year of field records, one contribution at a time."
+    }
+  },
+  "contributions": {
+    "levels": [
+      "#1e223b",
+      "#6162a1",
+      "#6a6cba",
+      "#7778cf",
+      "#a0a3ff"
+    ]
+  }
+}

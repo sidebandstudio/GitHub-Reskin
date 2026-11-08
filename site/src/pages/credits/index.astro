@@ -1,0 +1,27 @@
+---
+import Prose from "../../layouts/Prose.astro";
+import { ANIME, href } from "../../lib/site.mjs";
+import { profile } from "../../lib/fixture.mjs";
+---
+<Prose title="Credits and licenses · GitHub Reskin" heading="Credits and licenses" description="Fonts, preview content, theme inspirations and licenses used by GitHub Reskin and this site." path="credits/">
+  <h2>Theme inspirations</h2>
+  <p>Each anime theme has an original name and colors. The series named below identify what inspired each theme; GitHub Reskin uses no artwork, logos, characters or dialogue from them, and is not affiliated with or endorsed by their creators or rights holders. All trademarks belong to their owners.</p>
+  <ul>
+    {ANIME.map((t) => <li><b>{t.name}</b>, inspired by {t.inspiredBy}</li>)}
+  </ul>
+
+  <h2>Classic palettes</h2>
+  <p>The Classics follow palettes from their open-source projects: Dracula, Nord, Catppuccin, Gruvbox, Tokyo Night, Rosé Pine, One Dark and Solarized. Editing Suite is original to GitHub Reskin.</p>
+
+  <h2>Interactive preview</h2>
+  <p>The preview shows public content from <span>github.com/{profile.header.login}</span>, captured offline on November 8, 2026, with the owner's permission. It is a frozen copy, not live activity, and this site makes no requests to GitHub. Avatars and organization logos belong to their owners. The GitHub Reskin repository text is MIT licensed (<a href={href("licenses/LICENSE-GitHub-Reskin.txt")}>license</a>). The preview is an independent reconstruction for demonstration and is not GitHub's own interface.</p>
+
+  <h2>Fonts</h2>
+  <p>The GitHub Reskin wordmark and headings use Manrope by the Manrope Project Authors, under the SIL Open Font License 1.1 (<a href={href("licenses/manrope-OFL.txt")}>license</a>). This site bundles a Latin subset. Body text uses your system's font.</p>
+
+  <h2>Icon and graphics</h2>
+  <p>The GitHub Reskin icon and the small interface icons were drawn for this project by Sideband Studio. They contain no GitHub marks or franchise artwork.</p>
+
+  <h2>Software</h2>
+  <p>This site is built with Astro. GitHub Reskin is MIT licensed; its source and third-party notices are in the repository.</p>
+</Prose>
