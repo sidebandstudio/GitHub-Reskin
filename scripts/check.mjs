@@ -1,22 +1,25 @@
 // Checks behind the npm scripts that are not builds. Run: node scripts/check.mjs <check> [args]
-// C1 runs these itself:
+// Every check is a route in scripts/check-routes.mjs to a module exporting
+// run({ command, args, root, outDir }). C1's local implementations are this module's run:
 //   test [paths...]   node:test over *.test.mjs and test.mjs files. Fails if nothing is discovered, if any file
 //                     or path has no tests, or on any failed or skipped test, suite or hook.
 //   harness           the runner smoke tests: tests/foundation/harness.test.mjs, then the platform Playwright
-//                     projects in Chromium and Firefox through the same e2e and a11y dispatch other surfaces use.
+//                     projects in Chromium and Firefox through the same test:e2e and a11y dispatch other surfaces use.
 //   toolchain         exact Node, npm and dependency versions; reports browsers and media tools.
-//   lint-firefox      web-ext lint of a fresh dist/firefox build, with one reviewed warning allowed.
+//   lint-firefox      web-ext lint of a fresh firefox build, with one reviewed warning allowed.
 //   lint-chrome       Chrome manifest and package checks, then the unpacked package loaded in
 //                     Playwright's Chromium against the platform fixture app.
-// Every other check is a route in scripts/check-routes.mjs to a unit-owned module. Until that
-// module and export exist the check fails with exit 2 and NOT IMPLEMENTED, so a gate never passes empty.
+//   test:e2e, a11y    the platform surface, tests/e2e/platform.
+// Until a routed module and its run export exist the check fails with exit 2 and NOT IMPLEMENTED,
+// so a gate never passes empty.
 import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, readFileSync, realpathSync } from "node:fs";
-import { mkdir, readFile, readdir } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import { join, relative, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { ROOT, build, extensionManifest, loadReleaseConfig, manifestPaths, manifestProblems } from "./build.mjs";
-import { BUILTIN, ROUTES, SURFACES, optionValues, withoutOptions } from "./check-routes.mjs";
+import { runSurface } from "./check-a11y.mjs";
+import { ROUTES, SURFACES, SURFACE_COMMANDS, optionValues, withoutOptions } from "./check-routes.mjs";
 import { serve } from "./serve.mjs";
 import { remoteResourceProblems } from "./verify-artifacts.mjs";
 
@@ -111,20 +114,37 @@ function version(command, args) {
   }
 }
 
+// A problem list that also counts how many assertions were made, for a check's testCount.
+function assertions() {
+  const problems = [];
+  let count = 0;
+  return {
+    problems,
+    get count() {
+      return count;
+    },
+    expect(ok, problem) {
+      count++;
+      if (!ok) problems.push(problem);
+    },
+  };
+}
+
 async function checkToolchain() {
   const config = await loadReleaseConfig();
   const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8"));
   const lock = JSON.parse(readFileSync(join(ROOT, "package-lock.json"), "utf8"));
-  const problems = [];
+  const checks = assertions();
+  const { problems, expect } = checks;
   const npm = /\bnpm\/(\S+)/.exec(process.env.npm_config_user_agent || "")?.[1] ?? version("npm", ["--version"]);
-  if (process.versions.node !== config.toolchain.node) problems.push(`Node ${process.versions.node}, pinned ${config.toolchain.node}`);
-  if (npm !== config.toolchain.npm) problems.push(`npm ${npm}, pinned ${config.toolchain.npm}`);
-  if (readFileSync(join(ROOT, ".node-version"), "utf8").trim() !== config.toolchain.node) problems.push(".node-version disagrees with release.config.json");
+  expect(process.versions.node === config.toolchain.node, `Node ${process.versions.node}, pinned ${config.toolchain.node}`);
+  expect(npm === config.toolchain.npm, `npm ${npm}, pinned ${config.toolchain.npm}`);
+  expect(readFileSync(join(ROOT, ".node-version"), "utf8").trim() === config.toolchain.node, ".node-version disagrees with release.config.json");
   for (const [name, pinned] of Object.entries(pkg.devDependencies)) {
     const installed = existsSync(join(ROOT, "node_modules", name, "package.json")) ? JSON.parse(readFileSync(join(ROOT, "node_modules", name, "package.json"), "utf8")).version : null;
     const locked = lock.packages[`node_modules/${name}`]?.version;
-    if (!/^\d+\.\d+\.\d+$/.test(pinned)) problems.push(`${name} must be pinned to an exact version, not ${pinned}`);
-    if (locked !== pinned || installed !== pinned) problems.push(`${name}: pinned ${pinned}, locked ${locked}, installed ${installed}; run npm ci`);
+    expect(/^\d+\.\d+\.\d+$/.test(pinned), `${name} must be pinned to an exact version, not ${pinned}`);
+    expect(locked === pinned && installed === pinned, `${name}: pinned ${pinned}, locked ${locked}, installed ${installed}; run npm ci`);
     console.log(`  ${name} ${installed}`);
   }
   console.log(`Node ${process.versions.node}, npm ${npm}`);
@@ -137,14 +157,14 @@ async function checkToolchain() {
   console.log("Hyperframes CLI: not pinned yet (C10)");
   if (problems.length) {
     console.error(`check:toolchain failed:\n  ${problems.join("\n  ")}`);
-    return 1;
+    return { exitCode: 1, testCount: checks.count };
   }
   console.log("check:toolchain passed");
-  return 0;
+  return { exitCode: 0, testCount: checks.count };
 }
 
-async function lintFirefox() {
-  const { dir, manifest } = await build({ target: "firefox", outDir: "dist" });
+async function lintFirefox({ outDir }) {
+  const { dir, manifest } = await build({ target: "firefox", outDir });
   const webExt = join(ROOT, "node_modules/web-ext/bin/web-ext.js");
   const result = spawnSync(process.execPath, [webExt, "lint", "--source-dir", dir, "--output", "json", "--no-config-discovery"], {
     encoding: "utf8",
@@ -157,28 +177,34 @@ async function lintFirefox() {
   for (const w of report.warnings.filter(accepted)) console.log(`accepted warning ${w.code}: ${ACCEPTED_FIREFOX_WARNINGS[w.code].reason}`);
   for (const n of report.notices) console.log(`notice ${show(n)}`);
   console.log(`web-ext ${JSON.parse(readFileSync(join(ROOT, "node_modules/web-ext/package.json"), "utf8")).version} lint: ${report.errors.length} errors, ${report.warnings.length} warnings (${unexpected.length} unexpected), ${report.notices.length} notices`);
+  // Assertions: no errors, no unexpected warning, and each warning checked against the accepted list.
+  const testCount = 2 + report.warnings.length;
   if (report.errors.length || unexpected.length) {
     console.error(`lint:firefox failed:\n  ${[...report.errors, ...unexpected].map(show).join("\n  ")}`);
-    return 1;
+    return { exitCode: 1, testCount };
   }
   console.log("lint:firefox passed");
-  return 0;
+  return { exitCode: 0, testCount };
 }
 
-async function lintChrome() {
+async function lintChrome({ outDir }) {
   const config = await loadReleaseConfig();
-  const { dir, files } = await build({ target: "chrome", outDir: "dist" });
+  const { dir, files } = await build({ target: "chrome", outDir });
   const manifest = JSON.parse(await readFile(join(dir, "manifest.json"), "utf8"));
   const contents = Object.fromEntries(await Promise.all(Object.keys(files).map(async (path) => [path, await readFile(join(dir, path))])));
+  const paths = manifestPaths(manifest);
   const problems = [
     ...manifestProblems(manifest, "chrome", config),
-    ...manifestPaths(manifest).filter((path) => !files[path]).map((path) => `missing ${path}`),
+    ...paths.filter((path) => !files[path]).map((path) => `missing ${path}`),
     ...remoteResourceProblems(contents),
   ];
   if (JSON.stringify(manifest) !== JSON.stringify(await extensionManifest("chrome", config))) problems.push("manifest.json differs from extension/manifests");
+  // Assertions: the manifest rules, each manifest path, each file's resource scan, the manifest
+  // source comparison and the unpacked load.
+  const testCount = 3 + paths.length + Object.keys(files).length;
   if (problems.length) {
     console.error(`lint:chrome failed:\n  ${problems.join("\n  ")}`);
-    return 1;
+    return { exitCode: 1, testCount: testCount - 1 };
   }
   console.log(`Chrome manifest and package: ${Object.keys(files).length} files, permissions ${manifest.permissions.join(", ")}, no Gecko keys`);
 
@@ -197,16 +223,14 @@ async function lintChrome() {
     await server.close();
   }
   console.log("lint:chrome passed");
-  return 0;
+  return { exitCode: 0, testCount };
 }
 
-const counted = (check) => async (args) => ({ exitCode: await check(args), testCount: 0 });
-
-async function harness(args) {
+async function harness({ args, root, outDir }) {
   const steps = [
     ["runner and dispatch tests", () => runTests([join(ROOT, "tests/foundation/harness.test.mjs")])],
-    ["platform e2e, Chromium and Firefox", () => dispatch("e2e", [...SURFACES.platform.projects.map(([name]) => `--project=${name}`), ...args])],
-    ["platform accessibility", () => dispatch("a11y", ["--surface=platform", ...args])],
+    ["platform e2e, Chromium and Firefox", () => dispatch("test:e2e", ["--surface=platform", ...args], { root, outDir })],
+    ["platform accessibility", () => dispatch("a11y", ["--surface=platform", ...args], { root, outDir })],
   ];
   const results = [];
   for (const [label, step] of steps) results.push([label, await step()]);
@@ -215,35 +239,59 @@ async function harness(args) {
   return { exitCode: results.find(([, r]) => r.exitCode)?.[1].exitCode ?? 0, testCount: results.reduce((n, [, r]) => n + r.testCount, 0) };
 }
 
-const BUILTINS = { test: runTests, harness, toolchain: counted(checkToolchain), "lint-firefox": counted(lintFirefox), "lint-chrome": counted(lintChrome) };
+// Checks that take no arguments reject any, as every module validates what it supports.
+const noArgs = (check) => (options) => {
+  if (options.args.length) throw new Error(`${options.command} takes no arguments, got ${options.args.join(" ")}`);
+  return check(options);
+};
+
+const LOCAL = {
+  test: ({ args }) => runTests(args),
+  harness,
+  toolchain: noArgs(checkToolchain),
+  "lint-firefox": noArgs(lintFirefox),
+  "lint-chrome": noArgs(lintChrome),
+  "test:e2e": ({ args, root }) => runSurface("platform", { args, root }),
+  a11y: ({ args, root }) => runSurface("platform", { args, root, a11y: true }),
+};
+
+/**
+ * C1's local implementations, behind the same contract as every routed module.
+ * @type {import("../packages/contracts/index.js").CheckRunner}
+ */
+export async function run(options) {
+  if (!Object.hasOwn(LOCAL, options.command)) throw new Error(`scripts/check.mjs has no local check ${options.command}`);
+  return LOCAL[options.command](options);
+}
 
 const notImplemented = (label, owner, why) => {
   console.error(`NOT IMPLEMENTED: ${label} (owner ${owner}): ${why}. Until it exists this gate fails.`);
   return { exitCode: 2, testCount: 0 };
 };
 
-// Calls one route's module export and checks what it returns.
-async function callRoute(label, route, { command, args, root }) {
-  const path = join(root, route.module);
-  if (!existsSync(path)) return notImplemented(label, route.owner, `${route.module} does not exist`);
-  const run = (await import(pathToFileURL(path).href))[route.export];
-  if (typeof run !== "function") return notImplemented(label, route.owner, `${route.module} has no export ${route.export}`);
-  const outDir = join(root, "artifacts", "reports");
-  await mkdir(outDir, { recursive: true });
+// Calls one route's run and checks what it returns.
+async function callRoute(label, route, { command, args, root, outDir, local }) {
+  let runner = local;
+  if (!route.local) {
+    const path = join(root, route.module);
+    if (!existsSync(path)) return notImplemented(label, route.owner, `${route.module} does not exist`);
+    runner = (await import(pathToFileURL(path).href)).run;
+    if (typeof runner !== "function") return notImplemented(label, route.owner, `${route.module} has no run export`);
+  }
   let result;
   try {
-    result = await run({ command, args: [...args], root, outDir });
+    result = await runner({ command, args: [...args], root, outDir });
   } catch (error) {
     console.error(`${label} (owner ${route.owner}) threw: ${error?.stack ?? error}`);
     return { exitCode: 1, testCount: 0 };
   }
   const { exitCode, testCount } = result ?? {};
   if (!Number.isInteger(exitCode) || !Number.isInteger(testCount) || exitCode < 0 || testCount < 0) {
-    console.error(`${label}: ${route.module} ${route.export}() returned ${JSON.stringify(result)}, not { exitCode, testCount }`);
+    console.error(`${label}: ${route.module} run() returned ${JSON.stringify(result)}, not { exitCode, testCount }`);
     return { exitCode: 1, testCount: 0 };
   }
   if (!exitCode && !testCount && route.tests !== false) {
-    console.error(`${label}: ${route.module} ${route.export}() ran no tests. A check that runs nothing fails.`);
+    console.error(`${label}: ${route.module} run() ran no tests. A check that runs nothing fails.`);
     return { exitCode: 1, testCount: 0 };
   }
   return { exitCode, testCount };
@@ -251,58 +299,61 @@ async function callRoute(label, route, { command, args, root }) {
 
 // Runs several routes in order and combines them: the first failure's exit code, all tests counted.
 async function callAll(calls, context) {
-  let exitCode = 0;
-  let testCount = 0;
-  for (const [label, route, args] of calls) {
-    const result = await callRoute(label, route, { ...context, args });
-    exitCode ||= result.exitCode;
-    testCount += result.testCount;
+  const results = [];
+  for (const [label, route, args] of calls) results.push([label, route, await callRoute(label, route, { ...context, args })]);
+  const exitCode = results.find(([, , r]) => r.exitCode)?.[2].exitCode ?? 0;
+  const testCount = results.reduce((n, [, , r]) => n + r.testCount, 0);
+  if (calls.length > 1) {
+    console.log(`\n${context.command}: ${calls.length} routes`);
+    for (const [label, { owner }, r] of results) console.log(`  ${r.exitCode ? `failed (exit ${r.exitCode})` : "passed"}  ${label} (owner ${owner}): ${r.testCount} tests`);
+    console.log(`  ${testCount} tests, exit ${exitCode}`);
   }
-  if (calls.length > 1) console.log(`${context.command}: ${calls.length} routes, ${testCount} tests, exit ${exitCode}`);
   return { exitCode, testCount };
 }
 
+// The surfaces a test:e2e or a11y request selects. --surface names surfaces and --project names
+// projects, each selecting its surface; with both, they must agree. No selector selects all.
+function selectSurfaces(args, surfaces) {
+  const names = Object.keys(surfaces);
+  const surfaceOf = (project) => names.find((name) => surfaces[name].projects.some(([p]) => p === project));
+  const asked = optionValues(args, "surface");
+  const projects = optionValues(args, "project");
+  const unknownSurfaces = asked.filter((name) => !Object.hasOwn(surfaces, name));
+  if (unknownSurfaces.length) return { error: `Unknown surface ${unknownSurfaces.join(", ")}. Surfaces: ${names.join(", ")}` };
+  const unknownProjects = projects.filter((project) => !surfaceOf(project));
+  if (unknownProjects.length) {
+    return { error: `Unknown Playwright project ${unknownProjects.join(", ")}. Projects: ${Object.values(surfaces).flatMap((s) => s.projects.map(([p]) => p)).join(", ")}` };
+  }
+  const fromProjects = new Set(projects.map(surfaceOf));
+  if (asked.length && projects.length) {
+    const conflicts = [
+      ...projects.filter((project) => !asked.includes(surfaceOf(project))).map((project) => `--project=${project} belongs to ${surfaceOf(project)}`),
+      ...asked.filter((name) => !fromProjects.has(name)).map((name) => `--surface=${name} has none of the requested projects`),
+    ];
+    if (conflicts.length) return { error: `Conflicting selectors: ${conflicts.join("; ")}` };
+  }
+  const chosen = new Set([...asked, ...fromProjects]);
+  return { names: chosen.size ? names.filter((name) => chosen.has(name)) : names, surfaceOf };
+}
+
 /**
- * Runs a check by name: a C1 builtin, the e2e or a11y surface dispatch, or a route.
- * routes and surfaces default to scripts/check-routes.mjs; tests pass their own.
+ * Runs a check by its dispatcher key: one route, or for test:e2e and a11y each selected surface.
+ * routes and surfaces default to scripts/check-routes.mjs, and local to this module's run;
+ * tests pass their own.
  * @returns {Promise<import("../packages/contracts/index.js").CheckResult>}
  */
-export async function dispatch(command, args = [], { root = ROOT, routes = ROUTES, surfaces = SURFACES, builtins = BUILTINS } = {}) {
-  const context = { command, root };
-  if (Object.hasOwn(builtins, command)) return builtins[command](args);
+export async function dispatch(command, args = [], { root = ROOT, outDir = join(root, "dist"), routes = ROUTES, surfaces = SURFACES, local = run } = {}) {
+  const context = { command, root: resolve(root), outDir: resolve(outDir), local };
 
-  if (command === "a11y") {
-    const requested = optionValues(args, "surface");
-    const names = requested.length ? requested : Object.keys(surfaces).filter((name) => surfaces[name].a11y !== false);
-    const unknown = names.filter((name) => !Object.hasOwn(surfaces, name) || surfaces[name].a11y === false);
-    if (unknown.length) {
-      console.error(`Unknown accessibility surface ${unknown.join(", ")}. Surfaces: ${Object.keys(surfaces).filter((n) => surfaces[n].a11y !== false).join(", ")}`);
+  if (SURFACE_COMMANDS.includes(command)) {
+    const { error, names, surfaceOf } = selectSurfaces(args, surfaces);
+    if (error) {
+      console.error(error);
       return { exitCode: 1, testCount: 0 };
     }
-    const rest = withoutOptions(args, ["surface"]);
-    return callAll(
-      names.map((name) => [`a11y --surface=${name}`, { owner: surfaces[name].owner, module: surfaces[name].module, export: "a11y" }, [`--surface=${name}`, ...rest]]),
-      context,
-    );
-  }
-
-  if (command === "e2e") {
-    const requested = optionValues(args, "project");
-    const owner = (project) => Object.keys(surfaces).find((name) => surfaces[name].projects.some(([p]) => p === project));
-    const unknown = requested.filter((project) => !owner(project));
-    if (unknown.length) {
-      console.error(`Unknown Playwright project ${unknown.join(", ")}. Projects: ${Object.values(surfaces).flatMap((s) => s.projects.map(([p]) => p)).join(", ")}`);
-      return { exitCode: 1, testCount: 0 };
-    }
-    const rest = withoutOptions(args, ["project"]);
-    const calls = [];
-    for (const [name, surface] of Object.entries(surfaces)) {
-      const projects = requested.length ? requested.filter((project) => owner(project) === name) : surface.projects.map(([p]) => p);
-      if (!projects.length) continue;
-      const selection = projects.map((project) => `--project=${project}`);
-      calls.push([`e2e ${selection.join(" ")}`, { owner: surface.owner, module: surface.module, export: "e2e" }, [...selection, ...rest]]);
-    }
-    return callAll(calls, context);
+    // One surface gets the arguments unchanged. With several, each loses the others' selectors.
+    const own = (name) => (names.length === 1 ? args : withoutOptions(args, ["surface", "project"], (option, value) => (option === "surface" ? value : surfaceOf(value)) === name));
+    return callAll(names.map((name) => [`${command} --surface=${name}`, surfaces[name], own(name)]), context);
   }
 
   if (Object.hasOwn(routes, command)) {
@@ -311,13 +362,14 @@ export async function dispatch(command, args = [], { root = ROOT, routes = ROUTE
     return callAll([[label, route, args]], context);
   }
 
-  const known = [...BUILTIN, "e2e", "a11y", ...Object.keys(routes)];
-  console.error(`Unknown check ${command}. Checks: ${known.join(", ")}`);
+  console.error(`Unknown check ${command}. Checks: ${[...SURFACE_COMMANDS, ...Object.keys(routes)].join(", ")}`);
   return { exitCode: 1, testCount: 0 };
 }
 
 if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const [name, ...args] = process.argv.slice(2);
+  const [name, ...rest] = process.argv.slice(2);
+  // npm removes its own "--"; one typed directly after the command is the same separator.
+  const args = rest[0] === "--" ? rest.slice(1) : rest;
   const { exitCode } = await dispatch(name, args);
   process.exitCode = exitCode;
 }

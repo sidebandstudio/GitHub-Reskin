@@ -82,16 +82,20 @@ test("package writes versioned ZIPs, the userscript, a source archive, checksums
       assert.ok(files["manifest.json"] && files.LICENSE, browser);
       assert.deepEqual(Buffer.from(files["licenses/primer-primitives.txt"]), notice, browser);
     }
+    // The single-file userscript embeds the same notice, byte for byte, in a comment.
+    const userscript = await readFile(join(out, artifactName(version, "userscript")), "utf8");
+    assert.ok(userscript.includes(`\n/*\n${notice.toString("utf8")}*/\n(function () {`));
     assert.deepEqual(
       info.licenses.map((item) => [item.file, item.license, item.covers, item.in]),
       [
         ["LICENSE", "MIT", ["GitHub Reskin"], ["chrome", "firefox", "amo-source"]],
-        ["licenses/primer-primitives.txt", "MIT", ["extension/github-modes.js"], ["chrome", "firefox", "amo-source"]],
+        ["licenses/primer-primitives.txt", "MIT", ["extension/github-modes.js"], ["chrome", "firefox", "userscript", "amo-source"]],
       ],
     );
 
     // The checks pass on real output when the toolchain is the pinned one.
-    const problems = await verifyArtifacts(out);
+    const { problems, checks } = await verifyArtifacts(out);
+    assert.ok(checks > 100, `${checks} checks`);
     const toolchain = problems.filter((p) => p.startsWith("built with Node"));
     assert.deepEqual(problems.filter((p) => !toolchain.includes(p)), []);
     assert.equal(toolchain.length, info.toolchain.node === info.toolchain.pinned.node && info.toolchain.npm === info.toolchain.pinned.npm ? 0 : 1);
@@ -110,7 +114,7 @@ test("check:artifacts catches new permissions, wrong Gecko IDs, stray files, dat
     await plant(out, firefox, (files) => (files["popup.js"] = strToU8(`fetch("https://example.com/theme.json");\n`)));
     await plant(out, firefox, (files) => delete files["licenses/primer-primitives.txt"]);
     await plant(out, artifactName(version, "amo-source"), (files) => (files["licenses/primer-primitives.txt"] = strToU8("MIT\n")));
-    const problems = (await verifyArtifacts(out)).join("\n");
+    const problems = (await verifyArtifacts(out)).problems.join("\n");
     assert.match(problems, /firefox\.zip: license file licenses\/primer-primitives\.txt is missing/);
     assert.match(problems, /the source archive: licenses\/primer-primitives\.txt differs from the checked-in notice/);
     assert.match(problems, /chrome\.zip: permissions/);
@@ -124,9 +128,10 @@ test("check:artifacts catches new permissions, wrong Gecko IDs, stray files, dat
     const dated = zipSync({ "manifest.json": strToU8("{}") });
     await writeFile(join(out, chrome), dated);
     await writeFile(join(out, userscript), "// tampered\n");
-    const more = (await verifyArtifacts(out)).join("\n");
+    const more = (await verifyArtifacts(out)).problems.join("\n");
     assert.match(more, /chrome\.zip does not match SHA256SUMS/);
     assert.match(more, /manifest\.json is not dated 1980-01-01/);
     assert.match(more, /userscript has no metadata block/);
+    assert.match(more, /the userscript lacks the licenses\/primer-primitives\.txt notice/);
   });
 });

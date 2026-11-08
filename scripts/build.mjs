@@ -6,11 +6,11 @@
 // --target all builds every target and fails with exit 2 while any of them is not implemented yet.
 import { createHash } from "node:crypto";
 import { existsSync, realpathSync } from "node:fs";
-import { mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
-import { BUILD_TARGETS, GECKO_ID, SHARED_BUILD_SCOPES as BUILD_SCOPES } from "../packages/contracts/index.js";
+import { BUILD_TARGETS, FONT_IDS, GECKO_ID, SHARED_BUILD_SCOPES as BUILD_SCOPES } from "../packages/contracts/index.js";
 
 export const ROOT = fileURLToPath(new URL("..", import.meta.url));
 // Files every browser package carries besides its entry and the entry's upstream notices.
@@ -39,8 +39,8 @@ export const treeHash = (files) =>
   );
 
 // Text is built with LF line endings whatever the checkout uses, so builds agree across systems.
-export async function readSource(path) {
-  const bytes = await readFile(join(ROOT, path));
+export async function readSource(path, root = ROOT) {
+  const bytes = await readFile(join(root, path));
   return TEXT.test(path) ? Buffer.from(bytes.toString("utf8").replace(/\r\n/g, "\n")) : bytes;
 }
 
@@ -56,6 +56,11 @@ export async function loadEntry(config) {
 
 // The license files a package of this entry carries: the project's own, then each upstream notice.
 export const licenseFiles = (entry) => [...LICENSE_FILES, ...entry.notices.map((notice) => notice.file)];
+
+// The artifacts a license file ships in. The single-file userscript carries the extension's
+// upstream material, so it embeds each upstream notice; the project's own LICENSE is in the archives.
+export const licenseTargets = (entry, file) =>
+  entry.notices.some((notice) => notice.file === file) ? ["chrome", "firefox", "userscript", "amo-source"] : ["chrome", "firefox", "amo-source"];
 
 // Problems with an entry's notices, as messages. Every frozen input is upstream material, so each
 // needs a notice that covers it, and each notice must cover files the entry really has.
@@ -211,15 +216,23 @@ async function buildUserscript({ outDir, releaseConfig }) {
 }
 
 // Shared build scopes. Each lists every package it bundles, so it builds all of its real
-// prerequisites, and each package's owner; `inputs` are data files the scope also requires.
-// Without a scope, every shared package is built. A missing package or input makes the scope
-// not implemented yet rather than quietly smaller.
+// prerequisites, and each package's owner; `inputs` are the data, font and notice files it also
+// requires, copied into the output at the same paths. Without a scope, every shared package is
+// built. A missing package, entry or input makes the scope not implemented yet rather than quietly
+// smaller; an empty one fails. Every input must be a nonempty regular file, and JSON must hold data.
+const ENGINE_PACKAGES = [["contracts", "C1"], ["format", "C2"], ["engine", "C2"]];
+const PRIMER_INPUTS = [["vendor/primer/modes.json", "C3"], ["licenses/primer-primitives.txt", "C1"]];
+// Each bundled family's one WOFF2 and its OFL notice. "system" ships no file.
+export const FONT_INPUTS = FONT_IDS.filter((id) => id !== "system").flatMap((id) => [
+  [`assets/fonts/${id}/${id}.woff2`, "C5"],
+  [`assets/fonts/${id}/OFL.txt`, "C5"],
+]);
 export const SHARED_SCOPES = {
-  engine: { packages: [["contracts", "C1"], ["format", "C2"], ["engine", "C2"]], inputs: [] },
-  primer: { packages: [["contracts", "C1"], ["format", "C2"], ["engine", "C2"], ["primer", "C3"]], inputs: [["vendor/primer/modes.json", "C3"]] },
+  engine: { packages: ENGINE_PACKAGES, inputs: [] },
+  primer: { packages: [...ENGINE_PACKAGES, ["primer", "C3"]], inputs: PRIMER_INPUTS },
   preview: {
-    packages: [["contracts", "C1"], ["format", "C2"], ["engine", "C2"], ["primer", "C3"], ["appearance", "C5"], ["preview", "C5"]],
-    inputs: [["vendor/primer/modes.json", "C3"]],
+    packages: [...ENGINE_PACKAGES, ["primer", "C3"], ["appearance", "C5"], ["preview", "C5"]],
+    inputs: [...PRIMER_INPUTS, ...FONT_INPUTS],
   },
 };
 const ALL_SHARED = {
@@ -227,14 +240,40 @@ const ALL_SHARED = {
   inputs: SHARED_SCOPES.preview.inputs,
 };
 
+// Why a required input file is unusable, or null. "missing" means it does not exist yet.
+export async function inputProblem(path, { root = ROOT } = {}) {
+  const info = await stat(join(root, path)).catch(() => null);
+  if (!info) return "missing";
+  if (!info.isFile()) return "is not a regular file";
+  if (!info.size) return "is empty";
+  if (path.endsWith(".json")) {
+    let value;
+    try {
+      value = JSON.parse(await readFile(join(root, path), "utf8"));
+    } catch {
+      return "is not valid JSON";
+    }
+    if (!value || typeof value !== "object" || !Object.keys(value).length) return "holds no data";
+  }
+  return null;
+}
+
+// The package.json "." export of packages/<name>, relative to the package, or null.
+async function packageEntry(name, root) {
+  const manifest = join(root, "packages", name, "package.json");
+  if (!existsSync(manifest)) return null;
+  const exported = JSON.parse(await readFile(manifest, "utf8")).exports?.["."];
+  return (typeof exported === "string" ? exported : exported?.default) ?? null;
+}
+
 // Bundles packages/<name> for browsers, in root. A package's package.json "." export is its entry.
-// Platform-neutral, so a package that reaches for Node built-ins fails here.
+// Platform-neutral, so a package that reaches for Node built-ins fails here. The shared target
+// rejects a bundle that comes out empty.
 export async function bundlePackages(names, { root = ROOT } = {}) {
   const { build: esbuild } = await import("esbuild");
   const files = {};
   for (const name of names) {
-    const exported = JSON.parse(await readFile(join(root, "packages", name, "package.json"), "utf8")).exports?.["."];
-    const entry = typeof exported === "string" ? exported : exported?.default;
+    const entry = await packageEntry(name, root);
     if (!entry) throw new Error(`packages/${name}/package.json needs an "exports" "." entry`);
     const result = await esbuild({
       entryPoints: [`packages/${name}/${entry}`],
@@ -248,44 +287,79 @@ export async function bundlePackages(names, { root = ROOT } = {}) {
       write: false,
       logLevel: "silent",
     });
-    const bytes = Buffer.from(result.outputFiles[0].contents);
-    if (!bytes.length) throw new Error(`packages/${name} bundled to nothing`);
-    files[`${name}.js`] = bytes;
+    files[`${name}.js`] = Buffer.from(result.outputFiles[0].contents);
   }
   return files;
 }
 
-async function buildShared({ outDir, scope }) {
+// The missing and unusable prerequisites of a shared scope, in root: missing as [path, owner]
+// pairs, broken as messages naming the owner.
+export async function sharedPrerequisites(scope, { root = ROOT } = {}) {
+  const { packages, inputs } = scope ? SHARED_SCOPES[scope] : ALL_SHARED;
+  const missing = [];
+  const broken = [];
+  const require = async (path, owner) => {
+    const problem = await inputProblem(path, { root });
+    if (problem === "missing") missing.push([path, owner]);
+    else if (problem) broken.push(`${path} (${owner}) ${problem}`);
+  };
+  for (const [name, owner] of packages) {
+    const entry = await packageEntry(name, root);
+    if (entry) await require(`packages/${name}/${entry.replace(/^\.\//, "")}`, owner);
+    else missing.push([`packages/${name}`, owner]);
+  }
+  for (const [path, owner] of inputs) await require(path, owner);
+  return { missing, broken };
+}
+
+async function buildShared(options) {
+  return buildSharedFrom(ROOT, options);
+}
+
+// The shared target with root's packages and inputs, so tests can supply them.
+export async function buildSharedFrom(root, { outDir, scope }) {
   if (scope !== undefined && !Object.hasOwn(SHARED_SCOPES, scope)) throw new Error(`Unknown shared scope ${scope}. Scopes: ${BUILD_SCOPES.join(", ")}`);
   const { packages, inputs } = scope ? SHARED_SCOPES[scope] : ALL_SHARED;
   const label = scope ? `shared --scope=${scope}` : "shared";
-  const missing = [
-    ...packages.filter(([name]) => !existsSync(join(ROOT, "packages", name, "package.json"))).map(([name, owner]) => [`packages/${name}`, owner]),
-    ...inputs.filter(([path]) => !existsSync(join(ROOT, path))),
-  ];
+  const { missing, broken } = await sharedPrerequisites(scope, { root });
   if (missing.length) {
     const owners = [...new Set(missing.map(([, owner]) => owner))].join(", ");
     throw new NotImplementedError(label, owners, `needs ${missing.map(([path, owner]) => `${path} (${owner})`).join(", ")}`);
   }
-  const files = await bundlePackages(packages.map(([name]) => name));
+  if (broken.length) throw new Error(`${label}:\n  ${broken.join("\n  ")}`);
+
+  const files = await bundlePackages(packages.map(([name]) => name), { root });
+  for (const [path] of inputs) files[path] = await readSource(path, root);
   const dir = await freshDir(outDir, "shared");
   await writeTree(dir, files);
-  return { target: "shared", scope: scope ?? null, dir, files: hashes(files) };
+  const written = await readTree(dir);
+  const owner = Object.fromEntries([...packages.map(([name, by]) => [`${name}.js`, by]), ...inputs]);
+  const empty = Object.keys(files).filter((path) => !written[path]?.length);
+  if (empty.length) throw new Error(`${label} wrote empty output: ${empty.map((path) => `${path} (${owner[path]})`).join(", ")}`);
+  return { target: "shared", scope: scope ?? null, dir, files: hashes(written) };
 }
 
 // The site is C7's: site/build.mjs exports build({ outDir, config }) and writes the static site
 // into outDir, which this empties first. Until that export exists the target is not implemented.
 const SITE_BUILDER = "site/build.mjs";
+const SITE_ENTRY = "index.html";
 
 async function buildSite({ outDir, releaseConfig }) {
-  const path = join(ROOT, SITE_BUILDER);
+  return buildSiteFrom(ROOT, { outDir, releaseConfig });
+}
+
+// The site target with root's site/build.mjs, so tests can supply a builder.
+export async function buildSiteFrom(root, { outDir, releaseConfig }) {
+  const path = join(root, SITE_BUILDER);
   if (!existsSync(path)) throw new NotImplementedError("site", "C7", `${SITE_BUILDER} does not exist`);
   const { build: buildSiteFiles } = await import(pathToFileURL(path).href);
   if (typeof buildSiteFiles !== "function") throw new NotImplementedError("site", "C7", `${SITE_BUILDER} has no build export`);
   const dir = await freshDir(outDir, "site");
   await buildSiteFiles({ outDir: dir, config: releaseConfig });
   const files = await readTree(dir);
-  if (!Object.keys(files).length) throw new Error(`${SITE_BUILDER} wrote nothing to ${dir}`);
+  if (!Object.keys(files).length) throw new Error(`${SITE_BUILDER} (C7) wrote nothing to ${dir}`);
+  // The entry page must be real; other files, such as .nojekyll, may be empty.
+  if (!files[SITE_ENTRY]?.length) throw new Error(`${SITE_BUILDER} (C7) wrote no nonempty ${SITE_ENTRY} to ${dir}`);
   return { target: "site", dir, files: hashes(files) };
 }
 

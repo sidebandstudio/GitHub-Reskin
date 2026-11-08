@@ -2,12 +2,13 @@
 // access disabled and different time zones and locales, must write identical dist trees and
 // artifact bytes. A third build from the extracted source archive alone, without git, must then
 // reproduce the same browser packages and userscript.
-// Run: node scripts/verify-repro.mjs
+// Run: node scripts/verify-repro.mjs, or check:repro through scripts/check.mjs.
 import { spawnSync } from "node:child_process";
 import { realpathSync } from "node:fs";
 import { mkdir, readFile, readdir, symlink, writeFile } from "node:fs/promises";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { parseArgs } from "node:util";
 import { unzipSync } from "fflate";
 import { withTempDir } from "../tests/helpers/tmp.mjs";
 import { ROOT, loadReleaseConfig, sha256 } from "./build.mjs";
@@ -45,7 +46,7 @@ export async function verifyRepro() {
   const npm = /\bnpm\/(\S+)/.exec(process.env.npm_config_user_agent || "")?.[1];
   if (process.versions.node !== config.toolchain.node) problems.push(`Node ${process.versions.node} is not the pinned ${config.toolchain.node}`);
   if (npm && npm !== config.toolchain.npm) problems.push(`npm ${npm} is not the pinned ${config.toolchain.npm}`);
-  if (problems.length) return { problems };
+  if (problems.length) return { problems, checks: 2 };
 
   return withTempDir(async (tmp) => {
     const [a, b, c] = ["a", "b", "c"].map((name) => join(tmp, name));
@@ -69,16 +70,28 @@ export async function verifyRepro() {
       if (rebuilt[name] !== treeA[`artifacts/${name}`]) problems.push(`${name} rebuilt from the source archive differs`);
     }
     const artifacts = Object.fromEntries(Object.entries(treeA).filter(([path]) => path.startsWith("artifacts/")).map(([path, hash]) => [path.slice(10), hash]));
-    return { problems, files: Object.keys(treeA).length, artifacts };
+    // Checks: the toolchain pins, each file compared between the two builds, and the three rebuilt artifacts.
+    const checks = 2 + new Set([...Object.keys(treeA), ...Object.keys(treeB)]).size + 3;
+    return { problems, checks, files: Object.keys(treeA).length, artifacts };
   });
 }
 
-if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const { problems, files, artifacts } = await verifyRepro();
+/**
+ * check:repro through scripts/check.mjs. Takes no arguments.
+ * @type {import("../packages/contracts/index.js").CheckRunner}
+ */
+export async function run({ args }) {
+  parseArgs({ args, options: {} });
+  const { problems, checks, files, artifacts } = await verifyRepro();
   if (problems.length) {
     console.error(`check:repro failed:\n  ${problems.join("\n  ")}`);
-    process.exit(1);
+    return { exitCode: 1, testCount: checks };
   }
-  console.log(`check:repro passed: two offline builds wrote the same ${files} files, and the source archive rebuilt the same packages.`);
+  console.log(`check:repro passed: two offline builds wrote the same ${files} files, and the source archive rebuilt the same packages (${checks} checks).`);
   for (const [name, hash] of Object.entries(artifacts)) console.log(`  ${hash}  ${name}`);
+  return { exitCode: 0, testCount: checks };
+}
+
+if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  process.exitCode = (await run({ args: process.argv.slice(2) })).exitCode;
 }

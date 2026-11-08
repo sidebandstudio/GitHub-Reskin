@@ -315,14 +315,29 @@ export interface SettingsV2 {
 
 /**
  * `reskin.boot`, saved with settings in the same storage.set call. No user identifiers, page
- * content or CSS.
+ * content or executable CSS. This is ARCHITECTURE.md's frozen validity rule, complete:
  *
- * Reuse rule: first decide native, high-contrast or forced-colors policy from the current page,
- * before applying any cached themed colors. Then reuse the snapshot only if it validates as a
- * complete ResolvedTheme branch (bounds and hex types), its sourceHash equals selectedSourceHash
- * and the current selected source's canonical hash, rendererVersion, engineVersion and
- * pairMatrixVersion equal the running ones, and its seedId and seedHash are those of the current
- * mode plan's seed. Any mismatch discards it and resolves the source again.
+ * 1. Policy first. Read the current page's mode attributes, media and forced-color state and
+ *    mode plan, and decide disabled, native or forced-color policy from them before applying any
+ *    cached themed colors. Native or forced-color policy emits no themed overrides even when
+ *    storage holds a themed snapshot. No cached standard palette may paint an accessibility island.
+ * 2. Validate the whole snapshot before compiling it: the entire discriminated ResolvedTheme
+ *    branch, closed token keys, bounds, font/effect/flavor fields, repairs and audits. The themed
+ *    branch needs the complete ColorSet and passing pair and graph constraints; native branches
+ *    need their exact null or empty fields. Unknown or partial old snapshots are invalid.
+ * 3. Reuse only if every one of these matches the current state:
+ *    - settingsRevision equals the current settings revision;
+ *    - catalogHash equals the current catalog hash;
+ *    - selectedSourceHash equals the current selected source's canonical hash, and the
+ *      snapshot's sourceHash equals selectedSourceHash;
+ *    - rendererVersion, engineVersion and pairMatrixVersion equal the running ones;
+ *    - effectivePreferences equal the current effective preferences;
+ *    - the snapshot's policy, base, seedId and seedHash equal the current mode plan's and its
+ *      immutable seed's identity;
+ *    - the snapshot's motionAllowed equals the motion eligibility computed now from the current
+ *      reduced-motion state and preferences.
+ * 4. Any mismatch or invalid field discards the snapshot and re-resolves the selected source
+ *    against the current context.
  */
 export interface BootRecord {
   settingsRevision: number;
@@ -575,13 +590,22 @@ export interface BuildOptions {
   target: BuildTarget;
   outDir: string;
   releaseConfig: ReleaseConfig;
-  /** For target "shared". Omitted, every shared package is built. */
+  /**
+   * For target "shared". engine bundles contracts, format and engine; primer adds primer,
+   * vendor/primer/modes.json and licenses/primer-primitives.txt; preview adds appearance, preview
+   * and each bundled font's assets/fonts/<id>/<id>.woff2 and assets/fonts/<id>/OFL.txt. Omitted,
+   * every shared package is built. Missing prerequisites fail as not implemented, naming their
+   * owner; empty or invalid ones and empty output fail.
+   */
   scope?: SharedScope;
   /** Test-only extra content-script matches for local fixtures. Never in production output. */
   testFixture?: { matches: string[] };
 }
 
-/** site/build.mjs (C7) exports build(options). It writes the static site into outDir, which is empty. */
+/**
+ * site/build.mjs (C7) exports build(options). It writes the static site into outDir, which is
+ * empty, honoring config.site.base and offline inputs. The output must include a nonempty index.html.
+ */
 export interface SiteBuildOptions {
   outDir: string;
   config: ReleaseConfig;
@@ -603,23 +627,34 @@ export interface PackageOptions {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Checks. scripts/check-routes.mjs routes each check command to a named export of a unit-owned
-// module with this signature; see scripts/README.md.
+// Checks. scripts/check-routes.mjs routes each check command to one unit-owned module, which
+// exports `run: CheckRunner`; see scripts/README.md.
 
 export interface CheckOptions {
-  /** The check command, such as "schema" or "a11y". */
+  /** The dispatcher key from the routing table, such as "schema", "contrast", "test:e2e" or "a11y". */
   command: string;
-  /** Arguments after the command, forwarded unchanged. */
+  /**
+   * The CLI arguments after the command, in order, with npm's "--" separator removed, forwarded
+   * unchanged (--scope, --surface, --project, --require-live, --read-only and the rest). The
+   * module validates the ones it supports.
+   */
   args: string[];
-  /** The repository root. */
+  /** The absolute implementation root. Modules never change the working directory. */
   root: string;
-  /** Directory for this run's reports, artifacts/reports under root. */
+  /** The absolute selected build-output root, <root>/dist by default. */
   outDir: string;
 }
 export interface CheckResult {
-  /** 0 passes. Nonzero fails the command with this exit code. */
+  /** Nonnegative integer. 0 passes; anything else fails the command with this exit code. */
   exitCode: number;
-  /** Tests or assertions actually run. Zero where tests should run fails the command. */
+  /**
+   * Nonnegative integer: real tests or assertions executed. Zero fails a test or check command;
+   * only render and capture commands may report zero.
+   */
   testCount: number;
 }
+/** A check module's export: `export async function run({ command, args, root, outDir })`. */
 export type CheckRunner = (options: CheckOptions) => Promise<CheckResult>;
+export interface CheckModule {
+  run: CheckRunner;
+}

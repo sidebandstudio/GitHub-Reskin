@@ -10,7 +10,7 @@ import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { zipSync } from "fflate";
-import { LICENSE_FILES, ROOT, build, extensionManifest, loadEntry, loadReleaseConfig, readSource, sha256, treeHash } from "./build.mjs";
+import { LICENSE_FILES, ROOT, build, extensionManifest, licenseTargets, loadEntry, loadReleaseConfig, readSource, sha256, treeHash } from "./build.mjs";
 
 const ZIP_FILE_MODE = (0o100644 << 16) >>> 0;
 const UNIX = 3;
@@ -76,15 +76,14 @@ extension/manifests/entries.json and copied without transformation. extension/gi
 frozen, checked-in snapshot of GitHub's mode colors; the build checks its hash and never regenerates it.
 scripts/github-modes.mjs is a separate maintenance tool that fetches github.com, and no build step runs it.
 
-Licenses: LICENSE covers GitHub Reskin. ${entry.notices.map((n) => `${n.file} is the ${n.license} notice for ${n.covers.map((p) => `${entry.root}/${p}`).join(", ")} (${n.upstream})`).join("; ")}. Both browser packages carry them at the same paths.
+Licenses: LICENSE covers GitHub Reskin. ${entry.notices.map((n) => `${n.file} is the ${n.license} notice for ${n.covers.map((p) => `${entry.root}/${p}`).join(", ")} (${n.upstream})`).join("; ")}. Both browser packages carry them at the same paths, and the userscript embeds each upstream notice in a comment.
 `;
 
 // Every license file the packages carry, with what it covers and where it ships.
 async function licenseInventory(entry) {
-  const packages = ["chrome", "firefox", "amo-source"];
   const own = LICENSE_FILES.map((file) => ({ file, license: "MIT", covers: ["GitHub Reskin"], upstream: null }));
   const notices = entry.notices.map(({ file, license, covers, upstream }) => ({ file, license, covers: covers.map((path) => `${entry.root}/${path}`), upstream }));
-  return Promise.all([...own, ...notices].map(async (item) => ({ ...item, sha256: sha256(await readSource(item.file)), in: packages })));
+  return Promise.all([...own, ...notices].map(async (item) => ({ ...item, sha256: sha256(await readSource(item.file)), in: licenseTargets(entry, item.file) })));
 }
 
 async function sourceFiles(config, entry) {

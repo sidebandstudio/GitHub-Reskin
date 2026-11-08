@@ -14,7 +14,8 @@ The shared vocabulary for GitHub Reskin modules.
 - `index.d.ts` declares the runtime values, re-exports every type from the two files above, and
   declares the module interfaces: import results, `PrimerModule`, `PreviewModule`, `SettingsV2`,
   `BootRecord`, `SettingsRequest`, `UiHost`, `EditorAction`, `ReleaseConfig`, `BuildOptions`,
-  and `CheckRunner` for the check routes in [scripts/README.md](../../scripts/README.md).
+  and `CheckRunner`/`CheckModule`, the `run` export every check route calls, in
+  [scripts/README.md](../../scripts/README.md).
 
 Import types from `index.js` only, for example
 `/** @typedef {import("../contracts/index.js").ModeSeed} ModeSeed */`. Each type has exactly one

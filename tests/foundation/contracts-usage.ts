@@ -5,6 +5,7 @@ import {
   EDITOR_ACTION_TYPES,
   LIMITS,
   type BootRecord,
+  type CheckModule,
   type CheckRunner,
   type ColorPath,
   type CommitAction,
@@ -301,6 +302,10 @@ export const undoable: boolean = state.canUndo;
 export const check: CheckRunner = async ({ command, args, root, outDir }) => ({ exitCode: args.length && command && root && outDir ? 0 : 1, testCount: 1 });
 // @ts-expect-error a check reports its test count.
 export const uncounted: CheckRunner = async () => ({ exitCode: 0 });
+// A routed module exports run, not a command-named function.
+export const checkModule: CheckModule = { run: check };
+// @ts-expect-error the export is run.
+export const namedExport: CheckModule = { schema: check };
 export const site: SiteBuild = async ({ outDir, config }) => void [outDir, config.site.base];
 
 export const cap: number = LIMITS.fileUtf8Bytes;

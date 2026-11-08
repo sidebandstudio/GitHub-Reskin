@@ -1,13 +1,14 @@
 // The fixed table from check commands to the units that implement them. scripts/check.mjs
-// imports it; there is no other registration. Each route names a module inside its owner's
-// directory and a named export with the signature (CheckRunner in packages/contracts)
+// imports it; there is no other registration. Every route names one module, which exports the
+// common runner (CheckRunner in packages/contracts):
 //
-//   export async function <name>({ command, args, root, outDir }) { return { exitCode, testCount }; }
+//   export async function run({ command, args, root, outDir }) { return { exitCode, testCount }; }
 //
-// args are the command's arguments, forwarded unchanged. A missing module or export fails the
-// command with exit 2 and "NOT IMPLEMENTED: <command> (owner <unit>)", and testCount 0 fails a
-// command that runs tests. Units implement their own module; they do not edit this table.
-// scripts/README.md describes the same table for people.
+// command is the dispatcher key below, args the arguments after it, forwarded unchanged, root the
+// absolute implementation root and outDir the absolute build-output root (<root>/dist). A missing
+// module or run export fails the command with exit 2 and NOT IMPLEMENTED, naming the owner and the
+// path, and testCount 0 fails a command that runs tests. Units implement their own module; they do
+// not edit this table. scripts/README.md describes the same table for people.
 
 export const UNITS = Object.freeze({
   C1: "Platform and deterministic build",
@@ -22,6 +23,8 @@ export const UNITS = Object.freeze({
   C10: "Hyperframes films",
 });
 
+// C1's local implementations live in scripts/check.mjs itself.
+const LOCAL = "scripts/check.mjs";
 const FORMAT = "packages/format/checks.mjs";
 const ENGINE = "packages/engine/checks.mjs";
 const PRIMER = "packages/primer/checks.mjs";
@@ -32,58 +35,64 @@ const SITE = "site/checks.mjs";
 const USERSCRIPT = "userscript/checks.mjs";
 const RELEASE = "tests/release/checks.mjs";
 const VIDEO = "scripts/verify-video.mjs";
-const PLATFORM = "scripts/check-a11y.mjs";
 
-// Commands C1 runs itself, in scripts/check.mjs.
-export const BUILTIN = Object.freeze(["test", "harness", "toolchain", "lint-chrome", "lint-firefox"]);
+const c1 = { owner: "C1", module: LOCAL, local: true };
 
 // Command routes. A command with several routes takes the first whose `when` matches its
-// arguments (--scope=engine or --scope engine); the last has no `when` and is the default.
+// arguments (--surface=site or --surface site); the last has no `when` and is the default.
 // `tests: false` marks a command that produces files rather than running tests.
 export const ROUTES = Object.freeze({
-  release: [{ owner: "C9", module: RELEASE, export: "release" }],
-  schema: [{ owner: "C2", module: FORMAT, export: "schema" }],
-  themes: [{ owner: "C2", module: FORMAT, export: "themes" }],
-  "classic-themes": [{ owner: "C2", module: FORMAT, export: "classicThemes" }],
-  prompt: [{ owner: "C2", module: FORMAT, export: "prompt" }],
-  contrast: [
-    { when: { scope: "engine" }, owner: "C2", module: ENGINE, export: "contrast" },
-    { owner: "C3", module: PRIMER, export: "contrast" },
-  ],
-  primer: [{ owner: "C3", module: PRIMER, export: "primer" }],
-  "slot-contracts": [{ owner: "C3", module: PRIMER, export: "slotContracts" }],
-  migrations: [{ owner: "C4", module: SETTINGS, export: "migrations" }],
-  boot: [{ owner: "C4", module: SETTINGS, export: "boot" }],
-  fonts: [{ owner: "C5", module: APPEARANCE, export: "fonts" }],
-  effects: [{ owner: "C5", module: APPEARANCE, export: "effects" }],
-  userscript: [{ owner: "C8", module: USERSCRIPT, export: "userscript" }],
-  site: [{ owner: "C7", module: SITE, export: "site" }],
+  test: [c1],
+  harness: [c1],
+  toolchain: [c1],
+  "lint-chrome": [c1],
+  "lint-firefox": [c1],
+  artifacts: [{ owner: "C1", module: "scripts/verify-artifacts.mjs" }],
+  repro: [{ owner: "C1", module: "scripts/verify-repro.mjs" }],
+  schema: [{ owner: "C2", module: FORMAT }],
+  prompt: [{ owner: "C2", module: FORMAT }],
+  themes: [{ owner: "C2", module: FORMAT }],
+  "classic-themes": [{ owner: "C2", module: FORMAT }],
+  // Every scope, including none: C2 orchestrates contrast and loads C3's data for --scope=primer.
+  contrast: [{ owner: "C2", module: ENGINE }],
+  primer: [{ owner: "C3", module: PRIMER }],
+  "slot-contracts": [{ owner: "C3", module: PRIMER }],
+  migrations: [{ owner: "C4", module: SETTINGS }],
+  boot: [{ owner: "C4", module: SETTINGS }],
+  fonts: [{ owner: "C5", module: APPEARANCE }],
+  effects: [{ owner: "C5", module: APPEARANCE }],
+  site: [{ owner: "C7", module: SITE }],
   budgets: [
-    { when: { surface: "site" }, owner: "C7", module: SITE, export: "budgets" },
-    { owner: "C9", module: RELEASE, export: "budgets" },
+    { when: { surface: "site" }, owner: "C7", module: SITE },
+    { owner: "C9", module: RELEASE },
   ],
-  "store-links": [{ owner: "C9", module: RELEASE, export: "storeLinks" }],
-  video: [{ owner: "C10", module: VIDEO, export: "check" }],
-  "render-video": [{ owner: "C10", module: VIDEO, export: "render", tests: false }],
-  "verify-video": [{ owner: "C10", module: VIDEO, export: "verify" }],
-  "capture-release": [{ owner: "C9", module: RELEASE, export: "captureRelease", tests: false }],
-  "qa-live": [{ owner: "C9", module: RELEASE, export: "qaLive" }],
-  "qa-firefox": [{ owner: "C9", module: RELEASE, export: "qaFirefox" }],
-  "qa-userscript": [{ owner: "C9", module: RELEASE, export: "qaUserscript" }],
-  "qa-published-install": [{ owner: "C9", module: RELEASE, export: "qaPublishedInstall" }],
+  userscript: [{ owner: "C8", module: USERSCRIPT }],
+  video: [{ owner: "C10", module: VIDEO }],
+  "render-video": [{ owner: "C10", module: VIDEO, tests: false }],
+  "verify-video": [{ owner: "C10", module: VIDEO }],
+  release: [{ owner: "C9", module: RELEASE }],
+  "store-links": [{ owner: "C9", module: RELEASE }],
+  "capture-release": [{ owner: "C9", module: RELEASE, tests: false }],
+  "qa-live": [{ owner: "C9", module: RELEASE }],
+  "qa-firefox": [{ owner: "C9", module: RELEASE }],
+  "qa-userscript": [{ owner: "C9", module: RELEASE }],
+  "qa-published-install": [{ owner: "C9", module: RELEASE }],
 });
 
+// The browser-surface commands. Each selects surfaces with --surface=<name> and/or
+// --project=<name> and calls each selected surface's module with this command key.
+export const SURFACE_COMMANDS = Object.freeze(["test:e2e", "a11y"]);
+
 // Browser test surfaces. Each owns one directory under tests/e2e and its Playwright projects;
-// playwright.config.mjs is generated from this. `e2e` takes --project=<name>; `a11y` takes
-// --surface=<name> and runs that surface's @a11y tests. Without a selector both run every surface
-// listed for them, so a missing one fails instead of being skipped.
+// playwright.config.mjs is generated from this. Without a selector both surface commands run
+// every surface, so a missing one fails instead of being skipped.
 export const SURFACES = Object.freeze({
-  platform: { owner: "C1", module: PLATFORM, projects: [["platform-chromium", "chromium"], ["platform-firefox", "firefox"]] },
+  platform: { ...c1, projects: [["platform-chromium", "chromium"], ["platform-firefox", "firefox"]] },
   fixture: { owner: "C5", module: APPEARANCE, projects: [["fixture-chromium", "chromium"], ["fixture-firefox", "firefox"]] },
   extension: { owner: "C6", module: UI, projects: [["chromium-extension", "chromium"]] },
   site: { owner: "C7", module: SITE, projects: [["site-chromium", "chromium"], ["site-firefox", "firefox"]] },
   userscript: { owner: "C8", module: USERSCRIPT, projects: [["userscript-chromium", "chromium"], ["userscript-firefox", "firefox"]] },
-  release: { owner: "C9", module: RELEASE, projects: [["release-chromium", "chromium"], ["release-firefox", "firefox"]], a11y: false },
+  release: { owner: "C9", module: RELEASE, projects: [["release-chromium", "chromium"], ["release-firefox", "firefox"]] },
 });
 
 export const e2eDir = (surface) => `tests/e2e/${surface}`;
@@ -98,13 +107,19 @@ export function optionValues(args, name) {
   return values;
 }
 
-// args without the named options and their values.
-export function withoutOptions(args, names) {
+// args without the named options whose value fails keep(name, value), in order.
+export function withoutOptions(args, names, keep = () => false) {
   const out = [];
   for (let i = 0; i < args.length; i++) {
-    const name = names.find((n) => args[i] === `--${n}` || args[i].startsWith(`--${n}=`));
-    if (!name) out.push(args[i]);
-    else if (args[i] === `--${name}`) i++;
+    const name = names.find((n) => (args[i] === `--${n}` && i + 1 < args.length) || args[i].startsWith(`--${n}=`));
+    if (!name) {
+      out.push(args[i]);
+      continue;
+    }
+    const pair = args[i] === `--${name}`;
+    const value = pair ? args[i + 1] : args[i].slice(name.length + 3);
+    if (keep(name, value)) out.push(...(pair ? [args[i], args[i + 1]] : [args[i]]));
+    if (pair) i++;
   }
   return out;
 }

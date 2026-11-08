@@ -1,13 +1,13 @@
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
-import { realpathSync } from "node:fs";
+import { existsSync, realpathSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 import { join, relative } from "node:path";
 import test from "node:test";
 import { promisify } from "node:util";
 import { ROOT } from "../../scripts/build.mjs";
 import { discoverTests } from "../../scripts/check.mjs";
-import { BUILTIN, ROUTES } from "../../scripts/check-routes.mjs";
+import { ROUTES, SURFACE_COMMANDS } from "../../scripts/check-routes.mjs";
 import { withTempDir } from "../helpers/tmp.mjs";
 
 // Without node:test's own context variable, so the child runs as a top-level test runner.
@@ -87,10 +87,26 @@ test("every acceptance script exists and runs through the check router", async (
     "check:video", "render:video", "verify:video", "capture:release", "qa:live", "qa:firefox", "qa:userscript", "qa:published-install",
   ];
   for (const name of named) assert.ok(scripts[name], name);
-  const commands = new Set([...BUILTIN, "e2e", "a11y", ...Object.keys(ROUTES)]);
+  const commands = new Set([...SURFACE_COMMANDS, ...Object.keys(ROUTES)]);
   for (const [name, command] of Object.entries(scripts)) {
-    const routed = /^node scripts\/check\.mjs (\S+)$/.exec(command)?.[1];
+    const routed = /^node scripts\/check\.mjs (\S+)/.exec(command)?.[1];
     if (routed) assert.ok(commands.has(routed), `${name} runs ${routed}, which has no route`);
   }
+  // Every check script, artifacts and repro included, goes through the router with its dispatcher key.
+  for (const [name, key] of [["check:artifacts", "artifacts"], ["check:repro", "repro"], ["test:e2e", "test:e2e"], ["check:a11y", "a11y"], ["check:contrast", "contrast"]]) {
+    assert.equal(scripts[name], `node scripts/check.mjs ${key}`, name);
+  }
   await fails(["no-such-check"], 1, /Unknown check/);
+});
+
+test("the CLI drops a typed -- separator and forwards the rest, and local checks reject arguments they do not take", async () => {
+  if (!existsSync(join(ROOT, "packages/engine/checks.mjs"))) {
+    await fails(["contrast", "--", "--scope=primer"], 2, /NOT IMPLEMENTED: contrast \(owner C2\): packages\/engine\/checks\.mjs does not exist/);
+  }
+  await fails(["toolchain", "--verbose"], 1, /toolchain takes no arguments, got --verbose/);
+  await fails(["repro", "--fast"], 1, /repro \(owner C1\) threw: TypeError .*--fast/);
+  await withTempDir(async (tmp) => {
+    // check:artifacts through its run adapter: real assertions, failing on an empty directory.
+    await fails(["artifacts", "--dir", tmp], 1, /check:artifacts found \d+ problem\(s\) in \d+ checks/);
+  });
 });

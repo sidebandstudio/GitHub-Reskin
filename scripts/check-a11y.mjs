@@ -1,11 +1,13 @@
-// The Playwright surface runner, and the platform surface's own e2e and accessibility checks.
-// Run through scripts/check.mjs: `e2e [--project=<name>...]` and `a11y [--surface=<name>]`.
-//
-// runSurface() is what each surface owner's checks.mjs calls once its prerequisites are built:
+// The Playwright surface runner, used by every surface's test:e2e and a11y checks. scripts/check.mjs
+// dispatches `test:e2e` and `a11y` (selected with --surface=<name> and/or --project=<name>) to each
+// selected surface's module, whose run calls runSurface once its prerequisites are built:
 //
 //   import { runSurface } from "../../scripts/check-a11y.mjs";
-//   export const e2e = (options) => runSurface("fixture", options);
-//   export const a11y = (options) => runSurface("fixture", { ...options, a11y: true });
+//   export async function run({ command, args, root, outDir }) {
+//     if (command === "test:e2e") return runSurface("fixture", { args, root });
+//     if (command === "a11y") return runSurface("fixture", { args, root, a11y: true });
+//     // ... the module's other commands ...
+//   }
 //
 // It lists the surface's projects first, without launching a browser, and fails if any requested
 // project discovers no tests. Then it runs them and fails on any failure, flaky result, skip,
@@ -102,12 +104,13 @@ export async function runPlaywright({ projects, grep, args = [], root = ROOT, co
 
 /**
  * Runs one surface's projects: those named by --project=<name> in args, or all of them. With
- * a11y, only its @a11y tests. Other arguments are passed to Playwright.
+ * a11y, only its @a11y tests. --surface may only name this surface. Other arguments are passed
+ * to Playwright.
  */
 export async function runSurface(surface, { args = [], root = ROOT, a11y = false } = {}) {
   const own = SURFACES[surface].projects.map(([name]) => name);
   const requested = optionValues(args, "project");
-  const unknown = requested.filter((name) => !own.includes(name));
+  const unknown = [...requested.filter((name) => !own.includes(name)), ...optionValues(args, "surface").filter((name) => name !== surface).map((name) => `surface ${name}`)];
   if (unknown.length) {
     console.error(`${unknown.join(", ")} not in the ${surface} surface (${own.join(", ")})`);
     return { exitCode: 1, testCount: 0 };
@@ -115,7 +118,3 @@ export async function runSurface(surface, { args = [], root = ROOT, a11y = false
   const rest = withoutOptions(args, ["project", "surface"]);
   return runPlaywright({ projects: requested.length ? requested : own, grep: a11y ? A11Y_TAG : undefined, args: rest, root });
 }
-
-// The platform surface, C1's runner smoke tests in tests/e2e/platform.
-export const e2e = (options) => runSurface("platform", options);
-export const a11y = (options) => runSurface("platform", { ...options, a11y: true });

@@ -1,14 +1,15 @@
 // Checks what scripts/package.mjs wrote: checksums, ZIP layout and normalization, manifests,
 // permissions, Gecko ID, licenses, the exact runtime file list, external resources, the
-// userscript header, the source archive and build-info. Prints every problem and exits 1 on any.
-// Run: node scripts/verify-artifacts.mjs [--dir artifacts]
+// userscript header and upstream notices, the source archive and build-info. Prints every
+// problem and exits 1 on any.
+// Run: node scripts/verify-artifacts.mjs [--dir artifacts], or check:artifacts through scripts/check.mjs.
 import { realpathSync } from "node:fs";
 import { readFile, readdir } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { unzipSync } from "fflate";
-import { ROOT, extensionManifest, licenseFiles, loadEntry, loadReleaseConfig, manifestPaths, manifestProblems, noticeProblems, readSource, sha256 } from "./build.mjs";
+import { ROOT, extensionManifest, licenseFiles, licenseTargets, loadEntry, loadReleaseConfig, manifestPaths, manifestProblems, noticeProblems, readSource, sha256 } from "./build.mjs";
 import { artifactName } from "./package.mjs";
 
 const DOS_1980_01_01 = (0 << 9) | (1 << 5) | 1;
@@ -63,7 +64,13 @@ export function zipEntries(bytes) {
 export async function verifyArtifacts(dir = "artifacts") {
   const out = resolve(ROOT, dir);
   const problems = [];
+  let checks = 0;
   const fail = (message) => problems.push(message);
+  // Every check counts, passing or not, so the run reports how many assertions it made.
+  const expect = (ok, message) => {
+    checks++;
+    if (!ok) fail(message);
+  };
   const config = await loadReleaseConfig();
   const entry = await loadEntry(config);
   const { version } = config;
@@ -80,12 +87,12 @@ export async function verifyArtifacts(dir = "artifacts") {
   const sums = (await read("SHA256SUMS"))?.toString("utf8") ?? "";
   const listed = new Map(sums.trim().split("\n").filter(Boolean).map((line) => line.split(/ {2}/).reverse()));
   const expected = ["build-info.json", ...["amo-source", "chrome", "firefox", "userscript"].map((kind) => artifactName(version, kind))].sort();
-  if (JSON.stringify([...listed.keys()].sort()) !== JSON.stringify(expected)) fail(`SHA256SUMS lists ${[...listed.keys()].join(", ")}, expected ${expected.join(", ")}`);
-  for (const name of (await readdir(out)).filter((n) => /^github-reskin-/.test(n))) if (!expected.includes(name)) fail(`${name} is not part of release ${version}`);
+  expect(JSON.stringify([...listed.keys()].sort()) === JSON.stringify(expected), `SHA256SUMS lists ${[...listed.keys()].join(", ")}, expected ${expected.join(", ")}`);
+  for (const name of (await readdir(out)).filter((n) => /^github-reskin-/.test(n))) expect(expected.includes(name), `${name} is not part of release ${version}`);
   const bytes = {};
   for (const name of expected) {
     bytes[name] = await read(name);
-    if (bytes[name] && listed.get(name) !== sha256(bytes[name])) fail(`${name} does not match SHA256SUMS`);
+    expect(!(bytes[name] && listed.get(name) !== sha256(bytes[name])), `${name} does not match SHA256SUMS`);
   }
 
   const contents = {};
@@ -93,16 +100,16 @@ export async function verifyArtifacts(dir = "artifacts") {
     if (!bytes[name]) return null;
     const entries = zipEntries(bytes[name]);
     const names = entries.map((e) => e.name);
-    if (JSON.stringify(names) !== JSON.stringify([...names].sort())) fail(`${name}: entries are not sorted`);
-    if (new Set(names).size !== names.length) fail(`${name}: duplicate entries`);
+    expect(JSON.stringify(names) === JSON.stringify([...names].sort()), `${name}: entries are not sorted`);
+    expect(new Set(names).size === names.length, `${name}: duplicate entries`);
     for (const e of entries) {
-      if (e.time !== 0 || e.date !== DOS_1980_01_01) fail(`${name}: ${e.name} is not dated 1980-01-01 00:00`);
-      if (e.mode !== FILE_644 || e.madeBy !== 3) fail(`${name}: ${e.name} is not a 644 Unix file`);
-      if (e.name.endsWith("/") || e.name.startsWith("/") || e.name.split("/").includes("..")) fail(`${name}: bad path ${e.name}`);
-      if (FORBIDDEN_PATH.test(e.name)) fail(`${name}: ${e.name} does not belong in a package`);
+      expect(!(e.time !== 0 || e.date !== DOS_1980_01_01), `${name}: ${e.name} is not dated 1980-01-01 00:00`);
+      expect(!(e.mode !== FILE_644 || e.madeBy !== 3), `${name}: ${e.name} is not a 644 Unix file`);
+      expect(!(e.name.endsWith("/") || e.name.startsWith("/") || e.name.split("/").includes("..")), `${name}: bad path ${e.name}`);
+      expect(!FORBIDDEN_PATH.test(e.name), `${name}: ${e.name} does not belong in a package`);
     }
     const files = unzipSync(bytes[name]);
-    for (const [path, data] of Object.entries(files)) if (SECRET.test(Buffer.from(data).toString("latin1"))) fail(`${name}: ${path} looks like it contains a secret`);
+    for (const [path, data] of Object.entries(files)) expect(!SECRET.test(Buffer.from(data).toString("latin1")), `${name}: ${path} looks like it contains a secret`);
     return (contents[name] = files);
   };
 
@@ -112,8 +119,8 @@ export async function verifyArtifacts(dir = "artifacts") {
   for (const path of licenseFiles(entry)) licenses[path] = sha256(await readSource(path));
   const licensesIn = (name, files) => {
     for (const [path, hash] of Object.entries(licenses)) {
-      if (!files[path]?.length) fail(`${name}: license file ${path} is missing`);
-      else if (sha256(files[path]) !== hash) fail(`${name}: ${path} differs from the checked-in notice`);
+      expect(files[path]?.length, `${name}: license file ${path} is missing`);
+      if (files[path]?.length) expect(sha256(files[path]) === hash, `${name}: ${path} differs from the checked-in notice`);
     }
   };
 
@@ -130,10 +137,10 @@ export async function verifyArtifacts(dir = "artifacts") {
     }
     const manifest = (manifests[browser] = JSON.parse(Buffer.from(files["manifest.json"]).toString("utf8")));
     for (const problem of manifestProblems(manifest, browser, config)) fail(`${name}: ${problem}`);
-    if (JSON.stringify(manifest) !== JSON.stringify(await extensionManifest(browser, config))) fail(`${name}: manifest.json differs from extension/manifests`);
-    for (const path of manifestPaths(manifest)) if (!files[path]) fail(`${name}: the manifest names ${path}, which is missing`);
+    expect(JSON.stringify(manifest) === JSON.stringify(await extensionManifest(browser, config)), `${name}: manifest.json differs from extension/manifests`);
+    for (const path of manifestPaths(manifest)) expect(files[path], `${name}: the manifest names ${path}, which is missing`);
     const paths = Object.keys(files).sort();
-    if (JSON.stringify(paths) !== JSON.stringify(allowed)) fail(`${name}: files ${paths.join(", ")} differ from the entry allowlist ${allowed.join(", ")}`);
+    expect(JSON.stringify(paths) === JSON.stringify(allowed), `${name}: files ${paths.join(", ")} differ from the entry allowlist ${allowed.join(", ")}`);
     licensesIn(name, files);
     for (const problem of remoteResourceProblems(files)) fail(`${name}: ${problem}`);
   }
@@ -141,12 +148,12 @@ export async function verifyArtifacts(dir = "artifacts") {
   const [chrome, firefox] = ["chrome", "firefox"].map((b) => contents[artifactName(version, b)]);
   if (chrome && firefox) {
     for (const path of new Set([...Object.keys(chrome), ...Object.keys(firefox)])) {
-      if (path !== "manifest.json" && (!chrome[path] || !firefox[path] || sha256(chrome[path]) !== sha256(firefox[path]))) fail(`${path} differs between the Chrome and Firefox packages`);
+      expect(!(path !== "manifest.json" && (!chrome[path] || !firefox[path] || sha256(chrome[path]) !== sha256(firefox[path]))), `${path} differs between the Chrome and Firefox packages`);
     }
     const keys = new Set([...Object.keys(manifests.chrome), ...Object.keys(manifests.firefox)]);
     for (const key of keys) {
       const differs = JSON.stringify(manifests.chrome[key]) !== JSON.stringify(manifests.firefox[key]);
-      if (differs && !["browser_specific_settings", "background"].includes(key)) fail(`manifest key ${key} differs between browsers without a platform reason`);
+      expect(!(differs && !["browser_specific_settings", "background"].includes(key)), `manifest key ${key} differs between browsers without a platform reason`);
     }
   }
 
@@ -154,9 +161,13 @@ export async function verifyArtifacts(dir = "artifacts") {
   const userscript = bytes[artifactName(version, "userscript")]?.toString("utf8");
   if (userscript) {
     const header = /^\/\/ ==UserScript==\n([\s\S]*?)\/\/ ==\/UserScript==\n/.exec(userscript)?.[1] ?? "";
-    if (!header) fail("the userscript has no metadata block");
-    if (!new RegExp(`^// @version +${version.replaceAll(".", "\\.")}$`, "m").test(header)) fail(`the userscript @version is not ${version}`);
-    if (/^\/\/ @require/m.test(header)) fail("the userscript must not @require remote code");
+    expect(header, "the userscript has no metadata block");
+    expect(new RegExp(`^// @version +${version.replaceAll(".", "\\.")}$`, "m").test(header), `the userscript @version is not ${version}`);
+    expect(!/^\/\/ @require/m.test(header), "the userscript must not @require remote code");
+    // It carries the extension's frozen upstream material, so it carries each notice too.
+    for (const notice of entry.notices) {
+      expect(userscript.includes((await readSource(notice.file)).toString("utf8")), `the userscript lacks the ${notice.file} notice`);
+    }
   }
 
   // Source archive: exact inputs for a reviewer rebuild, no generated output or secrets.
@@ -165,10 +176,10 @@ export async function verifyArtifacts(dir = "artifacts") {
     const required = ["BUILDING.md", "LICENSE", "package.json", "package-lock.json", "release.config.json", ".node-version", "scripts/build.mjs", "scripts/package.mjs"];
     required.push(...["base.json", "chrome.json", "firefox.json", "entries.json"].map((f) => `extension/manifests/${f}`));
     required.push(...entry.files.map((f) => `${entry.root}/${f}`), config.userscript.builder);
-    for (const path of required) if (!source[path]) fail(`the source archive lacks ${path}`);
+    for (const path of required) expect(source[path], `the source archive lacks ${path}`);
     for (const [path, hash] of Object.entries(entry.frozen)) {
       const file = source[`${entry.root}/${path}`];
-      if (file && sha256(file) !== hash) fail(`the source archive's ${entry.root}/${path} is not the frozen snapshot`);
+      expect(!(file && sha256(file) !== hash), `the source archive's ${entry.root}/${path} is not the frozen snapshot`);
     }
     licensesIn("the source archive", source);
   }
@@ -177,34 +188,41 @@ export async function verifyArtifacts(dir = "artifacts") {
   const infoBytes = bytes["build-info.json"];
   if (infoBytes) {
     const info = JSON.parse(infoBytes.toString("utf8"));
-    if (info.version !== version) fail(`build-info version ${info.version} is not ${version}`);
-    if (info.extensionEntry !== config.extension.entry) fail("build-info names a different extension entry");
-    if (info.toolchain?.node !== config.toolchain.node || info.toolchain?.npm !== config.toolchain.npm) {
-      fail(`built with Node ${info.toolchain?.node} and npm ${info.toolchain?.npm}; the release toolchain is Node ${config.toolchain.node} and npm ${config.toolchain.npm}`);
-    }
-    for (const [name, { sha256: hash }] of Object.entries(info.artifacts || {})) if (bytes[name] && sha256(bytes[name]) !== hash) fail(`build-info's hash of ${name} is wrong`);
+    expect(info.version === version, `build-info version ${info.version} is not ${version}`);
+    expect(info.extensionEntry === config.extension.entry, "build-info names a different extension entry");
+    expect(
+      info.toolchain?.node === config.toolchain.node && info.toolchain?.npm === config.toolchain.npm,
+      `built with Node ${info.toolchain?.node} and npm ${info.toolchain?.npm}; the release toolchain is Node ${config.toolchain.node} and npm ${config.toolchain.npm}`,
+    );
+    for (const [name, { sha256: hash }] of Object.entries(info.artifacts || {})) expect(!(bytes[name] && sha256(bytes[name]) !== hash), `build-info's hash of ${name} is wrong`);
     const inventory = new Map((info.licenses || []).map((item) => [item.file, item]));
     for (const [path, hash] of Object.entries(licenses)) {
       const item = inventory.get(path);
-      if (!item) fail(`build-info's license inventory lacks ${path}`);
-      else if (item.sha256 !== hash || JSON.stringify(item.in) !== JSON.stringify(["chrome", "firefox", "amo-source"])) fail(`build-info's inventory entry for ${path} is wrong`);
+      expect(item, `build-info's license inventory lacks ${path}`);
+      if (item) expect(item.sha256 === hash && JSON.stringify(item.in) === JSON.stringify(licenseTargets(entry, path)), `build-info's inventory entry for ${path} is wrong`);
     }
-    for (const path of inventory.keys()) if (!licenses[path]) fail(`build-info lists ${path}, which no package carries`);
+    for (const path of inventory.keys()) expect(licenses[path], `build-info lists ${path}, which no package carries`);
   }
 
   // A release tag must name the release version.
   const tag = process.env.RELEASE_TAG || (process.env.GITHUB_REF_TYPE === "tag" ? process.env.GITHUB_REF_NAME : "");
-  if (tag && tag !== `v${version}`) fail(`tag ${tag} does not match version ${version}`);
+  expect(!(tag && tag !== `v${version}`), `tag ${tag} does not match version ${version}`);
 
-  return problems;
+  return { problems, checks };
+}
+
+/**
+ * check:artifacts through scripts/check.mjs. Takes --dir, relative to root.
+ * @type {import("../packages/contracts/index.js").CheckRunner}
+ */
+export async function run({ args, root }) {
+  const { values } = parseArgs({ args, options: { dir: { type: "string", default: "artifacts" } } });
+  const { problems, checks } = await verifyArtifacts(resolve(root, values.dir));
+  if (problems.length) console.error(`check:artifacts found ${problems.length} problem(s) in ${checks} checks:\n  ${problems.join("\n  ")}`);
+  else console.log(`check:artifacts passed for ${values.dir}: ${checks} checks`);
+  return { exitCode: problems.length ? 1 : 0, testCount: checks };
 }
 
 if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const { values } = parseArgs({ options: { dir: { type: "string", default: "artifacts" } } });
-  const problems = await verifyArtifacts(values.dir);
-  if (problems.length) {
-    console.error(`check:artifacts found ${problems.length} problem(s):\n  ${problems.join("\n  ")}`);
-    process.exit(1);
-  }
-  console.log(`check:artifacts passed for ${values.dir}`);
+  process.exitCode = (await run({ args: process.argv.slice(2), root: ROOT })).exitCode;
 }
