@@ -11,18 +11,51 @@ import * as contracts from "../../packages/contracts/index.js";
 const ROOT = fileURLToPath(new URL("../..", import.meta.url));
 
 const declarations = await readFile(join(ROOT, "packages/contracts/index.d.ts"), "utf8");
+const DECLARATION_FILES = ["index.d.ts", "theme-v1.d.ts", "theme-engine.d.ts"];
+const sources = Object.fromEntries(
+  await Promise.all([...DECLARATION_FILES, "index.js"].map(async (file) => [file, await readFile(join(ROOT, "packages/contracts", file), "utf8")])),
+);
 
 test("every declared constant exists at runtime and every runtime export is declared", () => {
   const declared = [...declarations.matchAll(/^export declare const (\w+):/gm)].map(([, name]) => name).sort();
   assert.deepEqual(Object.keys(contracts).sort(), declared);
 });
 
-test("the declarations type-check strictly and accept the schema's examples", async () => {
+test("the declarations type-check strictly, accept the schema's examples and the frozen engine shapes, and reject the old ones", async () => {
   const tsc = join(ROOT, "node_modules/typescript/bin/tsc");
   const args = ["--noEmit", "--strict", "--target", "es2022", "--module", "nodenext", "--moduleResolution", "nodenext", "--lib", "es2022,dom"];
   await promisify(execFile)(process.execPath, [tsc, ...args, "tests/foundation/contracts-usage.ts"], { cwd: ROOT }).catch((error) => {
     assert.fail(error.stdout || error.message);
   });
+});
+
+test("each type has one definition, which index.d.ts re-exports", () => {
+  const defined = {};
+  for (const file of DECLARATION_FILES) {
+    for (const [, name] of sources[file].matchAll(/^export (?:interface|type) (\w+)\b/gm)) (defined[name] ||= []).push(file);
+  }
+  const duplicates = Object.entries(defined).filter(([, files]) => files.length > 1);
+  assert.deepEqual(duplicates, []);
+  // Everything theme-v1.d.ts and theme-engine.d.ts define is reachable from index.d.ts.
+  const reexported = [...declarations.matchAll(/^export type \{([^}]+)\} from "\.\/theme-(?:v1|engine)\.js";/gm)].flatMap(([, names]) => names.split(",").map((n) => n.trim()).filter(Boolean));
+  const frozen = Object.entries(defined).filter(([, [file]]) => file !== "index.d.ts").map(([name]) => name);
+  assert.deepEqual([...reexported].sort(), frozen.sort());
+  // Types only: the contracts package never promises engine functions at runtime.
+  for (const file of DECLARATION_FILES) assert.doesNotMatch(sources[file], /^export declare function/m, file);
+});
+
+test("deferred editor and settings features have no contract", () => {
+  const deferred = /\b(remixTheme|RemixOptions|lockedColors|redo|canRedo|setGraph|setEffect|favorites|semanticMode|ModeRecord|ResolvedTokens|accentEmphasisText|primaryBackgroundHover)\b/;
+  for (const [file, text] of Object.entries(sources)) assert.doesNotMatch(text, deferred, file);
+  assert.deepEqual(
+    [...contracts.EDITOR_ACTION_TYPES],
+    ["setColor", "setBase", "setFont", "toggleEffect", "setFlavorEnabled", "setFlavorSlot", "undo", "reset", "loadImport"],
+  );
+  // Dimmed is a standard-family mode ID, not a family.
+  assert.deepEqual([...contracts.MODE_FAMILIES], ["standard", "colorblind", "tritanopia"]);
+  assert.deepEqual([...contracts.MODE_POLICIES], ["themed", "native-high-contrast", "native-unknown"]);
+  assert.equal(contracts.PAIR_MATRIX_VERSION, 1);
+  assert.deepEqual([...contracts.SHARED_BUILD_SCOPES], ["engine", "primer", "preview"]);
 });
 
 test("contract values are frozen", () => {

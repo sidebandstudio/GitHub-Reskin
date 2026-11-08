@@ -1,7 +1,9 @@
 // Shared vocabulary for every GitHub Reskin module. Values here are part of the public format,
 // stored settings or release gates, so a change is a contract change and needs review before
 // dependent units rely on it. Types for everything below, and the module interfaces, are in
-// index.d.ts.
+// index.d.ts, which re-exports the theme format (theme-v1.d.ts) and the frozen engine types
+// (theme-engine.d.ts). Those two files declare types only; executable functions live in their
+// real packages.
 
 const freeze = (value) => {
   if (value && typeof value === "object") {
@@ -17,6 +19,8 @@ export const THEME_FORMAT_VERSION = 1;
 export const SETTINGS_VERSION = 2;
 export const RENDERER_VERSION = 1;
 export const ENGINE_VERSION = 1;
+// PairMatrix.version of packages/engine/pairs.json, recorded in the boot record.
+export const PAIR_MATRIX_VERSION = 1;
 
 // The first-run theme, Choom Circuit. Always chosen by ID, never by catalog order.
 export const DEFAULT_THEME_ID = "anime.cyberpunk-edgerunners";
@@ -79,7 +83,7 @@ export const OVERRIDE_COLOR_ROLES = freeze([
   "done",
 ]);
 export const SYNTAX_ROLES = freeze(["comment", "keyword", "string", "function", "number", "variable", "type"]);
-// Roles a remix can lock. Core colors plus overrides; syntax is locked as one group.
+// Every color role the theme format names, with syntax as one group. A schema registry only.
 export const COLOR_ROLES = freeze([...CORE_COLOR_ROLES, ...OVERRIDE_COLOR_ROLES, "syntax"]);
 
 // "system" uses the platform font and ships no file.
@@ -120,25 +124,24 @@ export const COMMIT_ACTION_TYPES = freeze([
   "resetAll",
 ]);
 export const SETTINGS_REQUEST_TYPES = freeze(["get", "commit", "draft", "open-page"]);
+// Builder edits, exactly. One previous document backs undo; there is no history stack.
 export const EDITOR_ACTION_TYPES = freeze([
   "setColor",
   "setBase",
   "setFont",
-  "setEffect",
+  "toggleEffect",
+  "setFlavorEnabled",
   "setFlavorSlot",
-  "setGraph",
-  "remix",
   "undo",
-  "redo",
   "reset",
   "loadImport",
 ]);
 export const INTERNAL_PAGES = freeze(["onboarding", "settings"]);
 export const PREVIEW_VIEWS = freeze(["profile", "repo", "diff", "empty", "404"]);
 export const MODE_POLICIES = freeze(["themed", "native-high-contrast", "native-unknown"]);
-// Families of GitHub's native modes. C3 supplies the actual mode IDs from the frozen mode index;
-// nothing may assume how many there are.
-export const MODE_FAMILIES = freeze(["standard", "dimmed", "colorblind", "tritanopia"]);
+// Families of GitHub's native modes. Dimmed is a mode ID in the standard family. C3 supplies the
+// actual mode IDs from the frozen mode index; nothing may assume how many there are.
+export const MODE_FAMILIES = freeze(["standard", "colorblind", "tritanopia"]);
 export const ISSUE_SEVERITIES = freeze(["error", "warning", "info"]);
 
 // Stable machine codes for Issue.code. Messages are for people and may change; codes may not.
@@ -228,6 +231,8 @@ export const BUDGETS = freeze({
 
 export const BROWSER_TARGETS = freeze(["chrome", "firefox"]);
 export const BUILD_TARGETS = freeze(["chrome", "firefox", "userscript", "shared", "site"]);
+// build:shared -- --scope=<scope>. Each scope includes the ones before it.
+export const SHARED_BUILD_SCOPES = freeze(["engine", "primer", "preview"]);
 export const GECKO_ID = "github-reskin@sideband.studio";
 export const SUPPORTED_ORIGINS = freeze(["https://github.com", "https://gist.github.com"]);
 
