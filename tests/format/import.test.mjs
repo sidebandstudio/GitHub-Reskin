@@ -189,6 +189,45 @@ test("the parser matches jsonc-parser on accepted input and rejects what it reje
   }
 });
 
+// Deterministic mutations of every valid fixture, plus comments with each line ending. Where the
+// pinned jsonc-parser accepts, the parser returns the same value or refuses for a documented
+// safety reason; where it rejects, the parser rejects too.
+test("the parser agrees with jsonc-parser on 6,000 deterministic mutations", () => {
+  const seeds = readdirSync(`${ROOT}tests/fixtures/schema/valid`).map((file) => readFileSync(`${ROOT}tests/fixtures/schema/valid/${file}`, "utf8"));
+  seeds.push('{ // c\r "a": [1, 2,], /* b */ "s": "x\\u00e9\\n", // d\r\n "t": true // e\n}');
+  let state = 0x9e3779b9;
+  const next = () => {
+    state ^= state << 13;
+    state ^= state >>> 17;
+    state ^= state << 5;
+    return (state >>> 0) / 0x100000000;
+  };
+  const pick = (list) => list[Math.floor(next() * list.length)];
+  const alphabet = [..."{}[]\":,/*\\u01-.etna'#", "\n", "\r", " ", "\t"];
+  const safety = new Set([ISSUE_CODES.duplicateKey, ISSUE_CODES.forbiddenKey, ISSUE_CODES.tooDeep, ISSUE_CODES.nonFiniteNumber, ISSUE_CODES.invalidUtf8]);
+  let accepted = 0;
+  for (let n = 0; n < 6000; n++) {
+    let text = pick(seeds);
+    for (let edits = 1 + Math.floor(next() * 3); edits > 0; edits--) {
+      const at = Math.floor(next() * (text.length + 1));
+      const op = Math.floor(next() * 3);
+      const c = pick(alphabet);
+      text = text.slice(0, at) + (op === 1 ? "" : c) + text.slice(op === 0 ? at : at + 1);
+    }
+    const errors = [];
+    const expected = jsonc.parse(text, errors, { allowTrailingComma: true });
+    const ours = parseJson(text, { maxDepth: 12 });
+    if (ours.ok) {
+      assert.deepEqual(errors, [], `jsonc-parser rejects what we accept: ${JSON.stringify(text)}`);
+      assert.deepEqual(ours.value, expected, JSON.stringify(text));
+      accepted++;
+    } else if (!errors.length) {
+      assert.ok(safety.has(ours.issue.code) || /control characters/.test(ours.issue.message), `we reject what jsonc-parser accepts: ${JSON.stringify(text)} (${ours.issue.message})`);
+    }
+  }
+  assert.ok(accepted > 1000, `${accepted} accepted mutations`);
+});
+
 test("CR, LF and CRLF end line comments alike in themes, prose and candidate extraction", () => {
   const second = MINIMAL.replace("Moss", "Second");
   for (const end of ["\n", "\r", "\r\n"]) {
