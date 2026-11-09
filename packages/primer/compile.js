@@ -28,7 +28,8 @@ const ISSUE_LABEL = {
 const ON = "--reskin-on";
 const SELECTION_TEXT = "--reskin-selection-text";
 const SELECTION_BACKGROUND = "--reskin-selection-background";
-// Gecko matches these selectors; other engines use the style queries below.
+// Gecko matches these selectors. Before Firefox 151 it has no container style queries, and
+// Chromium's selection needs its own rule.
 const GECKO = "selector(:-moz-focusring)";
 const important = (declarations) => declarations.replace(/;/g, " !important;") + " !important";
 
@@ -164,11 +165,11 @@ export function compileGitHub(resolved, modePlan, prefs, index = MODE_INDEX) {
   const branch = (name) => {
     const scope = islandScope(covered, Object.keys(index.modes), baseOf, name);
     // Rules that are not inherited custom properties, for elements whose nearest island is
-    // eligible. A graph or label that is itself an island follows its own mode, below.
+    // eligible. A graph, label or Brand footer that is itself an island follows its own mode, below.
     const component = (target) => [
       [`${GRAPH_TARGET}:not([data-color-mode])`, graph],
       [".hx_IssueLabel:not([data-color-mode])", label],
-      [scope.brand, brandDeclarations],
+      [`${scope.brand}:not(${ATTRIBUTED})`, brandDeclarations],
     ].map(([selector, body]) => `${target(selector)}{${body}}`).join("\n");
     return [
       // Every island with theme attributes clears the Reskin switches, at no specificity, and
@@ -176,19 +177,22 @@ export function compileGitHub(resolved, modePlan, prefs, index = MODE_INDEX) {
       `:where(${ATTRIBUTED}){${ON}:initial !important;${SELECTION_TEXT}:initial !important;${SELECTION_BACKGROUND}:initial !important}`,
       `${scope.eligible}{${declarations}}`,
       // Only a themed island's own descendants can suppress it, and a graph or label holds no
-      // islands, so for these subjects no unsafe descendant at all is the same, shorter test.
+      // islands, so for these subjects no unsafe descendant at all is the same, shorter test. A
+      // Brand footer holds no island of `others`, unsafe ones included.
       `${GRAPH_TARGET}${scope.themed}:not(:has(${scope.unsafe})){${graph}}`,
       `.hx_IssueLabel${scope.themed}:not(:has(${scope.unsafe})){${label}}`,
-      `@supports ${GECKO}{`,
-      component(scope.within),
-      "}",
-      // Outside Gecko the other component rules read the nearest island's switch with a style
-      // query, which reads the parent's, so it never sees a subject's own island. An engine with
-      // neither keeps GitHub's components.
-      `@supports not ${GECKO}{`,
+      `${scope.brand}${scope.themed}{${brandDeclarations}}`,
+      // The other component rules read the nearest island's switch with a style query, which
+      // reads the parent's, so it never sees a subject's own island, through any depth. Gecko
+      // before Firefox 151 matches selectors instead, and an engine with neither keeps GitHub's
+      // components.
       `@container style(${ON}: 1){`,
       component((selector) => selector),
       "}",
+      `@supports ${GECKO}{`,
+      component(scope.within),
+      "}",
+      `@supports not ${GECKO}{`,
       // Chromium's highlight styles inherit from the parent's, and only an element whose
       // ancestors have no selection rule paints the browser's own selection, whose dark-scheme and
       // inactive-window colors no keyword reproduces. So the themed selection is set once on the

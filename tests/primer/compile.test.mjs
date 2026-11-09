@@ -111,7 +111,8 @@ function hasArguments(selector) {
 
 test("unsafe islands are every island but the frozen mode combinations and the Brand footer's", () => {
   const LOOSE = "[data-color-mode]:not([data-light-theme],[data-dark-theme])";
-  const WRAPPER = `react-partial[partial-name="marketing-footer"] > div > ${LOOSE}`;
+  const BRAND_LOOSE = `${LOOSE}:is([data-color-mode=light],[data-color-mode=dark])`;
+  const WRAPPER = `react-partial[partial-name="marketing-footer"] > div > ${BRAND_LOOSE}`;
   for (const branch of ["light", "dark"]) {
     const { unsafe, eligible, others } = scopeOf("dark", branch);
     const head = ":is([data-color-mode]:is([data-light-theme],[data-dark-theme]):not(";
@@ -123,8 +124,8 @@ test("unsafe islands are every island but the frozen mode combinations and the B
     });
     assert.deepEqual(known.sort(), expected.sort(), branch);
     // Every island without theme attributes, whatever it holds, except the marketing footer
-    // partial's and those inside its footer.
-    assert.ok(unsafe.endsWith(`,${LOOSE}:not(${WRAPPER},:is(${WRAPPER} > footer[role="contentinfo"]) *))`), branch);
+    // partial's and those inside its footer, while their value is light or dark.
+    assert.ok(unsafe.endsWith(`,${LOOSE}:not(${WRAPPER},:is(${WRAPPER} > footer[role="contentinfo"]) ${BRAND_LOOSE}))`), branch);
     // Browsers reject a :has() nested in another; each suppression depth has its own.
     for (const selector of [eligible, unsafe, others]) for (const arg of hasArguments(selector)) assert.doesNotMatch(arg, /:has\(/);
     assert.equal(hasArguments(eligible).length, 4);
@@ -134,7 +135,7 @@ test("unsafe islands are every island but the frozen mode combinations and the B
   }
 });
 
-test("component rules follow a subject's own island, then the nearest island: selectors in Gecko, the switch elsewhere", () => {
+test("component rules follow a subject's own island, then the nearest island: the switch, and selectors in Gecko without it", () => {
   const [resolved, p] = themed("light");
   const { css } = compileGitHub(resolved, p, PREFS);
   const all = rules(css);
@@ -151,10 +152,11 @@ test("component rules follow a subject's own island, then the nearest island: se
   const gecko = graph.filter((r) => r.media.includes("selector(:-moz-focusring)"));
   assert.equal(gecko.length, 2);
   for (const r of gecko) assert.equal(r.selectors[0], scopeOf("light", branchOf(r)).within(':is(.js-highlight-blob,.Progress-item:is(main #js-contribution-activity .Progress[role="img"] > *):not(.markdown-body *)):not([data-color-mode])'));
-  const queried = graph.filter((r) => r.media.includes("not selector(:-moz-focusring)"));
+  // Every engine with container style queries reads the switch, through any depth.
+  const queried = graph.filter((r) => r.media.includes("style(--reskin-on: 1)"));
   assert.equal(queried.length, 2);
   for (const r of queried) {
-    assert.deepEqual(r.media.slice(2), ["not selector(:-moz-focusring)", "style(--reskin-on: 1)"]);
+    assert.deepEqual(r.media.slice(2), ["style(--reskin-on: 1)"]);
     assert.equal(r.selectors.length, 1);
     // The style query reads the parent's switch, so a subject that is an island never matches.
     assert.match(r.selectors[0], /:not\(\[data-color-mode\]\)$/);
@@ -259,7 +261,8 @@ test("the Primer Brand footer gets its own mapped variables, scoped by structure
   const [resolved, p] = themed("dark");
   const { css } = compileGitHub(resolved, p, PREFS);
   const brand = rules(css).filter((r) => r.declarations.some((d) => d.name === "--brand-color-text-default"));
-  assert.equal(brand.length, 4);
+  // Its own mode, the switch and Gecko's selectors, in each color-scheme branch.
+  assert.equal(brand.length, 6);
   for (const r of brand) {
     assert.ok(r.selectors.every((s) => s.includes('footer[role="contentinfo"]')));
     assert.doesNotMatch(r.selectors.join(","), /class/);

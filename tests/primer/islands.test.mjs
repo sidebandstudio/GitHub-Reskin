@@ -83,12 +83,12 @@ for (const [name, engine] of [["Chromium", chromium], ["Firefox", firefox]]) {
       await browser?.close();
     });
     // Opens a page, optionally reads it before the theme, then adds the compiled stylesheet.
-    const open = async ({ root = ROOT, body = STANDARD, extra = "", colorScheme = "light", beforeTheme } = {}) => {
+    const open = async ({ root = ROOT, body = STANDARD, extra = "", colorScheme = "light", beforeTheme, css = compiled } = {}) => {
       const context = await browser.newContext({ colorScheme });
       const p = await context.newPage();
       await p.setContent(page(root, body, extra));
       const earlier = beforeTheme ? await beforeTheme(p) : undefined;
-      await p.addStyleTag({ content: compiled });
+      await p.addStyleTag({ content: css });
       const read = (id, prop) => p.evaluate(([id, prop]) => getComputedStyle(id === "root" ? document.documentElement : document.getElementById(id)).getPropertyValue(prop).trim().toLowerCase(), [id, prop]);
       return { p, read, earlier, close: () => context.close() };
     };
@@ -240,6 +240,118 @@ for (const [name, engine] of [["Chromium", chromium], ["Firefox", firefox]]) {
       assert.notEqual(await t.read("brand-inner", "--brand-color-text-default"), "#fafbe0");
       assert.notEqual(await t.read("deep-inner", "--brand-color-text-default"), "#fafbe0");
       await t.close();
+    });
+
+    // Native Brand sentinels on the root, and an element painted with them, so a Brand value the
+    // footer passes down shows as a change in paint.
+    const BRAND_NATIVE = "<style>:root{--brand-color-text-default:#112233;--brand-color-canvas-subtle:#eeeeee}.brand-paint{color:var(--brand-color-text-default);background:var(--brand-color-canvas-subtle)}</style>";
+    const brandPaint = (id) => `<span id="${id}" class="brand-paint">Brand words</span>`;
+    const footerWith = (own, inside) => `<react-partial partial-name="marketing-footer"><div><div data-color-mode="light"><footer id="footer" ${own} role="contentinfo">${inside}</footer></div></div></react-partial>`;
+
+    test("a high-contrast island in the Brand footer, or the footer itself, keeps GitHub's Brand colors", async () => {
+      for (const [own, inside, ids] of [
+        ["", `<div id="hc" ${HC}>${brandPaint("probe")}</div><div id="menu" data-color-mode="dark">${brandPaint("menu-probe")}</div>`, ["hc", "probe"]],
+        ["", `<div id="menu" data-color-mode="dark"><div id="hc" ${HC}>${brandPaint("probe")}</div></div>`, ["hc", "probe"]],
+        [HC, brandPaint("probe"), ["footer", "probe"]],
+      ]) {
+        const t = await open({ body: footerWith(own, inside), extra: BRAND_NATIVE, beforeTheme: paint(ids) });
+        assert.deepEqual(await paint(ids)(t.p), t.earlier, `${own} ${inside}`);
+        assert.equal(await t.read("probe", "--brand-color-text-default"), "#112233");
+        assert.equal(await t.read("root", "--bgColor-default"), "#101a2b", "the high-contrast island suppresses nothing");
+        // A Brand island beside it cannot reach the high-contrast island and keeps the theme.
+        if (inside.includes("menu-probe")) assert.equal(await t.read("menu-probe", "--brand-color-text-default"), "#fafbe0");
+        await t.close();
+      }
+      // A standard footer island and a standard island in the footer keep the Brand mapping.
+      for (const [own, inside] of [[STD, brandPaint("probe")], ["", `<div ${STD}>${brandPaint("probe")}</div>`]]) {
+        const t = await open({ body: footerWith(own, inside), extra: BRAND_NATIVE });
+        assert.equal(await t.read("probe", "--brand-color-text-default"), "#fafbe0", `${own} ${inside}`);
+        await t.close();
+      }
+    });
+
+    test("an island without theme attributes in the Brand footer is recognized only with GitHub's light or dark value", async () => {
+      const ids = ["root", "footer", "probe"];
+      for (const [inside, change] of [
+        ['<div id="probe" data-color-mode="sepia">Unknown words</div>'],
+        ['<div id="probe" data-color-mode="sepia"></div>'],
+        ['<div id="probe" data-color-mode="auto">Auto words</div>'],
+        ['<div id="probe" data-color-mode="light">Words</div>', "sepia"],
+      ]) {
+        const t = await open({ body: footerWith("", inside), extra: BRAND_NATIVE, beforeTheme: change ? undefined : paint(ids) });
+        let earlier = t.earlier;
+        if (change) {
+          // Recognized first, then changed at runtime to a value GitHub never renders.
+          assert.equal(await t.read("probe", "--bgColor-default"), "#101a2b");
+          assert.equal(await t.read("probe", "--brand-color-text-default"), "#fafbe0");
+          await t.p.evaluate((mode) => { document.getElementById("probe").dataset.colorMode = mode; }, change);
+          const plain = await t.p.context().newPage();
+          await plain.setContent(page(ROOT, footerWith("", inside.replace('"light"', `"${change}"`)), BRAND_NATIVE));
+          earlier = await paint(ids)(plain);
+          await plain.close();
+        }
+        assert.deepEqual(await paint(ids)(t.p), earlier, inside);
+        assert.notEqual(await t.read("footer", "--brand-color-text-default"), "#fafbe0", inside);
+        assert.notDeepEqual(await selectionOf(t.p, "probe"), themedInk, inside);
+        await t.close();
+      }
+      // GitHub's own light and dark values in the footer pass the theme through.
+      for (const mode of ["light", "dark"]) {
+        const t = await open({ body: footerWith("", `<div id="probe" data-color-mode="${mode}">Words</div>`), extra: BRAND_NATIVE });
+        assert.equal(await t.read("probe", "--bgColor-default"), "#101a2b", mode);
+        assert.equal(await t.read("probe", "--brand-color-text-default"), "#fafbe0", mode);
+        await t.close();
+      }
+      // The partial's own island takes only those values too.
+      const t = await open({ body: footerWith("", '<i id="probe"></i>').replace('<div data-color-mode="light">', '<div data-color-mode="sepia">'), extra: BRAND_NATIVE });
+      assert.equal(await t.read("root", "--bgColor-default"), native("light", "--bgColor-default"));
+      assert.equal(await t.read("probe", "--brand-color-text-default"), "#112233");
+      await t.close();
+    });
+
+    test("graph, label and Brand rules hold through one to six nested standard islands, and fail closed only at an unsafe or native one", async () => {
+      const deep = (n, inner) => `${`<div ${STD}>`.repeat(n - 1)}<div id="deep" ${STD}>${inner}</div>${"</div>".repeat(n - 1)}`;
+      const content = `${blob("blob")}${label("label")}${footer("brand")}`;
+      const fill = (p) => p.evaluate(() => getComputedStyle(document.getElementById("blob")).fill);
+      const labelBackground = (p) => p.evaluate(() => getComputedStyle(document.getElementById("label")).backgroundColor);
+      for (let n = 1; n <= 6; n++) {
+        let t = await open({ body: deep(n, content) });
+        assert.equal(await t.read("deep", "--reskin-on"), "1", `${n} deep`);
+        assert.equal(await fill(t.p), "rgb(57, 255, 20)", `${n} deep graph`);
+        assert.equal(await labelBackground(t.p), "rgba(215, 58, 74, 0.18)", `${n} deep label`);
+        assert.equal(await t.read("brand", "--brand-color-text-default"), "#fafbe0", `${n} deep Brand`);
+        await t.close();
+        // A high-contrast island at that depth keeps GitHub's graph, and a standard one inside it
+        // is themed again.
+        t = await open({ body: deep(n, `<div ${HC}>${blob("hc-blob")}<div ${STD}>${content}</div></div>`) });
+        assert.equal(await t.p.evaluate(() => getComputedStyle(document.getElementById("hc-blob")).fill), GREEN, `${n} deep high contrast`);
+        assert.equal(await fill(t.p), "rgb(57, 255, 20)", `${n} deep reopened graph`);
+        assert.equal(await labelBackground(t.p), "rgba(215, 58, 74, 0.18)", `${n} deep reopened label`);
+        await t.close();
+        // An island without theme attributes suppresses its nearest island, here the deepest.
+        t = await open({ body: deep(n, `${content}<span data-color-mode="dark">bare</span>`) });
+        assert.equal(await t.read("deep", "--reskin-on"), "", `${n} deep suppressed`);
+        assert.equal(await fill(t.p), GREEN, `${n} deep suppressed graph`);
+        assert.equal(await t.read("root", "--reskin-on"), "1", `${n} deep root`);
+        await t.close();
+      }
+      if (name !== "Firefox") return;
+      // Gecko before Firefox 151 has no style queries and matches selectors alone: themed through
+      // every depth of themed islands, and native wherever its nearest island is not eligible.
+      const css = compiled.replace(/@container style\(--reskin-on: 1\)\{\n(?:.*\n){3}\}\n/g, "");
+      assert.doesNotMatch(css, /@container/);
+      for (let n = 1; n <= 6; n++) {
+        let t = await open({ body: deep(n, content), css });
+        assert.equal(await fill(t.p), "rgb(57, 255, 20)", `${n} deep graph without style queries`);
+        assert.equal(await labelBackground(t.p), "rgba(215, 58, 74, 0.18)", `${n} deep label without style queries`);
+        assert.equal(await t.read("brand", "--brand-color-text-default"), "#fafbe0", `${n} deep Brand without style queries`);
+        await t.close();
+        t = await open({ body: deep(n, `<div ${HC}>${blob("hc-blob")}</div>${content}<span data-color-mode="dark">bare</span>`), css });
+        assert.equal(await t.p.evaluate(() => getComputedStyle(document.getElementById("hc-blob")).fill), GREEN, `${n} deep high contrast without style queries`);
+        assert.equal(await fill(t.p), GREEN, `${n} deep suppressed graph without style queries`);
+        assert.equal(await t.read("brand", "--brand-color-text-default"), "", `${n} deep suppressed Brand without style queries`);
+        await t.close();
+      }
     });
 
     test("graph, label and footer rules follow the nearest island: standard, then high contrast, then standard again", async () => {

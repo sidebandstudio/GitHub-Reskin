@@ -44,21 +44,24 @@ export function scopeSelectors(modes, baseOf = (mode) => POLICY.modes[mode]?.bas
 export const ATTRIBUTED = "[data-color-mode]:is([data-light-theme],[data-dark-theme])";
 const LOOSE = "[data-color-mode]:not([data-light-theme],[data-dark-theme])";
 const CONTENTINFO = 'footer[role="contentinfo"]';
+// An island without theme attributes with one of the two values the marketing footer gives them
+// (github.com, 2026-11-08). Any other value is unsafe.
+const BRAND_LOOSE = `${LOOSE}:is([data-color-mode=light],[data-color-mode=dark])`;
 // The marketing footer partial's island without theme attributes, as GitHub renders it on its
 // home, 404 and marketing pages (github.com, 2026-11-08).
-const BRAND_WRAPPER = `react-partial[partial-name="marketing-footer"] > div > ${LOOSE}`;
+const BRAND_WRAPPER = `react-partial[partial-name="marketing-footer"] > div > ${BRAND_LOOSE}`;
 
 /**
  * The Primer Brand marketing footer: the contentinfo footer directly inside the marketing-footer
  * partial's island without theme attributes. Structural only; no hashed class names. That island,
  * and islands without theme attributes nested in the footer (its language menu), are recognized
- * and pass their parent's mode through, as they do natively.
+ * and pass their parent's mode through, as they do natively, while their value is light or dark.
  */
 export const BRAND_FOOTER = `:is(${BRAND_WRAPPER} > ${CONTENTINFO})`;
+const BRAND_INNER = `${BRAND_FOOTER} ${BRAND_LOOSE}`;
 
 // How many islands with theme attributes, counted from the root, may enclose an element for its
-// nearest one to be found. A deeper island is suppressed by any unsafe island inside it, and
-// `within` keeps GitHub's styles below it.
+// nearest one to be found. A deeper island is suppressed by any unsafe island inside it.
 const NESTING = 3;
 
 // Elements with at least `n` islands with theme attributes among their ancestors.
@@ -83,9 +86,9 @@ function grouped(modes, baseOf, branch) {
  * `known` every mode of the ModeIndex.
  *
  * - `unsafe` matches a boundary whose native reset cannot be proved: an island of an unknown
- *   mode, a color mode without the theme attribute it reads, a stray value, any island without
- *   theme attributes outside the Brand footer, empty and text-only ones included, and a stray
- *   child of the footer's island. Only the Brand footer's island passes its parent's mode through.
+ *   mode, a color mode without the theme attribute it reads, a stray value, and any island without
+ *   theme attributes, empty and text-only ones included, but the Brand footer's light or dark
+ *   islands, which pass their parent's mode through.
  * - `eligible` matches the plan's islands that no unsafe boundary depends on. An unsafe boundary
  *   inherits from its nearest island with theme attributes; when that island is themed it is
  *   suppressed and keeps GitHub's own declarations for its mode, and when it is a native island
@@ -96,13 +99,14 @@ function grouped(modes, baseOf, branch) {
  * - `native` matches islands of the other known modes and unknown attributed islands.
  * - `others` matches every island but the plan's and the Brand footer's, in one compound that
  *   starts with the color-mode attribute, so a :has() of it is one cheap walk.
- * - `brand` matches the Brand footer and the islands without theme attributes inside it while
- *   no island of an unknown mode is in the footer, the only unsafe boundary it can hold: GitHub's
- *   mode files do not reset Brand properties.
+ * - `brand` matches the Brand footer and its recognized islands without theme attributes, each
+ *   while it holds no island of `others`: GitHub's mode files do not reset Brand properties, so a
+ *   native, unknown or unsafe island must not inherit them. A Brand island beside one keeps them.
  * - `within(target)` matches `target`, a compound selector without theme attributes of its own,
- *   when its nearest island with theme attributes is eligible. A native island is its own
- *   boundary, and a themed island nested in it starts a fresh scope. For rules that are not
- *   inherited custom properties, in engines without container style queries.
+ *   when its nearest island with theme attributes is eligible: through three islands from the
+ *   root, and below that while every island above it is themed and none holds an unsafe one.
+ *   A native island is its own boundary, and a themed island nested in it starts a fresh scope.
+ *   For rules that are not inherited custom properties, in Gecko before container style queries.
  *
  * Chromium re-runs each :has() after a DOM change below the element it is anchored on, walking
  * that subtree, so the compiler anchors them only on islands and the body, and keeps them few.
@@ -110,7 +114,7 @@ function grouped(modes, baseOf, branch) {
 export function islandScope(covered, known, baseOf, branch) {
   const themed = grouped(covered, baseOf, branch);
   const unknown = `${ATTRIBUTED}:not(${grouped(known, baseOf, branch)})`;
-  const unsafe = `:is(${unknown},${LOOSE}:not(${BRAND_WRAPPER},${BRAND_FOOTER} *))`;
+  const unsafe = `:is(${unknown},${LOOSE}:not(${BRAND_WRAPPER},${BRAND_INNER}))`;
   // An island is suppressed when an unsafe boundary below it has no other island with theme
   // attributes in between: both are at the same depth.
   const sameDepth = (depth) => `:has(${unsafe}:not(${below(depth + 1)}))`;
@@ -119,15 +123,19 @@ export function islandScope(covered, known, baseOf, branch) {
   suppressed.push(`${ATTRIBUTED}:is(${below(NESTING)}):has(${unsafe})`);
   // A target with exactly `depth` islands with theme attributes above it, the innermost themed
   // and not suppressed.
+  const native = `${ATTRIBUTED}:not(${themed})`;
   const nearest = [];
   for (let depth = 1; depth <= NESTING; depth++) nearest.push((target) => `${atDepth(depth)}${themed}:not(${sameDepth(depth)}) ${target}:not(${ATTRIBUTED}):not(${below(depth + 1)})`);
+  // Deeper, only themed islands above and no unsafe island below any of them: none is suppressed.
+  nearest.push((target) => `${target}:not(${ATTRIBUTED}):is(${below(NESTING + 1)}):not(${native} *):not(${themed}:has(${unsafe}) *)`);
+  const others = `[data-color-mode]:not(${themed},${BRAND_WRAPPER},${BRAND_INNER})`;
   return {
     themed,
     eligible: `${themed}:not(${suppressed.join(",")})`,
     unsafe,
-    native: `${ATTRIBUTED}:not(${themed})`,
-    others: `[data-color-mode]:not(${themed},${BRAND_WRAPPER},${BRAND_FOOTER} ${LOOSE})`,
-    brand: `:is(${BRAND_FOOTER},${LOOSE}:is(${BRAND_FOOTER} *)):not(:is(${BRAND_WRAPPER}:has(${unknown})) *)`,
+    native,
+    others,
+    brand: `:is(${BRAND_FOOTER},${BRAND_INNER}):not(:has(${others}))`,
     within: (target) => `:is(${nearest.map((at) => at(target)).join(",")})`,
   };
 }
