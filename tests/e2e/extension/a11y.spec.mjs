@@ -16,14 +16,19 @@ const axe = async (page) => {
 const PAGES = [
   ["popup", { width: 400, height: 600 }],
   ["settings", { width: 1280, height: 900 }],
+  ["settings", { width: 390, height: 844 }, "themes"],
   ["onboarding", { width: 1280, height: 900 }],
-  ["settings", { width: 390, height: 844 }],
+  ["onboarding", { width: 390, height: 844 }],
 ];
 
-for (const [name, viewport] of PAGES) {
-  test(`${name} at ${viewport.width}px has no serious or critical axe violations @a11y`, async ({ extension }) => {
+for (const [name, viewport, view] of PAGES) {
+  test(`${name}${view ? ` ${view}` : ""} at ${viewport.width}px has no serious or critical axe violations @a11y`, async ({ extension }) => {
     const page = await openPage(extension, name, viewport);
-    if (name === "onboarding") await page.getByRole("button", { name: "All 13 anime" }).click();
+    if (view) await page.getByRole("link", { name: "Themes" }).click();
+    if (name === "onboarding") {
+      await page.getByRole("button", { name: "All 13 anime" }).click();
+      await page.getByText("Preview extras").click();
+    }
     expect(await axe(page)).toEqual([]);
   });
 }
@@ -34,7 +39,7 @@ test("popup controls are native, named, keyboard reachable and show focus @a11y"
   expect(snapshot).toContain('switch "Reskin"');
   expect(snapshot).toContain('radio "Full"');
   expect(snapshot).toContain('radio "Calm"');
-  expect(snapshot).toContain('switch "Text"');
+  expect(snapshot).toContain('switch "Extra theme text"');
   expect(snapshot).toContain('switch "Motion"');
   expect(snapshot).toContain('searchbox "Search themes or shows"');
   expect(snapshot).toMatch(/button "Cyberpunk: Edgerunners Choom Circuit Selected" \[pressed\]/);
@@ -66,4 +71,25 @@ test("the reduced-motion note appears beside Motion when the device asks for les
   await page.goto(extension.url("popup"));
   await expect(page.getByText("Paused by your device's reduced-motion setting")).toBeVisible();
   await expect(page.getByRole("switch", { name: "Motion" })).toBeChecked();
+});
+
+test("settings reach Preferences directly, and its switches explain what they change @a11y", async ({ extension }) => {
+  const page = await openPage(extension, "settings", { width: 390, height: 844 });
+  const nav = page.getByRole("navigation", { name: "Settings sections" });
+  await expect(nav.getByRole("link", { name: "Preferences" })).toHaveAttribute("aria-current", "page");
+  await expect(page.locator(".rs-card").first()).toBeHidden();
+  // The switches start in the first screen.
+  const top = await page.getByRole("switch", { name: "Reskin on GitHub and Gist" }).evaluate((el) => el.getBoundingClientRect().top);
+  expect(top).toBeLessThan(844);
+  await expect(page.getByRole("switch", { name: "Extra theme text" })).toHaveAccessibleDescription("Adds labels like // choom. Your own words stay the same.");
+  await page.getByText("Preview extras").click();
+  await expect(page.locator(".rs-extras").getByText("Preem picks")).toBeVisible();
+
+  await nav.getByRole("link", { name: "Themes" }).click();
+  await expect(page).toHaveURL(/#themes$/);
+  await expect(nav.getByRole("link", { name: "Themes" })).toHaveAttribute("aria-current", "page");
+  await expect(page.locator(".rs-card")).toHaveCount(13);
+  await expect(page.getByRole("switch", { name: "Motion" })).toBeHidden();
+  // The selected show stays above every view.
+  await expect(page.locator("[data-rs=summary-show]")).toBeVisible();
 });

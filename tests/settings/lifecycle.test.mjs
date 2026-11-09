@@ -259,6 +259,31 @@ test("optional decoration stops for the rest of a navigation once it exceeds 10 
   content.destroy();
 });
 
+test("forced colors take a spent page native, and turning them off places the decoration again", async () => {
+  const { storage } = await stored();
+  const { page, renderer, content } = start(storage, {}, { decorateCost: LIMITS.maxNavigationMs + 5 });
+  await content.ready;
+  page.document.readyState = "interactive";
+  page.fire("document", "DOMContentLoaded");
+  await page.frame();
+  assert.equal(renderer.calls.decorate, 1, "the first pass spends the budget");
+  page.setMedia("(forced-colors: active)", true);
+  await page.settle();
+  await page.frame();
+  assert.equal(phase(page), "native");
+  assert.equal(page.style(), null, "no stylesheet under forced colors");
+  assert.equal(renderer.calls.destroyed, 1, "the decoration leaves with it");
+  page.setMedia("(forced-colors: active)", false);
+  await page.settle();
+  await page.frame();
+  await page.frame();
+  assert.equal(phase(page), "ready");
+  assert.ok(page.style());
+  assert.equal(renderer.calls.decorate, 2, "the themed page after native gets a pass of its own");
+  assert.equal(content.status().decorated, true);
+  content.destroy();
+});
+
 test("the decoration budget adds up every pass of a navigation, not just the latest one", async () => {
   const { storage } = await stored();
   const { page, renderer, events, content } = start(storage, {}, { decorateCost: 6 });

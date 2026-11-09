@@ -100,7 +100,7 @@ test("the renderer paints Choom Circuit through C3's Primer compiler and C5's ap
   assert.equal(contrast.seed, null);
 });
 
-test("a bundled accent font is loaded from the packaged path only when Full and Fonts allow it", () => {
+test("a bundled heading font is loaded from the packaged path in Full and Calm while Fonts is on", () => {
   const document = catalog.document("anime.solo-leveling");
   const { plan, seed } = renderer.plan(renderer.readPage(null, null), document.base);
   const resolved = renderer.resolve(document, { seed, policy: "themed", reducedMotion: false, forcedColors: false });
@@ -110,8 +110,126 @@ test("a bundled accent font is loaded from the packaged path only when Full and 
   assert.deepEqual(fontUrls, [resolved.font]);
   fontUrls.length = 0;
   assert.doesNotMatch(renderer.compile(resolved, plan, prefs({ fonts: false })).css, /@font-face/);
-  assert.doesNotMatch(renderer.compile(resolved, plan, prefs({ appearance: "calm", extras: false })).css, /@font-face/);
+  assert.doesNotMatch(renderer.compile(resolved, plan, prefs({ appearance: "calm", extras: false, fonts: false })).css, /@font-face/);
   assert.deepEqual(fontUrls, []);
+  // Calm keeps role fonts (THEME-EXPANSION.md), so the face its heading rule names is loaded too.
+  assert.match(renderer.compile(resolved, plan, prefs({ appearance: "calm", extras: false })).css, /@font-face/);
+  assert.deepEqual(fontUrls, [resolved.font]);
+});
+
+test("cards carry what Full adds, at miniature scale: wallpaper, heading face, tag, heading addition, glow and rail", () => {
+  const choom = cards.find((card) => card.id === DEFAULT_THEME_ID).mini;
+  assert.ok(choom.wallpaper.image.includes("linear-gradient"));
+  // Choom's 48px grid tiles at 8px; its viewport-tall glow fills the miniature.
+  assert.match(choom.wallpaper.size, /^100% 100%,8px 8px,8px 8px,auto$/);
+  assert.deepEqual([choom.tag, choom.flourish, choom.glow, choom.rail], ["// choom", "Preem picks", true, true]);
+  assert.equal(choom.font.id, null, "a native stack needs no file");
+  assert.match(choom.font.stack, /^"Roboto Condensed", /);
+  const frieren = cards.find((card) => card.id === "anime.frieren").mini;
+  assert.deepEqual([frieren.font.id, frieren.wallpaper, frieren.tag, frieren.glow], ["alegreya", null, "// travel journal", false]);
+  for (const card of cards.filter((c) => c.group === "classics")) {
+    assert.deepEqual([card.mini.tag, card.mini.flourish, card.mini.wallpaper, card.mini.font], [null, null, null, null], card.id);
+  }
+});
+
+// Just enough document for decorate's scope marker: the appearance mounts nothing without
+// createElement, and forced colors can be flipped as the operating system would.
+function forcedColorsPage(forced) {
+  const listeners = new Set();
+  const attributes = new Map();
+  const list = {
+    get matches() {
+      return forced;
+    },
+    addEventListener: (type, listener) => listeners.add(listener),
+    removeEventListener: (type, listener) => listeners.delete(listener),
+  };
+  const doc = {
+    defaultView: { matchMedia: () => list },
+    documentElement: { setAttribute: (name, value) => attributes.set(name, value), removeAttribute: (name) => attributes.delete(name), getAttribute: (name) => attributes.get(name) ?? null },
+  };
+  doc.body = { ownerDocument: doc, getBoundingClientRect: () => ({}) };
+  return {
+    doc,
+    listeners,
+    scope: () => attributes.get("data-reskin-css") ?? null,
+    flip(value) {
+      forced = value;
+      for (const listener of [...listeners]) listener();
+    },
+  };
+}
+
+test("a decoration pass settles style and layout before the adapter's time-limited slot search", () => {
+  const order = [];
+  const timed = createRenderer({ github: { ...github, locateSlots: () => (order.push("locate"), []) }, resources, catalog });
+  const { plan, seed } = timed.plan(renderer.readPage(null, null), "dark");
+  const resolved = timed.resolve(catalog.document(DEFAULT_THEME_ID), { seed, policy: plan.policy, reducedMotion: false, forcedColors: false });
+  const page = forcedColorsPage(false);
+  page.doc.body.getBoundingClientRect = () => (order.push("layout"), {});
+  timed.decorate(page.doc, resolved, prefs()).destroy();
+  assert.deepEqual(order, ["layout", "locate"]);
+});
+
+test("a slot search that gave up on its time limit is tried once more on the next frame, and destroy cancels it", () => {
+  let now = 0;
+  let calls = 0;
+  const slow = createRenderer({
+    github: { ...github, locateSlots: () => (calls++, (now += 5), []) },
+    resources,
+    catalog,
+    slotTimeLimitMs: 4,
+  });
+  const { plan, seed } = slow.plan(renderer.readPage(null, null), "dark");
+  const resolved = slow.resolve(catalog.document(DEFAULT_THEME_ID), { seed, policy: plan.policy, reducedMotion: false, forcedColors: false });
+  const frames = new Map();
+  const page = forcedColorsPage(false);
+  Object.assign(page.doc.defaultView, {
+    performance: { now: () => now },
+    requestAnimationFrame: (callback) => (frames.set(frames.size + 1, callback), frames.size),
+    cancelAnimationFrame: (id) => frames.delete(id),
+  });
+  slow.decorate(page.doc, resolved, prefs());
+  assert.equal(calls, 1);
+  assert.equal(frames.size, 1, "one retry is queued");
+  const queued = [...frames.values()];
+  frames.clear();
+  for (const callback of queued) callback();
+  assert.equal(calls, 2);
+  assert.equal(frames.size, 0, "a second give-up is not retried again");
+
+  slow.decorate(page.doc, resolved, prefs()).destroy();
+  assert.equal(frames.size, 0, "destroy cancels a queued retry");
+  // A fast empty search found nothing to place and is not retried.
+  const fast = createRenderer({ github: { ...github, locateSlots: () => (calls++, []) }, resources, catalog, slotTimeLimitMs: 4 });
+  fast.decorate(page.doc, resolved, prefs());
+  assert.equal(frames.size, 0);
+});
+
+test("the theme's CSS scope marker is set only while forced colors are off, and follows them as they change", () => {
+  const gated = createRenderer({ github: { ...github, forcedColorsActive: (view) => view.matchMedia("(forced-colors: active)").matches }, resources, catalog });
+  const { plan, seed } = gated.plan(renderer.readPage(null, null), "dark");
+  const resolved = gated.resolve(catalog.document(DEFAULT_THEME_ID), { seed, policy: plan.policy, reducedMotion: false, forcedColors: false });
+
+  const page = forcedColorsPage(false);
+  const decoration = gated.decorate(page.doc, resolved, prefs());
+  assert.equal(page.scope(), "active");
+  page.flip(true);
+  assert.equal(page.scope(), null, "forced colors remove it at once");
+  page.flip(false);
+  assert.equal(page.scope(), "active", "and it returns with them off");
+  decoration.destroy();
+  assert.equal(page.scope(), null);
+  assert.equal(page.listeners.size, 0, "destroy stops following the mode");
+
+  const forced = forcedColorsPage(true);
+  gated.decorate(forced.doc, resolved, prefs()).destroy();
+  assert.equal(forced.scope(), null, "never set under forced colors");
+  const calm = forcedColorsPage(false);
+  gated.decorate(calm.doc, resolved, prefs({ appearance: "calm", extras: false }));
+  calm.flip(true);
+  calm.flip(false);
+  assert.equal(calm.scope(), null, "Calm has no theme CSS to scope");
 });
 
 test("the background's boot snapshot is reused by the content script on the common page", () => {

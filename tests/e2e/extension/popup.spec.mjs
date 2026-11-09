@@ -1,5 +1,6 @@
 // The popup on the installed extension: instant commit to an open GitHub tab, one-change Undo,
-// Full/Calm, Text, on/off, search, groups, keyboard use, failure recovery and popup geometry.
+// Full/Calm, Extra theme text, on/off, search, groups, keyboard use, failure recovery, miniatures
+// that follow the preferences, and popup geometry in every state, short windows and real zoom.
 import { readFileSync } from "node:fs";
 import { resolveTheme } from "../../../packages/engine/index.js";
 import { MODE_INDEX, standardSeed } from "../../../packages/primer/index.js";
@@ -8,6 +9,9 @@ import { CHOOM, CHOOM_CANVAS, expect, openGitHub, openPage, painted, storage, te
 const frieren = JSON.parse(readFileSync(new URL("../../../themes/anime/longroad-petals.reskin.json", import.meta.url), "utf8"));
 const FRIEREN_CANVAS = resolveTheme(frieren, { seed: standardSeed(MODE_INDEX, "light"), policy: "themed", reducedMotion: false, forcedColors: false }).tokens.canvas;
 const card = (popup, show) => popup.locator(".rs-card", { hasText: show });
+const FLAVOR = ["profile.activity.heading", "profile.organizations.heading", "profile.pinned.heading", "profile.tag"];
+const CHOOM_COPY = ["// choom", "Crews", "Preem picks", "Gig log"];
+const TEXT = "Extra theme text";
 
 test("a new install paints Choom Circuit on GitHub with its flavor, and the popup leads with the anime", async ({ extension }) => {
   const github = await openGitHub(extension);
@@ -32,7 +36,7 @@ test("a new install paints Choom Circuit on GitHub with its flavor, and the popu
 
 test("a theme click commits to the open GitHub tab at once, and Undo restores the previous theme once", async ({ extension }) => {
   const github = await openGitHub(extension);
-  await waitPainted(github, (s) => s.canvas === CHOOM_CANVAS);
+  await waitPainted(github, (s) => s.canvas === CHOOM_CANVAS && s.owned.length === 4);
   const popup = await openPage(extension, "popup");
   await expect(popup.locator("[data-rs=undo]")).toBeHidden();
 
@@ -51,7 +55,10 @@ test("a theme click commits to the open GitHub tab at once, and Undo restores th
   await expect(again.locator("[data-rs=status]")).toHaveText("Theme change undone.");
   await expect(again.locator("[data-rs=undo]")).toBeHidden();
   await expect(again.locator("[data-rs=summary-name]")).toHaveText("Choom Circuit");
-  await waitPainted(github, (s) => s.canvas === CHOOM_CANVAS);
+  // The same document gets Choom's colors and its whole flavor back, without a reload.
+  const state = await waitPainted(github, (s) => s.canvas === CHOOM_CANVAS && s.owned.length === 4);
+  expect(state.owned).toEqual(FLAVOR);
+  expect(state.copy).toEqual(CHOOM_COPY);
   expect((await storage(extension.worker))["reskin.settings"].selectedThemeId).toBe(CHOOM);
 
   // A new choice makes Undo available again.
@@ -59,40 +66,61 @@ test("a theme click commits to the open GitHub tab at once, and Undo restores th
   await expect(again.locator("[data-rs=undo]")).toBeVisible();
 });
 
-test("Calm keeps the colors and removes flavor; Text off removes only the copy; both survive theme changes", async ({ extension }) => {
+test("Calm keeps the colors and removes flavor; Full, Extra theme text and theme changes restore it on the same document", async ({ extension }) => {
   const github = await openGitHub(extension);
   await waitPainted(github, (s) => s.owned.length === 4);
+  const origin = await github.evaluate(() => performance.timeOrigin);
   const popup = await openPage(extension, "popup");
+  const selectedMini = popup.locator(".rs-card[aria-pressed=true] .rs-mini");
+  await expect(selectedMini).toHaveAttribute("data-full", "");
+  await expect(selectedMini.locator(".rs-mini-tag")).toHaveText("// choom");
 
   await popup.getByRole("radio", { name: "Calm" }).check();
   await expect(popup.locator("[data-rs=status]")).toHaveText("Saved.");
-  await expect(popup.locator("[data-rs=calm-note]")).toBeVisible();
   let state = await waitPainted(github, (s) => s.owned.length === 0);
   expect(state).toMatchObject({ styled: true, canvas: CHOOM_CANVAS });
+  // The miniature shows Calm too: no wallpaper, tag or heading addition.
+  await expect(selectedMini).not.toHaveAttribute("data-full", "");
+  await expect(selectedMini.locator(".rs-mini-tag, .rs-mini-flourish, .rs-mini-wall")).toHaveCount(0);
   // Child switches stay editable under Calm and keep their values.
-  await expect(popup.getByRole("switch", { name: "Text" })).toBeEnabled();
-  await expect(popup.getByRole("switch", { name: "Text" })).toBeChecked();
+  await expect(popup.getByRole("switch", { name: TEXT })).toBeEnabled();
+  await expect(popup.getByRole("switch", { name: TEXT })).toBeChecked();
 
-  // Full brings the flavor back. C4's lifecycle counts every decoration pass of one page load
-  // against its 10 ms optional-work budget, so on the same document it returns with the next
-  // navigation; a fresh load shows it at once.
   await popup.getByRole("radio", { name: "Full" }).check();
-  await expect(popup.locator("[data-rs=calm-note]")).toBeHidden();
-  await github.reload();
-  await waitPainted(github, (s) => s.owned.length === 4);
-  await popup.getByRole("switch", { name: "Text" }).uncheck();
+  state = await waitPainted(github, (s) => s.owned.length === 4);
+  expect(state.copy).toEqual(CHOOM_COPY);
+
+  await popup.getByRole("switch", { name: TEXT }).uncheck();
   await expect(popup.locator("[data-rs=status]")).toHaveText("Saved.");
-  await github.reload();
-  state = await waitPainted(github, (s) => s.boot === "ready" && s.styled);
-  expect(state.copy).toEqual([]);
+  state = await waitPainted(github, (s) => s.copy.length === 0);
   expect(state.canvas).toBe(CHOOM_CANVAS);
+  await expect(selectedMini.locator(".rs-mini-tag")).toHaveCount(0);
+  await popup.getByRole("switch", { name: TEXT }).check();
+  state = await waitPainted(github, (s) => s.copy.length === 4);
+  expect(state.copy).toEqual(CHOOM_COPY);
+
+  // Theme changes and Undo keep the flavor following the theme on this same document.
+  await card(popup, "Frieren").click();
+  await waitPainted(github, (s) => s.canvas === FRIEREN_CANVAS && s.copy.includes("// travel journal"));
+  await popup.locator("[data-rs=undo]").click();
+  state = await waitPainted(github, (s) => s.canvas === CHOOM_CANVAS && s.owned.length === 4);
+  expect(state.copy).toEqual(CHOOM_COPY);
+  expect(await github.evaluate(() => performance.timeOrigin)).toBe(origin);
 
   // Switching themes never turns a preference back on.
+  await popup.getByRole("switch", { name: TEXT }).uncheck();
   await card(popup, "Solo Leveling").click();
   await expect(popup.locator("[data-rs=status]")).toHaveText("Applied to GitHub.");
-  await expect(popup.getByRole("switch", { name: "Text" })).not.toBeChecked();
+  await expect(popup.getByRole("switch", { name: TEXT })).not.toBeChecked();
   const settings = (await storage(extension.worker))["reskin.settings"];
   expect(settings.preferences).toMatchObject({ appearance: "full", text: false, motion: true });
+});
+
+test("Full and Calm and Extra theme text are explained before anyone touches them", async ({ extension }) => {
+  const popup = await openPage(extension, "popup");
+  await expect(popup.getByRole("group", { name: "Appearance" })).toHaveAccessibleDescription("Full adds backgrounds and extras. Calm keeps colors and fonts.");
+  await expect(popup.getByRole("switch", { name: TEXT })).toHaveAccessibleDescription("Adds labels like // choom. Your own words stay the same.");
+  await expect(popup.getByText("Full adds backgrounds and extras. Calm keeps colors and fonts.")).toBeVisible();
 });
 
 test("off leaves GitHub native, a choice while off is saved for later, and on applies it", async ({ extension }) => {
@@ -169,25 +197,87 @@ test("a failed save keeps the committed theme visible and offers Retry", async (
   await expect(card(popup, "Frieren")).toHaveAttribute("aria-pressed", "true");
 });
 
-test("the popup fits 400x600 and 320x600: one inner scroller, primary controls in view", async ({ extension }) => {
+// The controls a popup visitor needs, wherever the popup puts them.
+const CONTROLS = ["[data-rs=enabled]", "[data-rs=summary-show]", "[data-rs=search]", "[data-rs=appearance]", "[data-rs=text]", "[data-rs=motion]", "[data-rs=undo]", "[data-rs-clear]", "[data-rs-open=settings]", ".rs-popup-footer a"];
+
+// Whether the page or the popup body scrolls, how many cards the gallery shows, and where each
+// shown control sits.
+const popupLayout = (popup) =>
+  popup.evaluate((controls) => {
+    const gallery = document.querySelector("[data-rs=gallery]");
+    const shown = (el) => el && el.getClientRects().length > 0;
+    const body = document.body;
+    return {
+      scrolls: document.scrollingElement.scrollHeight > innerHeight || body.scrollHeight > body.clientHeight + 1,
+      sideways: document.scrollingElement.scrollWidth > innerWidth || body.scrollWidth > body.clientWidth + 1,
+      galleryScrolls: shown(gallery) && gallery.scrollHeight > gallery.clientHeight,
+      rows: new Set([...document.querySelectorAll(".rs-card")].slice(0, 4).map((c) => Math.round(c.getBoundingClientRect().top))).size,
+      cardsVisible: shown(gallery) ? [...document.querySelectorAll(".rs-card")].filter((c) => c.getBoundingClientRect().bottom <= gallery.getBoundingClientRect().bottom + 1).length : 0,
+      height: innerHeight,
+      width: innerWidth,
+      shown: controls.filter((selector) => [...document.querySelectorAll(selector)].some(shown)),
+    };
+  }, CONTROLS);
+
+/** No sideways scrolling, and every shown control can be scrolled to and seen in full. */
+async function expectReachable(popup, label, { scrolls } = {}) {
+  const layout = await popupLayout(popup);
+  expect(layout.sideways, label).toBe(false);
+  if (scrolls !== undefined) expect(layout.scrolls, label).toBe(scrolls);
+  for (const selector of layout.shown) {
+    for (const control of await popup.locator(selector).all()) {
+      if (!(await control.isVisible())) continue;
+      await control.scrollIntoViewIfNeeded();
+      await expect(control, `${label} ${selector}`).toBeInViewport({ ratio: 1 });
+    }
+  }
+  return layout;
+}
+
+test("the popup fits 400x600 and 320x600 in every state: one inner scroller, every control in view", async ({ extension }) => {
   for (const viewport of [{ width: 400, height: 600 }, { width: 320, height: 600 }]) {
-    const popup = await openPage(extension, "popup", viewport);
-    const layout = await popup.evaluate(() => {
-      const gallery = document.querySelector("[data-rs=gallery]");
-      const box = (selector) => document.querySelector(selector).getBoundingClientRect();
-      return {
-        pageScrolls: document.scrollingElement.scrollHeight > innerHeight || document.scrollingElement.scrollWidth > innerWidth,
-        galleryScrolls: gallery.scrollHeight > gallery.clientHeight,
-        bottoms: ["[data-rs=enabled]", "[data-rs=summary-show]", "[data-rs=appearance]", "[data-rs=motion]", ".rs-popup-footer"].map((s) => box(s).bottom),
-        rows: new Set([...document.querySelectorAll(".rs-card")].slice(0, 4).map((c) => Math.round(c.getBoundingClientRect().top))).size,
-        cardsVisible: [...document.querySelectorAll(".rs-card")].filter((c) => c.getBoundingClientRect().bottom <= gallery.getBoundingClientRect().bottom + 1).length,
-      };
-    });
-    expect(layout.pageScrolls, JSON.stringify(viewport)).toBe(false);
+    const label = JSON.stringify(viewport);
+    const popup = await extension.context.newPage();
+    await popup.emulateMedia({ reducedMotion: "reduce" });
+    await popup.setViewportSize(viewport);
+    await popup.goto(extension.url("popup"));
+    await expect(popup.locator("[data-rs=summary-show]")).not.toBeEmpty();
+    let layout = await expectReachable(popup, label, { scrolls: false });
     expect(layout.galleryScrolls).toBe(true);
-    for (const bottom of layout.bottoms) expect(bottom).toBeLessThanOrEqual(viewport.height);
     expect(layout.rows).toBe(2);
     expect(layout.cardsVisible).toBeGreaterThanOrEqual(2);
+
+    // Calm, the reduced-motion note and Undo all at once.
+    await popup.getByRole("radio", { name: "Calm" }).check();
+    await card(popup, "Frieren").click();
+    await expect(popup.locator("[data-rs=undo]")).toBeVisible();
+    await expect(popup.locator("[data-rs=motion-note]")).toBeVisible();
+    layout = await expectReachable(popup, `${label} calm`, { scrolls: false });
+    // A two-line show title at 320px leaves most of a row; at 400px a whole row shows.
+    if (viewport.width === 400) expect(layout.cardsVisible, `${label} calm`).toBeGreaterThanOrEqual(2);
+
+    // An empty search takes the gallery's place.
+    await popup.getByRole("searchbox").fill("zzz");
+    await expect(popup.locator("[data-rs=empty]")).toBeVisible();
+    await expect(popup.locator("[data-rs=gallery]")).toBeHidden();
+    await expectReachable(popup, `${label} empty`, { scrolls: false });
+    await popup.getByRole("button", { name: "Clear search" }).click();
+    await popup.getByRole("radio", { name: "Full" }).check();
+    await popup.locator("[data-rs=undo]").click();
+    await expect(popup.locator("[data-rs=undo]")).toBeHidden();
     await popup.close();
   }
+});
+
+test("a popup at real 200% browser zoom wraps and scrolls instead of clipping controls", async ({ extension }) => {
+  const popup = await openPage(extension, "popup");
+  await popup.evaluate(async () => {
+    const tab = await chrome.tabs.getCurrent();
+    await chrome.tabs.setZoom(tab.id, 2);
+  });
+  await expect.poll(() => popup.evaluate(() => innerWidth)).toBe(200);
+  const layout = await expectReachable(popup, "200%", { scrolls: true });
+  expect(layout.height).toBe(300);
+  await popup.getByRole("switch", { name: "Motion" }).uncheck();
+  await expect(popup.locator("[data-rs=status]")).toHaveText("Saved.");
 });

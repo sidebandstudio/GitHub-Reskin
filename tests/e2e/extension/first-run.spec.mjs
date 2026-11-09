@@ -1,5 +1,6 @@
 // The first-run tab: opened once on a genuine install, never on a reload or update, with Choom
-// Circuit selected, a working Before/After preview, instant theme choice and Open GitHub.
+// Circuit selected, a working Before/After preview, instant theme choice and Open GitHub, with the
+// result, Undo and Open GitHub in the first screen and a preview that scrolls.
 import { chromium } from "@playwright/test";
 import { CHOOM, expect, storage, test } from "./helpers.mjs";
 
@@ -71,4 +72,84 @@ test("the welcome page reflows to 390px without page-wide horizontal scrolling",
   await welcome.setViewportSize({ width: 390, height: 844 });
   await expect(welcome.locator("[data-reskin-preview]")).toHaveAttribute("data-policy", "themed", { timeout: 15000 });
   expect(await welcome.evaluate(() => document.scrollingElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+// The element is on the first screen; a tall one (the preview) needs only its first 160px there.
+const inFirstScreen = (page, selector) =>
+  page.locator(selector).first().evaluate((el) => {
+    const r = el.getBoundingClientRect();
+    return r.width > 0 && r.top >= 0 && Math.min(r.bottom, r.top + 160) <= innerHeight;
+  });
+
+test("the result, Undo and Open GitHub stay in the first screen while choosing, at 1440 and 390", async ({ extension }) => {
+  await expect.poll(() => onboardingTabs(extension).length).toBe(1);
+  const welcome = onboardingTabs(extension)[0];
+  for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
+    const label = JSON.stringify(viewport);
+    await welcome.setViewportSize(viewport);
+    await welcome.evaluate(() => scrollTo(0, 0));
+    for (const selector of ["[data-rs=summary-show]", "[data-rs-open-github]", ".rs-chip", "[data-rs-preview]"]) {
+      expect(await inFirstScreen(welcome, selector), `${label} ${selector}`).toBe(true);
+    }
+  }
+
+  // Wide: the full list stays bounded beside the preview, and the result never moves away.
+  await welcome.setViewportSize({ width: 1440, height: 900 });
+  await welcome.getByRole("button", { name: "All 13 anime" }).click();
+  const gallery = welcome.locator("[data-rs=gallery]");
+  expect(await gallery.evaluate((el) => el.getBoundingClientRect().height <= innerHeight * 0.6 && el.scrollHeight > el.clientHeight)).toBe(true);
+  await welcome.locator(".rs-card", { hasText: "Death Note" }).click();
+  await expect(welcome.locator("[data-rs=summary-show]")).toHaveText("Death Note");
+  for (const selector of ["[data-rs=summary-show]", "[data-rs-open-github]", "[data-rs=undo]", "[data-rs=status]"]) {
+    expect(await inFirstScreen(welcome, selector), `1440 ${selector}`).toBe(true);
+  }
+  await expect(welcome.getByRole("button", { name: "All 13 anime" })).toHaveAttribute("aria-expanded", "true");
+
+  // Narrow: a choice from the list closes it, the show joins the quick picks, and the result with
+  // Undo and Open GitHub is on screen.
+  await welcome.setViewportSize({ width: 390, height: 844 });
+  const card = welcome.locator(".rs-card", { hasText: "Chainsaw Man" });
+  await card.scrollIntoViewIfNeeded();
+  await card.click();
+  await expect(welcome.locator("[data-rs=summary-show]")).toHaveText("Chainsaw Man");
+  await expect(welcome.locator("#rs-all")).toBeHidden();
+  await expect(welcome.getByRole("button", { name: "All 13 anime" })).toHaveAttribute("aria-expanded", "false");
+  await expect(welcome.getByRole("button", { name: "All 13 anime" })).toBeFocused();
+  await expect(welcome.locator("[data-rs=quick]").getByRole("button", { name: "Chainsaw Man" })).toHaveAttribute("aria-pressed", "true");
+  await expect(welcome.locator("[data-rs=undo]")).toBeInViewport();
+  await expect(welcome.locator("[data-rs-open-github]")).toBeInViewport();
+  // A quick pick hides the extra chip again.
+  await welcome.getByRole("button", { name: "Frieren" }).click();
+  await expect(welcome.locator("[data-rs-picked]")).toBeHidden();
+});
+
+test("the preview region scrolls by wheel and keyboard and shows the contribution graph", async ({ extension }) => {
+  await expect.poll(() => onboardingTabs(extension).length).toBe(1);
+  const welcome = onboardingTabs(extension)[0];
+  for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
+    const label = JSON.stringify(viewport);
+    await welcome.setViewportSize(viewport);
+    const region = welcome.getByRole("region", { name: "Preview of a GitHub profile, scrollable" });
+    await expect(welcome.locator("[data-reskin-preview]")).toHaveAttribute("data-policy", "themed", { timeout: 15000 });
+    await expect.poll(() => region.evaluate((el) => el.scrollHeight > el.clientHeight + 40), { message: label }).toBe(true);
+    await region.evaluate((el) => (el.scrollTop = 0));
+    // The graph's heading is in the first view of the region, so a crop of the graph shows without
+    // scrolling. The layout document lays out the same view and can be measured.
+    const regionHeight = await region.evaluate((el) => el.clientHeight);
+    const graphHeading = await welcome.locator("[data-reskin-preview] iframe[inert]").evaluate((frame) => {
+      const heading = [...frame.contentDocument.querySelectorAll("h2")].find((node) => /contributions in the last year/.test(node.textContent));
+      return heading ? heading.getBoundingClientRect().bottom : Infinity;
+    });
+    expect(graphHeading, label).toBeLessThan(regionHeight - 20);
+
+    await region.hover();
+    await welcome.mouse.wheel(0, 300);
+    await expect.poll(() => region.evaluate((el) => el.scrollTop), { message: `${label} wheel` }).toBeGreaterThan(0);
+    await region.evaluate((el) => (el.scrollTop = 0));
+    await region.focus();
+    await welcome.keyboard.press("PageDown");
+    await expect.poll(() => region.evaluate((el) => el.scrollTop), { message: `${label} PageDown` }).toBeGreaterThan(0);
+    await welcome.keyboard.press("Home");
+    await expect.poll(() => region.evaluate((el) => el.scrollTop)).toBe(0);
+  }
 });

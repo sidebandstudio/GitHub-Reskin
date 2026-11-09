@@ -15,34 +15,55 @@
       <a class="rs-header-link" href="https://github.com/sidebandstudio/GitHub-Reskin" target="_blank" rel="noopener noreferrer">Help and source</a>
     </header>
 
-    <main class="rs-main">
-      <h1 class="rs-hero">Pick your GitHub world.</h1>
-      <p class="rs-lede">Your browser view. Your colors. Reskin changes how GitHub looks in this browser only; nothing on GitHub or your account changes.</p>
-
-      <div class="rs-quick" data-rs="quick" role="group" aria-label="Quick picks">
-        <button type="button" class="rs-chip" data-theme="anime.cyberpunk-edgerunners">Cyberpunk: Edgerunners</button>
-        <button type="button" class="rs-chip" data-theme="anime.frieren">Frieren</button>
-        <button type="button" class="rs-chip" data-theme="anime.demon-slayer">Demon Slayer</button>
-        <button type="button" class="rs-chip rs-chip--more" aria-expanded="false" aria-controls="rs-all" data-rs-more>All 13 anime</button>
+    <main class="rs-main rs-welcome">
+      <div class="rs-intro">
+        <h1 class="rs-hero">Pick your GitHub world.</h1>
+        <p class="rs-lede">Tap your show and GitHub changes in this browser. Nothing on GitHub or your account changes.</p>
       </div>
 
-      <section id="rs-all" class="rs-all" aria-label="All themes" hidden>
-        <div class="rs-groups" data-rs="groups" role="group" aria-label="Theme groups"></div>
-        <div class="rs-search-row">
-          <label class="rs-visually-hidden" for="rs-search">Search themes or shows</label>
-          <input id="rs-search" class="rs-search" type="search" placeholder="Search themes or shows" autocomplete="off" data-rs="search" aria-describedby="rs-count" />
-          <p id="rs-count" class="rs-count" data-rs="count" aria-live="polite"></p>
+      <section class="rs-chooser" aria-label="Choose a theme">
+        <div class="rs-quick" data-rs="quick" role="group" aria-label="Quick picks">
+          <button type="button" class="rs-chip" data-theme="anime.cyberpunk-edgerunners">Cyberpunk: Edgerunners</button>
+          <button type="button" class="rs-chip" data-theme="anime.frieren">Frieren</button>
+          <button type="button" class="rs-chip" data-theme="anime.demon-slayer">Demon Slayer</button>
+          <button type="button" class="rs-chip" data-rs-picked hidden></button>
+          <button type="button" class="rs-chip rs-chip--more" aria-expanded="false" aria-controls="rs-all" data-rs-more>All 13 anime</button>
         </div>
-        <section class="rs-gallery" aria-label="Themes" data-rs="gallery"></section>
-        <div class="rs-empty" data-rs="empty" hidden>
-          <p data-rs-text></p>
-          <button type="button" class="rs-link-button" data-rs-clear>Clear search</button>
-        </div>
+
+        <section id="rs-all" class="rs-all" aria-label="All themes" hidden>
+          <div class="rs-groups" data-rs="groups" role="group" aria-label="Theme groups"></div>
+          <div class="rs-search-row">
+            <label class="rs-visually-hidden" for="rs-search">Search themes or shows</label>
+            <input id="rs-search" class="rs-search" type="search" placeholder="Search themes or shows" autocomplete="off" data-rs="search" aria-describedby="rs-count" />
+            <p id="rs-count" class="rs-count" data-rs="count" aria-live="polite"></p>
+          </div>
+          <section class="rs-gallery" aria-label="Themes" data-rs="gallery"></section>
+          <div class="rs-empty" data-rs="empty" hidden>
+            <p data-rs-text></p>
+            <button type="button" class="rs-link-button" data-rs-clear>Clear search</button>
+          </div>
+        </section>
       </section>
 
       <section class="rs-stage" aria-labelledby="rs-preview-title">
+        <div class="rs-result" aria-label="Selected theme">
+          <div class="rs-selected">
+            <p class="rs-summary-show" data-rs="summary-show"></p>
+            <p class="rs-summary-name" data-rs="summary-name"></p>
+            <p class="rs-note" data-rs="summary-note"></p>
+          </div>
+          <a class="rs-button rs-button--primary" href="https://github.com/whoisaldo" target="_blank" rel="noopener noreferrer" data-rs-open-github>Open GitHub</a>
+        </div>
+        <div class="rs-status-row">
+          <p class="rs-status" role="status" aria-live="polite" data-rs="status"></p>
+          <button type="button" class="rs-link-button" data-rs="undo" hidden>Undo theme change</button>
+        </div>
+        <p class="rs-error" role="alert" data-rs="error" hidden>
+          <span data-rs-text></span>
+          <button type="button" class="rs-link-button" data-rs="retry" hidden>Retry</button>
+        </p>
         <div class="rs-stage-bar">
-          <h2 id="rs-preview-title" class="rs-stage-title">Interactive preview</h2>
+          <h2 id="rs-preview-title" class="rs-stage-title">Preview</h2>
           <fieldset class="rs-segmented" data-rs-before>
             <legend class="rs-visually-hidden">Compare</legend>
             <span class="rs-segments">
@@ -55,38 +76,28 @@
         <p class="rs-note">A fixed offline copy of a public GitHub profile. Your real GitHub tabs change when you pick a theme.</p>
       </section>
 
-      <div class="rs-selected" aria-label="Selected theme">
-        <p class="rs-summary-show" data-rs="summary-show"></p>
-        <p class="rs-summary-name" data-rs="summary-name"></p>
-        <p class="rs-note" data-rs="summary-note"></p>
-      </div>
-
-      <section class="rs-prefs rs-prefs--row" aria-label="Appearance">
-        <fieldset class="rs-segmented" data-rs="appearance">
+      <section class="rs-prefs rs-prefs--page" aria-label="Appearance">
+        <fieldset class="rs-segmented rs-segmented--start" data-rs="appearance" aria-describedby="rs-appearance-note">
           <legend>Appearance</legend>
           <span class="rs-segments">
             <label><input type="radio" name="appearance" value="full" />Full</label>
             <label><input type="radio" name="appearance" value="calm" />Calm</label>
           </span>
         </fieldset>
-        <label class="rs-switch"><input type="checkbox" role="switch" data-rs="text" />Text</label>
+        <p class="rs-note" id="rs-appearance-note">Full adds backgrounds and extras. Calm keeps colors and fonts.</p>
+        <label class="rs-switch"><input type="checkbox" role="switch" data-rs="text" aria-describedby="rs-text-note" />Extra theme text</label>
+        <p class="rs-note rs-pref-note" id="rs-text-note">Adds labels like // choom. Your own words stay the same.</p>
+        <details class="rs-extras">
+          <summary>Preview extras</summary>
+          <div class="rs-extras-example" aria-label="Example: the Pinned heading on a profile">
+            <p><span class="rs-extras-when">Off</span><span class="rs-extras-heading">Pinned</span></p>
+            <p><span class="rs-extras-when">On</span><span class="rs-extras-heading">Pinned</span><span class="rs-extras-added">Preem picks</span></p>
+          </div>
+          <p class="rs-note">Extra theme text only adds words like these beside GitHub's own. Your name, bio, repositories and README never change.</p>
+        </details>
         <label class="rs-switch"><input type="checkbox" role="switch" data-rs="motion" aria-describedby="rs-motion-note" />Motion</label>
-        <p class="rs-note" id="rs-motion-note" data-rs="motion-note" hidden>Paused by your device's reduced-motion setting</p>
+        <p class="rs-note rs-pref-note" id="rs-motion-note" data-rs="motion-note" hidden>Paused by your device's reduced-motion setting</p>
       </section>
-      <p class="rs-note" data-rs="calm-note" hidden>Calm keeps colors, the graph and code colors, and hides wallpaper, flavor text, glow and motion. Your Text and Motion choices are kept.</p>
-
-      <div class="rs-status-row">
-        <p class="rs-status" role="status" aria-live="polite" data-rs="status"></p>
-        <button type="button" class="rs-link-button" data-rs="undo" hidden>Undo theme change</button>
-      </div>
-      <p class="rs-error" role="alert" data-rs="error" hidden>
-        <span data-rs-text></span>
-        <button type="button" class="rs-link-button" data-rs="retry" hidden>Retry</button>
-      </p>
-
-      <div class="rs-actions">
-        <a class="rs-button rs-button--primary" href="https://github.com/whoisaldo" target="_blank" rel="noopener noreferrer" data-rs-open-github>Open GitHub</a>
-      </div>
 
       <ul class="rs-tips">
         <li>Tip: pin GitHub Reskin in your browser's extensions menu.</li>

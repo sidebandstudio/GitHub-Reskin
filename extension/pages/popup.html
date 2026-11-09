@@ -20,10 +20,18 @@
     </header>
 
     <section class="rs-summary rs-popup-fixed" aria-label="Current theme">
-      <p class="rs-summary-show" data-rs="summary-show"></p>
-      <p class="rs-summary-name" data-rs="summary-name"></p>
-      <p class="rs-note" data-rs="summary-note"></p>
+      <div class="rs-summary-text">
+        <p class="rs-summary-show" data-rs="summary-show"></p>
+        <p class="rs-summary-name" data-rs="summary-name"></p>
+        <p class="rs-note rs-summary-note" data-rs="summary-note"></p>
+        <p class="rs-status" role="status" aria-live="polite" data-rs="status"></p>
+      </div>
+      <button type="button" class="rs-link-button" data-rs="undo" aria-label="Undo theme change" hidden>Undo<span class="rs-undo-rest"> theme change</span></button>
     </section>
+    <p class="rs-error" role="alert" data-rs="error" hidden>
+      <span data-rs-text></span>
+      <button type="button" class="rs-link-button" data-rs="retry" hidden>Retry</button>
+    </p>
 
     <section class="rs-notices" data-rs="notices" aria-label="Update notes" hidden>
       <ul data-rs-list></ul>
@@ -46,29 +54,21 @@
     </div>
 
     <section class="rs-prefs" aria-label="Appearance">
-      <fieldset class="rs-segmented" data-rs="appearance">
+      <fieldset class="rs-segmented" data-rs="appearance" aria-describedby="rs-appearance-note">
         <legend>Appearance</legend>
         <span class="rs-segments">
           <label><input type="radio" name="appearance" value="full" />Full</label>
           <label><input type="radio" name="appearance" value="calm" />Calm</label>
         </span>
       </fieldset>
+      <p class="rs-note" id="rs-appearance-note">Full adds backgrounds and extras. Calm keeps colors and fonts.</p>
       <div class="rs-children">
-        <label class="rs-switch"><input type="checkbox" role="switch" data-rs="text" />Text</label>
+        <label class="rs-switch"><input type="checkbox" role="switch" data-rs="text" aria-describedby="rs-text-note" />Extra theme text</label>
         <label class="rs-switch"><input type="checkbox" role="switch" data-rs="motion" aria-describedby="rs-motion-note" />Motion</label>
       </div>
+      <p class="rs-note" id="rs-text-note">Adds labels like // choom. Your own words stay the same.</p>
       <p class="rs-note" id="rs-motion-note" data-rs="motion-note" hidden>Paused by your device's reduced-motion setting</p>
-      <p class="rs-note" data-rs="calm-note" hidden>Calm keeps colors, the graph and code colors, and hides wallpaper, flavor text, glow and motion. Your Text and Motion choices are kept.</p>
     </section>
-
-    <div class="rs-status-row">
-      <p class="rs-status" role="status" aria-live="polite" data-rs="status"></p>
-      <button type="button" class="rs-link-button" data-rs="undo" hidden>Undo theme change</button>
-    </div>
-    <p class="rs-error" role="alert" data-rs="error" hidden>
-      <span data-rs-text></span>
-      <button type="button" class="rs-link-button" data-rs="retry" hidden>Retry</button>
-    </p>
 
     <footer class="rs-popup-footer">
       <button type="button" class="rs-link-button" data-rs-open="settings">Settings</button>

@@ -122,9 +122,12 @@ export function startContent({ storage, document, view, catalog, renderer, onEve
     }
   }
 
+  // Native leaves nothing placed, so the themed page that follows (forced colors or GitHub's own
+  // mode switching back) gets a pass of its own instead of keeping an empty spent budget.
   function goNative(reason) {
     clearStyle();
     dropDecorations();
+    openBudget();
     resolvedNow = null;
     setPhase("native");
     onEvent({ type: "native", reason });

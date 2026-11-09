@@ -12,6 +12,8 @@ import { COPY, GROUPS, cardLabels, countText, emptySearchText, failureText, noti
 const PREFERENCE_SWITCHES = ["text", "motion", "fonts", "effects"];
 // A tiny contribution crop: levels per cell, 3 rows of 9 weeks.
 const GRAPH_CROP = [0, 1, 0, 2, 1, 0, 3, 1, 0, 2, 0, 1, 3, 4, 2, 1, 0, 1, 0, 2, 4, 3, 1, 2, 0, 1, 2];
+// The native heading every miniature shows, in the theme's heading face.
+const MINI_HEADING = "Pinned";
 
 /**
  * @param {Document} doc
@@ -21,9 +23,11 @@ const GRAPH_CROP = [0, 1, 0, 2, 1, 0, 3, 1, 0, 2, 0, 1, 3, 4, 2, 1, 0, 1, 0, 2, 
  * @param {object} options.catalog CatalogSource, to check that an Undo target still exists
  * @param {(entry:{id, group, document})=>object} [options.cardFor] card for a saved theme
  * @param {(state:object)=>void} [options.onChange] called after each render with the settings
+ * @param {(fontId:string)=>string} [options.fontFace] @font-face CSS for a bundled heading face, so
+ *   miniatures show it; without it they use the face's fallback stack
  * @returns {{ready:Promise<void>, destroy():void, state():object}}
  */
-export function mountPicker(doc, host, { cards, catalog, cardFor = null, onChange = () => {} }) {
+export function mountPicker(doc, host, { cards, catalog, cardFor = null, onChange = () => {}, fontFace = null }) {
   const part = (name) => doc.querySelector(`[data-rs="${name}"]`);
   const parts = Object.fromEntries(
     ["enabled", "summary-show", "summary-name", "summary-note", "notices", "groups", "search", "count", "gallery", "empty", "status", "error", "undo", "retry", "motion-note", "calm-note", "quick", "appearance", ...PREFERENCE_SWITCHES].map((name) => [name, part(name)]),
@@ -171,29 +175,68 @@ export function mountPicker(doc, host, { cards, catalog, cardFor = null, onChang
     return node;
   };
 
-  function miniature(card) {
+  // Bundled heading faces load once, the first time a miniature shows one.
+  const faces = new Set();
+  let faceStyle = null;
+  function loadFace(id) {
+    if (!fontFace || !id || faces.has(id)) return;
+    faces.add(id);
+    faceStyle ??= doc.head.appendChild(el("style"));
+    faceStyle.setAttribute("data-rs-faces", "");
+    try {
+      faceStyle.append(fontFace(id));
+    } catch {
+      // No packaged face: the fallback stack stands in.
+    }
+  }
+
+  // A crop of a GitHub profile in the theme's colors, with what the effective preferences let
+  // the theme add there: in Full the wallpaper, the profile tag and the pinned heading's addition
+  // (Text), and glow and rail (Effects); the heading face in Full and Calm while Fonts is on.
+  function miniature(card, prefs) {
     const mini = el("span", "rs-mini");
     mini.setAttribute("aria-hidden", "true");
     const m = card.mini;
     for (const [name, value] of Object.entries({ canvas: m.canvas, surface: m.surface, border: m.border, text: m.text, muted: m.muted, link: m.link, button: m.button, header: m.header, "header-text": m.headerText })) {
       mini.style.setProperty(`--mini-${name}`, value);
     }
+    const full = prefs.appearance === "full";
+    const flags = { full, text: full && prefs.text, effects: full && prefs.effects, fonts: prefs.fonts };
+    for (const [flag, on] of Object.entries(flags)) mini.toggleAttribute(`data-${flag}`, on);
+    if (m.wallpaper && full) {
+      const wall = el("span", "rs-mini-wall");
+      wall.style.backgroundImage = m.wallpaper.image;
+      wall.style.backgroundSize = m.wallpaper.size;
+      mini.append(wall);
+    }
     mini.append(el("span", "rs-mini-head"));
     const body = el("span", "rs-mini-body");
-    const repo = el("span", "rs-mini-repo");
-    repo.append(el("span", "rs-mini-line rs-mini-link"), el("span", "rs-mini-line rs-mini-muted"), el("span", "rs-mini-button"));
+    const words = el("span", "rs-mini-words");
+    if (m.tag && flags.text) {
+      const tag = el("span", "rs-mini-tag", m.tag);
+      tag.toggleAttribute("data-glow", m.glow && flags.effects);
+      words.append(tag);
+    }
+    const title = el("span", "rs-mini-title", MINI_HEADING);
+    title.toggleAttribute("data-rail", m.rail && flags.effects);
+    if (m.font && flags.fonts) {
+      loadFace(m.font.id);
+      title.style.fontFamily = m.font.stack;
+    }
+    words.append(title);
+    if (m.flourish && flags.text) words.append(el("span", "rs-mini-flourish", m.flourish));
     const graph = el("span", "rs-mini-graph");
     for (const level of GRAPH_CROP) {
       const cell = el("span", "rs-mini-cell");
       cell.style.backgroundColor = m.graph[level];
       graph.append(cell);
     }
-    body.append(repo, graph);
+    body.append(words, graph);
     mini.append(body);
     return mini;
   }
 
-  function cardButton(card, selectedId) {
+  function cardButton(card, selectedId, prefs) {
     const button = el("button", "rs-card");
     button.type = "button";
     button.dataset.theme = card.id;
@@ -207,7 +250,7 @@ export function mountPicker(doc, host, { cards, catalog, cardFor = null, onChang
     mark.setAttribute("aria-hidden", "true");
     check.append(mark, "Selected");
     check.hidden = !pressed;
-    button.append(miniature(card), text, check);
+    button.append(miniature(card, prefs), text, check);
     return button;
   }
 
@@ -229,17 +272,19 @@ export function mountPicker(doc, host, { cards, catalog, cardFor = null, onChang
     }
   }
 
-  function renderGallery(selectedId) {
+  function renderGallery(selectedId, prefs) {
     if (!parts.gallery) return;
     const shown = visibleCards({ group, query, cards, customCards });
     const focused = doc.activeElement?.closest?.(".rs-card")?.dataset.theme;
     const list = el("ul", "rs-cards");
     for (const card of shown) {
       const item = el("li");
-      item.append(cardButton(card, selectedId));
+      item.append(cardButton(card, selectedId, prefs));
       list.append(item);
     }
     parts.gallery.replaceChildren(list);
+    // An empty result takes the gallery's place instead of sitting below an empty scroller.
+    parts.gallery.hidden = shown.length === 0;
     if (focused) parts.gallery.querySelector(`[data-theme="${CSS.escape(focused)}"]`)?.focus();
     if (parts.count) parts.count.textContent = countText(shown.length, query);
     if (parts.empty) {
@@ -279,7 +324,7 @@ export function mountPicker(doc, host, { cards, catalog, cardFor = null, onChang
       button.setAttribute("aria-pressed", String(button.dataset.theme === selectedId));
     }
     if (parts.undo) parts.undo.hidden = !undoTarget(state, catalog) || Boolean(pendingTheme);
-    renderGallery(selectedId);
+    renderGallery(selectedId, prefs);
     onChange({ settings, selectedId, pending: Boolean(pendingTheme) });
   }
 

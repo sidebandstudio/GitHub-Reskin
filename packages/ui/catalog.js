@@ -31,7 +31,11 @@ export function catalogFromData(data) {
  */
 export function themeCard({ id, group, document }, resolved) {
   const t = resolved.tokens;
-  const header = resolved.appearance?.colors?.header ?? {};
+  const appearance = resolved.appearance ?? {};
+  const header = appearance.colors?.header ?? {};
+  const heading = appearance.fonts?.heading ?? {};
+  const slots = resolved.flavor?.enabled ? (resolved.flavor.slots ?? {}) : {};
+  const effects = Object.keys(resolved.effects ?? {});
   return {
     id,
     group,
@@ -50,8 +54,29 @@ export function themeCard({ id, group, document }, resolved) {
       header: header.background ?? t.inset,
       headerText: header.text ?? t.mutedText,
       graph: [...resolved.graph],
+      // What Full adds on GitHub, drawn at miniature scale: the page wallpaper, the heading face,
+      // the profile tag and the pinned heading's addition, and the glow and rail effects.
+      wallpaper: miniWallpaper(appearance.paints?.page),
+      font: heading.family ? { id: heading.source === "bundled" ? heading.id : null, stack: `"${heading.family}", ${heading.fallback}` } : null,
+      tag: slots["profile.tag"] ?? null,
+      flourish: slots["profile.pinned.heading"] ?? null,
+      glow: effects.includes("glow"),
+      rail: effects.includes("rail"),
     },
   };
+}
+
+// A page paint's gradient layers with their tile sizes scaled to the miniature, which draws
+// about a sixth of GitHub's width; a viewport-tall layer becomes miniature-tall.
+const MINI_SCALE = 6;
+function miniWallpaper(paint) {
+  const layers = (paint?.layers ?? []).filter((layer) => layer.kind === "gradientCss");
+  if (!layers.length) return null;
+  const size = (value) =>
+    String(value ?? "auto")
+      .replace(/100vh/g, "100%")
+      .replace(/(\d+(?:\.\d+)?)px/g, (_, n) => `${Math.max(2, Math.round(Number(n) / MINI_SCALE))}px`);
+  return { image: layers.map((layer) => layer.value).join(","), size: layers.map((layer) => size(layer.size)).join(",") };
 }
 
 /** Lowercase, accent-free text for search. */

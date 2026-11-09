@@ -100,13 +100,14 @@
   margin: 0;
   font-size: 16px;
 }
+/* The preview frame grows to its content; this region scrolls it by wheel, touch and keyboard. */
 .rs-preview {
   min-height: 320px;
-  max-height: min(70vh, 640px);
+  max-height: min(82vh, 720px);
+  overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
   border-radius: 8px;
-  overflow: hidden;
   background: var(--canvas);
 }
 .rs-stage .rs-note {
@@ -185,4 +186,169 @@
   color: var(--secondary);
   border-style: dashed;
   cursor: not-allowed;
+}
+.rs-pref-note {
+  margin: -6px 0 6px 50px;
+}
+
+/* Settings views: one section at a time, each a link away */
+.rs-views {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.rs-views a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--separator);
+  border-radius: 8px;
+  color: var(--secondary);
+  font-weight: 600;
+  text-decoration: none;
+}
+.rs-views a:hover {
+  background: var(--raised);
+}
+.rs-views a[aria-current="page"] {
+  border-color: var(--brand);
+  color: var(--text);
+  box-shadow: inset 0 -2px 0 var(--brand);
+}
+
+/* Preview extras: one before/after copy example */
+.rs-extras {
+  margin: 0 0 6px 50px;
+}
+.rs-extras summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--brand-hover);
+  font-weight: 600;
+  cursor: pointer;
+}
+.rs-extras-example {
+  display: grid;
+  gap: 6px;
+  max-width: 360px;
+  margin-bottom: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--separator);
+  border-radius: 8px;
+  background: var(--surface);
+}
+.rs-extras-example p {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0;
+}
+.rs-extras-when {
+  width: 28px;
+  color: var(--caption);
+  font-size: 12px;
+}
+.rs-extras-heading {
+  font-weight: 650;
+}
+.rs-extras-added {
+  margin-left: auto;
+  padding: 0 6px;
+  border: 1px solid var(--brand);
+  border-radius: 4px;
+  color: var(--brand-hover);
+  font: 600 12px/20px var(--mono);
+}
+
+/* First run: intro, chooser, the result with the preview, then appearance. On wide windows the
+   chooser and appearance sit in a column beside the preview, which stays in view while the
+   column scrolls. */
+.rs-welcome .rs-intro {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.rs-welcome .rs-hero {
+  font-size: clamp(30px, 5vw, 44px);
+}
+.rs-welcome .rs-lede {
+  font-size: 16px;
+}
+.rs-chooser {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.rs-welcome .rs-gallery {
+  max-height: min(56vh, 480px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 3px;
+  margin: 0 -3px;
+}
+.rs-welcome .rs-cards {
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+}
+.rs-result {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+.rs-result .rs-selected {
+  min-width: 0;
+}
+.rs-welcome .rs-stage .rs-status-row {
+  min-height: 0;
+  margin: 2px 0 6px;
+}
+.rs-welcome .rs-stage .rs-status:empty {
+  display: none;
+}
+.rs-prefs--page {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+.rs-prefs--page > .rs-note:not(.rs-pref-note) {
+  margin-bottom: 6px;
+}
+
+@media (min-width: 960px) {
+  .rs-welcome {
+    display: grid;
+    grid-template-columns: minmax(340px, 420px) minmax(0, 1fr);
+    grid-template-rows: auto auto auto 1fr;
+    grid-template-areas:
+      "intro stage"
+      "chooser stage"
+      "prefs stage"
+      "tips stage";
+    align-items: start;
+    gap: 16px 32px;
+  }
+  .rs-welcome .rs-intro {
+    grid-area: intro;
+  }
+  .rs-chooser {
+    grid-area: chooser;
+  }
+  .rs-welcome .rs-stage {
+    grid-area: stage;
+    position: sticky;
+    top: 12px;
+  }
+  .rs-prefs--page {
+    grid-area: prefs;
+  }
+  .rs-welcome .rs-tips {
+    grid-area: tips;
+  }
+  .rs-welcome .rs-preview {
+    max-height: calc(100vh - 270px);
+  }
 }
