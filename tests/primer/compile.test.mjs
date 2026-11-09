@@ -109,10 +109,11 @@ function hasArguments(selector) {
   return out;
 }
 
-test("unsafe islands are every island but the frozen mode combinations and the Brand footer's", () => {
+test("unsafe islands are every island but the frozen mode combinations and the Brand footer's and pages'", () => {
   const LOOSE = "[data-color-mode]:not([data-light-theme],[data-dark-theme])";
   const BRAND_LOOSE = `${LOOSE}:is([data-color-mode=light],[data-color-mode=dark])`;
   const WRAPPER = `react-partial[partial-name="marketing-footer"] > div > ${BRAND_LOOSE}`;
+  const PAGE = `:is(main.font-mktg > react-app > div > ${BRAND_LOOSE})`;
   for (const branch of ["light", "dark"]) {
     const { unsafe, eligible, others } = scopeOf("dark", branch);
     const head = ":is([data-color-mode]:is([data-light-theme],[data-dark-theme]):not(";
@@ -124,8 +125,9 @@ test("unsafe islands are every island but the frozen mode combinations and the B
     });
     assert.deepEqual(known.sort(), expected.sort(), branch);
     // Every island without theme attributes, whatever it holds, except the marketing footer
-    // partial's and those inside its footer, while their value is light or dark.
-    assert.ok(unsafe.endsWith(`,${LOOSE}:not(${WRAPPER},:is(${WRAPPER} > footer[role="contentinfo"]) ${BRAND_LOOSE}))`), branch);
+    // partial's and those inside its footer, and a Brand page's marketing app island and those
+    // inside it, while their value is light or dark.
+    assert.ok(unsafe.endsWith(`,${LOOSE}:not(${WRAPPER},:is(${WRAPPER} > footer[role="contentinfo"]) ${BRAND_LOOSE},${PAGE},${PAGE} ${BRAND_LOOSE}))`), branch);
     // Browsers reject a :has() nested in another; each suppression depth has its own.
     for (const selector of [eligible, unsafe, others]) for (const arg of hasArguments(selector)) assert.doesNotMatch(arg, /:has\(/);
     // Six exact depths, then two for deeper islands.
@@ -152,7 +154,8 @@ test("component rules follow a subject's own island, then the nearest island: th
   }
   const gecko = graph.filter((r) => r.media.includes("selector(:-moz-focusring)"));
   assert.equal(gecko.length, 2);
-  for (const r of gecko) assert.equal(r.selectors[0], scopeOf("light", branchOf(r)).within(':is(.js-highlight-blob,.Progress-item:is(main #js-contribution-activity .Progress[role="img"] > *):not(.markdown-body *)):not([data-color-mode])'));
+  // One nested rule per branch holds every Gecko subject, under the nearest-island test.
+  for (const r of gecko) assert.equal(r.selectors[0], `:is(${scopeOf("light", branchOf(r)).nearest}):is(.js-highlight-blob,.Progress-item:is(main #js-contribution-activity .Progress[role="img"] > *):not(.markdown-body *)):not([data-color-mode])`);
   // Every engine with container style queries reads the switch, through any depth.
   const queried = graph.filter((r) => r.media.includes("style(--reskin-on: 1)"));
   assert.equal(queried.length, 2);
@@ -176,7 +179,9 @@ test("component rules follow a subject's own island, then the nearest island: th
   assert.equal(reset.length, 2);
   for (const r of reset) {
     assert.deepEqual(r.selectors, [":where([data-color-mode]:is([data-light-theme],[data-dark-theme]))"]);
-    assert.deepEqual(r.declarations.map((d) => [d.name, d.value]), [["--reskin-on", "initial"], ["--reskin-selection-text", "initial"], ["--reskin-selection-background", "initial"]]);
+    assert.deepEqual(r.declarations.map((d) => [d.name, d.value]), [["--reskin-on", "initial"], ["--reskin-selection-text", "initial"], ["--reskin-selection-background", "initial"], ["scrollbar-color", "auto"]]);
+    // The scrollbar reset is not important, so GitHub's own scrollbar rules keep winning there.
+    assert.equal(r.declarations.at(-1).important, false);
   }
 });
 
@@ -261,11 +266,12 @@ test("the primary counter falls back to the primary fill when it would not read 
 test("the Primer Brand footer gets its own mapped variables, scoped by structure", () => {
   const [resolved, p] = themed("dark");
   const { css } = compileGitHub(resolved, p, PREFS);
-  const brand = rules(css).filter((r) => r.declarations.some((d) => d.name === "--brand-color-text-default"));
+  // The footer's Brand canvas is the inset; a Brand page's is the canvas.
+  const brand = rules(css).filter((r) => r.declarations.some((d) => d.name === "--brand-color-canvas-default" && d.value === colorAt(resolved, "/tokens/inset")));
   // Its own mode, the switch and Gecko's selectors, in each color-scheme branch.
   assert.equal(brand.length, 6);
   for (const r of brand) {
-    assert.ok(r.selectors.every((s) => s.includes('footer[role="contentinfo"]')));
+    assert.ok(r.selectors.every((s) => s.startsWith(':is(:is(react-partial[partial-name="marketing-footer"]') || s.startsWith(":is(:not(")));
     assert.doesNotMatch(r.selectors.join(","), /class/);
     assert.equal(r.declarations.find((d) => d.name === "--brand-color-text-default").value, colorAt(resolved, "/tokens/text"));
   }

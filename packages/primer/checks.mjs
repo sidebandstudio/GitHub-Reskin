@@ -109,11 +109,19 @@ async function checkSlotContracts(root) {
     }
   }
   for (const page of evidence.pages) for (const anchor of page.anchors) a.expect(!anchor.authored && !anchor.interactive, `${page.url}: ${anchor.slot} anchored in authored or interactive markup`);
-  // The adapter only reads. Drawing, text and their removal belong to C5's owned nodes.
+  // The adapter only reads, except admission, which writes Reskin's own marker attributes through
+  // its two helpers and nothing else. Drawing, text and their removal belong to C5's owned nodes.
   const dir = join(root, "extension/content/github");
+  const WRITES = /\.(append|prepend|before|after|replaceWith|replaceChildren|insertBefore|appendChild|removeChild|insertAdjacent\w*|setAttribute|removeAttribute|toggleAttribute)\(|\.remove\(\)|textContent\s*=|innerText\s*=|innerHTML|outerHTML\s*=|\.data\s*=|nodeValue\s*=/;
   for (const file of readdirSync(dir).filter((f) => f.endsWith(".js"))) {
-    const text = readFileSync(join(dir, file), "utf8").replace(/^\s*(\/\/|\*).*$/gm, "");
-    a.expect(!/\.(append|prepend|before|after|replaceWith|replaceChildren|insertBefore|appendChild|removeChild|insertAdjacent\w*|setAttribute|removeAttribute|toggleAttribute)\(|\.remove\(\)|textContent\s*=|innerText\s*=|innerHTML|outerHTML\s*=|\.data\s*=|nodeValue\s*=/.test(text), `extension/content/github/${file} must not write to the page`);
+    let text = readFileSync(join(dir, file), "utf8").replace(/^\s*(\/\/|\*).*$/gm, "");
+    if (file === "admission.js") {
+      const writes = [...text.matchAll(/\b(\w+)\.(setAttribute|removeAttribute)\(/g)];
+      a.expect(writes.length === 2 && writes.every((m) => m[1] === "el"), "admission.js writes attributes only inside mark() and unmark()");
+      a.expect(/function mark\(el, name, value\) \{\n\s*if \(!MARKERS\.has\(name\)\) throw/.test(text) && /function unmark\(el, name\) \{\n\s*if \(!MARKERS\.has\(name\)\) throw/.test(text), "admission.js refuses every attribute but Reskin's markers");
+      text = text.replace(/el\.(setAttribute|removeAttribute)\(/g, "");
+    }
+    a.expect(!WRITES.test(text), `extension/content/github/${file} must not write to the page`);
     a.expect(!/font-size\s*:\s*0|content\s*:\s*["']|aria-label\s*=|localStorage|sessionStorage|\bfetch\(/.test(text), `extension/content/github/${file} must not hide labels, generate text, use page storage or the network`);
   }
   for (const p of a.problems) console.error(`  FAIL ${p}`);

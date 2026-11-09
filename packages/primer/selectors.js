@@ -58,7 +58,18 @@ const BRAND_WRAPPER = `react-partial[partial-name="marketing-footer"] > div > ${
  * and pass their parent's mode through, as they do natively, while their value is light or dark.
  */
 export const BRAND_FOOTER = `:is(${BRAND_WRAPPER} > ${CONTENTINFO})`;
+/**
+ * A Primer Brand marketing page: the island without theme attributes directly inside the marketing
+ * React app root, as GitHub renders its home, Features, Pricing and Sponsors pages (github.com,
+ * 2026-11-08). It and the islands without theme attributes nested in it pass their parent's mode
+ * through, as they do natively, while their value is light or dark. Primer Brand declares its
+ * variables on each of them, so each one takes the page's Brand mapping itself.
+ */
+export const BRAND_PAGE = `:is(main.font-mktg > react-app > div > ${BRAND_LOOSE})`;
 const BRAND_INNER = `${BRAND_FOOTER} ${BRAND_LOOSE}`;
+const BRAND_PAGE_INNER = `${BRAND_PAGE} ${BRAND_LOOSE}`;
+// Every recognized Brand island without theme attributes: footer and page.
+const BRAND_KNOWN = `${BRAND_WRAPPER},${BRAND_INNER},${BRAND_PAGE},${BRAND_PAGE_INNER}`;
 
 // How many islands with theme attributes, counted from the root, may enclose an element for its
 // nearest one to be found exactly. A selector cannot name the nearest of any number of ancestors,
@@ -88,8 +99,8 @@ function grouped(modes, baseOf, branch) {
  *
  * - `unsafe` matches a boundary whose native reset cannot be proved: an island of an unknown
  *   mode, a color mode without the theme attribute it reads, a stray value, and any island without
- *   theme attributes, empty and text-only ones included, but the Brand footer's light or dark
- *   islands, which pass their parent's mode through.
+ *   theme attributes, empty and text-only ones included, but the Brand footer's and Brand pages'
+ *   light or dark islands, which pass their parent's mode through.
  * - `eligible` matches the plan's islands that no unsafe boundary depends on. An unsafe boundary
  *   inherits from its nearest island with theme attributes; when that island is themed it is
  *   suppressed and keeps GitHub's own declarations for its mode, and when it is a native island
@@ -104,12 +115,14 @@ function grouped(modes, baseOf, branch) {
  * - `brand` matches the Brand footer and its recognized islands without theme attributes, each
  *   while it holds no island of `others`: GitHub's mode files do not reset Brand properties, so a
  *   native, unknown or unsafe island must not inherit them. A Brand island beside one keeps them.
+ * - `brandPage` matches a Brand page's recognized islands without theme attributes the same way.
  * - `within(target)` matches `target`, a compound selector without theme attributes of its own,
  *   when its nearest island with theme attributes is eligible: exactly through six islands from
  *   the root, and below that while the islands above it form at most three runs of themed and
  *   native islands, ending themed, and no deeper themed island above it could be suppressed.
  *   A native island is its own boundary, and a themed island nested in it starts a fresh scope.
  *   For rules that are not inherited custom properties, in Gecko before container style queries.
+ *   `nearest` is the same test for any element without theme attributes, for a nested rule.
  *
  * Chromium re-runs each :has() after a DOM change below the element it is anchored on, walking
  * that subtree, so the compiler anchors them only on islands and the body, and keeps them few.
@@ -117,7 +130,7 @@ function grouped(modes, baseOf, branch) {
 export function islandScope(covered, known, baseOf, branch) {
   const themed = grouped(covered, baseOf, branch);
   const unknown = `${ATTRIBUTED}:not(${grouped(known, baseOf, branch)})`;
-  const unsafe = `:is(${unknown},${LOOSE}:not(${BRAND_WRAPPER},${BRAND_INNER}))`;
+  const unsafe = `:is(${unknown},${LOOSE}:not(${BRAND_KNOWN}))`;
   // An island is suppressed when an unsafe boundary below it has no other island with theme
   // attributes in between: both are at the same depth.
   const sameDepth = (depth) => `:has(${unsafe}:not(${below(depth + 1)}))`;
@@ -145,7 +158,7 @@ export function islandScope(covered, known, baseOf, branch) {
   // element, none has any.
   const deepThemed = `${themed}:is(${below(NESTING)})`;
   nearest.push(`:is(${below(NESTING + 1)}):is(${lastThemed.join(",")}):not(${deepThemed}:has(${unsafe}:not(${deepNative} *)) *):not(${deepNative} ${deepThemed}:has(${unsafe}) *)`);
-  const others = `[data-color-mode]:not(${themed},${BRAND_WRAPPER},${BRAND_INNER})`;
+  const others = `[data-color-mode]:not(${themed},${BRAND_KNOWN})`;
   return {
     themed,
     eligible: `${themed}:not(${suppressed.join(",")})`,
@@ -153,6 +166,9 @@ export function islandScope(covered, known, baseOf, branch) {
     native,
     others,
     brand: `:is(${BRAND_FOOTER},${BRAND_INNER}):not(:has(${others}))`,
+    brandPage: `:is(${BRAND_PAGE},${BRAND_PAGE_INNER}):not(:has(${others}))`,
     within: (target) => `${target}:not(${ATTRIBUTED}):is(${nearest.join(",")})`,
+    // The same test for any element without theme attributes, for a nested rule's parent.
+    nearest: `:not(${ATTRIBUTED}):is(${nearest.join(",")})`,
   };
 }

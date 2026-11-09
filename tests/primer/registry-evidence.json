@@ -1,0 +1,1003 @@
+{
+  "version": 1,
+  "captured": "2026-11-09",
+  "method": "tests/primer/capture-registry-evidence.mjs: logged-out Chromium, en-US, 1280x900, dark system scheme, the shipped extension/content/github adapter injected after load (CSP bypassed, as for a content script), startAdmission with the dark-base plan's modes light, dark and dark_dimmed. Nothing was signed in, clicked, starred or followed.",
+  "pages": [
+    {
+      "url": "https://github.com/whoisaldo",
+      "kind": "profile",
+      "status": "whoisaldo (Ali Younes) · GitHub",
+      "route": "profile",
+      "gate": true,
+      "scope": true,
+      "reason": "admitted",
+      "admitted": {
+        "page": {
+          "kind": "page-backing",
+          "count": 1,
+          "example": {
+            "element": "body",
+            "classes": [
+              "env-production",
+              "logged-out",
+              "page-profile",
+              "page-responsive"
+            ],
+            "attributes": {},
+            "descendants": 2700
+          }
+        },
+        "header.marketing": {
+          "kind": "header-chrome",
+          "count": 1,
+          "example": {
+            "element": "header",
+            "classes": [
+              "HeaderMktg",
+              "header-logged-out"
+            ],
+            "attributes": {
+              "role": "banner"
+            },
+            "descendants": 477
+          }
+        },
+        "tab.profile": {
+          "kind": "control-chrome",
+          "count": 2,
+          "example": {
+            "element": "a",
+            "classes": [
+              "UnderlineNav-item",
+              "js-responsive-underlinenav-item",
+              "js-selected-navigation-item",
+              "selected"
+            ],
+            "attributes": {
+              "aria-current": "page"
+            },
+            "descendants": 2
+          }
+        },
+        "heading.profile-sidebar": {
+          "kind": "heading-chrome",
+          "count": 4,
+          "example": {
+            "element": "h2",
+            "classes": [
+              "h4",
+              "mb-2"
+            ],
+            "attributes": {},
+            "descendants": 1
+          }
+        },
+        "graph.day": {
+          "kind": "graph-cell",
+          "count": 371,
+          "example": {
+            "element": "td",
+            "classes": [
+              "ContributionCalendar-day"
+            ],
+            "attributes": {
+              "role": "gridcell"
+            },
+            "descendants": 0
+          }
+        },
+        "graph.blob": {
+          "kind": "graph-decoration",
+          "count": 1,
+          "example": {
+            "element": "path",
+            "classes": [
+              "js-highlight-blob"
+            ],
+            "attributes": {},
+            "descendants": 0
+          }
+        },
+        "graph.point": {
+          "kind": "graph-decoration",
+          "count": 4,
+          "example": {
+            "element": "ellipse",
+            "classes": [
+              "activity-overview-point",
+              "js-highlight-top-ellipse"
+            ],
+            "attributes": {},
+            "descendants": 0
+          }
+        }
+      },
+      "refused": {
+        "heading.pinned": {
+          "count": 1,
+          "reasons": [
+            "too many descendants"
+          ],
+          "example": {
+            "element": "h2",
+            "classes": [
+              "f4",
+              "mb-2",
+              "text-normal"
+            ],
+            "attributes": {},
+            "descendants": 6
+          }
+        }
+      },
+      "protected": 0,
+      "layers": []
+    },
+    {
+      "url": "https://github.com/sidebandstudio/GitHub-Reskin",
+      "kind": "repository overview",
+      "status": "GitHub - sidebandstudio/GitHub-Reskin: Themes for GitHub with a color picker, pl",
+      "route": "repository",
+      "gate": true,
+      "scope": true,
+      "reason": "admitted",
+      "admitted": {
+        "page": {
+          "kind": "page-backing",
+          "count": 1,
+          "example": {
+            "element": "body",
+            "classes": [
+              "env-production",
+              "logged-out",
+              "page-responsive"
+            ],
+            "attributes": {},
+            "descendants": 2047
+          }
+        },
+        "header.marketing": {
+          "kind": "header-chrome",
+          "count": 1,
+          "example": {
+            "element": "header",
+            "classes": [
+              "HeaderMktg",
+              "header-logged-out"
+            ],
+            "attributes": {
+              "role": "banner"
+            },
+            "descendants": 477
+          }
+        },
+        "header.global-nav": {
+          "kind": "header-chrome",
+          "count": 1,
+          "example": {
+            "element": "header",
+            "classes": [
+              "GlobalNav"
+            ],
+            "attributes": {
+              "data-component": "Stack",
+              "aria-label": "Global navigation menu"
+            },
+            "descendants": 72
+          }
+        },
+        "tab.repository": {
+          "kind": "control-chrome",
+          "count": 1,
+          "example": {
+            "element": "a",
+            "classes": [],
+            "attributes": {
+              "aria-current": "page"
+            },
+            "descendants": 4
+          }
+        },
+        "heading.repository-sidebar": {
+          "kind": "heading-chrome",
+          "count": 3,
+          "example": {
+            "element": "h2",
+            "classes": [],
+            "attributes": {
+              "data-component": "Heading"
+            },
+            "descendants": 1
+          }
+        }
+      },
+      "refused": {
+        "heading.repository-sidebar": {
+          "count": 2,
+          "reasons": [
+            "too many descendants"
+          ],
+          "example": {
+            "element": "h2",
+            "classes": [],
+            "attributes": {
+              "data-component": "Heading"
+            },
+            "descendants": 3
+          }
+        }
+      },
+      "protected": 0,
+      "layers": []
+    },
+    {
+      "url": "https://github.com/sidebandstudio/GitHub-Reskin/blob/main/README.md",
+      "kind": "file view",
+      "status": "GitHub-Reskin/README.md at main · sidebandstudio/GitHub-Reskin · GitHub",
+      "route": "repository",
+      "gate": true,
+      "scope": true,
+      "reason": "admitted",
+      "admitted": {
+        "page": {
+          "kind": "page-backing",
+          "count": 1,
+          "example": {
+            "element": "body",
+            "classes": [
+              "env-production",
+              "logged-out",
+              "page-responsive"
+            ],
+            "attributes": {},
+            "descendants": 1578
+          }
+        },
+        "header.marketing": {
+          "kind": "header-chrome",
+          "count": 1,
+          "example": {
+            "element": "header",
+            "classes": [
+              "HeaderMktg",
+              "header-logged-out"
+            ],
+            "attributes": {
+              "role": "banner"
+            },
+            "descendants": 477
+          }
+        },
+        "header.global-nav": {
+          "kind": "header-chrome",
+          "count": 1,
+          "example": {
+            "element": "header",
+            "classes": [
+              "GlobalNav"
+            ],
+            "attributes": {
+              "data-component": "Stack",
+              "aria-label": "Global navigation menu"
+            },
+            "descendants": 72
+          }
+        },
+        "tab.repository": {
+          "kind": "control-chrome",
+          "count": 1,
+          "example": {
+            "element": "a",
+            "classes": [],
+            "attributes": {
+              "aria-current": "page"
+            },
+            "descendants": 4
+          }
+        }
+      },
+      "refused": {
+        "heading.repository-sidebar": {
+          "count": 1,
+          "reasons": [
+            "too many descendants"
+          ],
+          "example": {
+            "element": "h2",
+            "classes": [],
+            "attributes": {
+              "data-component": "Heading"
+            },
+            "descendants": 6
+          }
+        }
+      },
+      "protected": 0,
+      "layers": []
+    },
+    {
+      "url": "https://github.com/sidebandstudio/GitHub-Reskin/pull/5/files",
+      "kind": "pull request diff",
+      "status": "Replace blanket mode forcing and slang with a mode-aware Primer adapter and safe",
+      "route": "pull-files",
+      "gate": true,
+      "scope": true,
+      "reason": "admitted",
+      "admitted": {
+        "page": {
+          "kind": "page-backing",
+          "count": 1,
+          "example": {
+            "element": "body",
+            "classes": [
+              "env-production",
+              "full-width",
+              "logged-out",
+              "page-responsive"
+            ],
+            "attributes": {},
+            "descendants": 49430
+          }
+        },
+        "header.marketing": {
+          "kind": "header-chrome",
+          "count": 1,
+          "example": {
+            "element": "header",
+            "classes": [
+              "HeaderMktg",
+              "header-logged-out"
+            ],
+            "attributes": {
+              "role": "banner"
+            },
+            "descendants": 477
+          }
+        },
+        "header.global-nav": {
+          "kind": "header-chrome",
+          "count": 1,
+          "example": {
+            "element": "header",
+            "classes": [
+              "GlobalNav"
+            ],
+            "attributes": {
+              "data-component": "Stack",
+              "aria-label": "Global navigation menu"
+            },
+            "descendants": 72
+          }
+        },
+        "tab.repository": {
+          "kind": "control-chrome",
+          "count": 1,
+          "example": {
+            "element": "a",
+            "classes": [],
+            "attributes": {
+              "aria-current": "page"
+            },
+            "descendants": 7
+          }
+        },
+        "button.primary": {
+          "kind": "control-chrome",
+          "count": 1,
+          "example": {
+            "element": "summary",
+            "classes": [
+              "btn",
+              "btn-primary",
+              "btn-sm",
+              "m-0",
+              "ml-0",
+              "ml-md-2"
+            ],
+            "attributes": {
+              "role": "button"
+            },
+            "descendants": 0
+          }
+        },
+        "tab.pull": {
+          "kind": "control-chrome",
+          "count": 1,
+          "example": {
+            "element": "a",
+            "classes": [
+              "flex-shrink-0",
+              "selected",
+              "tabnav-tab"
+            ],
+            "attributes": {
+              "aria-current": "page"
+            },
+            "descendants": 3
+          }
+        }
+      },
+      "refused": {
+        "button.primary": {
+          "count": 1,
+          "reasons": [
+            "inside protected UI"
+          ],
+          "example": {
+            "element": "a",
+            "classes": [
+              "btn",
+              "btn-primary",
+              "mx-auto"
+            ],
+            "attributes": {},
+            "descendants": 0
+          }
+        }
+      },
+      "protected": 1,
+      "layers": []
+    },
+    {
+      "url": "https://github.com/sidebandstudio/GitHub-Reskin/commit/46c0e6f",
+      "kind": "commit diff",
+      "status": "Rebuild the userscript as 1.1.0, with Cyberpunk, its slang and the fi… · sideban",
+      "route": "commit",
+      "gate": true,
+      "scope": true,
+      "reason": "admitted",
+      "admitted": {
+        "page": {
+          "kind": "page-backing",
+          "count": 1,
+          "example": {
+            "element": "body",
+            "classes": [
+              "env-production",
+              "logged-out",
+              "page-responsive"
+            ],
+            "attributes": {},
+            "descendants": 951
+          }
+        },
+        "header.marketing": {
+          "kind": "header-chrome",
+          "count": 1,
+          "example": {
+            "element": "header",
+            "classes": [
+              "HeaderMktg",
+              "header-logged-out"
+            ],
+            "attributes": {
+              "role": "banner"
+            },
+            "descendants": 477
+          }
+        },
+        "header.global-nav": {
+          "kind": "header-chrome",
+          "count": 1,
+          "example": {
+            "element": "header",
+            "classes": [
+              "GlobalNav"
+            ],
+            "attributes": {
+              "data-component": "Stack",
+              "aria-label": "Global navigation menu"
+            },
+            "descendants": 72
+          }
+        },
+        "tab.repository": {
+          "kind": "control-chrome",
+          "count": 1,
+          "example": {
+            "element": "a",
+            "classes": [],
+            "attributes": {
+              "aria-current": "page"
+            },
+            "descendants": 4
+          }
+        }
+      },
+      "refused": {},
+      "protected": 0,
+      "layers": []
+    },
+    {
+      "url": "https://github.com/whoisaldo/this-page-does-not-exist-reskin-qa",
+      "kind": "404",
+      "status": "Page not found · GitHub · GitHub",
+      "route": "not-found",
+      "gate": true,
+      "scope": true,
+      "reason": "admitted",
+      "admitted": {
+        "page": {
+          "kind": "page-backing",
+          "count": 1,
+          "example": {
+            "element": "body",
+            "classes": [
+              "d-flex",
+              "env-production",
+              "flex-column",
+              "logged-out",
+              "min-height-full",
+              "page-responsive"
+            ],
+            "attributes": {},
+            "descendants": 791
+          }
+        },
+        "header.marketing": {
+          "kind": "header-chrome",
+          "count": 1,
+          "example": {
+            "element": "header",
+            "classes": [
+              "HeaderMktg",
+              "header-logged-out"
+            ],
+            "attributes": {
+              "role": "banner"
+            },
+            "descendants": 477
+          }
+        }
+      },
+      "refused": {},
+      "protected": 0,
+      "layers": []
+    },
+    {
+      "url": "https://github.com/",
+      "kind": "home",
+      "status": "GitHub · Change is constant. GitHub keeps you ahead. · GitHub · GitHub",
+      "route": "marketing",
+      "gate": true,
+      "scope": true,
+      "reason": "admitted",
+      "admitted": {
+        "page": {
+          "kind": "page-backing",
+          "count": 1,
+          "example": {
+            "element": "body",
+            "classes": [
+              "env-production",
+              "logged-out",
+              "page-responsive"
+            ],
+            "attributes": {},
+            "descendants": 2068
+          }
+        },
+        "header.marketing": {
+          "kind": "header-chrome",
+          "count": 1,
+          "example": {
+            "element": "header",
+            "classes": [
+              "HeaderMktg",
+              "header-logged-out"
+            ],
+            "attributes": {
+              "role": "banner"
+            },
+            "descendants": 472
+          }
+        }
+      },
+      "refused": {},
+      "protected": 0,
+      "layers": []
+    },
+    {
+      "url": "https://github.com/features",
+      "kind": "features",
+      "status": "GitHub Features · GitHub",
+      "route": "marketing",
+      "gate": true,
+      "scope": true,
+      "reason": "admitted",
+      "admitted": {
+        "page": {
+          "kind": "page-backing",
+          "count": 1,
+          "example": {
+            "element": "body",
+            "classes": [
+              "env-production",
+              "logged-out",
+              "page-responsive"
+            ],
+            "attributes": {},
+            "descendants": 1437
+          }
+        },
+        "header.marketing": {
+          "kind": "header-chrome",
+          "count": 1,
+          "example": {
+            "element": "header",
+            "classes": [
+              "HeaderMktg",
+              "header-logged-out"
+            ],
+            "attributes": {
+              "role": "banner"
+            },
+            "descendants": 472
+          }
+        }
+      },
+      "refused": {},
+      "protected": 0,
+      "layers": []
+    },
+    {
+      "url": "https://github.com/pricing",
+      "kind": "pricing",
+      "status": "GitHub plans and pricing · GitHub",
+      "route": "marketing",
+      "gate": true,
+      "scope": true,
+      "reason": "admitted",
+      "admitted": {
+        "page": {
+          "kind": "page-backing",
+          "count": 1,
+          "example": {
+            "element": "body",
+            "classes": [
+              "env-production",
+              "logged-out",
+              "page-responsive"
+            ],
+            "attributes": {},
+            "descendants": 3165
+          }
+        },
+        "header.marketing": {
+          "kind": "header-chrome",
+          "count": 1,
+          "example": {
+            "element": "header",
+            "classes": [
+              "HeaderMktg",
+              "header-logged-out"
+            ],
+            "attributes": {
+              "role": "banner"
+            },
+            "descendants": 472
+          }
+        }
+      },
+      "refused": {},
+      "protected": 0,
+      "layers": []
+    },
+    {
+      "url": "https://github.com/sponsors",
+      "kind": "sponsors",
+      "status": "GitHub Sponsors · GitHub",
+      "route": "marketing",
+      "gate": true,
+      "scope": true,
+      "reason": "admitted",
+      "admitted": {
+        "page": {
+          "kind": "page-backing",
+          "count": 1,
+          "example": {
+            "element": "body",
+            "classes": [
+              "env-production",
+              "logged-out",
+              "page-responsive"
+            ],
+            "attributes": {},
+            "descendants": 1142
+          }
+        },
+        "header.marketing": {
+          "kind": "header-chrome",
+          "count": 1,
+          "example": {
+            "element": "header",
+            "classes": [
+              "HeaderMktg",
+              "header-logged-out"
+            ],
+            "attributes": {
+              "role": "banner"
+            },
+            "descendants": 472
+          }
+        }
+      },
+      "refused": {},
+      "protected": 0,
+      "layers": []
+    },
+    {
+      "url": "https://gist.github.com/octocat/6cad326836d38bd3a7ae",
+      "kind": "gist",
+      "status": "Hello world! · GitHub",
+      "route": "gist",
+      "gate": false,
+      "scope": true,
+      "reason": "open layer or alert",
+      "admitted": {},
+      "refused": {
+        "page": {
+          "count": 1,
+          "reasons": [
+            "pending"
+          ],
+          "example": {
+            "element": "body",
+            "classes": [
+              "env-production",
+              "logged-out",
+              "page-responsive"
+            ],
+            "attributes": {},
+            "descendants": 2169
+          }
+        },
+        "header.gist": {
+          "count": 1,
+          "reasons": [
+            "pending"
+          ],
+          "example": {
+            "element": "div",
+            "classes": [
+              "Details",
+              "Header",
+              "flex-md-nowrap",
+              "flex-wrap",
+              "js-details-container",
+              "p-responsive"
+            ],
+            "attributes": {
+              "role": "banner"
+            },
+            "descendants": 52
+          }
+        },
+        "button.primary": {
+          "count": 1,
+          "reasons": [
+            "inside protected UI"
+          ],
+          "example": {
+            "element": "a",
+            "classes": [
+              "btn",
+              "btn-primary"
+            ],
+            "attributes": {},
+            "descendants": 0
+          }
+        }
+      },
+      "protected": 1,
+      "layers": [
+        "<div data-view-component=\"true\" class=\"tmp-mt-3 flash flash-warn\" data-reskin-protected=\"\"> <a rel=\"nofollow\" class=\"btn"
+      ]
+    },
+    {
+      "url": "https://github.com/login",
+      "kind": "sign-in (protected route)",
+      "status": "Sign in to GitHub · GitHub",
+      "route": "other",
+      "gate": false,
+      "scope": false,
+      "reason": "unreviewed route",
+      "admitted": {},
+      "refused": {
+        "page": {
+          "count": 1,
+          "reasons": [
+            "not a candidate"
+          ],
+          "example": {
+            "element": "body",
+            "classes": [
+              "env-production",
+              "logged-out",
+              "page-responsive",
+              "session-authentication"
+            ],
+            "attributes": {},
+            "descendants": 234
+          }
+        }
+      },
+      "protected": 0,
+      "layers": []
+    },
+    {
+      "url": "https://github.com/sidebandstudio/GitHub-Reskin/issues",
+      "kind": "issue list",
+      "status": "Issues · sidebandstudio/GitHub-Reskin · GitHub",
+      "route": "issues",
+      "gate": false,
+      "scope": true,
+      "reason": "no native subjects on issues",
+      "admitted": {},
+      "refused": {
+        "page": {
+          "count": 1,
+          "reasons": [
+            "not a candidate"
+          ],
+          "example": {
+            "element": "body",
+            "classes": [
+              "env-production",
+              "logged-out",
+              "page-responsive"
+            ],
+            "attributes": {},
+            "descendants": 963
+          }
+        },
+        "header.marketing": {
+          "count": 1,
+          "reasons": [
+            "not a candidate"
+          ],
+          "example": {
+            "element": "header",
+            "classes": [
+              "HeaderMktg",
+              "header-logged-out"
+            ],
+            "attributes": {
+              "role": "banner"
+            },
+            "descendants": 477
+          }
+        },
+        "header.global-nav": {
+          "count": 1,
+          "reasons": [
+            "not a candidate"
+          ],
+          "example": {
+            "element": "header",
+            "classes": [
+              "GlobalNav"
+            ],
+            "attributes": {
+              "data-component": "Stack",
+              "aria-label": "Global navigation menu"
+            },
+            "descendants": 72
+          }
+        },
+        "tab.repository": {
+          "count": 1,
+          "reasons": [
+            "not a candidate"
+          ],
+          "example": {
+            "element": "a",
+            "classes": [],
+            "attributes": {
+              "aria-current": "page"
+            },
+            "descendants": 5
+          }
+        }
+      },
+      "protected": 0,
+      "layers": []
+    }
+  ],
+  "slotCandidates": {
+    "footer.signoff": {
+      "status": "proposed",
+      "seen": [
+        {
+          "url": "https://github.com/whoisaldo",
+          "route": "profile",
+          "matches": 1,
+          "reasons": [
+            null
+          ],
+          "outer": "<span> © 2026 GitHub,&nbsp;Inc. </span>"
+        },
+        {
+          "url": "https://github.com/sidebandstudio/GitHub-Reskin",
+          "route": "repository",
+          "matches": 1,
+          "reasons": [
+            "route is repository"
+          ],
+          "outer": "<span> © 2026 GitHub,&nbsp;Inc. </span>"
+        },
+        {
+          "url": "https://github.com/sidebandstudio/GitHub-Reskin/blob/main/README.md",
+          "route": "repository",
+          "matches": 1,
+          "reasons": [
+            "route is repository"
+          ],
+          "outer": "<span> © 2026 GitHub,&nbsp;Inc. </span>"
+        },
+        {
+          "url": "https://github.com/sidebandstudio/GitHub-Reskin/pull/5/files",
+          "route": "pull-files",
+          "matches": 1,
+          "reasons": [
+            "route is pull-files"
+          ],
+          "outer": "<span> © 2026 GitHub,&nbsp;Inc. </span>"
+        },
+        {
+          "url": "https://github.com/sidebandstudio/GitHub-Reskin/commit/46c0e6f",
+          "route": "commit",
+          "matches": 1,
+          "reasons": [
+            "route is commit"
+          ],
+          "outer": "<span> © 2026 GitHub,&nbsp;Inc. </span>"
+        },
+        {
+          "url": "https://gist.github.com/octocat/6cad326836d38bd3a7ae",
+          "route": "gist",
+          "matches": 1,
+          "reasons": [
+            "route is gist"
+          ],
+          "outer": "<span> © 2026 GitHub,&nbsp;Inc. </span>"
+        },
+        {
+          "url": "https://github.com/sidebandstudio/GitHub-Reskin/issues",
+          "route": "issues",
+          "matches": 1,
+          "reasons": [
+            "route is issues"
+          ],
+          "outer": "<span> © 2026 GitHub,&nbsp;Inc. </span>"
+        }
+      ],
+      "date": "2026-11-09",
+      "url": "https://github.com/whoisaldo",
+      "screenshot": "tests/primer/evidence/footer.signoff.png"
+    },
+    "profile.achievements.heading": {
+      "status": "dormant",
+      "seen": []
+    },
+    "repository.releases.heading": {
+      "status": "dormant",
+      "seen": []
+    },
+    "profile.followers.heading": {
+      "status": "dormant",
+      "seen": [
+        {
+          "url": "https://github.com/whoisaldo",
+          "route": "profile",
+          "matches": 2,
+          "reasons": [
+            null,
+            null
+          ],
+          "outer": "<a class=\"Link--secondary no-underline no-wrap\" href=\"…\"> <svg text=\"muted\" aria-hidden=\"true\" data-component=\"Octicon\" height=\"16\" viewBox=\"0 0 16 16\" version=\"1.1\" width=\"16\" data-view-component=\"true\" class=\"octicon octicon-people\"> <pat"
+        }
+      ]
+    }
+  }
+}

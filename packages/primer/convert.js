@@ -164,7 +164,7 @@ export function convertModes({ files, policy, mappings, hash, allowUnreviewed = 
 
   // Native baselines: for each family seed, every variable whose value differs between themable
   // modes and that the compiler does not write itself, with the seed mode's own value.
-  const emitted = new Set([...mappings.emit, ...mappings.brandFooter].map((m) => m.variable));
+  const emitted = new Set([...mappings.emit, ...mappings.brandFooter, ...(mappings.brandPage ?? [])].map((m) => m.variable));
   const themable = Object.keys(policy.modes).filter((id) => policy.modes[id].policy === "themed");
   const names = [...declared[themable[0]].keys()];
   for (const id of Object.keys(declared)) {

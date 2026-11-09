@@ -2,12 +2,14 @@
 // native baseline, then every mapped Primer variable from its resolved role, scoped to the GitHub
 // mode islands the plan covers. Native and forced-color resolutions emit nothing. Pure: no DOM.
 import { ENGINE_VERSION, PAIR_MATRIX_VERSION, RENDERER_VERSION } from "../contracts/index.js";
+import { appearanceMode, componentRules, scrollbarDeclarations } from "./components.js";
 import { MODE_INDEX } from "./data.js";
 import MAPPINGS from "./mappings.json" with { type: "json" };
 import { coveredModes } from "./modes.js";
 import { ATTRIBUTED, islandScope } from "./selectors.js";
 
-export const COMPILER_VERSION = 1;
+export const COMPILER_VERSION = 2;
+export const TARGETS = Object.freeze(["github", "preview"]);
 const HEX6 = /^#[0-9a-f]{6}$/;
 const NATIVE_DECLARATION = /^--[A-Za-z0-9_-]+:[^;{}<>\\@]+$/;
 const PREFERENCE_KEYS = ["enabled", "extras", "text", "motion", "fonts", "effects"];
@@ -31,9 +33,18 @@ const SELECTION_BACKGROUND = "--reskin-selection-background";
 // Gecko matches these selectors. Before Firefox 151 it has no container style queries, and
 // Chromium's selection needs its own rule.
 const GECKO = "selector(:-moz-focusring)";
+// Engines that draw corner-shape. Gecko never does, so its selector rules are always square.
+const BEVEL = `(corner-shape: bevel) and (not ${GECKO})`;
 const important = (declarations) => declarations.replace(/;/g, " !important;") + " !important";
 
 const checkedBaselines = new WeakMap();
+// islandScope builds the same long selectors for every compile of a plan, so they are kept.
+const scopes = new Map();
+function cachedScope(covered, known, baseOf, branch) {
+  const key = JSON.stringify([covered, known, known.map(baseOf), branch]);
+  if (!scopes.has(key)) scopes.set(key, islandScope(covered, known, baseOf, branch));
+  return scopes.get(key);
+}
 
 /** Reads a ColorPath such as /tokens/canvas or /graph/3 from a resolved theme. */
 export function colorAt(resolved, path) {
@@ -109,6 +120,22 @@ function nativeBaseline(index, seedMode) {
 
 function assertPreferences(prefs) {
   if (!prefs || PREFERENCE_KEYS.some((k) => typeof prefs[k] !== "boolean")) throw new TypeError("compileGitHub needs EffectivePreferences with six booleans");
+  if (prefs.appearance !== undefined && prefs.appearance !== "full" && prefs.appearance !== "calm") throw new TypeError("EffectivePreferences.appearance must be full or calm");
+}
+
+// The preview target: only the named variables and component rules, for a frame whose sole
+// island is its root. The root is themed only while it holds no unsafe island at all, and
+// component rules skip every element inside another island, so the preview is never themed
+// where github.com would not be. Unknown names fail rather than paint a partial preview.
+function previewSelection(options) {
+  const variables = options.variables;
+  if (!Array.isArray(variables) || !variables.length || !variables.every((v) => typeof v === "string")) throw new TypeError("The preview target needs the list of Primer variables its fixture reads");
+  const known = new Set([...MAPPINGS.emit.map((m) => m.variable)]);
+  const unknown = variables.filter((v) => !known.has(v));
+  if (unknown.length) throw new TypeError(`The preview fixture reads variables the compiler does not write: ${unknown.join(", ")}`);
+  const components = options.components ?? null;
+  if (components !== null && !(Array.isArray(components) && components.every((c) => typeof c === "string"))) throw new TypeError("The preview target's components must be rule IDs");
+  return { variables: new Set(variables), components: components && new Set(components) };
 }
 
 /**
@@ -116,16 +143,24 @@ function assertPreferences(prefs) {
  * @param {{seedMode:string|null, policy:string}} modePlan from selectMode
  * @param {object} prefs EffectivePreferences
  * @param {object} [index] the ModeIndex the plan came from; defaults to the frozen production index
+ * @param {{target?:'github'|'preview', variables?:string[], components?:string[]}} [options]
+ *   `preview` compiles only `variables` and the component rules in `components` (all when
+ *   omitted), without the family baseline the preview frame carries itself.
  * @returns {{css:string, fingerprint:string, warnings:object[], ownedNodePlan:[]}}
  */
-export function compileGitHub(resolved, modePlan, prefs, index = MODE_INDEX) {
+export function compileGitHub(resolved, modePlan, prefs, index = MODE_INDEX, options = {}) {
   assertPreferences(prefs);
   if (!resolved || typeof resolved.policy !== "string") throw new TypeError("compileGitHub needs a ResolvedTheme");
   if (!modePlan || typeof modePlan.policy !== "string") throw new TypeError("compileGitHub needs a ModePlan");
+  const target = options.target ?? "github";
+  if (!TARGETS.includes(target)) throw new TypeError(`compileGitHub target must be github or preview, not ${target}`);
+  const preview = target === "preview" ? previewSelection(options) : null;
+  const mode = appearanceMode(prefs);
   const fingerprint = digest(JSON.stringify([
     COMPILER_VERSION, RENDERER_VERSION, ENGINE_VERSION, PAIR_MATRIX_VERSION,
     resolved.sourceHash ?? null, resolved.policy, resolved.seedHash ?? null,
-    modePlan.seedMode ?? null, modePlan.policy, PREFERENCE_KEYS.map((k) => prefs[k]),
+    modePlan.seedMode ?? null, modePlan.policy, PREFERENCE_KEYS.map((k) => prefs[k]), mode,
+    target, preview && [[...preview.variables], preview.components && [...preview.components]],
   ]));
   const warnings = [];
   // Disabled, native and forced-color resolutions leave GitHub entirely native.
@@ -136,16 +171,20 @@ export function compileGitHub(resolved, modePlan, prefs, index = MODE_INDEX) {
   if (!seed) throw new TypeError(`ModePlan seed ${modePlan.seedMode} is not in the ModeIndex`);
   if (resolved.seedId !== seed.id || resolved.seedHash !== seed.sourceHash) throw new TypeError(`The resolved theme was resolved against ${resolved.seedId}, not the plan's ${seed.id}`);
   if (resolved.base !== seed.base || seed.highContrast) throw new TypeError(`Seed ${seed.id} cannot theme a ${resolved.base} resolution`);
+  if (!resolved.appearance) throw new TypeError("compileGitHub needs the resolved appearance record of a themed resolution");
+  const wanted = (id) => !preview?.components || preview.components.has(id);
 
-  const colors = emittedColors(resolved, MAPPINGS.emit, warnings);
-  const brand = emittedColors(resolved, MAPPINGS.brandFooter, warnings);
+  const colors = emittedColors(resolved, preview ? MAPPINGS.emit.filter((m) => preview.variables.has(m.variable)) : MAPPINGS.emit, warnings);
+  const brand = preview ? new Map() : emittedColors(resolved, MAPPINGS.brandFooter, warnings);
+  const brandPage = preview ? new Map() : emittedColors(resolved, MAPPINGS.brandPage, warnings);
   const blob = colorAt(resolved, "/graph/4");
   const bar = colorAt(resolved, "/graph/3");
   const selectionText = colorAt(resolved, "/tokens/selectionText");
   const selectionBackground = colorAt(resolved, "/tokens/selectionBackground");
   const dark = seed.base === "dark";
   const declarations = [
-    ...nativeBaseline(index, seed.id).map((d) => `${d} !important`),
+    // The preview frame carries the family baseline itself.
+    ...(preview ? [] : nativeBaseline(index, seed.id).map((d) => `${d} !important`)),
     ...[...colors].map(([name, value]) => `${name}:${value} !important`),
     // primer.css derives some light-dark() values from these switches; they follow color-scheme.
     `--lightningcss-light:${dark ? " " : "initial"} !important`,
@@ -154,57 +193,83 @@ export function compileGitHub(resolved, modePlan, prefs, index = MODE_INDEX) {
     `${ON}:1 !important`,
     `${SELECTION_TEXT}:${selectionText} !important`,
     `${SELECTION_BACKGROUND}:${selectionBackground} !important`,
+    ...(wanted("scrollbar") ? scrollbarDeclarations(resolved).map((d) => `${d} !important`) : []),
   ].join(";");
   const brandDeclarations = [...brand].map(([name, value]) => `${name}:${value} !important`).join(";");
+  const brandPageDeclarations = [...brandPage].map(([name, value]) => `${name}:${value} !important`).join(";");
 
   const covered = coveredModes(index, seed.id);
-  const baseOf = (mode) => index.modes[mode]?.base;
+  const known = Object.keys(index.modes);
+  const baseOf = (m) => index.modes[m]?.base;
   // Fill and stroke paint the blob, background-color the bar.
   const graph = `fill:${blob} !important;stroke:${blob} !important;background-color:${bar} !important`;
   const label = important(ISSUE_LABEL[seed.base]);
+  // Appearance rules in the engines that draw corner-shape, and in the rest. Rules that are the
+  // same in both are written once.
+  const bevel = componentRules(resolved, prefs, { variant: "bevel" }).filter((r) => wanted(r.id));
+  const square = componentRules(resolved, prefs, { variant: "square" }).filter((r) => wanted(r.id));
+  const same = bevel.filter((r, i) => square[i]?.id === r.id && square[i].body === r.body);
+  const onlyBevel = bevel.filter((r) => !same.includes(r));
+  const onlySquare = square.filter((r) => !same.some((s) => s.id === r.id));
   const branch = (name) => {
-    const scope = islandScope(covered, Object.keys(index.modes), baseOf, name);
+    const full = cachedScope(covered, known, baseOf, name);
+    const scope = preview ? previewScope(full) : full;
     // Rules that are not inherited custom properties, for elements whose nearest island is
-    // eligible. A graph, label or Brand footer that is itself an island follows its own mode, below.
-    const component = (target) => [
-      [`${GRAPH_TARGET}:not([data-color-mode])`, graph],
-      [".hx_IssueLabel:not([data-color-mode])", label],
-      [`${scope.brand}:not(${ATTRIBUTED})`, brandDeclarations],
-    ].map(([selector, body]) => `${target(selector)}{${body}}`).join("\n");
+    // eligible. A graph, label or Brand island that is itself an island follows its own mode,
+    // below; other subjects that are islands themselves stay GitHub's.
+    const subjects = [
+      ...(wanted("graph") ? [[`${GRAPH_TARGET}:not([data-color-mode])`, graph]] : []),
+      ...(wanted("issue-label") ? [[".hx_IssueLabel:not([data-color-mode])", label]] : []),
+      ...(preview ? [] : [[`${scope.brand}:not(${ATTRIBUTED})`, brandDeclarations], [`${scope.brandPage}:not(${ATTRIBUTED})`, brandPageDeclarations]]),
+      ...same.map((r) => [`:is(${r.target}):not([data-color-mode])`, r.body]),
+    ];
+    const rule = (prefix) => ([selector, body]) => `${prefix}${selector}{${body}}`;
+    const variants = (prefix) => [
+      ...subjects.map(rule(prefix)),
+      ...(onlyBevel.length ? [`@supports ${BEVEL}{`, ...onlyBevel.map((r) => `${prefix}:is(${r.target}):not([data-color-mode]){${r.body}}`), "}"] : []),
+      ...(onlySquare.length ? [`@supports not (${BEVEL}){`, ...onlySquare.map((r) => `${prefix}:is(${r.target}):not([data-color-mode]){${r.body}}`), "}"] : []),
+    ];
     return [
       // Every island with theme attributes clears the Reskin switches, at no specificity, and
       // eligible islands raise them again: native, unknown and suppressed islands stay cleared.
-      `:where(${ATTRIBUTED}){${ON}:initial !important;${SELECTION_TEXT}:initial !important;${SELECTION_BACKGROUND}:initial !important}`,
+      `:where(${ATTRIBUTED}){${ON}:initial !important;${SELECTION_TEXT}:initial !important;${SELECTION_BACKGROUND}:initial !important;scrollbar-color:auto}`,
       `${scope.eligible}{${declarations}}`,
       // Only a themed island's own descendants can suppress it, and a graph or label holds no
       // islands, so for these subjects no unsafe descendant at all is the same, shorter test. A
       // Brand footer holds no island of `others`, unsafe ones included.
-      `${GRAPH_TARGET}${scope.themed}:not(:has(${scope.unsafe})){${graph}}`,
-      `.hx_IssueLabel${scope.themed}:not(:has(${scope.unsafe})){${label}}`,
-      `${scope.brand}${scope.themed}{${brandDeclarations}}`,
+      ...(wanted("graph") ? [`${GRAPH_TARGET}${scope.themed}:not(:has(${scope.unsafe})){${graph}}`] : []),
+      ...(wanted("issue-label") ? [`.hx_IssueLabel${scope.themed}:not(:has(${scope.unsafe})){${label}}`] : []),
+      ...(preview ? [] : [`${scope.brand}${scope.themed}{${brandDeclarations}}`]),
       // The other component rules read the nearest island's switch with a style query, which
-      // reads the parent's, so it never sees a subject's own island, through any depth. Gecko
-      // before Firefox 151 matches selectors instead, and an engine with neither keeps GitHub's
-      // components.
+      // reads the parent's, so it never sees a subject's own island, through any depth.
       `@container style(${ON}: 1){`,
-      component((selector) => selector),
+      ...variants(""),
       "}",
+      // Gecko before Firefox 151 matches selectors instead, once for every subject through one
+      // nested rule, and an engine with neither keeps GitHub's components. Gecko draws no
+      // corner-shape, so its bevels are square.
       `@supports ${GECKO}{`,
-      component(scope.within),
+      `${scope.nearest}{`,
+      ...[...subjects, ...onlySquare.map((r) => [`:is(${r.target}):not([data-color-mode])`, r.body])].map(rule("&")),
       "}",
-      `@supports not ${GECKO}{`,
-      // Chromium's highlight styles inherit from the parent's, and only an element whose
-      // ancestors have no selection rule paints the browser's own selection, whose dark-scheme and
-      // inactive-window colors no keyword reproduces. So the themed selection is set once on the
-      // body of a themed root, for the page to inherit, and only while every island is the
-      // plan's or the Brand footer's: no native, unknown or unsafe island, so none is suppressed. It is gated by selector: Chromium does not pass a style-queried highlight
-      // rule on to children when the stylesheet changes.
-      `:root${scope.themed} > body:not(:has(${scope.others}))::selection{color:${selectionText};background-color:${selectionBackground}}`,
       "}",
+      ...(wanted("selection")
+        ? [
+            `@supports not ${GECKO}{`,
+            // Chromium's highlight styles inherit from the parent's, and only an element whose
+            // ancestors have no selection rule paints the browser's own selection, whose dark-scheme and
+            // inactive-window colors no keyword reproduces. So the themed selection is set once on the
+            // body of a themed root, for the page to inherit, and only while every island is the
+            // plan's or a recognized Brand island: no native, unknown or unsafe island, so none is suppressed. It is gated by selector: Chromium does not pass a style-queried highlight
+            // rule on to children when the stylesheet changes.
+            `:root${scope.themed} > body:not(:has(${scope.others}))::selection{color:${selectionText};background-color:${selectionBackground}}`,
+            "}",
+          ]
+        : []),
     ].join("\n");
   };
   const css = [
-    `/* GitHub Reskin: ${seed.id} seed for ${covered.join(", ")} */`,
+    `/* GitHub Reskin: ${seed.id} seed for ${covered.join(", ")}${preview ? ", preview" : ""} */`,
     "@media not all and (forced-colors: active){",
     "@media not all and (prefers-color-scheme: dark){",
     branch("light"),
@@ -214,9 +279,37 @@ export function compileGitHub(resolved, modePlan, prefs, index = MODE_INDEX) {
     "}",
     // Gecko matches selection per element and paints HighlightText on Highlight by default, which
     // an element outside every themed island keeps.
-    `@supports ${GECKO}{::selection{color:var(${SELECTION_TEXT},HighlightText);background-color:var(${SELECTION_BACKGROUND},Highlight)}}`,
+    ...(wanted("selection") ? [`@supports ${GECKO}{::selection{color:var(${SELECTION_TEXT},HighlightText);background-color:var(${SELECTION_BACKGROUND},Highlight)}}`] : []),
     "}",
     "",
   ].join("\n");
   return { css, fingerprint, warnings, ownedNodePlan: [] };
+}
+
+/**
+ * The preview target of compileGitHub: only the Primer variables `variables` names, the component
+ * rules in `components` (every one when omitted) and the same mappings, fallbacks, island and
+ * forced-color guards, for a frame whose only island is its root.
+ */
+export function compilePreview(resolved, modePlan, prefs, { variables, components, index = MODE_INDEX } = {}) {
+  return compileGitHub(resolved, modePlan, prefs, index, { target: "preview", variables, components });
+}
+
+/** The component rule IDs compileGitHub can write, for a preview host's `components` list. */
+export const COMPONENT_IDS = Object.freeze([
+  "selection", "scrollbar", "graph", "issue-label",
+  "box", "box-first", "box-last", "box-border", "button", "primary", "primary-hover",
+  "label-color", "label-shape", "topic-color", "topic-shape", "issue-label-shape",
+  "cell-shape", "svg-cell-shape", "cell-glow-1", "cell-glow-2", "cell-glow-3", "cell-glow-4", "overview-point",
+]);
+
+// The preview frame's scope: its root is eligible only while it holds no unsafe island, and
+// component subjects must sit inside no island but the root.
+function previewScope(full) {
+  const eligible = `:root${full.themed}:not(:has(${full.unsafe}))`;
+  return {
+    ...full,
+    eligible,
+    nearest: `:is(${eligible} *):not(${ATTRIBUTED}):not(:root ${ATTRIBUTED} *)`,
+  };
 }

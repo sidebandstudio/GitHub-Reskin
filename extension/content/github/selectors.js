@@ -70,6 +70,7 @@ export const ROUTE_META = {
 export const NOT_FOUND_ILLUSTRATION = "main img[data-static-error-asset='404-illustration']";
 export const PROFILE_CARD = "main .h-card[itemtype='http://schema.org/Person']";
 export const SOURCE_CODE = "[itemtype='http://schema.org/SoftwareSourceCode']";
+export const MARKETING_MAIN = "main.font-mktg";
 
 /**
  * The eight flavor slots. `scope` finds candidate guard elements; `text` is the exact English
@@ -158,6 +159,56 @@ export const SLOTS = [
     // The caption follows the calendar graph, outside the graph and its keyboard cells.
     host: "graph",
     graph: ".graph-before-activity-overview",
+    insert: "after",
+  },
+];
+
+/**
+ * Slot candidates for the next schema revision, outside the frozen eight. locateSlots never
+ * yields them until C2b adds their IDs and they move into SLOTS. `proposed` passed every guard on
+ * the dated capture in tests/primer/slot-evidence.json; `dormant` explains why no safe location
+ * exists. A heading whose text is a link, button or tab stays dormant.
+ */
+export const CANDIDATE_SLOTS = [
+  {
+    slot: "footer.signoff",
+    status: "proposed",
+    route: "profile",
+    // GitHub's own footer line, outside <main>: the copyright span beside the footer logo link.
+    region: "footer",
+    scope: "body footer.footer[role='contentinfo'] > div > div.flex-shrink-0 > span",
+    text: [/^© \d{4} GitHub, Inc\.$/],
+    host: "guard",
+    insert: "after",
+  },
+  {
+    slot: "profile.achievements.heading",
+    status: "dormant",
+    dormant: "The Achievements heading's whole text is a link (h2.h4 > a.Link--primary to ?tab=achievements), so an owned node would sit inside or against a control.",
+    route: "profile",
+    scope: "main .Layout-sidebar h2.h4.mb-2",
+    text: ["Achievements"],
+    host: "guard",
+    insert: "append",
+  },
+  {
+    slot: "repository.releases.heading",
+    status: "dormant",
+    dormant: "The repository sidebar's Releases heading is a link (h2 > a.headingLink to /releases), so an owned node would sit inside or against a control.",
+    route: "repository",
+    scope: "main h2[data-component='Heading']",
+    text: ["Releases"],
+    host: "guard",
+    insert: "append",
+  },
+  {
+    slot: "profile.followers.heading",
+    status: "dormant",
+    dormant: "GitHub renders no Followers or following heading: the profile sidebar shows the counts as links (a.Link--secondary to ?tab=followers and ?tab=following), and the followers tab lists people without a heading.",
+    route: "profile",
+    scope: "main .Layout-sidebar .js-profile-editable-area a.Link--secondary",
+    text: null,
+    host: "guard",
     insert: "after",
   },
 ];
