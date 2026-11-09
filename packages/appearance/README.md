@@ -7,7 +7,7 @@ preview, the userscript and the site all use this package.
 | Export | Behavior |
 | --- | --- |
 | `compileAppearance(resolved, prefs, target)` | CSS for owned nodes only: accent copy, effect geometry, the finite motion rules when motion is effective, a reduced-motion stop and a forced-colors hide. `""` when nothing shows. `github` and `preview` emit the same declarations; `github` marks the structural ones `!important`. Never interpolates theme strings. |
-| `mountAppearance(root, resolved, prefs, anchors)` | Creates owned nodes at verified `SlotAnchor`s inside `root` and returns `{ destroy(), play(), owned, animated }`. `play()` runs the single motion pass for an explicit theme selection. Load, scrolling and navigation never call it. |
+| `mountAppearance(root, resolved, prefs, anchors)` | Creates owned nodes at verified `SlotAnchor`s inside `root` and returns `{ destroy(), play(), motionBoxes(), owned, animated }`. `play()` runs the single motion pass for an explicit theme selection, only in boxes inside the viewport, and returns a box to rest if it leaves the viewport during the pass. Load, scrolling and navigation never call it. `motionBoxes()` lists the boxes allowed to move, for a host that tests visibility itself (the preview controller). |
 | `fontFaceCss(fontId, resourceUrl)` | One `@font-face` (swap, Latin `unicode-range`) for a bundled face. Accepts only extension URLs, same-site paths and `data:font/woff2` URLs. |
 | `extensionResources(runtime)`, `siteResources(base)`, `embeddedResources({fonts, assets})`, `noResources` | Runtime resource adapters: `{ fontUrl(id), assetUrl(path) }`. The only source of asset locations. |
 | `effectiveAppearance`, `planAppearance`, `ownedNodePlan` | Preference gating and the node plan, also usable for `CompiledStyle.ownedNodePlan`. |
@@ -20,9 +20,9 @@ Every owned node is `aria-hidden`, pointer-transparent and unfocusable, and ente
 
 - **Heading slots** hang a strip of at most 360x36px into the blank end of the heading row from a zero-height wrapper, so block flow is untouched. In a flex row the wrapper fills the free space; under grid or column layout it leaves the flow entirely.
 - **The profile tag** is a badge laid over blank space beside or above the name.
-- **Captions** are in-flow paragraphs. They are the only owned nodes that take space, and only when Text is on.
+- **Captions** are in-flow paragraphs of copy. They are the only owned nodes that take space, and only when Text is on. A caption's edge hangs out of flow over the blank end of its last line, so turning Effects on or off never moves content.
 
-Before an overlay is kept, its box is measured against the host's text and its native neighbors. If it would cover them, it tries one alternate place; if that is not blank either, the slot is left out. Anchors inside `.markdown-body`, comments, issue titles, code, tables, SVG or interactive elements are refused.
+Before an overlay is kept, its box is measured against the host's native text and its native neighbors; owned copy, including an appended slot's own copy, is not an obstacle. A caption edge is measured against the caption's copy. If a box would cover them, it tries one alternate place; if that is not blank either, the slot is left out (a caption keeps its copy and drops its edge). Anchors inside `.markdown-body`, comments, issue titles, code, tables, SVG or interactive elements are refused.
 
 ## Limits
 

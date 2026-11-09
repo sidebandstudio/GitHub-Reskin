@@ -10,9 +10,10 @@ import { effectiveAppearance } from "./plan.js";
 export const TARGETS = Object.freeze(["github", "preview"]);
 const HEX = /^#[0-9a-f]{6}$/;
 
-// Structure: no owned node takes pointer input, and only captions take space in the flow. A
-// heading strip hangs from a zero-height wrapper into the blank end of the heading's row, and
-// the tag badge sits over the blank end of the name row, so neither moves GitHub content.
+// Structure: no owned node takes pointer input, and only caption copy takes space in the flow. A
+// heading strip hangs from a zero-height wrapper into the blank end of the heading's row, the tag
+// badge sits over the blank end of the name row, and a caption's edge hangs over the blank end of
+// the caption's last line, so no decoration moves GitHub content.
 const STRUCTURE = [
   "[data-reskin-owned]{pointer-events:none;user-select:none;-webkit-user-select:none}",
   ".rs-slot--overlay{display:block;position:relative;height:0;margin:0;padding:0;border:0;overflow:visible;flex:1 1 0;min-width:0}",
@@ -28,7 +29,8 @@ const STRUCTURE = [
   ".rs-slot--overlay[data-rs-alt]>.rs-box--strip{width:min(240px,35%)}",
   ".rs-box--badge{top:4px;right:0;display:flex;align-items:center;gap:6px;height:22px;max-width:min(240px,60%);padding:0 8px}",
   ".rs-slot--caption{display:block;position:relative;margin:8px 0 0;padding:0}",
-  ".rs-box--edge{position:relative;display:block;height:10px;width:min(240px,100%);overflow:hidden;margin:4px 0 0}",
+  ".rs-box--edge{position:absolute;right:0;bottom:4px;display:block;height:10px;width:min(240px,40%);overflow:hidden}",
+  ".rs-slot--caption[data-rs-alt]>.rs-box--edge{width:min(120px,25%)}",
   ".rs-copy{position:relative;z-index:2;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-style:normal;letter-spacing:normal;text-transform:none;text-decoration:none}",
   ".rs-copy--caption{white-space:normal}",
   ".rs-fx{position:absolute;box-sizing:border-box;pointer-events:none}",

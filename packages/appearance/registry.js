@@ -24,7 +24,7 @@ export const LIMITS = freeze({
 });
 
 // Box heights, all within the 96px patch bound. A heading strip sits in the blank end of a
-// heading row; a badge is the profile tag; a caption edge runs under caption copy.
+// heading row; a badge is the profile tag; a caption edge hangs at the blank end of the caption copy.
 export const BOX = freeze({ strip: { height: 28, maxWidth: 360 }, badge: { height: 22, maxWidth: 240 }, edge: { height: 6, maxWidth: 240 } });
 
 // Font fallbacks by shape, so a blocked or missing face keeps a similar width and tone.

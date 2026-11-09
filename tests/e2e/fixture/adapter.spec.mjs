@@ -62,13 +62,44 @@ test("effects never move native content on the adapter path", async ({ page, fix
   await open(page, fixtureApp);
   const boxes = () => page.evaluate(() => [...document.body.querySelectorAll("*")].filter((n) => !n.closest("[data-reskin-owned]")).map((n) => {
     const r = n.getBoundingClientRect();
-    return [n.tagName, r.x, r.y, r.width, r.height];
+    return [n.tagName, n.id, r.x, r.y, r.width, r.height];
   }));
   await page.evaluate(([t, p]) => window.reskinNative.apply(t, { ...p, extras: false }), [THEME, PREFS]);
   const bare = await boxes();
   await page.evaluate(([t, p]) => window.reskinNative.apply(t, { ...p, text: false }), [THEME, PREFS]);
   expect(await page.evaluate(() => document.querySelectorAll(".rs-fx").length)).toBeGreaterThan(0);
   expect(await boxes()).toEqual(bare);
+  // Text held on: the contribution caption's copy takes its line, and the activity overview after
+  // it stays exactly where it is whether Effects draw the caption's edge or not. A rail alone
+  // leaves room in the 24-node budget for the caption's edge.
+  const rail = decorated("tokyo-night", { rail: { shape: "wave" } });
+  await page.evaluate(([t, p]) => window.reskinNative.apply(t, { ...p, effects: false }), [rail, PREFS]);
+  const textOnly = await boxes();
+  await page.evaluate(([t, p]) => window.reskinNative.apply(t, p), [rail, PREFS]);
+  expect(await page.evaluate(() => document.querySelectorAll('[data-reskin-owned="contributions.caption"] .rs-box--edge .rs-fx-rail').length)).toBe(1);
+  expect(await boxes()).toEqual(textOnly);
+  const overview = textOnly.find(([, id]) => id === "user-activity-overview");
+  expect(overview).toBeTruthy();
+});
+
+test("appended heading and tag decoration survives beside its own copy, with GitHub's text unchanged", async ({ page, fixtureApp }) => {
+  await open(page, fixtureApp);
+  const native = () => page.evaluate(() => ["h1.vcard-names", ".js-pinned-items-reorder-container > h2", "#js-contribution-activity > h2", ".h-card .border-top > h2"].map((s) => {
+    const node = document.querySelector(s);
+    let own = "";
+    for (const child of node.childNodes) if (child.nodeType === 3 || !child.hasAttribute?.("data-reskin-owned")) own += child.textContent;
+    return own;
+  }));
+  const before = await native();
+  await page.evaluate(([t, p]) => window.reskinNative.apply(t, p), [THEME, PREFS]);
+  const placed = await page.evaluate(() => [...document.querySelectorAll("[data-reskin-owned]")].map((n) => [n.dataset.reskinOwned, n.parentElement.matches("h2, .vcard-names-container") ? "inside" : "beside", n.querySelectorAll(".rs-fx").length]));
+  for (const slot of ["profile.pinned.heading", "profile.activity.heading", "profile.organizations.heading", "profile.tag"]) {
+    const entry = placed.find(([s]) => s === slot);
+    expect(entry, slot).toBeTruthy();
+    expect(entry[1], slot).toBe("inside");
+  }
+  expect(placed.find(([s]) => s === "profile.pinned.heading")[2]).toBeGreaterThan(0);
+  expect(await native()).toEqual(before);
 });
 
 test("forced colors removes every owned node and theme decoration", async ({ page, fixtureApp }) => {

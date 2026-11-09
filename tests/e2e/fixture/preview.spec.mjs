@@ -1,6 +1,6 @@
 // mountPreview: views, Before/After, preferences, every effect, owned-node limits, cleanup and
 // layout stability, in Chromium and Firefox.
-import { PREFS, classic, decorated, effectThemes, expect, inFrame, mount, nativeBoxes, painted, test } from "./helpers.mjs";
+import { PREFS, classic, decorated, effectThemes, expect, expected, inFrame, mount, nativeBoxes, painted, rgb, test, update } from "./helpers.mjs";
 
 const CHOOM_LIKE = decorated("dracula", { rail: { shape: "notch" }, scanlines: {}, echo: {} });
 
@@ -13,12 +13,11 @@ test("every view renders the inert fixture with real content and no controls", a
       view: doc.querySelector("main").dataset.view,
       text: doc.body.textContent.length,
       controls: doc.querySelectorAll("button,input,select,textarea,a[href],[tabindex],form").length,
-      title: window.document.querySelector("#preview iframe").title,
     }));
     expect(facts.view).toBe(view);
     expect(facts.text).toBeGreaterThan(40);
     expect(facts.controls).toBe(0);
-    expect(facts.title).toMatch(/^Interactive preview: GitHub /);
+    expect(await page.locator("#preview iframe:not([aria-hidden])").getAttribute("title")).toMatch(/^Interactive preview: GitHub /);
   }
 });
 
@@ -42,25 +41,67 @@ test("the profile keeps whoisaldo's captured identity, counts and README in Befo
   expect(after.pins).toHaveLength(6);
 });
 
-test("After paints the resolved theme, Before and disabled show native GitHub colors", async ({ page, fixtureApp }) => {
-  await mount(page, fixtureApp, { theme: classic("dracula") });
-  const canvas = () => inFrame(page, (doc) => doc.defaultView.getComputedStyle(doc.body).backgroundColor);
-  const themed = await canvas();
-  expect(themed).toBe("rgb(40, 42, 54)");
-  expect(await page.locator("[data-reskin-preview]").getAttribute("data-policy")).toBe("themed");
-  await page.evaluate(() => window.reskinPreview.setBefore(true));
-  await painted(page);
-  const native = await canvas();
-  expect(native).not.toBe(themed);
-  await page.evaluate(() => window.reskinPreview.setBefore(false));
-  await page.evaluate(([theme, prefs]) => window.reskinPreview.update({ theme, preferences: { ...prefs, enabled: false } }), [classic("dracula"), PREFS]);
-  await painted(page);
-  expect(await canvas()).toBe(native);
-  const states = await page.evaluate(() => window.reskinPreview.states);
-  // One state per resolution: the mount and the preference change. Before/After does not re-resolve.
-  expect(states.length).toBe(2);
-  expect(states.every((s) => s.policy === "themed")).toBe(true);
+// Canvas, text, link and every graph level, as the fixture paints them.
+const paints = (page) =>
+  inFrame(page, (doc) => {
+    const style = (node) => doc.defaultView.getComputedStyle(node);
+    const cell = (level) => style(doc.querySelector(`.ContributionCalendar-grid .ContributionCalendar-day[data-level="${level}"]`)).backgroundColor;
+    return {
+      canvas: style(doc.body).backgroundColor,
+      text: style(doc.body).color,
+      card: style(doc.querySelector(".pinned-item-list-item")).borderTopColor,
+      graph: [0, 1, 2, 3, 4].map(cell),
+      rules: [...doc.styleSheets].reduce((n, sheet) => n + sheet.cssRules.length, 0),
+    };
+  });
+const expectedPaints = (values) => ({
+  canvas: rgb(values["--bgColor-default"]),
+  text: rgb(values["--fgColor-default"]),
+  card: rgb(values["--borderColor-default"]),
+  graph: [0, 1, 2, 3, 4].map((level) => rgb(values[`--contribution-default-bgColor-${level}`])),
 });
+
+for (const id of ["dracula", "solarized-light"]) {
+  test(`After paints the resolved ${id}, Before and disabled paint GitHub's exact native colors`, async ({ page, fixtureApp }) => {
+    const theme = classic(id);
+    await mount(page, fixtureApp, { theme });
+    const { rules: _, ...themed } = await paints(page);
+    expect(themed).toEqual(expectedPaints(await expected(page, theme)));
+    expect(await page.locator("[data-reskin-preview]").getAttribute("data-policy")).toBe("themed");
+    const native = expectedPaints(await expected(page, theme, true));
+    expect(native.canvas).not.toBe(themed.canvas);
+    await page.evaluate(() => window.reskinPreview.setBefore(true));
+    await painted(page);
+    const before = await paints(page);
+    expect(before.rules).toBeGreaterThan(100);
+    expect({ ...before, rules: undefined }).toEqual({ ...native, rules: undefined });
+    await page.evaluate(() => window.reskinPreview.setBefore(false));
+    await update(page, theme, { ...PREFS, enabled: false });
+    const disabled = await paints(page);
+    expect({ ...disabled, rules: undefined }).toEqual({ ...native, rules: undefined });
+    const states = await page.evaluate(() => window.reskinPreview.states);
+    // One state per resolution: the mount and the preference change. Before/After does not re-resolve.
+    expect(states.length).toBe(2);
+    expect(states.every((s) => s.policy === "themed")).toBe(true);
+  });
+
+  test(`every syntax role in the diff paints its emitted ${id} color on its line background`, async ({ page, fixtureApp }) => {
+    const theme = classic(id);
+    await mount(page, fixtureApp, { theme, view: "diff" });
+    const values = await expected(page, theme);
+    const roles = { "pl-c": "comment", "pl-k": "keyword", "pl-s": "string", "pl-en": "entity", "pl-c1": "constant", "pl-v": "variable", "pl-ent": "entityTag" };
+    const seen = await inFrame(page, (doc, classes) => Object.fromEntries(classes.map((name) => {
+      const node = doc.querySelector(`.diff-table .${name}`);
+      const row = doc.defaultView.getComputedStyle(node.closest("td"));
+      return [name, { color: doc.defaultView.getComputedStyle(node).color, line: row.color }];
+    })), Object.keys(roles));
+    for (const [name, role] of Object.entries(roles)) {
+      expect(seen[name].color, name).toBe(rgb(values[`--prettylights-syntax-${role}`]));
+    }
+    // The type annotation sits on an added line and must not inherit the line's text color.
+    expect(seen["pl-ent"].color).not.toBe(seen["pl-ent"].line);
+  });
+}
 
 test("an invalid theme throws and leaves the last valid preview", async ({ page, fixtureApp }) => {
   await mount(page, fixtureApp, { theme: classic("nord") });
@@ -144,7 +185,8 @@ test("Text off removes every copy node and keeps decoration; Flavor extras off r
 test("dormant slots stay dormant in the default preview", async ({ page, fixtureApp }) => {
   await mount(page, fixtureApp, { theme: CHOOM_LIKE });
   const slots = await inFrame(page, (doc) => [...doc.querySelectorAll("[data-reskin-owned]")].map((n) => n.dataset.reskinOwned).sort());
-  expect(slots).toEqual(["contributions.caption", "profile.pinned.heading", "profile.tag"]);
+  // C3's evidence leaves only the issue-list caption dormant; the capture has no activity section.
+  expect(slots).toEqual(["contributions.caption", "profile.organizations.heading", "profile.pinned.heading", "profile.tag"]);
 });
 
 for (const width of [390, 1440]) {
@@ -160,6 +202,15 @@ for (const width of [390, 1440]) {
       // The 404 view has only a caption slot, which Text off removes.
       if (view !== "404") expect(await inFrame(page, (doc) => doc.querySelectorAll(".rs-fx").length)).toBeGreaterThan(0);
       expect(await inFrame(page, nativeBoxes)).toEqual(bare);
+      // With Text held on, turning Effects on or off moves nothing native either: a caption's
+      // edge hangs out of flow.
+      await update(page, theme, { ...PREFS, effects: false });
+      const textOnly = await inFrame(page, nativeBoxes);
+      await update(page, theme, PREFS);
+      // The profile caption is left-aligned, so its edge has a blank end to hang in. A centered
+      // caption may have none, and then drops its edge rather than cover its copy.
+      if (view === "profile") expect(await inFrame(page, (doc) => doc.querySelectorAll(".rs-slot--caption .rs-box--edge").length)).toBe(1);
+      expect(await inFrame(page, nativeBoxes)).toEqual(textOnly);
       // With text, only content after an in-flow caption may shift, by the caption's height.
       await page.evaluate(([t, p]) => window.reskinPreview.update({ theme: t, preferences: p }), [theme, PREFS]);
       await painted(page);
@@ -219,10 +270,12 @@ for (const width of [390, 768, 1440]) {
         for (const box of doc.querySelectorAll(".rs-slot--overlay > .rs-box")) {
           const r = box.getBoundingClientRect();
           if (r.top < page.top || r.left < page.left || r.right > page.right) out.push("outside the page");
-          // Native heading and name text, by its line boxes.
+          // Native heading and name text, by its line boxes. Owned copy appended inside a heading
+          // is the decoration's own text, not native text.
           for (const heading of doc.querySelectorAll(".vcard-names, h2")) {
             const walker = doc.createTreeWalker(heading, 4);
             for (let text = walker.nextNode(); text; text = walker.nextNode()) {
+              if (text.parentElement.closest("[data-reskin-owned]")) continue;
               const range = doc.createRange();
               range.selectNodeContents(text);
               for (const line of range.getClientRects()) if (hit(r, line)) out.push(`text ${text.data}`);

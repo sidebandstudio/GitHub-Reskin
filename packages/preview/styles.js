@@ -128,7 +128,7 @@ svg.octicon{fill:currentColor;vertical-align:text-bottom;flex:none}
 .diff-table tr.add .x{background:var(--diffBlob-additionWord-bgColor);color:var(--diffBlob-additionWord-fgColor);border-radius:3px}
 .diff-table tr.del .x{background:var(--diffBlob-deletionWord-bgColor);color:var(--diffBlob-deletionWord-fgColor);border-radius:3px}
 .pl-c{color:var(--prettylights-syntax-comment)}.pl-k{color:var(--prettylights-syntax-keyword)}.pl-s{color:var(--prettylights-syntax-string)}
-.pl-en{color:var(--prettylights-syntax-entity)}.pl-c1{color:var(--prettylights-syntax-constant)}.pl-v{color:var(--prettylights-syntax-variable)}.pl-ent{color:var(--prettylights-syntax-entity-tag)}
+.pl-en{color:var(--prettylights-syntax-entity)}.pl-c1{color:var(--prettylights-syntax-constant)}.pl-v{color:var(--prettylights-syntax-variable)}.pl-ent{color:var(--prettylights-syntax-entityTag)}
 
 /* Empty states and 404 */
 .blankslate{padding:32px;text-align:center}

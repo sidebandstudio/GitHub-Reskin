@@ -5,7 +5,8 @@ import { BOX_EFFECTS, boundedParams, effectNodes } from "./effects.js";
 import { LIMITS } from "./registry.js";
 
 // Each slot's shape: headings get an out-of-flow strip in the blank end of their row, the profile
-// tag a badge, captions an in-flow paragraph with an optional edge under the copy.
+// tag a badge, captions an in-flow paragraph of copy with an optional out-of-flow edge at the
+// blank end of its last line.
 export const SLOT_KINDS = Object.freeze({
   "profile.pinned.heading": "heading",
   "profile.activity.heading": "heading",

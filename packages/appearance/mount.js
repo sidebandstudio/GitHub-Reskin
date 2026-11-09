@@ -32,21 +32,28 @@ export function usableAnchors(root, anchors) {
   return out;
 }
 
-const noop = Object.freeze({ destroy() {}, play: () => false, owned: 0, animated: 0 });
+const noop = Object.freeze({ destroy() {}, play: () => false, motionBoxes: () => [], owned: 0, animated: 0 });
 
 const overlaps = (a, b) => a.width > 0 && a.height > 0 && b.width > 0 && b.height > 0 && a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
 
-// What an overlay box may not cover: the line boxes of the host's own text and the boxes of its
-// native neighbors.
-function obstacles(doc, host) {
+// The line boxes of every text node under node, optionally skipping text inside owned nodes.
+function textRects(doc, node, skipOwned) {
   const rects = [];
   const range = doc.createRange();
-  const walker = doc.createTreeWalker(host, 4);
+  const walker = doc.createTreeWalker(node, 4);
   for (let text = walker.nextNode(); text; text = walker.nextNode()) {
-    if (!text.data.trim()) continue;
+    if (!text.data.trim() || (skipOwned && text.parentElement?.closest(`[${OWNED_ATTRIBUTE}]`))) continue;
     range.selectNodeContents(text);
     rects.push(...range.getClientRects());
   }
+  return rects;
+}
+
+// What an overlay box may not cover: the line boxes of the host's own native text and the boxes
+// of its native neighbors. Owned copy is never an obstacle: an appended slot's copy sits inside
+// its own box, beneath the host.
+function obstacles(doc, host) {
+  const rects = textRects(doc, host, true);
   const native = (node, step) => {
     while (node?.hasAttribute(OWNED_ATTRIBUTE)) node = node[step];
     return node;
@@ -56,9 +63,10 @@ function obstacles(doc, host) {
 }
 
 /**
- * Mounts the owned nodes for root's anchors. Returns { destroy(), play(), owned, animated }.
- * play() runs the theme's one finite pass of motion, for an explicit theme selection only; it
- * returns false and leaves the static state when motion is off, reduced, hidden or offscreen.
+ * Mounts the owned nodes for root's anchors. Returns { destroy(), play(), motionBoxes(), owned,
+ * animated }. play() runs the theme's one finite pass of motion, for an explicit theme selection
+ * only; it returns false and leaves the static state when motion is off, reduced, hidden or
+ * offscreen, and stops a box's pass when the box leaves the viewport.
  */
 export function mountAppearance(root, resolved, prefs, anchors) {
   const doc = root?.ownerDocument ?? root;
@@ -99,9 +107,11 @@ export function mountAppearance(root, resolved, prefs, anchors) {
     if (copy) (caption ? wrapper.prepend(copy) : box.append(copy));
     // A zero-height wrapper leaves block flow untouched. In a flex row it fills the free space
     // beside the host; under grid or column layout it would become an item, so it leaves the
-    // flow and hangs from the top right of the containing block instead.
-    if (!caption && anchor.host.parentElement && anchor.insert !== "append") {
-      const parent = view?.getComputedStyle?.(anchor.host.parentElement);
+    // flow and hangs from the top right of the containing block instead. An appended wrapper's
+    // container is the host itself.
+    const container = anchor.insert === "append" ? anchor.host : anchor.host.parentElement;
+    if (!caption && container) {
+      const parent = view?.getComputedStyle?.(container);
       const display = parent?.display ?? "block";
       if (/flex/.test(display) && !/column/.test(parent.flexDirection)) wrapper.setAttribute("data-rs-row", "");
       else if (!/^(block|flow-root|list-item)$/.test(display)) wrapper.setAttribute("data-rs-out", "");
@@ -109,21 +119,30 @@ export function mountAppearance(root, resolved, prefs, anchors) {
     if (anchor.insert === "after") anchor.host.after(wrapper);
     else if (anchor.insert === "before") anchor.host.before(wrapper);
     else anchor.host.append(wrapper);
-    // An overlay must land in blank space. If it would cover the host's text or a native
-    // neighbor, try its one alternate place; if that is not blank either, leave the slot out.
-    if (!caption) {
+    // Decoration must land in blank space. An overlay may not cover the host's native text or a
+    // native neighbor; a caption edge, which hangs out of flow at the end of its paragraph, may
+    // not cover the caption's own copy either. If the first place is not blank, try the one
+    // alternate place; if that is not blank either, leave the slot out (a caption keeps its copy
+    // and drops only its edge).
+    if (box) {
       // Leaving the root's area counts as blocked too: a box nobody can see is not blank space.
       const bounds = (root.nodeType === 9 ? root.documentElement : root).getBoundingClientRect();
       const blocked = () => {
         const rect = box.getBoundingClientRect();
-        return rect.top < bounds.top || rect.left < bounds.left || rect.right > bounds.right || obstacles(doc, anchor.host).some((other) => overlaps(rect, other));
+        const covered = caption ? textRects(doc, wrapper, false) : obstacles(doc, anchor.host);
+        return rect.top < bounds.top || rect.left < bounds.left || rect.right > bounds.right || covered.some((other) => overlaps(rect, other));
       };
       if (blocked()) {
         wrapper.setAttribute("data-rs-alt", "");
         if (blocked()) {
-          wrapper.remove();
           if (moving.includes(box)) moving.splice(moving.indexOf(box), 1);
-          continue;
+          if (caption && copy) {
+            wrapper.removeAttribute("data-rs-alt");
+            box.remove();
+          } else {
+            wrapper.remove();
+            continue;
+          }
         }
       }
     }
@@ -134,9 +153,12 @@ export function mountAppearance(root, resolved, prefs, anchors) {
 
   const duration = Math.min(LIMITS.maxAnimationMs, motionMs(resolved.effects)) + 50;
   let timer = null;
+  let watcher = null;
   const stop = () => {
     if (timer !== null) view?.clearTimeout(timer);
     timer = null;
+    watcher?.disconnect();
+    watcher = null;
     for (const box of moving) box.removeAttribute("data-rs-play");
   };
   const onVisibility = () => doc.hidden && stop();
@@ -152,23 +174,34 @@ export function mountAppearance(root, resolved, prefs, anchors) {
     box.addEventListener("animationcancel", onEnd);
   }
   let destroyed = false;
+  const motionAllowed = () => !destroyed && plan.effective.motion && moving.length > 0 && !doc.hidden && !view?.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  // A box is visible when it intersects this document's viewport. That is the page's viewport on
+  // github.com; a host that renders decoration in a frame of its own decides with motionBoxes().
+  const inViewport = (box) => {
+    const rect = box.getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0 && rect.bottom > 0 && rect.right > 0 && rect.top < (view?.innerHeight ?? 0) && rect.left < (view?.innerWidth ?? 0);
+  };
 
   return {
     owned,
     animated: plan.effective.motion ? animated : 0,
+    /** The boxes that may make a pass now, before any visibility test; [] when motion is off. */
+    motionBoxes: () => (motionAllowed() ? [...moving] : []),
     play() {
-      if (destroyed || !plan.effective.motion || !moving.length || doc.hidden) return false;
-      if (view?.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return false;
-      const height = view?.innerHeight ?? 0;
-      const width = view?.innerWidth ?? 0;
-      const visible = moving.filter((box) => {
-        const rect = box.getBoundingClientRect();
-        return rect.bottom > 0 && rect.right > 0 && rect.top < height && rect.left < width;
-      });
+      if (!motionAllowed()) return false;
+      const visible = moving.filter(inViewport);
       if (!visible.length) return false;
       stop();
       for (const box of visible) box.setAttribute("data-rs-play", "");
       timer = view.setTimeout(stop, duration);
+      // A box that leaves the viewport during its pass returns to rest at once and does not
+      // play again when it comes back.
+      if (typeof view.IntersectionObserver === "function") {
+        watcher = new view.IntersectionObserver((entries) => {
+          for (const entry of entries) if (!entry.isIntersecting) entry.target.removeAttribute("data-rs-play");
+        });
+        for (const box of visible) watcher.observe(box);
+      }
       return true;
     },
     destroy() {

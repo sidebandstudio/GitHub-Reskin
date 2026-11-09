@@ -64,16 +64,25 @@ export async function mount(page, app, options, { slots } = {}) {
   await painted(page);
 }
 
+/** Waits until every requested preview update has completed in a shown frame. */
 export async function painted(page) {
   await page.waitForFunction(() => {
-    const host = document.querySelector("[data-reskin-preview][data-source-hash]");
-    const doc = window.reskinPreview.frame();
-    return host && doc?.body?.querySelector("main[data-view]")?.getAttribute("data-view") === host.getAttribute("data-view");
+    const host = document.querySelector("[data-reskin-preview][data-completed]");
+    return host && host.getAttribute("data-completed") === host.getAttribute("data-requested") && host.querySelectorAll("iframe:not([aria-hidden])").length === 1;
   });
 }
 
-/** Runs fn(frameDocument, arg) in the page, against the preview's frame. */
-export const inFrame = (page, fn, arg) => page.evaluate(([source, value]) => new Function("doc", "arg", `return (${source})(doc, arg)`)(window.reskinPreview.frame(), value), [fn.toString(), arg]);
+/** The styled frame: sandboxed without scripts, so only the test driver can evaluate in it. */
+export async function previewFrame(page) {
+  const handle = await page.locator("#preview iframe:not([aria-hidden])").elementHandle();
+  return handle.contentFrame();
+}
+
+/**
+ * Runs fn(frameDocument, arg) in the styled frame. The frame's policy blocks eval, so fn travels
+ * as source to the driver's own evaluation, which the policy does not govern.
+ */
+export const inFrame = async (page, fn, arg) => (await previewFrame(page)).evaluate(`(${fn.toString()})(document, ${JSON.stringify(arg ?? null)})`);
 
 /** Every non-owned element's box, in document order. */
 export const nativeBoxes = (doc) =>
@@ -83,3 +92,15 @@ export const nativeBoxes = (doc) =>
       const r = node.getBoundingClientRect();
       return [node.tagName, node.className?.baseVal ?? node.className, Math.round(r.x * 100) / 100, Math.round(r.y * 100) / 100, Math.round(r.width * 100) / 100, Math.round(r.height * 100) / 100];
     });
+
+/** rgb(r, g, b) for a #rrggbb color, as getComputedStyle reports it. */
+export const rgb = (hex) => `rgb(${[1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(", ")})`;
+
+/** The value each preview variable should carry for theme: emitted in After, native in Before. */
+export const expected = (page, theme, before = false) => page.evaluate(([t, b]) => window.reskinPreview.expected(t, b), [theme, before]);
+
+/** Updates the preview and waits for the replacement frame. */
+export async function update(page, theme, preferences = PREFS) {
+  await page.evaluate(([t, p]) => window.reskinPreview.update({ theme: t, preferences: p }), [theme, preferences]);
+  await painted(page);
+}

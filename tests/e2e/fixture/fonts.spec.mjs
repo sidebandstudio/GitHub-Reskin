@@ -1,5 +1,6 @@
-// Fonts: only the selected face loads, from the runtime adapter's packaged path; a blocked or
-// missing file falls back natively; body and code keep their own families.
+// Fonts: only the selected face loads, read once by the controller from the runtime adapter's
+// packaged path and embedded in the scriptless frame; a blocked or missing file falls back
+// natively; body and code keep their own families.
 import { PREFS, decorated, expect, inFrame, mount, test } from "./helpers.mjs";
 
 const theme = (font) => decorated("gruvbox", { rules: { style: "ticks" } }, { font });
@@ -32,11 +33,13 @@ test("a blocked font file falls back to the native stack and the preview stays c
   await mount(page, fixtureApp, { theme: theme("rajdhani") });
   await inFrame(page, (doc) => doc.fonts.ready.then(() => null));
   const state = await inFrame(page, (doc) => {
-    const copy = doc.querySelector(".rs-copy--heading");
-    return { status: [...doc.fonts].map((f) => f.status), text: copy.textContent, width: copy.getBoundingClientRect().width, loaded: doc.fonts.check('600 18px "Reskin Rajdhani"') && [...doc.fonts].some((f) => f.status === "loaded") };
+    const copy = doc.querySelector('[data-reskin-owned="profile.pinned.heading"] .rs-copy--heading');
+    return { status: [...doc.fonts].map((f) => f.status), text: copy.textContent, width: copy.getBoundingClientRect().width, loaded: [...doc.fonts].some((f) => f.status === "loaded"), family: doc.defaultView.getComputedStyle(copy).fontFamily };
   });
-  expect(state.status).toEqual(["error"]);
+  // Without an embedded copy the frame gets no face at all, so it never tries the network.
+  expect(state.status).toEqual([]);
   expect(state.loaded).toBe(false);
+  expect(state.family).toMatch(/^"Reskin Rajdhani", /);
   expect(state.text).toBe("Pinned sentinel copy");
   expect(state.width).toBeGreaterThan(0);
 });

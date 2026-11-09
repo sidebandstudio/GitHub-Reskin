@@ -1,7 +1,8 @@
 // The five inert fixture views, built with DOM calls and textContent only. Links keep their
 // destinations as data-href and never navigate; there are no buttons, inputs, Star/Fork controls
 // or sign-in prompts. Each view returns its slot anchors, located by construction rather than by
-// searching, so authored README text is never a candidate.
+// searching, so authored README text is never a candidate. Every anchor has the host and insert
+// mode C3's locator reports for the same slot on github.com, so decoration lands the same way.
 import FIXTURE from "./fixture/whoisaldo.json" with { type: "json" };
 import { LANGUAGE_COLORS } from "./styles.js";
 
@@ -110,8 +111,10 @@ function calendar(b, data) {
     b.el("div", { class: "ContributionCalendar-footer" }, b.el("span", { class: "calendar-crop" }, `Showing the latest ${NARROW_WEEKS} weeks`), b.el("span", null, "Learn how we count contributions"), legend),
   );
   const heading2 = b.el("h2", { class: "f4 text-normal mb-2" }, heading);
-  const section = b.el("div", { class: "js-yearly-contributions" }, heading2, b.el("div", { class: "Box ContributionCalendar" }, graph));
-  return { section, graph };
+  // GitHub's graph wrapper, which C3's contribution caption follows.
+  const wrapper = b.el("div", { class: "Box ContributionCalendar graph-before-activity-overview" }, graph);
+  const section = b.el("div", { class: "js-yearly-contributions" }, heading2, wrapper);
+  return { section, wrapper };
 }
 
 function pinnedCard(b, pin) {
@@ -130,7 +133,7 @@ function pinnedCard(b, pin) {
 
 function profile(b) {
   const p = FIXTURE.profile;
-  const names = b.el("h1", { class: "vcard-names" }, b.el("span", { class: "vcard-fullname p-name" }, p.displayName), b.el("span", { class: "vcard-username p-nickname" }, p.login));
+  const names = b.el("div", { class: "vcard-names-container" }, b.el("h1", { class: "vcard-names" }, b.el("span", { class: "vcard-fullname p-name" }, p.displayName), b.el("span", { class: "vcard-username p-nickname" }, p.login)));
   const orgHeading = b.el("h2", { class: "h4" }, "Organizations");
   const card = b.el(
     "div",
@@ -155,15 +158,15 @@ function profile(b) {
   const pinnedHeading = b.el("h2", { class: "f4 mb-2 text-normal" }, p.pinnedHeading);
   const pinned = b.el("div", { class: "js-pinned-items-reorder-container" }, pinnedHeading, b.el("ol", { class: "pinned-items-list" }, p.pinned.map((pin) => pinnedCard(b, pin))));
   const readme = b.el("div", { class: "Box profile-readme" }, b.el("div", { class: "profile-readme-title" }, `${p.login} / README.md`), b.el("article", { class: "markdown-body" }, markdown(b, p.readme)));
-  const { section, graph } = calendar(b, FIXTURE.contributions);
+  const { section, wrapper } = calendar(b, FIXTURE.contributions);
   const root = b.el("main", { class: "page", "data-view": "profile" }, b.el("div", { class: "layout" }, card, b.el("div", { class: "main" }, readme, pinned, section)));
   return {
     root,
     anchors: [
-      { slot: "profile.tag", host: names, insert: "before", nativeSignature: "preview:vcard-names" },
-      { slot: "profile.organizations.heading", host: orgHeading, insert: "after", nativeSignature: "preview:organizations" },
-      { slot: "profile.pinned.heading", host: pinnedHeading, insert: "after", nativeSignature: "preview:pinned" },
-      { slot: "contributions.caption", host: graph, insert: "after", nativeSignature: "preview:calendar" },
+      { slot: "profile.tag", host: names, insert: "append", nativeSignature: "preview:vcard-names" },
+      { slot: "profile.organizations.heading", host: orgHeading, insert: "append", nativeSignature: "preview:organizations" },
+      { slot: "profile.pinned.heading", host: pinnedHeading, insert: "append", nativeSignature: "preview:pinned" },
+      { slot: "contributions.caption", host: wrapper, insert: "after", nativeSignature: "preview:calendar" },
     ],
   };
 }
@@ -250,8 +253,10 @@ function diff(b) {
 
 function empty(b) {
   const pinnedHeading = b.el("h2", { class: "f4 mb-2 text-normal" }, "Pinned");
-  const pinnedSlate = b.el("div", { class: "Box blankslate" }, b.icon("repo", 24), b.el("h3", null, "Nothing pinned yet"), b.el("p", null, "Pinned repositories will appear here."));
-  const issuesSlate = b.el("div", { class: "Box blankslate" }, b.icon("issue", 24), b.el("h3", null, "No issues yet"), b.el("p", null, "Issues track ideas, bugs and tasks for this repository."));
+  const pinnedSlateHeading = b.el("h3", { class: "blankslate-heading" }, "Nothing pinned yet");
+  const issuesSlateHeading = b.el("h3", { class: "blankslate-heading" }, "No issues yet");
+  const pinnedSlate = b.el("div", { class: "Box blankslate" }, b.icon("repo", 24), pinnedSlateHeading, b.el("p", null, "Pinned repositories will appear here."));
+  const issuesSlate = b.el("div", { class: "Box blankslate" }, b.icon("issue", 24), issuesSlateHeading, b.el("p", null, "Issues track ideas, bugs and tasks for this repository."));
   const root = b.el(
     "main",
     { class: "page", "data-view": "empty" },
@@ -264,9 +269,9 @@ function empty(b) {
   return {
     root,
     anchors: [
-      { slot: "profile.pinned.heading", host: pinnedHeading, insert: "after", nativeSignature: "preview:pinned" },
-      { slot: "empty.pinned.caption", host: pinnedSlate, insert: "append", nativeSignature: "preview:pinned-empty" },
-      { slot: "empty.issues.caption", host: issuesSlate, insert: "append", nativeSignature: "preview:issues-empty" },
+      { slot: "profile.pinned.heading", host: pinnedHeading, insert: "append", nativeSignature: "preview:pinned" },
+      { slot: "empty.pinned.caption", host: pinnedSlateHeading, insert: "after", nativeSignature: "preview:pinned-empty" },
+      { slot: "empty.issues.caption", host: issuesSlateHeading, insert: "after", nativeSignature: "preview:issues-empty" },
     ],
   };
 }
