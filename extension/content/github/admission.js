@@ -58,11 +58,12 @@ function candidatesFor(document, route) {
   const out = new Map();
   for (const def of HOST_SUBJECTS) {
     if (!def.routes.includes(route)) continue;
-    const { className, tag, within } = def.key;
+    const { className, tag, within, withinId } = def.key;
     let pool = [];
     if (className) pool = document.getElementsByClassName(className);
     else if (tag) pool = document.getElementsByTagName(tag);
     else if (within) pool = document.getElementsByClassName(within)[0]?.querySelectorAll(def.select) ?? [];
+    else if (withinId) pool = document.getElementById(withinId)?.querySelectorAll(def.select) ?? [];
     for (const el of pool) if (!out.has(el) && el.matches(def.select)) out.set(el, def);
   }
   return out;

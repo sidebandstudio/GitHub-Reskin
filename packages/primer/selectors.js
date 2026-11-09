@@ -66,6 +66,11 @@ export const BRAND_FOOTER = `:is(${BRAND_WRAPPER} > ${CONTENTINFO})`;
  * variables on each of them, so each one takes the page's Brand mapping itself.
  */
 export const BRAND_PAGE = `:is(main.font-mktg > react-app > div > ${BRAND_LOOSE})`;
+/**
+ * GitHub's logged-out marketing header, a Primer Brand component that reads Brand variables on
+ * every route (github.com, 2026-11-08). It is usually its own island with theme attributes.
+ */
+export const BRAND_HEADER = 'header.HeaderMktg[role="banner"]';
 const BRAND_INNER = `${BRAND_FOOTER} ${BRAND_LOOSE}`;
 const BRAND_PAGE_INNER = `${BRAND_PAGE} ${BRAND_LOOSE}`;
 // Every recognized Brand island without theme attributes: footer and page.

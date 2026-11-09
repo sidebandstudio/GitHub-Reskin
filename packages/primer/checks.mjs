@@ -77,7 +77,7 @@ async function checkPrimer(root) {
   }
   for (const p of a.problems) console.error(`  FAIL ${p}`);
   const available = await engineAvailable();
-  const files = ["tests/primer/data.test.mjs", "tests/primer/modes.test.mjs", "tests/primer/compile.test.mjs", "tests/primer/islands.test.mjs", ...(available ? ["tests/primer/engine.integration.mjs"] : [])];
+  const files = ["tests/primer/data.test.mjs", "tests/primer/modes.test.mjs", "tests/primer/compile.test.mjs", "tests/primer/preview.test.mjs", "tests/primer/registry.test.mjs", "tests/primer/admission.test.mjs", "tests/primer/islands.test.mjs", ...(available ? ["tests/primer/engine.integration.mjs"] : [])];
   const result = await runTestFiles(root, files);
   const testCount = a.count + result.tests;
   console.log(`check:primer: ${a.count} data assertions, ${result.tests} tests (${result.pass} passed, ${result.fail} failed, ${result.skip} skipped)`);
@@ -88,7 +88,7 @@ async function checkPrimer(root) {
 async function checkSlotContracts(root) {
   const a = assertions();
   const { FLAVOR_SLOT_IDS } = await import("../contracts/index.js");
-  const { SLOTS } = await import("../../extension/content/github/selectors.js");
+  const { SLOTS, CANDIDATE_SLOTS } = await import("../../extension/content/github/selectors.js");
   const evidence = JSON.parse(readFileSync(join(root, "tests/primer/slot-evidence.json"), "utf8"));
   a.expect(JSON.stringify(SLOTS.map((s) => s.slot).sort()) === JSON.stringify([...FLAVOR_SLOT_IDS].sort()), "the adapter defines exactly the eight frozen slot IDs");
   a.expect(JSON.stringify(Object.keys(evidence.slots).sort()) === JSON.stringify([...FLAVOR_SLOT_IDS].sort()), "slot-evidence.json covers exactly the eight slot IDs");
@@ -107,6 +107,21 @@ async function checkSlotContracts(root) {
     } else {
       a.expect(typeof e?.reason === "string" && e.reason.length > 20 && typeof def.dormant === "string", `${def.slot}: dormant reason`);
     }
+  }
+  // Candidates for new slot IDs: none is a frozen ID yet, each proposed one has dated live
+  // evidence that it passed every guard, and each dormant one says why.
+  const candidates = JSON.parse(readFileSync(join(root, "tests/primer/registry-evidence.json"), "utf8")).slotCandidates;
+  for (const def of CANDIDATE_SLOTS) {
+    const e = candidates[def.slot];
+    a.expect(!FLAVOR_SLOT_IDS.includes(def.slot), `${def.slot}: a candidate is not yet a frozen slot ID`);
+    a.expect(e?.status === def.status, `${def.slot}: candidate status ${def.status}, evidence ${e?.status}`);
+    a.expect(!/\*=|\^=|\$=|~=/.test(def.scope), `${def.slot}: no substring attribute matching`);
+    if (def.status === "proposed") {
+      const seen = e.seen.filter((s) => s.route === def.route);
+      a.expect(/^\d{4}-\d{2}-\d{2}$/.test(e.date ?? "") && /^https:\/\/github\.com\//.test(e.url ?? ""), `${def.slot}: dated live evidence`);
+      a.expect(seen.length > 0 && seen.every((s) => s.matches === 1 && s.reasons[0] === null), `${def.slot}: exactly one candidate passed every guard on each captured ${def.route} page`);
+      a.expect(Boolean(e.screenshot) && existsSync(join(root, e.screenshot)), `${def.slot}: evidence screenshot`);
+    } else a.expect(typeof def.dormant === "string" && def.dormant.length > 20, `${def.slot}: dormant reason`);
   }
   for (const page of evidence.pages) for (const anchor of page.anchors) a.expect(!anchor.authored && !anchor.interactive, `${page.url}: ${anchor.slot} anchored in authored or interactive markup`);
   // The adapter only reads, except admission, which writes Reskin's own marker attributes through

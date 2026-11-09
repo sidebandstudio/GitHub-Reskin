@@ -41,7 +41,8 @@ const pages = [];
 const candidates = {};
 for (const { url, kind } of PAGES) {
   const page = await context.newPage();
-  await page.goto(url, { waitUntil: "load", timeout: 60000 });
+  await page.goto(url, { waitUntil: "domcontentloaded", timeout: 90000 });
+  await page.waitForLoadState("load", { timeout: 30000 }).catch(() => {});
   await page.waitForTimeout(4000);
   await page.addScriptTag({ content: bundle });
   const found = await page.evaluate(async (modes) => {
@@ -72,7 +73,11 @@ for (const { url, kind } of PAGES) {
     const layers = [...document.querySelectorAll(G.BLOCKING)].filter((el) => !el.closest("[hidden],dialog:not([open]),details:not([open]) > :not(summary),[popover]:not(:popover-open)") && (el.localName !== "dialog" || el.open)).map((el) => el.outerHTML.replace(/\s+/g, " ").slice(0, 120));
     const slotCandidates = G.CANDIDATE_SLOTS.map((def) => {
       const els = [...document.querySelectorAll(def.scope)].filter((el) => def.text === null || def.text.some((t) => (typeof t === "string" ? G.ownText(el) === t : t.test(G.ownText(el)))));
-      return { slot: def.slot, status: def.status, matches: els.length, reasons: els.map((el) => (def.route === state.route ? G.rejectReason(def, el) : `route is ${state.route}`)), outer: els[0] ? els[0].outerHTML.replace(/\s+/g, " ").replace(/href="[^"]*"/g, 'href="…"').slice(0, 240) : null };
+      // The region the owned node would join: the insertion parent, for the screenshot.
+      const parent = els[0] && (def.host === "parent" ? els[0].parentElement : els[0]).parentElement;
+      const box = parent?.getBoundingClientRect();
+      const clip = box && box.width && box.height ? { x: Math.max(0, box.x - 8), y: Math.max(0, box.y + window.scrollY - 8), width: box.width + 16, height: Math.min(box.height + 16, 400) } : null;
+      return { slot: def.slot, status: def.status, matches: els.length, clip, reasons: els.map((el) => (def.route === state.route ? G.rejectReason(def, el) : `route is ${state.route}`)), outer: els[0] ? els[0].outerHTML.replace(/\s+/g, " ").replace(/href="[^"]*"/g, 'href="…"').slice(0, 240) : null };
     });
     handle.dispose();
     return { state, admitted, refused, protectedCount, layers, slotCandidates, events: events.map((e) => e.type) };
@@ -83,7 +88,7 @@ for (const { url, kind } of PAGES) {
     if (c.matches) record.seen.push({ url, route: found.state.route, matches: c.matches, reasons: c.reasons, outer: c.outer });
     if (c.status === "proposed" && c.matches === 1 && c.reasons[0] === null && !record.screenshot) {
       const shot = `tests/primer/evidence/${c.slot}.png`;
-      await page.locator("body footer.footer[role='contentinfo'] > div > div.flex-shrink-0").screenshot({ path: join(SHOTS, `${c.slot}.png`) });
+      await page.screenshot({ path: join(SHOTS, `${c.slot}.png`), clip: c.clip, fullPage: true });
       Object.assign(record, { date, url, screenshot: shot });
     }
   }

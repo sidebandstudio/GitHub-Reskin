@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { CSS_VARIABLES } from "../../packages/contracts/index.js";
+import { cssVariables } from "../../packages/engine/variables.js";
 import { parseStylesheet } from "../../packages/primer/css.js";
 import { colorAt, compileGitHub, coveredModes, emittedColors, islandScope, MODE_INDEX, modeSelectors, selectMode } from "../../packages/primer/index.js";
 import { EXTRAS_OFF, nativeResolved, PREFS, readJson, resolvedFromSeed } from "./helpers.mjs";
@@ -175,11 +177,13 @@ test("component rules follow a subject's own island, then the nearest island: th
   assert.equal(decl["--reskin-on"], "1");
   assert.equal(decl["--reskin-selection-text"], colorAt(resolved, "/tokens/selectionText"));
   assert.equal(decl["--reskin-selection-background"], colorAt(resolved, "/tokens/selectionBackground"));
+  // And every audited scalar variable advanced CSS and owned decorations read.
+  for (const [name, value] of Object.entries(cssVariables(resolved))) assert.equal(decl[name], value, name);
   const reset = all.filter((r) => r.declarations.some((d) => d.name === "--reskin-on" && d.value === "initial"));
   assert.equal(reset.length, 2);
   for (const r of reset) {
     assert.deepEqual(r.selectors, [":where([data-color-mode]:is([data-light-theme],[data-dark-theme]))"]);
-    assert.deepEqual(r.declarations.map((d) => [d.name, d.value]), [["--reskin-on", "initial"], ["--reskin-selection-text", "initial"], ["--reskin-selection-background", "initial"], ["scrollbar-color", "auto"]]);
+    assert.deepEqual(r.declarations.map((d) => [d.name, d.value]), [["--reskin-on", "initial"], ...Object.keys(CSS_VARIABLES).map((name) => [name, "initial"]), ["scrollbar-color", "auto"]]);
     // The scrollbar reset is not important, so GitHub's own scrollbar rules keep winning there.
     assert.equal(r.declarations.at(-1).important, false);
   }

@@ -112,24 +112,7 @@
           }
         }
       },
-      "refused": {
-        "heading.pinned": {
-          "count": 1,
-          "reasons": [
-            "too many descendants"
-          ],
-          "example": {
-            "element": "h2",
-            "classes": [
-              "f4",
-              "mb-2",
-              "text-normal"
-            ],
-            "attributes": {},
-            "descendants": 6
-          }
-        }
-      },
+      "refused": {},
       "protected": 0,
       "layers": []
     },
@@ -153,7 +136,7 @@
               "page-responsive"
             ],
             "attributes": {},
-            "descendants": 2047
+            "descendants": 2037
           }
         },
         "header.marketing": {
@@ -196,6 +179,21 @@
               "aria-current": "page"
             },
             "descendants": 4
+          }
+        },
+        "title.repository": {
+          "kind": "heading-chrome",
+          "count": 1,
+          "example": {
+            "element": "a",
+            "classes": [
+              "color-fg-default"
+            ],
+            "attributes": {
+              "data-testid": "repo-name-link",
+              "data-component": "Link"
+            },
+            "descendants": 0
           }
         },
         "heading.repository-sidebar": {
@@ -336,7 +334,7 @@
               "page-responsive"
             ],
             "attributes": {},
-            "descendants": 49430
+            "descendants": 32030
           }
         },
         "header.marketing": {
@@ -977,8 +975,21 @@
       "screenshot": "tests/primer/evidence/footer.signoff.png"
     },
     "profile.achievements.heading": {
-      "status": "dormant",
-      "seen": []
+      "status": "proposed",
+      "seen": [
+        {
+          "url": "https://github.com/whoisaldo",
+          "route": "profile",
+          "matches": 1,
+          "reasons": [
+            null
+          ],
+          "outer": "<a href=\"…\" class=\"Link--primary mb-2\">Achievements</a>"
+        }
+      ],
+      "date": "2026-11-09",
+      "url": "https://github.com/whoisaldo",
+      "screenshot": "tests/primer/evidence/profile.achievements.heading.png"
     },
     "repository.releases.heading": {
       "status": "dormant",

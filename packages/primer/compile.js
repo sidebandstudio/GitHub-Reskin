@@ -1,12 +1,13 @@
 // Compiles a resolved theme into the trusted stylesheet GitHub actually reads: the family seed's
 // native baseline, then every mapped Primer variable from its resolved role, scoped to the GitHub
 // mode islands the plan covers. Native and forced-color resolutions emit nothing. Pure: no DOM.
-import { ENGINE_VERSION, PAIR_MATRIX_VERSION, RENDERER_VERSION } from "../contracts/index.js";
+import { CSS_VARIABLES, ENGINE_VERSION, PAIR_MATRIX_VERSION, RENDERER_VERSION } from "../contracts/index.js";
+import { cssVariables } from "../engine/variables.js";
 import { appearanceMode, componentRules, scrollbarDeclarations } from "./components.js";
 import { MODE_INDEX } from "./data.js";
 import MAPPINGS from "./mappings.json" with { type: "json" };
 import { coveredModes } from "./modes.js";
-import { ATTRIBUTED, islandScope } from "./selectors.js";
+import { ATTRIBUTED, BRAND_HEADER, islandScope } from "./selectors.js";
 
 export const COMPILER_VERSION = 2;
 export const TARGETS = Object.freeze(["github", "preview"]);
@@ -26,10 +27,12 @@ const ISSUE_LABEL = {
   dark: "--lightness-threshold:.6;--background-alpha:.18;--border-alpha:.3;--lighten-by:calc(((var(--lightness-threshold) - var(--perceived-lightness)) * 100) * var(--lightness-switch));color:hsl(var(--label-h), calc(var(--label-s) * 1%), calc((var(--label-l) + var(--lighten-by)) * 1%));background:rgba(var(--label-r), var(--label-g), var(--label-b), var(--background-alpha));border-color:hsla(var(--label-h), calc(var(--label-s) * 1%), calc((var(--label-l) + var(--lighten-by)) * 1%), var(--border-alpha))",
 };
 // Reskin-owned inherited properties. Themed islands set them and native islands clear them, so
-// every element sees its nearest island's: whether it is themed, and its selection colors.
+// every element sees its nearest island's: whether it is themed, its selection colors and the
+// audited scalar variables advanced CSS and owned decorations read.
 const ON = "--reskin-on";
 const SELECTION_TEXT = "--reskin-selection-text";
 const SELECTION_BACKGROUND = "--reskin-selection-background";
+const CLEARED = [ON, ...Object.keys(CSS_VARIABLES)].map((name) => `${name}:initial !important`).join(";");
 // Gecko matches these selectors. Before Firefox 151 it has no container style queries, and
 // Chromium's selection needs its own rule.
 const GECKO = "selector(:-moz-focusring)";
@@ -191,8 +194,8 @@ export function compileGitHub(resolved, modePlan, prefs, index = MODE_INDEX, opt
     `--lightningcss-dark:${dark ? "initial" : " "} !important`,
     `color-scheme:${seed.base} !important`,
     `${ON}:1 !important`,
-    `${SELECTION_TEXT}:${selectionText} !important`,
-    `${SELECTION_BACKGROUND}:${selectionBackground} !important`,
+    // The scalar API, selection colors included, from the same repaired output.
+    ...Object.entries(cssVariables(resolved)).map(([name, value]) => `${name}:${value} !important`),
     ...(wanted("scrollbar") ? scrollbarDeclarations(resolved).map((d) => `${d} !important`) : []),
   ].join(";");
   const brandDeclarations = [...brand].map(([name, value]) => `${name}:${value} !important`).join(";");
@@ -220,7 +223,7 @@ export function compileGitHub(resolved, modePlan, prefs, index = MODE_INDEX, opt
     const subjects = [
       ...(wanted("graph") ? [[`${GRAPH_TARGET}:not([data-color-mode])`, graph]] : []),
       ...(wanted("issue-label") ? [[".hx_IssueLabel:not([data-color-mode])", label]] : []),
-      ...(preview ? [] : [[`${scope.brand}:not(${ATTRIBUTED})`, brandDeclarations], [`${scope.brandPage}:not(${ATTRIBUTED})`, brandPageDeclarations]]),
+      ...(preview ? [] : [[`${scope.brand}:not(${ATTRIBUTED})`, brandDeclarations], [`${scope.brandPage}:not(${ATTRIBUTED})`, brandPageDeclarations], [`${BRAND_HEADER}:not(${ATTRIBUTED})`, brandPageDeclarations]]),
       ...same.map((r) => [`:is(${r.target}):not([data-color-mode])`, r.body]),
     ];
     const rule = (prefix) => ([selector, body]) => `${prefix}${selector}{${body}}`;
@@ -232,7 +235,7 @@ export function compileGitHub(resolved, modePlan, prefs, index = MODE_INDEX, opt
     return [
       // Every island with theme attributes clears the Reskin switches, at no specificity, and
       // eligible islands raise them again: native, unknown and suppressed islands stay cleared.
-      `:where(${ATTRIBUTED}){${ON}:initial !important;${SELECTION_TEXT}:initial !important;${SELECTION_BACKGROUND}:initial !important;scrollbar-color:auto}`,
+      `:where(${ATTRIBUTED}){${CLEARED};scrollbar-color:auto}`,
       `${scope.eligible}{${declarations}}`,
       // Only a themed island's own descendants can suppress it, and a graph or label holds no
       // islands, so for these subjects no unsafe descendant at all is the same, shorter test. A
@@ -240,6 +243,9 @@ export function compileGitHub(resolved, modePlan, prefs, index = MODE_INDEX, opt
       ...(wanted("graph") ? [`${GRAPH_TARGET}${scope.themed}:not(:has(${scope.unsafe})){${graph}}`] : []),
       ...(wanted("issue-label") ? [`.hx_IssueLabel${scope.themed}:not(:has(${scope.unsafe})){${label}}`] : []),
       ...(preview ? [] : [`${scope.brand}${scope.themed}{${brandDeclarations}}`]),
+      // The marketing header, usually an island itself, takes the Brand page mapping by the same
+      // shorter test: it holds no islands.
+      ...(preview ? [] : [`${BRAND_HEADER}${scope.themed}:not(:has(${scope.unsafe})){${brandPageDeclarations}}`]),
       // The other component rules read the nearest island's switch with a style query, which
       // reads the parent's, so it never sees a subject's own island, through any depth.
       `@container style(${ON}: 1){`,

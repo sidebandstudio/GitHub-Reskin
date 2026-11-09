@@ -95,7 +95,7 @@ const KINDS = {
 
 /**
  * Host signatures. `key` is the cheap lookup that yields candidates (a class, a tag, or the
- * subtree of the first element with a class), `select` the exact structure a candidate must
+ * subtree of the first element with a class or of the element with an ID), `select` the exact structure a candidate must
  * match, `descendants` the only elements an inheritable subject may contain, at most
  * `maxDescendants`. `signature` is the exact compound theme CSS uses, which compileCss matches.
  */
@@ -185,10 +185,11 @@ export const HOST_SUBJECTS = freeze([
     maxDescendants: 8,
   },
   {
+    // The repository name above the file list, outside the global navigation.
     id: "title.repository",
-    key: { within: "GlobalNav" },
+    key: { withinId: "repo-title-component" },
     kind: "heading-chrome",
-    select: 'header.GlobalNav [itemprop="name"] a[data-testid="repo-name-link"]',
+    select: '#repo-title-component [itemprop="name"][data-testid="repo-name-wrapper"] > strong > a[data-testid="repo-name-link"]',
     routes: ["repository", "pull-files", "commit"],
     signature: { element: "a", classes: [], predicates: [{ name: "data-testid", value: "repo-name-link" }] },
     descendants: "",
@@ -323,8 +324,8 @@ export const INVALIDATION = freeze({
 
 // Reviewed structural evidence, path to SHA-256. tests/primer/registry.test.mjs checks them.
 const FIXTURES = {
-  "tests/primer/registry-evidence.json": "pending",
-  "tests/primer/fixtures/registry.html": "pending",
+  "tests/primer/registry-evidence.json": "d7bac46cac4dee655f4e0f87ba8e28cf65f3f19b6afefdd69b3b52011f85e76a",
+  "tests/primer/fixtures/registry.html": "cf05c975c698aa302c0b69a808b7dc14e3f399e1d514c76decaa03bc471e883d",
 };
 
 /** registryVersion 1, the CssTargetRegistry C2b's compileCss consumes. */
