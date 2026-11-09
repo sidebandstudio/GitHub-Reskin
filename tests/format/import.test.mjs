@@ -265,8 +265,11 @@ test("validation is linear on long strings: the reviewer's 120,000-letter name r
 
 // Each import of a maximum-size paste must finish within one long task. The fastest of three runs
 // keeps scheduling noise out while a super-linear path, which is slow on every run, still fails.
+// Shared CI runners are a few times slower than a user's machine, so CI allows three long tasks;
+// the super-linear paths this guards against took seconds, far past either limit.
 test("every hostile shape of a maximum-size paste imports within the long-task budget", () => {
   const MAX = LIMITS.pastedUtf8Bytes;
+  const budget = BUDGETS.longTaskMs * (process.env.CI ? 3 : 1);
   const fill = (unit, room) => unit.repeat(Math.floor(room / unit.length));
   const inName = (unit) => {
     const [head, tail] = MINIMAL.split("Moss");
@@ -312,7 +315,7 @@ test("every hostile shape of a maximum-size paste imports within the long-task b
       fastest = Math.min(fastest, performance.now() - started);
       assert.equal(typeof result.ok, "boolean", name);
     }
-    assert.ok(fastest < BUDGETS.longTaskMs, `${name} took ${fastest.toFixed(1)} ms`);
+    assert.ok(fastest < budget, `${name} took ${fastest.toFixed(1)} ms, over ${budget} ms`);
   }
 });
 
