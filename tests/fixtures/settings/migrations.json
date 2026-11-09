@@ -1,0 +1,491 @@
+{
+  "description": "1.1.0 storage states and the SettingsV2 each must migrate to. selectedThemeId \"local\" means the one migrated local theme. Run by tests/settings/migrate.test.mjs and npm run check:migrations.",
+  "cases": [
+    {
+      "name": "no settings at all is a fresh install",
+      "raw": {},
+      "expect": {
+        "enabled": true,
+        "selectedThemeId": "anime.cyberpunk-edgerunners",
+        "notices": [],
+        "recovery": [],
+        "firstRun": true
+      }
+    },
+    {
+      "name": "enabled false alone keeps Reskin off",
+      "raw": {
+        "enabled": false
+      },
+      "expect": {
+        "enabled": false,
+        "selectedThemeId": "anime.cyberpunk-edgerunners",
+        "notices": [],
+        "recovery": [],
+        "firstRun": false
+      }
+    },
+    {
+      "name": "enabled false with a classic keeps both",
+      "raw": {
+        "enabled": false,
+        "theme": "nord"
+      },
+      "expect": {
+        "enabled": false,
+        "selectedThemeId": "nord",
+        "notices": [],
+        "recovery": [],
+        "firstRun": false
+      }
+    },
+    {
+      "name": "enabled true with a classic",
+      "raw": {
+        "enabled": true,
+        "theme": "gruvbox",
+        "custom": null
+      },
+      "expect": {
+        "enabled": true,
+        "selectedThemeId": "gruvbox",
+        "notices": [],
+        "recovery": [],
+        "firstRun": false
+      }
+    },
+    {
+      "name": "a light classic keeps its exact ID",
+      "raw": {
+        "theme": "solarized-light"
+      },
+      "expect": {
+        "enabled": true,
+        "selectedThemeId": "solarized-light",
+        "notices": [],
+        "recovery": [],
+        "firstRun": false
+      }
+    },
+    {
+      "name": "cyberpunk aliases to Choom Circuit",
+      "raw": {
+        "theme": "cyberpunk"
+      },
+      "expect": {
+        "enabled": true,
+        "selectedThemeId": "anime.cyberpunk-edgerunners",
+        "notices": [
+          "cyberpunk-alias",
+          "control-swaps-removed"
+        ],
+        "recovery": [],
+        "firstRun": false
+      }
+    },
+    {
+      "name": "cyberpunk off stays off",
+      "raw": {
+        "enabled": false,
+        "theme": "cyberpunk"
+      },
+      "expect": {
+        "enabled": false,
+        "selectedThemeId": "anime.cyberpunk-edgerunners",
+        "notices": [
+          "cyberpunk-alias",
+          "control-swaps-removed"
+        ],
+        "recovery": [],
+        "firstRun": false
+      }
+    },
+    {
+      "name": "four custom colors on a classic",
+      "raw": {
+        "theme": "dracula",
+        "custom": {
+          "bg": "#1a1b26",
+          "text": "#c0caf5",
+          "accent": "#7aa2f7",
+          "graph": "#bb9af7"
+        }
+      },
+      "expect": {
+        "enabled": true,
+        "selectedThemeId": "local",
+        "notices": [
+          "custom-colors"
+        ],
+        "recovery": [],
+        "basedOn": "dracula",
+        "base": "dark",
+        "colors": {
+          "background": "#1a1b26",
+          "text": "#c0caf5",
+          "accent": "#7aa2f7",
+          "contribution": "#bb9af7"
+        },
+        "firstRun": false
+      }
+    },
+    {
+      "name": "custom colors without a theme belong to Editing Suite",
+      "raw": {
+        "custom": {
+          "bg": "#0a0a0b",
+          "text": "#ededea",
+          "accent": "#f2a93b",
+          "graph": "#f2a93b"
+        }
+      },
+      "expect": {
+        "enabled": true,
+        "selectedThemeId": "local",
+        "notices": [
+          "custom-colors"
+        ],
+        "recovery": [],
+        "basedOn": "editing-suite",
+        "base": "dark",
+        "colors": {
+          "background": "#0a0a0b",
+          "text": "#ededea",
+          "accent": "#f2a93b",
+          "contribution": "#f2a93b"
+        },
+        "firstRun": false
+      }
+    },
+    {
+      "name": "custom colors on cyberpunk clone Choom Circuit",
+      "raw": {
+        "theme": "cyberpunk",
+        "custom": {
+          "bg": "#0a0a17",
+          "text": "#e4f3ff",
+          "accent": "#ff2a6d",
+          "graph": "#00f0ff"
+        }
+      },
+      "expect": {
+        "enabled": true,
+        "selectedThemeId": "local",
+        "notices": [
+          "cyberpunk-alias",
+          "control-swaps-removed",
+          "custom-colors"
+        ],
+        "recovery": [],
+        "basedOn": "anime.cyberpunk-edgerunners",
+        "base": "dark",
+        "colors": {
+          "background": "#0a0a17",
+          "text": "#e4f3ff",
+          "accent": "#ff2a6d",
+          "contribution": "#00f0ff"
+        },
+        "firstRun": false
+      }
+    },
+    {
+      "name": "uppercase custom hex is kept, lowercased",
+      "raw": {
+        "theme": "nord",
+        "custom": {
+          "bg": "#2E3440",
+          "text": "#ECEFF4",
+          "accent": "#88C0D0",
+          "graph": "#A3BE8C"
+        }
+      },
+      "expect": {
+        "enabled": true,
+        "selectedThemeId": "local",
+        "notices": [
+          "custom-colors"
+        ],
+        "recovery": [],
+        "basedOn": "nord",
+        "base": "dark",
+        "colors": {
+          "background": "#2e3440",
+          "text": "#eceff4",
+          "accent": "#88c0d0",
+          "contribution": "#a3be8c"
+        },
+        "firstRun": false
+      }
+    },
+    {
+      "name": "unreadable custom colors are repaired and the originals kept",
+      "raw": {
+        "theme": "nord",
+        "custom": {
+          "bg": "#2e3440",
+          "text": "#3b4252",
+          "accent": "#434c5e",
+          "graph": "#4c566a"
+        }
+      },
+      "expect": {
+        "enabled": true,
+        "selectedThemeId": "local",
+        "notices": [
+          "custom-colors",
+          "custom-repaired"
+        ],
+        "recovery": [
+          "custom"
+        ],
+        "basedOn": "nord",
+        "base": "dark",
+        "colors": {
+          "background": "#2e3440",
+          "text": "#b4b7bc",
+          "accent": "#434c5e",
+          "contribution": "#4c566a"
+        },
+        "firstRun": false
+      }
+    },
+    {
+      "name": "light custom colors on a dark classic switch the base",
+      "raw": {
+        "theme": "dracula",
+        "custom": {
+          "bg": "#ffffff",
+          "text": "#111111",
+          "accent": "#5500aa",
+          "graph": "#22aa55"
+        }
+      },
+      "expect": {
+        "enabled": true,
+        "selectedThemeId": "local",
+        "notices": [
+          "custom-colors"
+        ],
+        "recovery": [],
+        "basedOn": "dracula",
+        "base": "light",
+        "colors": {
+          "background": "#ffffff",
+          "text": "#111111",
+          "accent": "#5500aa",
+          "contribution": "#22aa55"
+        },
+        "firstRun": false
+      }
+    },
+    {
+      "name": "custom colors with enabled false stay off",
+      "raw": {
+        "enabled": false,
+        "theme": "tokyo-night",
+        "custom": {
+          "bg": "#16161e",
+          "text": "#c0caf5",
+          "accent": "#e0af68",
+          "graph": "#9ece6a"
+        }
+      },
+      "expect": {
+        "enabled": false,
+        "selectedThemeId": "local",
+        "notices": [
+          "custom-colors"
+        ],
+        "recovery": [],
+        "basedOn": "tokyo-night",
+        "base": "dark",
+        "colors": {
+          "background": "#16161e",
+          "text": "#c0caf5",
+          "accent": "#e0af68",
+          "contribution": "#9ece6a"
+        },
+        "firstRun": false
+      }
+    },
+    {
+      "name": "partial custom is recovered, never applied",
+      "raw": {
+        "custom": {
+          "bg": "#000000"
+        }
+      },
+      "expect": {
+        "enabled": true,
+        "selectedThemeId": "editing-suite",
+        "notices": [
+          "custom-recovered"
+        ],
+        "recovery": [
+          "custom"
+        ],
+        "firstRun": false
+      }
+    },
+    {
+      "name": "invalid custom hex on a classic keeps the classic",
+      "raw": {
+        "theme": "nord",
+        "custom": {
+          "bg": "#zzzzzz",
+          "text": "#ffffff",
+          "accent": "#88c0d0",
+          "graph": "#88c0d0"
+        }
+      },
+      "expect": {
+        "enabled": true,
+        "selectedThemeId": "nord",
+        "notices": [
+          "custom-recovered"
+        ],
+        "recovery": [
+          "custom"
+        ],
+        "firstRun": false
+      }
+    },
+    {
+      "name": "custom that is not an object is recovered",
+      "raw": {
+        "theme": "one-dark",
+        "custom": "#ff0000"
+      },
+      "expect": {
+        "enabled": true,
+        "selectedThemeId": "one-dark",
+        "notices": [
+          "custom-recovered"
+        ],
+        "recovery": [
+          "custom"
+        ],
+        "firstRun": false
+      }
+    },
+    {
+      "name": "string enabled is not truthiness",
+      "raw": {
+        "enabled": "false",
+        "theme": "nord"
+      },
+      "expect": {
+        "enabled": true,
+        "selectedThemeId": "nord",
+        "notices": [
+          "invalid-enabled"
+        ],
+        "recovery": [
+          "enabled"
+        ],
+        "firstRun": false
+      }
+    },
+    {
+      "name": "numeric enabled is not truthiness",
+      "raw": {
+        "enabled": 0
+      },
+      "expect": {
+        "enabled": true,
+        "selectedThemeId": "anime.cyberpunk-edgerunners",
+        "notices": [
+          "invalid-enabled"
+        ],
+        "recovery": [
+          "enabled"
+        ],
+        "firstRun": false
+      }
+    },
+    {
+      "name": "unknown theme falls back to Editing Suite",
+      "raw": {
+        "theme": "vaporwave"
+      },
+      "expect": {
+        "enabled": true,
+        "selectedThemeId": "editing-suite",
+        "notices": [
+          "unknown-theme"
+        ],
+        "recovery": [
+          "theme"
+        ],
+        "firstRun": false
+      }
+    },
+    {
+      "name": "non-string theme falls back to Editing Suite",
+      "raw": {
+        "theme": 42,
+        "enabled": true
+      },
+      "expect": {
+        "enabled": true,
+        "selectedThemeId": "editing-suite",
+        "notices": [
+          "unknown-theme"
+        ],
+        "recovery": [
+          "theme"
+        ],
+        "firstRun": false
+      }
+    },
+    {
+      "name": "a local-looking theme ID is unknown in 1.1.0",
+      "raw": {
+        "theme": "local:00000000-0000-4000-8000-000000000001"
+      },
+      "expect": {
+        "enabled": true,
+        "selectedThemeId": "editing-suite",
+        "notices": [
+          "unknown-theme"
+        ],
+        "recovery": [
+          "theme"
+        ],
+        "firstRun": false
+      }
+    },
+    {
+      "name": "unknown theme with custom colors clones Editing Suite",
+      "raw": {
+        "theme": "vaporwave",
+        "custom": {
+          "bg": "#101010",
+          "text": "#f0f0f0",
+          "accent": "#ffaa00",
+          "graph": "#ffaa00"
+        }
+      },
+      "expect": {
+        "enabled": true,
+        "selectedThemeId": "local",
+        "notices": [
+          "unknown-theme",
+          "custom-colors"
+        ],
+        "recovery": [
+          "theme"
+        ],
+        "basedOn": "editing-suite",
+        "base": "dark",
+        "colors": {
+          "background": "#101010",
+          "text": "#f0f0f0",
+          "accent": "#ffaa00",
+          "contribution": "#ffaa00"
+        },
+        "firstRun": false
+      }
+    }
+  ]
+}
