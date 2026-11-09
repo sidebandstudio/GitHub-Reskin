@@ -1,0 +1,187 @@
+{
+  "revision": "4.1",
+  "generatedSchemaCases": [
+    {
+      "id": "css-max-char",
+      "field": "css",
+      "characters": 32768,
+      "schemaValid": true
+    },
+    {
+      "id": "css-over-char",
+      "field": "css",
+      "characters": 32769,
+      "schemaValid": false
+    },
+    {
+      "id": "five-wallpaper-layers",
+      "schemaValid": false
+    },
+    {
+      "id": "nine-gradient-stops",
+      "schemaValid": false
+    },
+    {
+      "id": "every-font-role",
+      "schemaValid": true
+    },
+    {
+      "id": "all-syntax-diff-ansi",
+      "schemaValid": true
+    }
+  ],
+  "semanticRequirements": [
+    {
+      "id": "css-utf8",
+      "source": "a multibyte CSS comment fits maxLength but exceeds 32768 UTF-8 bytes",
+      "expect": "reject before parser"
+    },
+    {
+      "id": "image-byte-cap",
+      "decodedBytes": [
+        131072,
+        131073
+      ],
+      "expect": [
+        "accept if valid raster",
+        "reject"
+      ]
+    },
+    {
+      "id": "combined-images",
+      "decodedBytes": [
+        262144,
+        262145
+      ],
+      "expect": [
+        "accept if each <=131072",
+        "reject, counting repeated occurrences"
+      ]
+    },
+    {
+      "id": "image-pixel-cap",
+      "pixels": [
+        2097152,
+        2097153
+      ],
+      "expect": [
+        "accept within per-side bound",
+        "reject before decode"
+      ]
+    },
+    {
+      "id": "forged-image-size",
+      "fixture": "valid/embedded-images.reskin.json",
+      "mutation": "claim width 2 for actual 1px PNG",
+      "expect": "schema valid; decoder rejects mismatch"
+    },
+    {
+      "id": "magic-mismatch",
+      "mutation": "PNG bytes in data:image/jpeg",
+      "expect": "schema valid; header check rejects"
+    },
+    {
+      "id": "animation",
+      "source": "multi-frame GIF/WebP/APNG",
+      "expect": "first-frame-only decode, metadata stripped, re-encode static, limits rechecked"
+    },
+    {
+      "id": "document-byte-cap",
+      "utf8Bytes": [
+        524288,
+        524289
+      ],
+      "expect": [
+        "admit before semantic checks",
+        "reject before parsing"
+      ]
+    },
+    {
+      "id": "paste-byte-cap",
+      "utf8Bytes": [
+        786432,
+        786433
+      ],
+      "expect": [
+        "admit before extraction",
+        "reject before extraction"
+      ]
+    },
+    {
+      "id": "inflate-cap",
+      "expandedBytes": [
+        524288,
+        524289
+      ],
+      "expect": [
+        "admit if valid JSON",
+        "stop inflate and reject"
+      ]
+    },
+    {
+      "id": "compressed-cap",
+      "bytes": [
+        393216,
+        393217
+      ],
+      "expect": [
+        "admit before inflate",
+        "reject before inflate"
+      ]
+    },
+    {
+      "id": "storage-cap",
+      "allRecordBytes": [
+        8388608,
+        8388609
+      ],
+      "expect": [
+        "write if other limits pass",
+        "retain previous state, offer export/delete"
+      ]
+    },
+    {
+      "id": "preview-url",
+      "characters": [
+        8192,
+        8193
+      ],
+      "expect": [
+        "offer link if valid code",
+        "offer file, never truncate"
+      ]
+    },
+    {
+      "id": "old-v1-compatibility",
+      "expect": "every baseline valid/repair/roundtrip/example and twelve merged Classics remains schema valid; old canonical vectors unchanged"
+    },
+    {
+      "id": "css-fixed-point",
+      "expect": "parse/sanitize/generate/reparse same allowed AST and bytes; consent changes with canonical CSS hash or policy"
+    },
+    {
+      "id": "protected-ancestor",
+      "expect": "CSS cannot hide, recolor unreadably, reposition, intercept or spoof protected descendant; unknown scope suspends CSS"
+    },
+    {
+      "id": "full-calm",
+      "expect": "all graph/code/header/button colors persist, wallpaper/imagery/heavy effects/CSS drop, source untouched"
+    },
+    {
+      "id": "live-graph",
+      "expect": "real extension calendar/legend/overview use ramp in themed modes and Calm; native exceptions remain native"
+    },
+    {
+      "id": "aggregate-decoded-pixels",
+      "pixels": [
+        6291456,
+        6291457
+      ],
+      "expect": [
+        "admit if all per-image/encoded limits pass, including repeats",
+        "reject before decoding"
+      ]
+    }
+  ],
+  "reviewCases": "css-review-r41-cases.json"
+}

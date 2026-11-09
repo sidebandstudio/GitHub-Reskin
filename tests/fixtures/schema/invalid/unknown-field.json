@@ -7,5 +7,5 @@
     "text": "#27372d",
     "accent": "#446851"
   },
-  "css": "body{display:none}"
+  "script": "body{display:none}"
 }

@@ -1,6 +1,38 @@
 // Canonical portable source: recursively sorted keys (UTF-16 code unit order), array order kept,
-// UTF-8 without BOM. The compact form feeds share codes and hashes; exports use the same order.
+// UTF-8 without BOM, and admitted advanced CSS and gradientCss values in their canonical sanitized
+// form, so exports, share codes and hashes never carry an unreviewed spelling. The compact form
+// feeds share codes and hashes; exports use the same order.
+import { admitCss, admitGradientCss } from "./css/admission.js";
 import { validateTheme } from "./validate.js";
+
+const isObject = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
+
+// The theme with admitted CSS replaced by its canonical text. CSS that is not admitted is left
+// alone, for validation to report.
+function withCanonicalCss(theme) {
+  if (!isObject(theme)) return theme;
+  let out = theme;
+  if (typeof theme.css === "string") {
+    const admitted = admitCss(theme.css, "/css");
+    if (admitted.ok && admitted.value.css !== theme.css) out = { ...out, css: admitted.value.css };
+  }
+  if (isObject(theme.backgrounds)) {
+    let backgrounds = theme.backgrounds;
+    for (const target of ["page", "profileBanner", "header"]) {
+      const layers = backgrounds[target]?.layers;
+      if (!Array.isArray(layers) || !layers.some((layer) => isObject(layer?.gradientCss))) continue;
+      const next = layers.map((layer, index) => {
+        if (!isObject(layer?.gradientCss)) return layer;
+        const admitted = admitGradientCss(layer.gradientCss, `/backgrounds/${target}/layers/${index}/gradientCss`);
+        if (!admitted.ok) return layer;
+        return { gradientCss: { ...layer.gradientCss, value: admitted.value, ...(admitted.size !== null ? { size: admitted.size } : {}) } };
+      });
+      backgrounds = { ...backgrounds, [target]: { ...backgrounds[target], layers: next } };
+    }
+    if (backgrounds !== theme.backgrounds) out = { ...out, backgrounds };
+  }
+  return out;
+}
 
 const sorted = (value) => {
   if (Array.isArray(value)) return value.map(sorted);
@@ -16,7 +48,7 @@ export const utf8 = (text) => new TextEncoder().encode(text);
 
 /** Compact canonical JSON, no BOM, no trailing newline. */
 export function canonicalize(theme) {
-  return JSON.stringify(sorted(theme));
+  return JSON.stringify(sorted(withCanonicalCss(theme)));
 }
 
 /** A file-name stem: lowercase ASCII words joined by hyphens, or "theme". */
@@ -46,6 +78,6 @@ export function exportTheme(theme) {
   return {
     filename: `${fileStem(theme.name)}.reskin.json`,
     mime: "application/json",
-    bytes: utf8(`${JSON.stringify(sorted(theme), null, 2)}\n`),
+    bytes: utf8(`${JSON.stringify(sorted(withCanonicalCss(theme)), null, 2)}\n`),
   };
 }

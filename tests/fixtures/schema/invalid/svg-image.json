@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "name": "Moss and parchment",
+  "base": "light",
+  "colors": {
+    "background": "#f6f2e8",
+    "text": "#27372d",
+    "accent": "#446851"
+  },
+  "backgrounds": {
+    "page": {
+      "layers": [
+        {
+          "image": {
+            "data": "data:image/svg+xml;base64,PHN2Zz48L3N2Zz4=",
+            "width": 1,
+            "height": 1
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,14 +1,17 @@
 // resolveTheme: a pure, deterministic derivation of every renderer-1 color from portable source
 // and one immutable ModeSeed, followed by the frozen contrast repairs. See "Resolution and
 // contrast" in ARCHITECTURE.md for the initial values and the repair order implemented here.
-import { ISSUE_CODES, SYNTAX_ROLES } from "../contracts/index.js";
-import { canonicalize, validateTheme, EFFECT_PARAMETERS } from "../format/index.js";
+// Revision 4 adds the appearance record: the paired appearance colors are derived and repaired
+// here with the core set, under pair-matrix version 2, and never move a version 1 background.
+import { DIFF_ROLES, EXPANSION_VERSION, EXTENDED_SYNTAX_ROLES, ISSUE_CODES, SANITIZER_VERSION, SYNTAX_ROLES } from "../contracts/index.js";
+import { canonicalize, validateTheme, EFFECT_PARAMETERS, FONTS } from "../format/viewer.js";
+import { resolveAppearance } from "./appearance.js";
 import { BLACK, WHITE, bestInk, contrast, fit, luminance, mix } from "./color.js";
 import { deriveRamp, resolveRamp } from "./graph.js";
 import PAIRS from "./pairs.json" with { type: "json" };
 import { assertContext, pairMatrixProblems } from "./seed.js";
 import { sha256 } from "./sha256.js";
-import { ACCESSIBILITY_NOTICE, ANSI_ROLES, COLOR_PATHS, SEMANTIC_ROLES, TOKEN_KEYS } from "./vocabulary.js";
+import { ACCESSIBILITY_NOTICE, ANSI_ROLES, PAIR_PATHS, SEMANTIC_ROLES, TOKEN_KEYS } from "./vocabulary.js";
 
 export const PAIR_MATRIX = PAIRS;
 const SURFACES = ["canvas", "surface", "inset", "raised", "hover", "active"].map((k) => `/tokens/${k}`);
@@ -66,7 +69,7 @@ class Colors {
     return true;
   }
   repairs() {
-    return COLOR_PATHS.filter((p) => this.values.get(p) !== this.initial.get(p)).map((path) => ({
+    return PAIR_PATHS.filter((p) => this.values.get(p) !== this.initial.get(p)).map((path) => ({
       persistence: "render",
       path,
       before: this.initial.get(path),
@@ -130,9 +133,26 @@ function repair(colors, record) {
 }
 const repairId = (colors, id) => repair(colors, recordById(id));
 
-// One PairResult per foreground/background pair of a ColorSet, with unrounded ratios.
-function auditSet(set) {
+// Appearance records repair their foreground only. They never move a surface, so adding them
+// cannot change a version 1 color; when no ink passes every background, the first one decides.
+const isAppearance = (record) => record.id.startsWith("appearance.") || record.foreground.startsWith("/appearance/");
+function repairForeground(colors, record) {
+  const fg = colors.get(record.foreground);
+  const backgrounds = record.backgrounds.map((bg) => colors.get(bg));
+  if (backgrounds.every((bg) => contrast(fg, bg) >= record.minimum)) return false;
+  const fixed = fit(fg, backgrounds, record.minimum, colors.base) ?? fit(fg, backgrounds.slice(0, 1), record.minimum, colors.base);
+  return fixed ? colors.set(record.foreground, fixed, contrastReason(record)) : false;
+}
+const repairRecord = (colors, record) => (isAppearance(record) ? repairForeground(colors, record) : repair(colors, record));
+
+// One PairResult per foreground/background pair of a ColorSet and its appearance colors, with
+// unrounded ratios.
+function auditSet(set, appearanceColors) {
   const value = (path) => {
+    if (path.startsWith("/appearance/colors/")) {
+      const [group, field] = path.slice("/appearance/colors/".length).split("/");
+      return appearanceColors[group][field];
+    }
     const [, group, a, b] = path.split("/");
     return b === undefined ? set[group][a] : set[group][a][b];
   };
@@ -154,7 +174,10 @@ export function deriveColors(theme, seed) {
   const { base } = theme;
   const s = seed.colors;
   const ov = theme.overrides ?? {};
-  const syntaxOv = ov.syntax ?? {};
+  const code = theme.code ?? {};
+  const details = theme.details ?? {};
+  // code.syntax wins over the older overrides.syntax, role by role.
+  const syntaxOv = { ...(ov.syntax ?? {}), ...(code.syntax ?? {}) };
   const accessible = seed.family !== "standard";
   const colors = new Colors(base);
   const T = (key) => `/tokens/${key}`;
@@ -207,10 +230,10 @@ export function deriveColors(theme, seed) {
   for (const id of ["primaryHoverText", "primaryPressedText", "primaryIcon", "primaryCounterText", "primaryBorder"]) repairId(colors, id);
 
   // Selection, code, diff and component pairs.
-  init("selectionBackground", ov.selectionBackground ?? mix(canvas, tok("accent"), 0.3));
-  init("selectionText", ov.selectionText ?? tok("text"));
-  init("codeBackground", tok("inset"));
-  init("codeText", tok("text"));
+  init("selectionBackground", details.selection?.background ?? ov.selectionBackground ?? mix(canvas, tok("accent"), 0.3));
+  init("selectionText", details.selection?.text ?? ov.selectionText ?? tok("text"));
+  init("codeBackground", code.background ?? tok("inset"));
+  init("codeText", code.text ?? tok("text"));
   init("neutralBackground", tok("surface"));
   init("neutralText", tok("text"));
   for (const [line, word] of [["diffAdded", "diffWordAdded"], ["diffRemoved", "diffWordRemoved"]]) {
@@ -218,6 +241,16 @@ export function deriveColors(theme, seed) {
     init(`${word}Background`, mix(canvas, s.tokens[`${word}Background`], 0.55));
     init(`${line}Text`, s.tokens[`${line}Text`]);
     init(`${word}Text`, s.tokens[`${word}Text`]);
+  }
+  // Supplied code.diff roles replace the derived ones in standard modes. Accessibility families
+  // keep their own diff hues, as render repairs the source never sees.
+  for (const role of DIFF_ROLES) {
+    const supplied = code.diff?.[role];
+    if (supplied === undefined) continue;
+    const key = `diff${role[0].toUpperCase()}${role.slice(1)}`;
+    const derived = tok(key);
+    colors.init(T(key), supplied);
+    if (accessible) colors.set(T(key), derived, `${ACCESSIBILITY_NOTICE}.`);
   }
   init("tooltipBackground", tok("raised"));
   init("tooltipText", tok("text"));
@@ -260,14 +293,15 @@ export function deriveColors(theme, seed) {
     repairId(colors, `syntax.${role}`);
   }
   for (const role of ANSI_ROLES) {
-    colors.init(`/ansi/${role}`, s.ansi[role]);
+    colors.init(`/ansi/${role}`, code.ansi?.[role] ?? s.ansi[role]);
     repairId(colors, `ansi.${role}`);
   }
+  deriveAppearanceColors(theme, colors, accessible);
 
   // A later surface move can affect an earlier pair; repeat the matrix until nothing changes.
   for (let pass = 0; pass < MAX_PASSES; pass++) {
     let changed = false;
-    for (const record of records()) changed = repair(colors, record) || changed;
+    for (const record of records()) changed = repairRecord(colors, record) || changed;
     if (!changed) break;
   }
 
@@ -280,6 +314,75 @@ export function deriveColors(theme, seed) {
     colors.set(`/graph/${i}`, level, "Contribution colors adjusted so every level is visible and in order.");
   });
   return { colors, graph };
+}
+
+// Extended syntax defaults from resolved core roles (THEME-EXPANSION.md), so an older theme still
+// gets a complete palette. Diff-like roles follow the resolved diff inks.
+const SYNTAX_DEFAULTS = {
+  operator: "/syntax/keyword",
+  punctuation: "/syntax/variable",
+  constant: "/syntax/number",
+  tag: "/syntax/keyword",
+  attribute: "/syntax/type",
+  regex: "/syntax/string",
+  escape: "/syntax/number",
+  invalid: "/tokens/diffRemovedText",
+  inserted: "/tokens/diffAddedText",
+  deleted: "/tokens/diffRemovedText",
+  markupHeading: "/tokens/codeText",
+  markupEmphasis: "/tokens/codeText",
+  markupLink: "/tokens/link",
+  markupQuote: "/syntax/comment",
+  markupList: "/syntax/keyword",
+};
+const DIFF_LIKE = new Set(["invalid", "inserted", "deleted"]);
+
+// The paired appearance colors: extended syntax, page backing, real header, scrollbar, labels,
+// topics and the graph cell boundary. Supplied values first, then derived ones; each is repaired
+// against its pair without moving any background.
+function deriveAppearanceColors(theme, colors, accessible) {
+  const A = (path) => `/appearance/colors/${path}`;
+  const tok = (key) => colors.get(`/tokens/${key}`);
+  const syntaxOv = { ...(theme.overrides?.syntax ?? {}), ...(theme.code?.syntax ?? {}) };
+  for (const role of EXTENDED_SYNTAX_ROLES) {
+    const derived = colors.get(SYNTAX_DEFAULTS[role]);
+    const supplied = syntaxOv[role];
+    colors.init(A(`syntax/${role}`), supplied ?? derived);
+    if (supplied && accessible && DIFF_LIKE.has(role)) colors.set(A(`syntax/${role}`), derived, `${ACCESSIBILITY_NOTICE}.`);
+    repairForeground(colors, recordById(`syntax.${role}`));
+  }
+  const d = theme.details ?? {};
+  const backgrounds = theme.backgrounds ?? {};
+  colors.init(A("page/background"), backgrounds.page?.color ?? tok("canvas"));
+  colors.init(A("header/background"), backgrounds.header?.color ?? tok("inset"));
+  colors.init(A("header/text"), d.headerText ?? tok("text"));
+  colors.init(A("scrollbar/track"), d.scrollbar?.track ?? tok("inset"));
+  colors.init(A("scrollbar/thumb"), d.scrollbar?.thumb ?? mix(colors.get(A("scrollbar/track")), tok("text"), 0.45));
+  for (const pill of ["labels", "topics"]) {
+    const p = d[pill] ?? {};
+    const fill = p.fill ?? "tinted";
+    const background = fill === "solid" ? tok("accentEmphasis") : fill === "outline" ? tok("canvas") : tok("accentMuted");
+    const text = fill === "solid" ? tok("emphasisText") : tok("labelText");
+    colors.init(A(`${pill}/background`), p.background ?? background);
+    colors.init(A(`${pill}/text`), p.text ?? text);
+    colors.init(A(`${pill}/border`), p.border ?? tok("labelBorder"));
+  }
+  colors.init(A("graph/cellBoundary"), theme.contributions?.cellBoundary ?? tok("controlBorder"));
+  for (const record of records()) if (record.id.startsWith("appearance.")) repairForeground(colors, record);
+}
+
+function appearanceColors(colors) {
+  const A = (path) => colors.get(`/appearance/colors/${path}`);
+  const pill = (name) => ({ background: A(`${name}/background`), text: A(`${name}/text`), border: A(`${name}/border`) });
+  return {
+    syntax: Object.fromEntries(EXTENDED_SYNTAX_ROLES.map((role) => [role, A(`syntax/${role}`)])),
+    page: { background: A("page/background") },
+    header: { background: A("header/background"), text: A("header/text") },
+    scrollbar: { thumb: A("scrollbar/thumb"), track: A("scrollbar/track") },
+    labels: pill("labels"),
+    topics: pill("topics"),
+    graph: { cellBoundary: A("graph/cellBoundary") },
+  };
 }
 
 function colorSet(colors) {
@@ -360,6 +463,8 @@ export function resolveTheme(theme, context) {
   if (context.forcedColors || context.policy !== "themed") {
     return deepFreeze({
       rendererVersion: 1,
+      expansionVersion: EXPANSION_VERSION,
+      sanitizerVersion: SANITIZER_VERSION,
       sourceHash: hash,
       seedId: seed?.id ?? null,
       seedHash: seed?.sourceHash ?? null,
@@ -374,6 +479,7 @@ export function resolveTheme(theme, context) {
       effects: {},
       flavor: { enabled: false, locale: "en", slots: {} },
       motionAllowed: false,
+      appearance: null,
       repairs: [],
       pairAudit: [],
     });
@@ -384,25 +490,33 @@ export function resolveTheme(theme, context) {
   assertBasePolarity(theme);
   const { colors } = deriveColors(theme, seed);
   const set = colorSet(colors);
+  const paired = appearanceColors(colors);
+  const appearance = { colors: paired, ...resolveAppearance(theme, set.tokens) };
+  // The legacy single font mirrors the effective heading font when it has a bundled file.
+  const heading = appearance.fonts.heading;
+  const font = heading.source === "bundled" && FONTS.some((f) => f.id === heading.id) ? heading.id : "system";
   return deepFreeze({
     ...set,
     rendererVersion: 1,
+    expansionVersion: EXPANSION_VERSION,
+    sanitizerVersion: SANITIZER_VERSION,
     sourceHash: hash,
     seedId: seed.id,
     seedHash: seed.sourceHash,
     base: theme.base,
     policy: "themed",
-    font: theme.fonts?.accent ?? "system",
+    font,
     effects: resolvedEffects(theme),
     flavor: resolvedFlavor(theme),
     motionAllowed: !context.reducedMotion,
+    appearance: { colors: appearance.colors, paints: appearance.paints, shape: appearance.shape, fonts: appearance.fonts, typography: appearance.typography, graph: appearance.graph, details: appearance.details, css: appearance.css, notes: appearance.notes },
     repairs: colors.repairs(),
-    pairAudit: auditSet(set),
+    pairAudit: auditSet(set, paired),
   });
 }
 
 /** Every PairResult for a themed resolution, one per foreground/background pair, unrounded. */
 export function auditPairs(resolved) {
   if (!resolved || resolved.policy !== "themed") throw new TypeError("auditPairs takes a themed ResolvedTheme; native policies have no colors to audit");
-  return deepFreeze(auditSet(resolved));
+  return deepFreeze(auditSet(resolved, resolved.appearance.colors));
 }

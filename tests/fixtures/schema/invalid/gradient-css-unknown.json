@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "name": "Art additions",
+  "base": "light",
+  "colors": {
+    "background": "#f6f2e8",
+    "text": "#27372d",
+    "accent": "#446851"
+  },
+  "fonts": {
+    "heading": "roboto-condensed",
+    "body": "barlow"
+  },
+  "shape": {
+    "avatar": {
+      "shape": "arch"
+    }
+  },
+  "contributions": {
+    "levels": [
+      "#eeeeee",
+      "#bbbbbb",
+      "#888888",
+      "#555555",
+      "#222222"
+    ],
+    "cellStyle": "glow",
+    "cellRadius": 2,
+    "cellBoundary": "#555555",
+    "glow": {
+      "radius": 4,
+      "opacity": 0.4,
+      "levels": [
+        4
+      ],
+      "color": "#71e0ff"
+    }
+  },
+  "backgrounds": {
+    "page": {
+      "layers": [
+        {
+          "gradientCss": {
+            "value": "repeating-linear-gradient(135deg,transparent 0 92px,#6d3da52b 92px 110px,transparent 110px 160px)",
+            "size": "100% 100vh",
+            "url": "https://leak.invalid/x"
+          }
+        }
+      ]
+    }
+  }
+}
