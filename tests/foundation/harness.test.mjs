@@ -59,6 +59,8 @@ test("every check has one owner and the module the revision 3 routing table name
     "lint-chrome": ["C1", "scripts/check.mjs"], "lint-firefox": ["C1", "scripts/check.mjs"],
     artifacts: ["C1", "scripts/verify-artifacts.mjs"], repro: ["C1", "scripts/verify-repro.mjs"],
     schema: ["C2", "packages/format/checks.mjs"], prompt: ["C2", "packages/format/checks.mjs"],
+    // Revision 4 adds check:css to the same static format route.
+    css: ["C2", "packages/format/checks.mjs"],
     themes: ["C2", "packages/format/checks.mjs"], "classic-themes": ["C2", "packages/format/checks.mjs"],
     contrast: ["C2", "packages/engine/checks.mjs"],
     primer: ["C3", "packages/primer/checks.mjs"], "slot-contracts": ["C3", "packages/primer/checks.mjs"],

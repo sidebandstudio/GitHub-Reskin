@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { EFFECTS, FONTS, LIMITS, registryProblems } from "../../packages/appearance/index.js";
 import { fontAudit, templateAudit } from "../../packages/appearance/audit.mjs";
+import { FONT_IDS } from "../../packages/contracts/index.js";
 
 const ROOT = new URL("../../", import.meta.url).pathname;
 const X = JSON.parse(readFileSync(`${ROOT}packages/format/theme-v1.schema.json`, "utf8"))["x-reskin"];
@@ -15,10 +16,14 @@ test("registry matches the contracts and the schema's effect and font registries
     assert.deepEqual(EFFECTS[id].colors.map((role) => `tokens.${role}`), effect.resolvedColorSources, id);
     assert.equal(EFFECTS[id].motion, /once on explicit selection/.test(effect.draws), id);
   }
+  // The schema lists every family a theme may name; only the bundled ones (FONT_IDS) ship files
+  // in this increment, and the rest stay deferred until their files land.
+  const bundled = new Set(FONT_IDS);
   assert.deepEqual(
     FONTS.map(({ id, family, weight, minimumAccentPx }) => ({ id, family, weight, minimumAccentPx })),
-    X.fonts.map(({ id, family, weight, minimumAccentPx }) => ({ id, family, weight, minimumAccentPx })),
+    X.fonts.filter(({ id }) => bundled.has(id)).map(({ id, family, weight, minimumAccentPx }) => ({ id, family, weight, minimumAccentPx })),
   );
+  assert.deepEqual(FONTS.map(({ id }) => id), FONT_IDS.filter((id) => id !== "system"));
 });
 
 test("limits match the schema's global effect limits", () => {

@@ -21,7 +21,7 @@ const DEFAULT_ROOT = resolve(HERE, "../..");
 const SCOPES = ["engine", "primer"];
 const SEED_NAMES = ["standard-dark", "standard-light", "colorblind-dark", "tritanopia-light"];
 const MODE_INDEX = "vendor/primer/modes.json";
-const FIXTURE_DIRS = ["tests/fixtures/roundtrip", "tests/fixtures/schema/repair", "tests/fixtures/schema/valid"];
+const FIXTURE_DIRS = ["tests/fixtures/roundtrip", "tests/fixtures/schema/repair", "tests/fixtures/schema/valid", "tests/fixtures/choom"];
 const readJson = (path) => JSON.parse(readFileSync(path, "utf8"));
 const context = (seed) => ({ seed, policy: "themed", reducedMotion: false, forcedColors: false });
 

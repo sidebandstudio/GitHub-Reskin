@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "name": "Moss and parchment",
+  "base": "light",
+  "colors": {
+    "background": "#f6f2e8",
+    "text": "#27372d",
+    "accent": "#446851"
+  },
+  "fonts": {
+    "body": "orbitron"
+  }
+}

@@ -1,30 +1,68 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { EFFECT_IDS, FLAVOR_SLOT_IDS, FONT_IDS } from "../../packages/contracts/index.js";
-import { makeAiPrompt, MAX_IDEA_LENGTH, parseImport, validateTheme } from "../../packages/format/index.js";
-import { EFFECT_PARAMETERS } from "../../packages/format/schema-registry.js";
-import { PROMPT_TEMPLATE_PATH, promptModule } from "../../scripts/generate-prompt.mjs";
+import { ANSI_ROLES, DIFF_ROLES, EFFECT_IDS, FLAVOR_SLOT_IDS, FONT_INVENTORY, THEME_SYNTAX_ROLES } from "../../packages/contracts/index.js";
+import { makeAiPrompt, MAX_IDEA_LENGTH, parseImport, sanitizeCss, validateTheme } from "../../packages/format/index.js";
+import { EFFECT_PARAMETERS, FONT_ROLES } from "../../packages/format/schema-registry.js";
+import { EXAMPLE_PATH, PROMPT_TEMPLATE_PATH, promptModule, promptText } from "../../scripts/generate-prompt.mjs";
+
+const ROOT = new URL("../../", import.meta.url).pathname;
+// The fonts this increment renders as requested: bundled, native-stack and system faces.
+const offeredFonts = (role) => FONT_ROLES.filter((font) => font.roles.includes(role) && font.source !== "deferred").map((font) => font.id);
+const example = () => /Here is a valid rich example with no images:\n(\{.+\})\n\nMy idea/s.exec(makeAiPrompt())[1];
 
 test("the checked-in prompt is generated from the current schema", () => {
   assert.equal(readFileSync(PROMPT_TEMPLATE_PATH, "utf8"), promptModule());
 });
 
-test("the prompt names every font, effect and slot ID with each effect's default", () => {
-  const prompt = makeAiPrompt();
-  for (const id of [...FONT_IDS, ...EFFECT_IDS, ...FLAVOR_SLOT_IDS]) assert.ok(prompt.includes(id), id);
-  for (const [id, params] of Object.entries(EFFECT_PARAMETERS)) {
-    for (const [name, spec] of Object.entries(params)) assert.ok(prompt.includes(`"${name}": `) && prompt.includes(`default ${typeof spec.default === "string" ? `"${spec.default}"` : spec.default}`), `${id}.${name}`);
-  }
-  assert.ok(prompt.length < 4500);
-  assert.doesNotMatch(prompt, /https?:|www\.|<|>/);
-  assert.match(prompt, /exactly one ```json code block/);
+test("generated from the registries, the prompt is exactly AI-PROMPT.md's contract text", () => {
+  assert.equal(promptText(), readFileSync(`${ROOT}tests/fixtures/prompt/ai-prompt-r41.txt`, "utf8"));
+  assert.ok(Buffer.byteLength(makeAiPrompt("x".repeat(MAX_IDEA_LENGTH))) <= 16384);
 });
 
-test("the prompt's example is a valid theme a fenced reply imports", () => {
-  const example = /```json\n(.+)\n```\n\nMy idea/s.exec(makeAiPrompt())[1];
-  assert.ok(validateTheme(JSON.parse(example)).ok);
-  assert.ok(parseImport(`Sure! Here is your theme:\n\n\`\`\`json\n${example}\n\`\`\`\n\nEnjoy.`, "text").ok);
+test("the prompt names every offered font, syntax, ANSI, diff, effect and slot ID with each effect's default", () => {
+  const prompt = makeAiPrompt();
+  for (const id of [...offeredFonts("heading"), ...offeredFonts("body"), ...THEME_SYNTAX_ROLES, ...ANSI_ROLES, ...DIFF_ROLES, ...EFFECT_IDS, ...FLAVOR_SLOT_IDS]) assert.ok(prompt.includes(id), id);
+  for (const [id, params] of Object.entries(EFFECT_PARAMETERS)) {
+    for (const [name, spec] of Object.entries(params)) assert.ok(prompt.includes(`${name}: `) && prompt.includes(`default ${spec.default}`), `${id}.${name}`);
+  }
+  assert.doesNotMatch(prompt, /https?:|www\./);
+  assert.match(prompt, /exactly one JSON object in one json code block/);
+  assert.match(prompt, /Never use url\(\), @import, @font-face/);
+  assert.match(prompt, /no images\/URLs|Do not include image layers/);
+});
+
+test("the prompt's rich example is the executable fixture and a fenced reply imports it", () => {
+  const text = example();
+  assert.equal(text, JSON.stringify(JSON.parse(readFileSync(EXAMPLE_PATH, "utf8"))));
+  const theme = JSON.parse(text);
+  assert.ok(validateTheme(theme).ok);
+  assert.ok(sanitizeCss(theme.css).ok);
+  assert.doesNotMatch(text, /data:image|base64|url\(/);
+  const reply = parseImport(`Sure! Here is your theme:\n\n\`\`\`json\n${text}\n\`\`\`\n\nEnjoy.`, "text");
+  assert.ok(reply.ok, JSON.stringify(reply.issues));
+  assert.deepEqual(reply.notes.filter((n) => n.severity === "warning"), []);
+});
+
+test("c2b r2 blocker 4: the prompt offers only this increment's fonts and at-rules and names nothing deferred", () => {
+  const prompt = makeAiPrompt();
+  const heading = /Heading IDs: ([^.]+)\./.exec(prompt)[1].split(", ");
+  const body = /Body IDs: ([^.]+)\./.exec(prompt)[1].split(", ");
+  assert.deepEqual(heading, offeredFonts("heading"));
+  assert.deepEqual(body, ["system"]);
+  assert.ok(heading.includes("roboto-condensed"), "the native condensed stack stays offered");
+  assert.deepEqual([...heading, ...body].filter((id) => FONT_INVENTORY.deferred.includes(id)), []);
+  // Every offered font resolves as requested, with no deferred-font warning.
+  const minimal = { schemaVersion: 1, name: "Font", base: "dark", colors: { background: "#111111", text: "#ffffff", accent: "#ffcc00" } };
+  for (const [role, ids] of [["heading", heading], ["body", body]]) {
+    for (const id of ids) assert.deepEqual(parseImport(JSON.stringify({ ...minimal, fonts: { [role]: id } }), "text").notes, [], `${role} ${id}`);
+  }
+  assert.ok(!FONT_INVENTORY.deferred.some((id) => Object.values(JSON.parse(example()).fonts).includes(id)));
+  // @media is the only at-rule offered; @supports is neither offered nor named.
+  assert.doesNotMatch(prompt, /supports/i);
+  assert.match(prompt, /The only at-rule is @media, with prefers-reduced-motion, hover, pointer, min-width, max-width tests joined by and, widths <=10000px; any other at-rule is rejected\./);
+  assert.equal(sanitizeCss("@supports (color:red){.AppHeader{border-color:var(--reskin-accent)}}").ok, false);
+  assert.ok(sanitizeCss("@media (prefers-reduced-motion:reduce) and (min-width:600px){.AppHeader{border-color:var(--reskin-accent)}}").ok);
 });
 
 test("the idea is plain, bounded text and never a template", () => {

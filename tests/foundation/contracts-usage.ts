@@ -8,6 +8,7 @@ import {
   type CheckModule,
   type CheckRunner,
   type ColorPath,
+  type PairPath,
   type CommitAction,
   type EditorAction,
   type EditorState,
@@ -176,13 +177,15 @@ export function paint(resolved: ResolvedTheme): string[] {
 
 export function persisted(repair: Repair): string {
   if (repair.persistence === "source") return repair.path;
-  const path: ColorPath = repair.path;
+  const path: PairPath = repair.path;
   return `${path} ${repair.before} -> ${repair.after}`;
 }
 
 declare const themed: ThemedResolved;
 export const forced: NativeResolved = {
   rendererVersion: 1,
+  expansionVersion: 1,
+  sanitizerVersion: 1,
   sourceHash: "0".repeat(64),
   seedId: null,
   seedHash: null,
@@ -197,6 +200,7 @@ export const forced: NativeResolved = {
   effects: {},
   flavor: { enabled: false, locale: "en", slots: {} },
   motionAllowed: false,
+  appearance: null,
   repairs: [],
   pairAudit: [],
 };
@@ -241,7 +245,9 @@ export const boot: BootRecord = {
   settingsRevision: 0,
   rendererVersion: 1,
   engineVersion: 1,
-  pairMatrixVersion: 1,
+  pairMatrixVersion: 2,
+  expansionVersion: 1,
+  sanitizerVersion: 1,
   catalogHash: "0".repeat(64),
   selectedSourceHash: themed.sourceHash,
   validatedTokenSnapshot: themed,
@@ -264,7 +270,7 @@ export async function commitWith(host: UiHost): Promise<string> {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Editor: exactly nine actions and one-change undo.
+// Editor: the nine original actions, the Revision 4 group edits and one-change undo.
 
 export const edits: EditorAction[] = [
   { type: "setColor", role: "accent", value: "#ff0000" },
@@ -276,10 +282,40 @@ export const edits: EditorAction[] = [
   { type: "undo" },
   { type: "reset" },
   { type: "loadImport", theme: rich },
+  { type: "setFont", font: "roboto-condensed", role: "heading" },
+  { type: "setBackground", target: "page", background: { color: "#0a0a17", layers: [{ pattern: { kind: "grid", color: "#00f0ff" } }] } },
+  { type: "setShape", shape: { corners: { style: "bevel", radius: 12 } } },
+  { type: "setTypography", typography: { uppercaseHeadings: true } },
+  { type: "setCode", code: { syntax: { operator: "#fcee0a" } } },
+  { type: "setDetails", details: { scrollbar: { width: "thin" } } },
+  { type: "setGraphStyle", style: { cellStyle: "glow", glow: { radius: 9 } } },
+  { type: "setGraphLevels", levels: null },
 ];
 export const registry = exact<
-  Equal<EditorAction["type"], "setColor" | "setBase" | "setFont" | "toggleEffect" | "setFlavorEnabled" | "setFlavorSlot" | "undo" | "reset" | "loadImport">
+  Equal<
+    EditorAction["type"],
+    | "setColor"
+    | "setBase"
+    | "setFont"
+    | "toggleEffect"
+    | "setFlavorEnabled"
+    | "setFlavorSlot"
+    | "undo"
+    | "reset"
+    | "loadImport"
+    | "setBackground"
+    | "setImage"
+    | "setShape"
+    | "setTypography"
+    | "setCode"
+    | "setDetails"
+    | "setGraphStyle"
+    | "setGraphLevels"
+    | "setCss"
+  >
 >();
+// @ts-expect-error a body font must be one of the readable families.
+export const displayBody: ThemeV1 = { ...minimal, fonts: { body: "rajdhani" } };
 export const registryValues: readonly EditorAction["type"][] = EDITOR_ACTION_TYPES;
 // @ts-expect-error only background, text and accent are edited directly.
 export const linkEdit: EditorAction = { type: "setColor", role: "link", value: "#ff0000" };

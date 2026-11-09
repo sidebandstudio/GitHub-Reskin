@@ -2,14 +2,19 @@
   "valid": [
     "valid/minimal-light.reskin.json",
     "valid/choom-circuit.reskin.json",
-    "valid/effect-defaults.reskin.json"
+    "valid/effect-defaults.reskin.json",
+    "valid/legacy-rich-v1.reskin.json",
+    "valid/embedded-images.reskin.json",
+    "valid/advanced-css.reskin.json",
+    "valid/ai-rich.reskin.json",
+    "valid/art-additions.reskin.json"
   ],
   "invalid": [
     {
       "file": "invalid/unknown-field.json",
       "stage": "schema",
-      "path": "/css",
-      "reason": "Unknown key, never interpreted as CSS"
+      "path": "/script",
+      "reason": "Unknown executable field remains rejected; css is now a supported advanced field"
     },
     {
       "file": "invalid/unsupported-version.json",
@@ -76,6 +81,120 @@
       "stage": "schema",
       "path": "/overrides/primaryHoverBackground",
       "reason": "Derived renderer states are not public override fields"
+    },
+    {
+      "file": "invalid/remote-image.json",
+      "stage": "schema",
+      "path": "/backgrounds/page/layers/0/image/data",
+      "reason": "Closed object, bundled role or bounded value required by Revision 4"
+    },
+    {
+      "file": "invalid/svg-image.json",
+      "stage": "schema",
+      "path": "/backgrounds/page/layers/0/image/data",
+      "reason": "Closed object, bundled role or bounded value required by Revision 4"
+    },
+    {
+      "file": "invalid/oversize-dimensions.json",
+      "stage": "schema",
+      "path": "/backgrounds/page/layers/0/image/width",
+      "reason": "Closed object, bundled role or bounded value required by Revision 4"
+    },
+    {
+      "file": "invalid/unknown-background.json",
+      "stage": "schema",
+      "path": "/backgrounds/remoteUrl",
+      "reason": "Closed object, bundled role or bounded value required by Revision 4"
+    },
+    {
+      "file": "invalid/unbounded-shadow.json",
+      "stage": "schema",
+      "path": "/shape/shadows/blur",
+      "reason": "Closed object, bundled role or bounded value required by Revision 4"
+    },
+    {
+      "file": "invalid/unknown-shape.json",
+      "stage": "schema",
+      "path": "/shape/avatar/shape",
+      "reason": "Closed object, bundled role or bounded value required by Revision 4"
+    },
+    {
+      "file": "invalid/unbundled-body-font.json",
+      "stage": "schema",
+      "path": "/fonts/body",
+      "reason": "Closed object, bundled role or bounded value required by Revision 4"
+    },
+    {
+      "file": "invalid/unbounded-tracking.json",
+      "stage": "schema",
+      "path": "/typography/headingLetterSpacing",
+      "reason": "Closed object, bundled role or bounded value required by Revision 4"
+    },
+    {
+      "file": "invalid/unknown-syntax-role.json",
+      "stage": "schema",
+      "path": "/code/syntax/customToken",
+      "reason": "Closed object, bundled role or bounded value required by Revision 4"
+    },
+    {
+      "file": "invalid/unknown-diff-role.json",
+      "stage": "schema",
+      "path": "/code/diff/lineCount",
+      "reason": "Closed object, bundled role or bounded value required by Revision 4"
+    },
+    {
+      "file": "invalid/unknown-graph-style.json",
+      "stage": "schema",
+      "path": "/contributions/cellStyle",
+      "reason": "Closed object, bundled role or bounded value required by Revision 4"
+    },
+    {
+      "file": "invalid/unbounded-graph-glow.json",
+      "stage": "schema",
+      "path": "/contributions/glow/radius",
+      "reason": "Closed object, bundled role or bounded value required by Revision 4"
+    },
+    {
+      "file": "invalid/unknown-details.json",
+      "stage": "schema",
+      "path": "/details/cursor",
+      "reason": "Closed object, bundled role or bounded value required by Revision 4"
+    },
+    {
+      "file": "invalid/graph-radius-over.json",
+      "stage": "schema",
+      "path": "/contributions/cellRadius",
+      "reason": "Cell radius exceeds 2px"
+    },
+    {
+      "file": "invalid/graph-glow-level-zero.json",
+      "stage": "schema",
+      "path": "/contributions/glow/levels",
+      "reason": "Glow level 0 is forbidden"
+    },
+    {
+      "file": "invalid/graph-glow-level-duplicate.json",
+      "stage": "schema",
+      "path": "/contributions/glow/levels",
+      "reason": "Glow levels are unique"
+    },
+    {
+      "file": "invalid/graph-unknown-art-key.json",
+      "stage": "schema",
+      "path": "/contributions/diamondScale",
+      "reason": "Graph additions remain closed"
+    },
+    {
+      "file": "invalid/gradient-css-value-over.json",
+      "stage": "schema",
+      "path": "/backgrounds/page/layers/0/gradientCss/value",
+      "reason": "Single gradient value exceeds 4096 characters; UTF-8 and AST bounds also apply"
+    },
+    {
+      "file": "invalid/gradient-css-unknown.json",
+      "stage": "schema",
+      "path": "/backgrounds/page/layers/0/gradientCss/url",
+      "reason": "Gradient layer is closed; URLs/resources remain forbidden"
     }
   ],
   "repair": [
@@ -126,5 +245,9 @@
     "seeds/colorblind-dark.json",
     "seeds/tritanopia-light.json"
   ],
-  "pairMatrix": "contracts/pairs.json"
+  "pairMatrix": "contracts/pairs.json",
+  "cssPolicyCases": "css-policy-cases.json",
+  "expansionCases": "expansion-cases.json",
+  "revision": "4.1",
+  "cssReviewCases": "css-review-r41-cases.json"
 }

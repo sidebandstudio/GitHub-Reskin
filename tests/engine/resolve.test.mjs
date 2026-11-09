@@ -3,17 +3,19 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { canonicalize, EFFECT_PARAMETERS } from "../../packages/format/index.js";
 import { ISSUE_CODES } from "../../packages/contracts/index.js";
-import { ACCESSIBILITY_NOTICE, auditPairs, basePolarityIssue, COLOR_PATHS, contrast, resolveTheme, sha256, TOKEN_KEYS } from "../../packages/engine/index.js";
+import { ACCESSIBILITY_NOTICE, auditPairs, basePolarityIssue, contrast, PAIR_MATRIX, PAIR_PATHS, resolveTheme, sha256, TOKEN_KEYS } from "../../packages/engine/index.js";
 
 const TESTS = new URL("../", import.meta.url).pathname;
 const json = (path) => JSON.parse(readFileSync(path, "utf8"));
 const seed = (name) => json(`${TESTS}fixtures/seeds/${name}.json`);
 const [darkSeed, lightSeed, colorblindSeed, tritanopiaSeed] = ["standard-dark", "standard-light", "colorblind-dark", "tritanopia-light"].map(seed);
 const themed = (s, extra = {}) => ({ seed: s, policy: "themed", reducedMotion: false, forcedColors: false, ...extra });
-const rich = json(`${TESTS}fixtures/schema/valid/choom-circuit.reskin.json`);
+// The previous rich example, kept as a compatibility input: its core resolution must not change.
+const rich = json(`${TESTS}fixtures/schema/valid/legacy-rich-v1.reskin.json`);
+const AUDITS = PAIR_MATRIX.records.reduce((n, r) => n + r.backgrounds.length, 0);
 const minimal = json(`${TESTS}fixtures/schema/valid/minimal-light.reskin.json`);
 
-const THEMED_KEYS = ["tokens", "semantics", "syntax", "ansi", "graph", "rendererVersion", "sourceHash", "seedId", "seedHash", "base", "policy", "font", "effects", "flavor", "motionAllowed", "repairs", "pairAudit"];
+const THEMED_KEYS = ["tokens", "semantics", "syntax", "ansi", "graph", "rendererVersion", "expansionVersion", "sanitizerVersion", "sourceHash", "seedId", "seedHash", "base", "policy", "font", "effects", "flavor", "motionAllowed", "appearance", "repairs", "pairAudit"];
 
 test("a themed resolution has exactly the frozen keys, every color and a passing audit", () => {
   const resolved = resolveTheme(rich, themed(darkSeed));
@@ -26,7 +28,9 @@ test("a themed resolution has exactly the frozen keys, every color and a passing
   assert.equal(resolved.seedId, darkSeed.id);
   assert.equal(resolved.seedHash, darkSeed.sourceHash);
   assert.equal(resolved.sourceHash, sha256(new TextEncoder().encode(canonicalize(rich))));
-  assert.equal(resolved.pairAudit.length, 287);
+  assert.equal(resolved.pairAudit.length, AUDITS);
+  assert.equal(AUDITS, 387);
+  assert.deepEqual([resolved.expansionVersion, resolved.sanitizerVersion], [1, 1]);
   assert.ok(resolved.pairAudit.every((r) => r.passed && r.ratio >= r.minimum));
   assert.deepEqual(auditPairs(resolved), resolved.pairAudit);
   assert.ok(Object.isFrozen(resolved) && Object.isFrozen(resolved.tokens) && Object.isFrozen(resolved.pairAudit[0]));
@@ -73,6 +77,8 @@ test("native policies and forced colors return the null branch without touching 
     const resolved = resolveTheme(rich, context);
     assert.deepEqual(resolved, {
       rendererVersion: 1,
+      expansionVersion: 1,
+      sanitizerVersion: 1,
       sourceHash: sha256(new TextEncoder().encode(before)),
       seedId: context.seed?.id ?? null,
       seedHash: context.seed?.sourceHash ?? null,
@@ -87,6 +93,7 @@ test("native policies and forced colors return the null branch without touching 
       effects: {},
       flavor: { enabled: false, locale: "en", slots: {} },
       motionAllowed: false,
+      appearance: null,
       repairs: [],
       pairAudit: [],
     });
@@ -103,6 +110,7 @@ test("invalid contexts and themes fail before rendering", () => {
   assert.throws(() => resolveTheme(rich, { seed: darkSeed, policy: "themed" }), /booleans/);
   assert.throws(() => resolveTheme(rich, themed({ ...darkSeed, colors: { ...darkSeed.colors, graph: [] } })), /ModeSeed/);
   assert.throws(() => resolveTheme({ ...rich, css: "x" }, themed(darkSeed)), /valid theme/);
+  assert.throws(() => resolveTheme({ ...rich, css: ".AppHeader{background-image:url(https://leak.invalid/x)}" }, themed(darkSeed)), /valid theme/);
 });
 
 test("inputs stay unchanged and resolution is deterministic", () => {
@@ -121,7 +129,7 @@ test("render repairs carry their before/after and never claim to be source repai
   const text = resolved.repairs.find((r) => r.path === "/tokens/text");
   assert.deepEqual([text.persistence, text.before, text.after === resolved.tokens.text], ["render", "#f6f2e8", true]);
   assert.ok(contrast(resolved.tokens.text, resolved.tokens.canvas) >= 4.5);
-  assert.ok(resolved.repairs.every((r) => r.persistence === "render" && COLOR_PATHS.includes(r.path) && r.before !== r.after && r.reason));
+  assert.ok(resolved.repairs.every((r) => r.persistence === "render" && PAIR_PATHS.includes(r.path) && r.before !== r.after && r.reason));
   assert.ok(resolved.pairAudit.every((r) => r.passed));
 });
 

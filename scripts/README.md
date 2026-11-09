@@ -23,7 +23,7 @@ no network requests.
 `check-routes.mjs` to one module, which exports the common runner:
 
 ```js
-// packages/format/checks.mjs (C2), which serves schema, prompt, themes and classic-themes
+// packages/format/checks.mjs (C2), which serves schema, prompt, css, themes and classic-themes
 export async function run({ command, args, root, outDir }) {
   if (command === "schema") {
     // ... run the checks ...
@@ -52,7 +52,7 @@ export async function run({ command, args, root, outDir }) {
 | --- | --- | --- |
 | `test`, `harness`, `toolchain`, `lint-chrome`, `lint-firefox` | C1 | `scripts/check.mjs` (local) |
 | `artifacts`, `repro` | C1 | `scripts/verify-artifacts.mjs`, `scripts/verify-repro.mjs` |
-| `schema`, `prompt`, `themes`, `classic-themes` | C2 | `packages/format/checks.mjs` |
+| `schema`, `prompt`, `css`, `themes`, `classic-themes` | C2 | `packages/format/checks.mjs` |
 | `contrast`, every scope (`--scope=engine`, `--scope=primer`, none) | C2 | `packages/engine/checks.mjs` |
 | `primer`, `slot-contracts` | C3 | `packages/primer/checks.mjs` |
 | `migrations`, `boot` | C4 | `packages/settings/checks.mjs` |
