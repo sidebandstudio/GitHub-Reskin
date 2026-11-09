@@ -1,0 +1,12 @@
+{
+  "name": "@github-reskin/appearance",
+  "version": "1.0.0",
+  "private": true,
+  "description": "GitHub Reskin effects, bundled accent fonts and owned decoration nodes.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./index.js"
+  },
+  "sideEffects": false
+}

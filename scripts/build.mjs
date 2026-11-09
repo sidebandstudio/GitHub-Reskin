@@ -206,10 +206,17 @@ async function buildExtension(browser, { outDir, releaseConfig, testFixture }) {
 }
 
 // The userscript builder named in release.config.json exports build(), which returns the script.
-async function buildUserscript({ outDir, releaseConfig }) {
+async function buildUserscript(options) {
+  return buildUserscriptFrom(ROOT, options);
+}
+
+export async function buildUserscriptFrom(root, { outDir, releaseConfig }) {
   const { builder, output } = releaseConfig.userscript;
-  const { build: generate } = await import(pathToFileURL(join(ROOT, builder)).href);
-  const files = { [output]: Buffer.from(await generate()) };
+  const { build: generate } = await import(pathToFileURL(join(root, builder)).href);
+  const script = Buffer.from(await generate());
+  // An empty script would hash, package and reproduce like a working one.
+  if (!script.length) throw new Error(`${builder} (C8) returned an empty userscript`);
+  const files = { [output]: script };
   const dir = await freshDir(outDir, "userscript");
   await writeTree(dir, files);
   return { target: "userscript", dir, files: hashes(files) };

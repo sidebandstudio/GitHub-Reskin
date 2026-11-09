@@ -1,0 +1,22 @@
+# @github-reskin/engine
+
+Renderer 1 color engine. Pure and deterministic: no DOM, storage, network, clocks or randomness. Inputs are never mutated; outputs are deep-frozen.
+
+| Export | Behavior |
+| --- | --- |
+| `resolveTheme(theme, context)` | `context` is `{seed, policy, reducedMotion, forcedColors}`. Forced colors, `native-high-contrast` and `native-unknown` return the null-color branch. `themed` needs a same-base, non-high-contrast seed and returns every `ColorSet` color plus font, effects with defaults filled, flavor, `motionAllowed`, render-only `repairs` and the 287-entry `pairAudit`. Invalid themes or contexts throw before anything is derived; a `themed` call on a base the colors contradict throws the `basePolarityIssue` error below. |
+| `repairTheme(theme, standardSeed)` | Portable source repair against a same-base standard seed. Changes only fields the source already has, through the source-role mapping, plus an invalid supplied `contributions.levels`. Repeats to a fixed point, so a second call returns no repairs. Throws the `basePolarityIssue` error below rather than repairing against a contradicted base. |
+| `basePolarityIssue(theme)` | `null`, or an error `Issue` with code `base-polarity` at `/base` when readable text on the background must sit on the other side of it from what `base` says (dark text on a light background for a dark base, or the reverse). The engine never infers or switches the base: callers check this after import and offer the other base, which always clears the issue. `resolveTheme` and `repairTheme` throw an `Error` whose `code` is `base-polarity` and whose `issue` is this Issue. |
+| `auditPairs(resolved)` | One unrounded `PairResult` per foreground/background pair of a themed resolution. |
+| `PAIR_MATRIX` | `pairs.json`, the C2-owned matrix: 67 records, 287 checks. C3 requests changes; it does not edit this file. |
+| `graphProblems`, `rampDirection`, `deriveRamp` | The contribution ramp rules. `rampDirection(base)` is `up` for dark and `down` for light, from the base alone. |
+| `contrast`, `luminance`, `mix`, `oklab`, `bestInk`, `fit`, `sha256` | The fixed color math. |
+| `seedProblems`, `pairMatrixProblems` | Input validation for ModeSeed records and pair matrices. |
+
+Repair order follows ARCHITECTURE.md: core text, surfaces from the repaired ink, then each pair in a fixed order, with the matrix repeated until nothing changes. A foreground that spans several surfaces keeps its side of the canvas when that side can pass there; offending secondary surfaces move toward the canvas instead, and the canvas never moves. Accent emphasis and status emphasis fills are repaired against the shared emphasis ink, never the reverse. Colorblind and tritanopia seeds replace supplied status inks, logged as render repairs with the reason `GitHub accessibility colors are active.`
+
+Graph ramps: a valid supplied ramp is kept exactly. Otherwise the derived ramp is tried, then the same ramp with its seed moved toward the extreme, then levels 1-4 spread evenly from the first mix that reaches 3:1 on the canvas, then the seed's own ramp. The 35% first level of the derived ramp seldom reaches 3:1 on its own, so most derived ramps take one of the later steps.
+
+`index.d.ts` declares every export with types from packages/contracts; `resolveTheme`, `repairTheme` and `auditPairs` match `EngineModule` exactly, and `tests/engine/module-types.ts` proves the module assigns to it under strict TypeScript without `allowJs`. Families, policies, syntax roles and the pair-matrix version come from packages/contracts; the token, semantic and ANSI key lists stay here until C1 adds runtime lists for them.
+
+`checks.mjs` exports `run({command, args, root, outDir})` for `check:contrast`. `--scope=engine` uses the four synthetic seeds; `--scope=primer` loads every themed seed from C3's `vendor/primer/modes.json` with the twelve Classics; no scope is the full gate over all 25 catalog themes. `--themes <dir>` adds staged theme files. Each option may appear once, as `--name=value` or `--name value`; unknown arguments, missing values, repeated scopes and a `--themes` value that is not a directory of `.json` files exit 2 before any check runs. Bundled, fixture and staged themes must agree with their base; generated sweep themes that do not are checked for refusal and then continue with the other base. Primer and full scopes report NOT IMPLEMENTED until the mode index exists.

@@ -1,0 +1,22 @@
+{
+  "$schema": "https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json",
+  "base": "dark",
+  "colors": {
+    "accent": "#cba6f7",
+    "background": "#1e1e2e",
+    "contribution": "#a6e3a1",
+    "text": "#cdd6f4"
+  },
+  "description": "Mocha palette from the Catppuccin project, MIT license.",
+  "name": "Catppuccin Mocha",
+  "overrides": {
+    "border": "#313244",
+    "mutedText": "#a6adc8",
+    "surface": "#181825"
+  },
+  "schemaVersion": 1,
+  "tags": [
+    "classic",
+    "dark"
+  ]
+}

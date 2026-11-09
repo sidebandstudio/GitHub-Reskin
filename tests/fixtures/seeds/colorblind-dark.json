@@ -1,0 +1,904 @@
+{
+  "contractVersion": 1,
+  "id": "fixture.colorblind-dark",
+  "base": "dark",
+  "family": "colorblind",
+  "highContrast": false,
+  "sourceHash": "6b87508bc1feaafa346105bda06a847825c7f4fb298f57f39bcf386c0ea3c72e",
+  "colors": {
+    "tokens": {
+      "canvas": "#0d1117",
+      "surface": "#161b22",
+      "inset": "#010409",
+      "raised": "#161b22",
+      "hover": "#242a32",
+      "active": "#2c333d",
+      "text": "#f0f6fc",
+      "mutedText": "#b1bac4",
+      "link": "#79c0ff",
+      "border": "#30363d",
+      "controlBorder": "#8b949e",
+      "accent": "#79c0ff",
+      "accentMuted": "#161b22",
+      "accentEmphasis": "#0550ae",
+      "emphasisText": "#ffffff",
+      "primaryBackground": "#238636",
+      "primaryHoverBackground": "#2ea043",
+      "primaryPressedBackground": "#196c2e",
+      "primaryText": "#ffffff",
+      "primaryHoverText": "#ffffff",
+      "primaryPressedText": "#ffffff",
+      "primaryBorder": "#8b949e",
+      "primaryIcon": "#ffffff",
+      "primaryCounterBackground": "#196c2e",
+      "primaryCounterText": "#ffffff",
+      "focusOuter": "#79c0ff",
+      "focusInner": "#0d1117",
+      "selectionBackground": "#264f78",
+      "selectionText": "#f0f6fc",
+      "codeBackground": "#0d1117",
+      "codeText": "#f0f6fc",
+      "neutralBackground": "#0d1117",
+      "neutralText": "#f0f6fc",
+      "diffAddedBackground": "#122d42",
+      "diffAddedText": "#f0f6fc",
+      "diffRemovedBackground": "#3d2616",
+      "diffRemovedText": "#f0f6fc",
+      "diffWordAddedBackground": "#193c56",
+      "diffWordAddedText": "#f0f6fc",
+      "diffWordRemovedBackground": "#54321b",
+      "diffWordRemovedText": "#f0f6fc",
+      "tooltipBackground": "#242a32",
+      "tooltipText": "#ffffff",
+      "overlayBackground": "#161b22",
+      "overlayText": "#f0f6fc",
+      "inputBackground": "#0d1117",
+      "inputText": "#f0f6fc",
+      "inputPlaceholder": "#f0f6fc",
+      "disabledBackground": "#161b22",
+      "disabledText": "#f0f6fc",
+      "disabledBorder": "#8b949e",
+      "counterBackground": "#161b22",
+      "counterText": "#f0f6fc",
+      "labelBackground": "#161b22",
+      "labelText": "#f0f6fc",
+      "labelBorder": "#8b949e"
+    },
+    "semantics": {
+      "success": {
+        "text": "#79c0ff",
+        "mutedBackground": "#161b22",
+        "emphasisBackground": "#79c0ff",
+        "onEmphasis": "#000000",
+        "border": "#79c0ff"
+      },
+      "danger": {
+        "text": "#ffa657",
+        "mutedBackground": "#161b22",
+        "emphasisBackground": "#ffa657",
+        "onEmphasis": "#000000",
+        "border": "#ffa657"
+      },
+      "warning": {
+        "text": "#e3b341",
+        "mutedBackground": "#161b22",
+        "emphasisBackground": "#e3b341",
+        "onEmphasis": "#000000",
+        "border": "#e3b341"
+      },
+      "done": {
+        "text": "#d2a8ff",
+        "mutedBackground": "#161b22",
+        "emphasisBackground": "#d2a8ff",
+        "onEmphasis": "#000000",
+        "border": "#d2a8ff"
+      },
+      "sponsor": {
+        "text": "#ff9bce",
+        "mutedBackground": "#161b22",
+        "emphasisBackground": "#ff9bce",
+        "onEmphasis": "#000000",
+        "border": "#ff9bce"
+      }
+    },
+    "syntax": {
+      "comment": "#b1bac4",
+      "keyword": "#ffa657",
+      "string": "#79c0ff",
+      "function": "#d2a8ff",
+      "number": "#e3b341",
+      "variable": "#79c0ff",
+      "type": "#ff9bce"
+    },
+    "ansi": {
+      "black": "#79c0ff",
+      "red": "#ffa657",
+      "green": "#e3b341",
+      "yellow": "#d2a8ff",
+      "blue": "#ff9bce",
+      "magenta": "#79c0ff",
+      "cyan": "#ffa657",
+      "white": "#e3b341",
+      "brightBlack": "#d2a8ff",
+      "brightRed": "#ff9bce",
+      "brightGreen": "#79c0ff",
+      "brightYellow": "#ffa657",
+      "brightBlue": "#e3b341",
+      "brightMagenta": "#d2a8ff",
+      "brightCyan": "#ff9bce",
+      "brightWhite": "#79c0ff"
+    },
+    "graph": [
+      "#24372f",
+      "#4e8c60",
+      "#78b94d",
+      "#a9dc3b",
+      "#d5ff35"
+    ]
+  },
+  "origins": {
+    "/tokens/canvas": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-canvas",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/surface": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-surface",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/inset": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-inset",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/raised": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-raised",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/hover": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-hover",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/active": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-active",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/text": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-text",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/mutedText": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-mutedText",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/link": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-link",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/border": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-border",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/controlBorder": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-controlBorder",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/accent": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-accent",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/accentMuted": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-accentMuted",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/accentEmphasis": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-accentEmphasis",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/emphasisText": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-emphasisText",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/primaryBackground": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-primaryBackground",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/primaryHoverBackground": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-primaryHoverBackground",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/primaryPressedBackground": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-primaryPressedBackground",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/primaryText": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-primaryText",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/primaryHoverText": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-primaryHoverText",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/primaryPressedText": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-primaryPressedText",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/primaryBorder": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-primaryBorder",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/primaryIcon": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-primaryIcon",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/primaryCounterBackground": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-primaryCounterBackground",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/primaryCounterText": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-primaryCounterText",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/focusOuter": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-focusOuter",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/focusInner": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-focusInner",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/selectionBackground": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-selectionBackground",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/selectionText": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-selectionText",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/codeBackground": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-codeBackground",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/codeText": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-codeText",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/neutralBackground": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-neutralBackground",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/neutralText": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-neutralText",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/diffAddedBackground": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-diffAddedBackground",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/diffAddedText": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-diffAddedText",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/diffRemovedBackground": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-diffRemovedBackground",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/diffRemovedText": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-diffRemovedText",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/diffWordAddedBackground": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-diffWordAddedBackground",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/diffWordAddedText": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-diffWordAddedText",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/diffWordRemovedBackground": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-diffWordRemovedBackground",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/diffWordRemovedText": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-diffWordRemovedText",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/tooltipBackground": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-tooltipBackground",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/tooltipText": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-tooltipText",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/overlayBackground": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-overlayBackground",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/overlayText": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-overlayText",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/inputBackground": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-inputBackground",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/inputText": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-inputText",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/inputPlaceholder": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-inputPlaceholder",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/disabledBackground": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-disabledBackground",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/disabledText": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-disabledText",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/disabledBorder": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-disabledBorder",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/counterBackground": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-counterBackground",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/counterText": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-counterText",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/labelBackground": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-labelBackground",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/labelText": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-labelText",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/tokens/labelBorder": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-tokens-labelBorder",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/semantics/success/text": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-semantics-success-text",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/semantics/success/mutedBackground": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-semantics-success-mutedBackground",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/semantics/success/emphasisBackground": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-semantics-success-emphasisBackground",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/semantics/success/onEmphasis": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-semantics-success-onEmphasis",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/semantics/success/border": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-semantics-success-border",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/semantics/danger/text": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-semantics-danger-text",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/semantics/danger/mutedBackground": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-semantics-danger-mutedBackground",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/semantics/danger/emphasisBackground": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-semantics-danger-emphasisBackground",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/semantics/danger/onEmphasis": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-semantics-danger-onEmphasis",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/semantics/danger/border": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-semantics-danger-border",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/semantics/warning/text": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-semantics-warning-text",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/semantics/warning/mutedBackground": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-semantics-warning-mutedBackground",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/semantics/warning/emphasisBackground": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-semantics-warning-emphasisBackground",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/semantics/warning/onEmphasis": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-semantics-warning-onEmphasis",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/semantics/warning/border": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-semantics-warning-border",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/semantics/done/text": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-semantics-done-text",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/semantics/done/mutedBackground": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-semantics-done-mutedBackground",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/semantics/done/emphasisBackground": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-semantics-done-emphasisBackground",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/semantics/done/onEmphasis": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-semantics-done-onEmphasis",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/semantics/done/border": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-semantics-done-border",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/semantics/sponsor/text": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-semantics-sponsor-text",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/semantics/sponsor/mutedBackground": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-semantics-sponsor-mutedBackground",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/semantics/sponsor/emphasisBackground": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-semantics-sponsor-emphasisBackground",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/semantics/sponsor/onEmphasis": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-semantics-sponsor-onEmphasis",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/semantics/sponsor/border": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-semantics-sponsor-border",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/syntax/comment": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-syntax-comment",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/syntax/keyword": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-syntax-keyword",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/syntax/string": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-syntax-string",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/syntax/function": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-syntax-function",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/syntax/number": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-syntax-number",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/syntax/variable": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-syntax-variable",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/syntax/type": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-syntax-type",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/ansi/black": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-ansi-black",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/ansi/red": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-ansi-red",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/ansi/green": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-ansi-green",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/ansi/yellow": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-ansi-yellow",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/ansi/blue": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-ansi-blue",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/ansi/magenta": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-ansi-magenta",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/ansi/cyan": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-ansi-cyan",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/ansi/white": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-ansi-white",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/ansi/brightBlack": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-ansi-brightBlack",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/ansi/brightRed": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-ansi-brightRed",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/ansi/brightGreen": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-ansi-brightGreen",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/ansi/brightYellow": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-ansi-brightYellow",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/ansi/brightBlue": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-ansi-brightBlue",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/ansi/brightMagenta": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-ansi-brightMagenta",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/ansi/brightCyan": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-ansi-brightCyan",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/ansi/brightWhite": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-ansi-brightWhite",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/graph/0": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-graph-0",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/graph/1": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-graph-1",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/graph/2": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-graph-2",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/graph/3": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-graph-3",
+      "fallback": false,
+      "compositeOver": null
+    },
+    "/graph/4": {
+      "file": "fixtures/seeds/source/colorblind-dark.css",
+      "sha256": "fcd28a8543474c95078d2abca14788aee050aaa7ebf5fa3ca5c356c3abe83c33",
+      "variable": "--fixture-graph-4",
+      "fallback": false,
+      "compositeOver": null
+    }
+  }
+}

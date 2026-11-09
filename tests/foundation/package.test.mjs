@@ -135,3 +135,26 @@ test("check:artifacts catches new permissions, wrong Gecko IDs, stray files, dat
     assert.match(more, /the userscript lacks the licenses\/primer-primitives\.txt notice/);
   });
 });
+
+test("check:artifacts fails a zero-byte userscript even when its checksums agree", async () => {
+  await withTempDir(async (tmp) => {
+    const out = join(tmp, "artifacts");
+    await packageRelease({ outDir: out, distDir: join(tmp, "dist"), source: true });
+    const name = artifactName(version, "userscript");
+    const empty = Buffer.alloc(0);
+    await writeFile(join(out, name), empty);
+    const info = JSON.parse(await readFile(join(out, "build-info.json"), "utf8"));
+    info.artifacts[name].sha256 = sha256(empty);
+    const infoBytes = Buffer.from(`${JSON.stringify(info, null, 2)}\n`);
+    await writeFile(join(out, "build-info.json"), infoBytes);
+    const sums = (await readFile(join(out, "SHA256SUMS"), "utf8"))
+      .split("\n")
+      .map((line) => (line.endsWith(`  ${name}`) ? `${sha256(empty)}  ${name}` : line.endsWith("  build-info.json") ? `${sha256(infoBytes)}  build-info.json` : line))
+      .join("\n");
+    await writeFile(join(out, "SHA256SUMS"), sums);
+    const problems = (await verifyArtifacts(out)).problems.join("\n");
+    assert.doesNotMatch(problems, /does not match SHA256SUMS/);
+    assert.match(problems, new RegExp(`${name.replaceAll(".", "\\.")} is empty`));
+    assert.match(problems, /the userscript has no metadata block/);
+  });
+});

@@ -6,7 +6,7 @@ import { join } from "node:path";
 import test from "node:test";
 import { promisify } from "node:util";
 import { SHARED_BUILD_SCOPES } from "../../packages/contracts/index.js";
-import { FONT_INPUTS, NotImplementedError, ROOT, SHARED_SCOPES, build, buildSharedFrom, buildSiteFrom, bundlePackages, sharedPrerequisites, treeHash } from "../../scripts/build.mjs";
+import { FONT_INPUTS, NotImplementedError, ROOT, SHARED_SCOPES, build, buildSharedFrom, buildSiteFrom, buildUserscriptFrom, bundlePackages, sharedPrerequisites, treeHash } from "../../scripts/build.mjs";
 import { withTempDir } from "../helpers/tmp.mjs";
 
 const node = (args, options = {}) => promisify(execFile)(process.execPath, args, { cwd: ROOT, ...options });
@@ -190,6 +190,21 @@ test("the site hook gets the site directory and release config, and must write a
         assert.deepEqual(Object.keys(files).sort(), [".nojekyll", "index.html"]);
         assert.equal(await readFile(join(dir, "index.html"), "utf8"), "<!doctype html><title>/GitHub-Reskin</title>");
       } else await assert.rejects(run, failure, String(i));
+    });
+  }
+});
+
+test("the userscript hook must return a nonempty script", async () => {
+  const cases = [
+    ['export async function build() { return "// ==UserScript==\\n// ==/UserScript==\\n"; }\n', null],
+    ['export async function build() { return ""; }\n', /stub\.mjs \(C8\) returned an empty userscript/],
+  ];
+  for (const [i, [source, failure]] of cases.entries()) {
+    await withTempDir(async (root) => {
+      await writeFile(join(root, "stub.mjs"), source);
+      const run = buildUserscriptFrom(root, { outDir: join(root, `out${i}`), releaseConfig: { userscript: { builder: "stub.mjs", output: "x.user.js" } } });
+      if (!failure) assert.deepEqual(Object.keys((await run).files), ["x.user.js"]);
+      else await assert.rejects(run, failure);
     });
   }
 });

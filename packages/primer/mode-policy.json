@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "reviewed": "2026-11-08",
+  "note": "Every GitHub mode the frozen dataset may contain, with its reviewed policy. High-contrast modes stay native. Each family's seed for a requested base is that family's mode of the base; dimmed is a standard-family dark mode and never a seed. A mode missing here blocks refresh-primer --accept.",
+  "modes": {
+    "light": { "base": "light", "family": "standard", "highContrast": false, "policy": "themed" },
+    "light_high_contrast": { "base": "light", "family": "standard", "highContrast": true, "policy": "native-high-contrast" },
+    "light_colorblind": { "base": "light", "family": "colorblind", "highContrast": false, "policy": "themed" },
+    "light_colorblind_high_contrast": { "base": "light", "family": "colorblind", "highContrast": true, "policy": "native-high-contrast" },
+    "light_tritanopia": { "base": "light", "family": "tritanopia", "highContrast": false, "policy": "themed" },
+    "light_tritanopia_high_contrast": { "base": "light", "family": "tritanopia", "highContrast": true, "policy": "native-high-contrast" },
+    "dark": { "base": "dark", "family": "standard", "highContrast": false, "policy": "themed" },
+    "dark_dimmed": { "base": "dark", "family": "standard", "highContrast": false, "policy": "themed" },
+    "dark_high_contrast": { "base": "dark", "family": "standard", "highContrast": true, "policy": "native-high-contrast" },
+    "dark_dimmed_high_contrast": { "base": "dark", "family": "standard", "highContrast": true, "policy": "native-high-contrast" },
+    "dark_colorblind": { "base": "dark", "family": "colorblind", "highContrast": false, "policy": "themed" },
+    "dark_colorblind_high_contrast": { "base": "dark", "family": "colorblind", "highContrast": true, "policy": "native-high-contrast" },
+    "dark_tritanopia": { "base": "dark", "family": "tritanopia", "highContrast": false, "policy": "themed" },
+    "dark_tritanopia_high_contrast": { "base": "dark", "family": "tritanopia", "highContrast": true, "policy": "native-high-contrast" }
+  },
+  "familySeeds": {
+    "standard": { "light": "light", "dark": "dark" },
+    "colorblind": { "light": "light_colorblind", "dark": "dark_colorblind" },
+    "tritanopia": { "light": "light_tritanopia", "dark": "dark_tritanopia" }
+  }
+}

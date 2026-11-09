@@ -92,6 +92,7 @@ export async function verifyArtifacts(dir = "artifacts") {
   const bytes = {};
   for (const name of expected) {
     bytes[name] = await read(name);
+    expect(!(bytes[name] && !bytes[name].length), `${name} is empty`);
     expect(!(bytes[name] && listed.get(name) !== sha256(bytes[name])), `${name} does not match SHA256SUMS`);
   }
 
@@ -158,8 +159,9 @@ export async function verifyArtifacts(dir = "artifacts") {
   }
 
   // Userscript. Its remote @icon/@updateURL metadata is checked by check:userscript (C8).
+  // An empty script still gets every check, so it fails them instead of skipping them.
   const userscript = bytes[artifactName(version, "userscript")]?.toString("utf8");
-  if (userscript) {
+  if (userscript !== undefined) {
     const header = /^\/\/ ==UserScript==\n([\s\S]*?)\/\/ ==\/UserScript==\n/.exec(userscript)?.[1] ?? "";
     expect(header, "the userscript has no metadata block");
     expect(new RegExp(`^// @version +${version.replaceAll(".", "\\.")}$`, "m").test(header), `the userscript @version is not ${version}`);
