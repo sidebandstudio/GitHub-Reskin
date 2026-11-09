@@ -1,7 +1,8 @@
 // Fonts: only the selected face loads, read once by the controller from the runtime adapter's
 // packaged path and embedded in the scriptless frame; a blocked or missing file falls back
-// natively; body and code keep their own families.
-import { PREFS, decorated, expect, inFrame, mount, test } from "./helpers.mjs";
+// natively; body and code keep their own families. On the GitHub-like page, a theme's bundled body
+// face loads beside its heading face, and code keeps its native family.
+import { PREFS, classic, decorated, expect, inFrame, mount, test } from "./helpers.mjs";
 
 const theme = (font) => decorated("gruvbox", { rules: { style: "ticks" } }, { font });
 
@@ -42,4 +43,32 @@ test("a blocked font file falls back to the native stack and the preview stays c
   expect(state.family).toMatch(/^"Reskin Rajdhani", /);
   expect(state.text).toBe("Pinned sentinel copy");
   expect(state.width).toBeGreaterThan(0);
+});
+
+test("on the GitHub-like page the body face loads beside the heading face, at the weights its text uses, and code stays native", async ({ page, fixtureApp }) => {
+  const fonts = [];
+  page.on("request", (request) => request.url().endsWith(".woff2") && fonts.push(new URL(request.url()).pathname));
+  await page.goto(fixtureApp.url("adversarial.html"));
+  await page.waitForFunction(() => document.documentElement.dataset.ready === "true");
+  const theme = { ...classic("gruvbox"), fonts: { heading: "cinzel", body: "ibm-plex-sans" } };
+  await page.evaluate(([t, p]) => window.reskinNative.apply(t, p), [theme, PREFS]);
+  await page.evaluate(() => document.fonts.ready);
+  const state = await page.evaluate(() => {
+    const family = (selector) => getComputedStyle(document.querySelector(selector)).fontFamily;
+    return {
+      readme: family(".markdown-body p"),
+      heading: family(".markdown-body h2, h2"),
+      code: family("pre"),
+      loaded: [...document.fonts].filter((f) => f.status === "loaded").map((f) => `${f.family.replace(/"/g, "")} ${f.weight}`),
+    };
+  });
+  expect(state.readme).toMatch(/^"Reskin Industrial Sans", /);
+  expect(state.heading).toMatch(/^"Reskin Cinzel", /);
+  expect(state.code).not.toMatch(/Reskin/);
+  expect(state.loaded).toEqual(expect.arrayContaining(["Reskin Industrial Sans 400", "Reskin Cinzel 600"]));
+  // Only the two selected families load, and only weights the page's text uses.
+  expect(fonts.length).toBeGreaterThanOrEqual(2);
+  expect(fonts.every((path) => /^\/assets\/fonts\/(ibm-plex-sans|cinzel)\//.test(path))).toBe(true);
+  expect(fonts).toContain("/assets/fonts/ibm-plex-sans/ibm-plex-sans.woff2");
+  expect(new Set(fonts).size).toBe(fonts.length);
 });

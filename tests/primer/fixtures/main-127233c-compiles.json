@@ -392,60 +392,60 @@
   "primer": "292e5d111514f5a8ac6583d7af7bf85b7b634506cddf6398a9a53d2d29d55c76"
  },
  "tests/fixtures/schema/valid/art-additions.reskin.json dark calm": {
-  "appearance": "b886d493b77e9e2566bdfe4059238ae02bfbe0d26933092de12d757a6eb2392a",
-  "primer": "1a32819cc31b82292d4ef089c2cf26173e89239d430ecfb0684d13e3b135aabd"
+  "primer": "1f819b58d199573a26fd4e8d59b8caff9fb46df9eca8261dd0784f10e5dd5c07",
+  "appearance": "9739a9c674863bb349f4359f47a8614e173b5e313796300ccac17720dc86962a"
  },
  "tests/fixtures/schema/valid/art-additions.reskin.json dark full": {
-  "appearance": "b4011b4ec673699c802adbe262d6238ad7304fbc7587cd5bdbaddd95b384ff5f",
-  "primer": "9b467731e7e85a17129cf50992f11e985fdb92edcb9b62d0b0f1fd88d01bc436"
+  "primer": "7a358933bbd43e1df045dd5883599b5305f9e2cbcf9cff338985f15d8347c6aa",
+  "appearance": "30449e673362e9a1a51170ed9a5c3ebcbf46b6815fb0fda2ffccc1678fc9dfb5"
  },
  "tests/fixtures/schema/valid/art-additions.reskin.json dark_colorblind calm": {
-  "appearance": "b886d493b77e9e2566bdfe4059238ae02bfbe0d26933092de12d757a6eb2392a",
-  "primer": "853c8704fe869c3133cb9e97f058f1181d15f032faf4a8860099e826eb885213"
+  "primer": "e915de8b9207be99cb62e308344bd75d7e1b19e36da8d854c14f102511fa3e46",
+  "appearance": "9739a9c674863bb349f4359f47a8614e173b5e313796300ccac17720dc86962a"
  },
  "tests/fixtures/schema/valid/art-additions.reskin.json dark_colorblind full": {
-  "appearance": "b4011b4ec673699c802adbe262d6238ad7304fbc7587cd5bdbaddd95b384ff5f",
-  "primer": "fdfd603b8d1a24bf63e536e4883715c6869f018cbfce5fd2348a78f4b9a2085d"
+  "primer": "ea28a7ddada6fdddddb0f6a9ba2cdd7d35b7105cadc96b421e6ee9076aa87cd5",
+  "appearance": "30449e673362e9a1a51170ed9a5c3ebcbf46b6815fb0fda2ffccc1678fc9dfb5"
  },
  "tests/fixtures/schema/valid/art-additions.reskin.json dark_dimmed calm": {
-  "appearance": "b886d493b77e9e2566bdfe4059238ae02bfbe0d26933092de12d757a6eb2392a",
-  "primer": "1a32819cc31b82292d4ef089c2cf26173e89239d430ecfb0684d13e3b135aabd"
+  "primer": "1f819b58d199573a26fd4e8d59b8caff9fb46df9eca8261dd0784f10e5dd5c07",
+  "appearance": "9739a9c674863bb349f4359f47a8614e173b5e313796300ccac17720dc86962a"
  },
  "tests/fixtures/schema/valid/art-additions.reskin.json dark_dimmed full": {
-  "appearance": "b4011b4ec673699c802adbe262d6238ad7304fbc7587cd5bdbaddd95b384ff5f",
-  "primer": "9b467731e7e85a17129cf50992f11e985fdb92edcb9b62d0b0f1fd88d01bc436"
+  "primer": "7a358933bbd43e1df045dd5883599b5305f9e2cbcf9cff338985f15d8347c6aa",
+  "appearance": "30449e673362e9a1a51170ed9a5c3ebcbf46b6815fb0fda2ffccc1678fc9dfb5"
  },
  "tests/fixtures/schema/valid/art-additions.reskin.json dark_tritanopia calm": {
-  "appearance": "b886d493b77e9e2566bdfe4059238ae02bfbe0d26933092de12d757a6eb2392a",
-  "primer": "20966e90715312ac60f8d4f837e12f021aee0b26d4dd4e9a3fe6bca2deea8d82"
+  "primer": "154b864d06d359e8428b145394022fd1413066ee12b713b92d5cf576d8656e7a",
+  "appearance": "9739a9c674863bb349f4359f47a8614e173b5e313796300ccac17720dc86962a"
  },
  "tests/fixtures/schema/valid/art-additions.reskin.json dark_tritanopia full": {
-  "appearance": "b4011b4ec673699c802adbe262d6238ad7304fbc7587cd5bdbaddd95b384ff5f",
-  "primer": "82c8600b004eb90f82bfb4421603f9d30dd50757de10a1fb615536bdb23fa4f7"
+  "primer": "5258f6a9bf91c41e8640e1400b1998b5a299cbf4c4ff3caaa34e37bb8d982742",
+  "appearance": "30449e673362e9a1a51170ed9a5c3ebcbf46b6815fb0fda2ffccc1678fc9dfb5"
  },
  "tests/fixtures/schema/valid/art-additions.reskin.json light calm": {
-  "appearance": "b886d493b77e9e2566bdfe4059238ae02bfbe0d26933092de12d757a6eb2392a",
-  "primer": "1a32819cc31b82292d4ef089c2cf26173e89239d430ecfb0684d13e3b135aabd"
+  "primer": "1f819b58d199573a26fd4e8d59b8caff9fb46df9eca8261dd0784f10e5dd5c07",
+  "appearance": "9739a9c674863bb349f4359f47a8614e173b5e313796300ccac17720dc86962a"
  },
  "tests/fixtures/schema/valid/art-additions.reskin.json light full": {
-  "appearance": "b4011b4ec673699c802adbe262d6238ad7304fbc7587cd5bdbaddd95b384ff5f",
-  "primer": "9b467731e7e85a17129cf50992f11e985fdb92edcb9b62d0b0f1fd88d01bc436"
+  "primer": "7a358933bbd43e1df045dd5883599b5305f9e2cbcf9cff338985f15d8347c6aa",
+  "appearance": "30449e673362e9a1a51170ed9a5c3ebcbf46b6815fb0fda2ffccc1678fc9dfb5"
  },
  "tests/fixtures/schema/valid/art-additions.reskin.json light_colorblind calm": {
-  "appearance": "b886d493b77e9e2566bdfe4059238ae02bfbe0d26933092de12d757a6eb2392a",
-  "primer": "853c8704fe869c3133cb9e97f058f1181d15f032faf4a8860099e826eb885213"
+  "primer": "e915de8b9207be99cb62e308344bd75d7e1b19e36da8d854c14f102511fa3e46",
+  "appearance": "9739a9c674863bb349f4359f47a8614e173b5e313796300ccac17720dc86962a"
  },
  "tests/fixtures/schema/valid/art-additions.reskin.json light_colorblind full": {
-  "appearance": "b4011b4ec673699c802adbe262d6238ad7304fbc7587cd5bdbaddd95b384ff5f",
-  "primer": "fdfd603b8d1a24bf63e536e4883715c6869f018cbfce5fd2348a78f4b9a2085d"
+  "primer": "ea28a7ddada6fdddddb0f6a9ba2cdd7d35b7105cadc96b421e6ee9076aa87cd5",
+  "appearance": "30449e673362e9a1a51170ed9a5c3ebcbf46b6815fb0fda2ffccc1678fc9dfb5"
  },
  "tests/fixtures/schema/valid/art-additions.reskin.json light_tritanopia calm": {
-  "appearance": "b886d493b77e9e2566bdfe4059238ae02bfbe0d26933092de12d757a6eb2392a",
-  "primer": "20966e90715312ac60f8d4f837e12f021aee0b26d4dd4e9a3fe6bca2deea8d82"
+  "primer": "154b864d06d359e8428b145394022fd1413066ee12b713b92d5cf576d8656e7a",
+  "appearance": "9739a9c674863bb349f4359f47a8614e173b5e313796300ccac17720dc86962a"
  },
  "tests/fixtures/schema/valid/art-additions.reskin.json light_tritanopia full": {
-  "appearance": "b4011b4ec673699c802adbe262d6238ad7304fbc7587cd5bdbaddd95b384ff5f",
-  "primer": "82c8600b004eb90f82bfb4421603f9d30dd50757de10a1fb615536bdb23fa4f7"
+  "primer": "5258f6a9bf91c41e8640e1400b1998b5a299cbf4c4ff3caaa34e37bb8d982742",
+  "appearance": "30449e673362e9a1a51170ed9a5c3ebcbf46b6815fb0fda2ffccc1678fc9dfb5"
  },
  "tests/fixtures/schema/valid/choom-circuit.reskin.json dark calm": {
   "appearance": "a6677dfd0f33d415a721a216e81592a03c67d6aae9f68c4a97a04f23787118e9",

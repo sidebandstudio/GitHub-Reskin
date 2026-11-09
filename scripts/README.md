@@ -128,7 +128,7 @@ is proven in Chromium and Firefox.
   | --- | --- | --- |
   | `engine` | contracts, format, engine | |
   | `primer` | engine's, primer (C3) | `vendor/primer/modes.json` (C3), `licenses/primer-primitives.txt` (C1) |
-  | `preview` | primer's, appearance, preview (C5) | primer's, and for each bundled font ID `assets/fonts/<id>/<id>.woff2` and `assets/fonts/<id>/OFL.txt` (C5) |
+  | `preview` | primer's, appearance, preview (C5) | primer's, and for each bundled font ID its WOFF2 per reviewed weight (`assets/fonts/<id>/<id>.woff2`, `<id>-<weight>.woff2`) and `assets/fonts/<id>/OFL.txt` (C5) |
   | none | preview's, settings (C4), ui (C6) | preview's |
 
   A missing package, package entry or input fails with exit 2, `NOT IMPLEMENTED: shared
