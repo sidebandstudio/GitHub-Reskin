@@ -67,12 +67,16 @@ test("every reviewed mode with every Classic and fixture resolves readably, and 
       assert.ok(resolved.pairAudit.filter((r) => /^(syntax|ansi)\.|^diff/.test(r.id)).length >= 23 * 6 + 4, `${id} code pairs audited`);
       assert.deepEqual(engine.graphProblems(resolved.graph, resolved.tokens.canvas, engine.rampDirection(theme.base, resolved.tokens.canvas)), [], `${id} on ${mode.id} graph`);
       const out = compileGitHub(resolved, plan, PREFS);
-      const values = new Map([...emittedColors(resolved, mappings.emit), ...emittedColors(resolved, mappings.brandFooter)]);
+      const emitted = emittedColors(resolved, mappings.emit);
+      const values = new Map([...emitted, ...emittedColors(resolved, mappings.brandFooter)]);
+      // A Brand page's islands carry their own mapping of the same Brand variables.
+      const page = new Map([...emitted, ...emittedColors(resolved, mappings.brandPage)]);
       // Every seasonal ramp is the resolved ramp, level for level.
       for (const season of ["default", "halloween", "winter"]) for (let n = season === "default" ? 0 : 1; n < 5; n++) assert.equal(values.get(`--contribution-${season}-bgColor-${n}`), resolved.graph[n]);
       for (const p of mappings.inheritedPairs) {
+        const set = p.id.startsWith("github.brandPage.") ? page : values;
         for (const bg of p.backgrounds) {
-          const ratio = contrast(values.get(p.foreground), values.get(bg));
+          const ratio = contrast(set.get(p.foreground), set.get(bg));
           if (ratio >= p.minimum) continue;
           // A miss is allowed only for the pending page-syntax matrix request, never silently.
           const reported = out.warnings.some((w) => w.severity === "warning" && w.message.startsWith(`${p.foreground} uses`));

@@ -5,6 +5,7 @@ import { test } from "node:test";
 import { FLAVOR_SLOT_IDS, PREVIEW_VIEWS } from "../../packages/contracts/index.js";
 import { repairTheme, resolveTheme } from "../../packages/engine/index.js";
 import { ASSET_DIR, DEFAULT_DORMANT_SLOTS, FIXTURE, FIXTURE_CSS, PREVIEW_SANDBOX, PREVIEW_VARIABLES, VIEWS, colorAt, configurePreview, createFixtureRenderer, mountPreview, nativeBaseline, styleText } from "../../packages/preview/index.js";
+import { NATIVE_ROLES } from "../../packages/preview/variables.js";
 import * as primer from "../fixture-app/product/primer-double.js";
 
 const ROOT = new URL("../../", import.meta.url).pathname;
@@ -61,6 +62,25 @@ test("every preview variable resolves for seeds and themes, and the fixture CSS 
   const seed = primer.MODE_INDEX.modes["fixture.standard-dark"];
   const resolved = resolveTheme(repairTheme(theme, seed).theme, { seed, policy: "themed", reducedMotion: false, forcedColors: false });
   for (const path of Object.values(PREVIEW_VARIABLES)) assert.match(colorAt(resolved, path), /^#[0-9a-f]{6}$/);
+  // The header takes the resolution's own appearance pair, at any path depth.
+  assert.equal(colorAt(resolved, "/appearance/colors/header/background"), resolved.appearance.colors.header.background);
+  assert.equal(colorAt(resolved, "/appearance/colors/header/text"), resolved.appearance.colors.header.text);
+  assert.equal(colorAt(resolved, "/semantics/success/emphasisBackground"), resolved.semantics.success.emphasisBackground);
+  assert.equal(colorAt(resolved, "/graph/4"), resolved.graph[4]);
+  assert.throws(() => colorAt(resolved, "/appearance/colors/header"), /No color/);
+});
+
+test("a seed, which has no appearance record, reads each appearance role through its own native role", () => {
+  // Only appearance roles have native stand-ins, and each stand-in is a seed role.
+  for (const [path, role] of Object.entries(NATIVE_ROLES)) {
+    assert.ok(path.startsWith("/appearance/") && Object.values(PREVIEW_VARIABLES).includes(path), path);
+    assert.match(role, /^\/tokens\//);
+  }
+  for (const seed of Object.values(primer.MODE_INDEX.modes)) {
+    assert.equal(seed.colors.appearance, undefined);
+    assert.equal(colorAt(seed.colors, "/appearance/colors/header/background"), seed.colors.tokens.inset, seed.id);
+    assert.equal(colorAt(seed.colors, "/appearance/colors/header/text"), seed.colors.tokens.mutedText, seed.id);
+  }
 });
 
 test("the native baseline wraps the ModeIndex declaration list in a root rule with the mode's color scheme", () => {
@@ -79,7 +99,8 @@ test("the native baseline wraps the ModeIndex declaration list in a root rule wi
 
 // C3's production mapping and native CSS, when C3 is in the checkout: every variable the fixture
 // reads must be one the compiler emits with the same role, and the native baseline built from
-// C3's index must declare it at the seed's native color.
+// C3's index must declare it at the seed's native color, through the native role where the themed
+// one is an appearance color.
 const C3 = existsSync(`${ROOT}packages/primer/index.js`) && existsSync(`${ROOT}vendor/primer/modes.json`);
 // Registered only with C3 present, since the runner fails on a skipped test.
 (C3 ? test : () => {})("every fixture variable is one C3 emits and declares natively", async () => {
@@ -92,6 +113,9 @@ const C3 = existsSync(`${ROOT}packages/primer/index.js`) && existsSync(`${ROOT}v
     const declared = new Set(css.slice(css.indexOf("{") + 1, -1).split(";").map((d) => d.slice(0, d.indexOf(":"))));
     for (const name of Object.keys(PREVIEW_VARIABLES)) assert.ok(declared.has(name), `${mode} baseline lacks ${name}`);
     for (const [name, path] of Object.entries(PREVIEW_VARIABLES)) assert.ok(css.includes(`${name}:${colorAt(c3.MODE_INDEX.modes[mode].colors, path)};`), `${mode} ${name}`);
+    // Before shows the seed's own header colors, independently of the themed roles.
+    const tokens = c3.MODE_INDEX.modes[mode].colors.tokens;
+    assert.ok(css.includes(`--header-bgColor:${tokens.inset};`) && css.includes(`--header-fgColor-default:${tokens.mutedText};`), mode);
   }
 });
 

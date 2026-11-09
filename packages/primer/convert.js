@@ -1,6 +1,7 @@
 // Converts frozen GitHub mode stylesheets into the renderer 1 ModeIndex: one ModeSeed per mode,
 // the unique counterpart for each themable mode and requested base, and the native baseline
-// declarations each family seed needs. Pure: the caller supplies file text and SHA-256 hashes.
+// declarations each family seed needs and each themable mode's restoring baseline. Pure: the caller
+// supplies file text and SHA-256 hashes.
 import { parseStylesheet } from "./css.js";
 import { githubModeSelectors } from "./selectors.js";
 
@@ -164,7 +165,7 @@ export function convertModes({ files, policy, mappings, hash, allowUnreviewed = 
 
   // Native baselines: for each family seed, every variable whose value differs between themable
   // modes and that the compiler does not write itself, with the seed mode's own value.
-  const emitted = new Set([...mappings.emit, ...mappings.brandFooter].map((m) => m.variable));
+  const emitted = new Set([...mappings.emit, ...mappings.brandFooter, ...(mappings.brandPage ?? [])].map((m) => m.variable));
   const themable = Object.keys(policy.modes).filter((id) => policy.modes[id].policy === "themed");
   const names = [...declared[themable[0]].keys()];
   for (const id of Object.keys(declared)) {
@@ -176,6 +177,11 @@ export function convertModes({ files, policy, mappings, hash, allowUnreviewed = 
   for (const seedMode of [...new Set(counterparts.map((c) => c.seedMode))].sort()) {
     nativeCss[seedMode] = varying.map((n) => `${n}:${declared[seedMode].get(n)}`).join(";");
   }
+  // Restoring baselines: for each themable mode, its own value of every variable a themed island
+  // overrides, baseline and emitted alike, which protected UI inside such an island takes back.
+  const overridden = names.filter((n) => emitted.has(n) || varying.includes(n));
+  const restoreCss = {};
+  for (const id of [...themable].sort()) restoreCss[id] = overridden.map((n) => `${n}:${declared[id].get(n)}`).join(";");
 
   // Variables that follow an emitted one through var() in every themable mode need no baseline.
   const follows = (n) => themable.every((id) => {
@@ -196,5 +202,5 @@ export function convertModes({ files, policy, mappings, hash, allowUnreviewed = 
     follows: names.filter((n) => !emitted.has(n) && !varying.includes(n) && follows(n)).sort(),
     constant: names.filter((n) => !emitted.has(n) && !varying.includes(n) && !follows(n)).sort(),
   };
-  return { index: { contractVersion: 1, modes, counterparts, nativeCss }, discovered, inventory };
+  return { index: { contractVersion: 1, modes, counterparts, nativeCss, restoreCss }, discovered, inventory };
 }

@@ -33,8 +33,40 @@ export function resolvedFromSeed(seed, overrides = {}) {
     effects: {},
     flavor: { enabled: true, locale: "en", slots: { "profile.tag": "</style><script>alert(1)</script>" } },
     motionAllowed: true,
+    appearance: appearanceFor(colors),
     repairs: [],
     pairAudit: [],
+  };
+}
+
+/**
+ * A resolved appearance record for a v1 theme with no expansion groups, from a ColorSet: native
+ * shape, square cells without glow, and the extended syntax defaults THEME-EXPANSION.md names.
+ * `overrides` replaces whole groups, such as {shape: {...}} or {graph: {...}}.
+ */
+export function appearanceFor(colors, overrides = {}) {
+  const t = colors.tokens;
+  const s = colors.syntax;
+  const pill = { background: t.labelBackground, text: t.labelText, border: t.labelBorder };
+  return {
+    colors: {
+      syntax: { operator: s.keyword, punctuation: s.variable, constant: s.number, tag: s.keyword, attribute: s.type, regex: s.string, escape: s.number, invalid: colors.semantics.danger.text, inserted: t.diffAddedText, deleted: t.diffRemovedText, markupHeading: t.codeText, markupEmphasis: t.codeText, markupLink: t.link, markupQuote: s.comment, markupList: s.keyword },
+      page: { background: t.canvas },
+      header: { background: t.inset, text: t.mutedText },
+      scrollbar: { thumb: t.mutedText, track: t.inset },
+      labels: { ...pill },
+      topics: { ...pill },
+      graph: { cellBoundary: t.controlBorder },
+    },
+    paints: { page: null, profileBanner: null, header: null },
+    shape: { corners: null, borders: null, shadows: null, buttons: null, avatar: null },
+    fonts: { heading: { id: "system", requested: "system", source: "system", family: null, fallback: null, weights: [] }, body: { id: "system", requested: "system", source: "system", family: null, fallback: null, weights: [] } },
+    typography: null,
+    graph: { cellStyle: "square", cellRadius: null, glow: null },
+    details: { scrollbarWidth: "auto", labels: null, topics: null },
+    css: null,
+    notes: [],
+    ...overrides,
   };
 }
 
@@ -43,8 +75,27 @@ export function nativeResolved(policy, base = "dark") {
     rendererVersion: 1, sourceHash: "0".repeat(64), seedId: null, seedHash: null, base, policy,
     tokens: null, semantics: null, syntax: null, ansi: null, graph: null,
     font: "system", effects: {}, flavor: { enabled: false, locale: "en", slots: {} },
-    motionAllowed: false, repairs: [], pairAudit: [],
+    motionAllowed: false, appearance: null, repairs: [], pairAudit: [],
   };
+}
+
+/**
+ * A stylesheet as an engine without container style queries applies it: every style-query block
+ * removed, the blocks nested inside it included, and the selector fallback's condition as Gecko
+ * before Firefox 151 evaluates it, without position-anchor.
+ */
+export function stripStyleQueries(text) {
+  let css = text.replaceAll("@supports selector(:-moz-focusring) and (not (position-anchor: normal)){", "@supports selector(:-moz-focusring){");
+  for (let i = css.indexOf("@container style("); i >= 0; i = css.indexOf("@container style(")) {
+    let depth = 0;
+    let j = css.indexOf("{", i);
+    for (; j < css.length; j++) {
+      if (css[j] === "{") depth++;
+      else if (css[j] === "}" && --depth === 0) break;
+    }
+    css = css.slice(0, i) + css.slice(j + 2);
+  }
+  return css;
 }
 
 /** The content adapter bundled as an IIFE that sets globalThis.ReskinGitHub, for browser pages. */

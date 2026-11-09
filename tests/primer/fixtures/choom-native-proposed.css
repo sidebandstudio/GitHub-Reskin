@@ -1,0 +1,8 @@
+.AppHeader,.Header,.HeaderMktg,.GlobalNav{box-shadow:0 4px 24px -6px color-mix(in srgb,var(--reskin-accent) 55%,transparent)}
+.btn-primary{box-shadow:0 0 14px color-mix(in srgb,var(--reskin-accent) 55%,transparent)}
+.btn-primary:hover{box-shadow:0 0 22px color-mix(in srgb,var(--reskin-accent) 80%,transparent)}
+.btn-primary:focus-visible{box-shadow:0 0 16px color-mix(in srgb,var(--reskin-accent) 60%,transparent)}
+.UnderlineNav-item[aria-current="page"],.tabnav-tab[aria-current="page"],a[aria-current="page"]{box-shadow:0 8px 10px -8px color-mix(in srgb,var(--reskin-accent) 80%,transparent)}
+a[data-testid="repo-name-link"]{text-shadow:0 0 8px color-mix(in srgb,var(--reskin-graph-4) 55%,transparent)}
+a[data-testid="repo-name-link"]:hover{color:var(--reskin-link);text-shadow:-1px 0 color-mix(in srgb,var(--reskin-graph-4) 70%,transparent),1px 0 color-mix(in srgb,var(--reskin-accent) 60%,transparent)}
+h2.h4.mb-2,h2[data-component="Heading"]{letter-spacing:.02em;text-shadow:0 0 12px color-mix(in srgb,var(--reskin-accent) 35%,transparent)}
