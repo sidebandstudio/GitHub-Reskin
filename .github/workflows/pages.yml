@@ -2,8 +2,9 @@ name: Pages
 
 # Builds the showcase site and deploys it to GitHub Pages, only from main and only through the
 # protected github-pages environment. Other branches and pull requests never deploy. The build
-# runs check:site with --production, which fails while the site still uses its temporary
-# site/dev preview adapter or development catalog.
+# runs check:site with --production, which fails if a development adapter, stand-in theme or
+# development catalog reaches the output. The site build captures each theme's first paint from
+# the shared preview in Chromium, so browsers are installed before it.
 on:
   push:
     branches: [main]
@@ -29,7 +30,8 @@ jobs:
 
       - run: npm install --global npm@11.12.1
 
-      # Dependency and browser installation are the only steps that use the network.
+      # Dependency and browser installation are the only steps that use the network. The site
+      # build itself needs Chromium.
       - run: npm ci
       - run: npx --no-install playwright install --with-deps chromium firefox
 

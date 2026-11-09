@@ -455,7 +455,7 @@ html:not(.js) .needs-js { display: none !important; }
   .hero h1, .hero-side, .stage { animation: rise 640ms var(--ease) both; }
   .hero-side { animation-delay: 80ms; }
   .stage { animation-delay: 160ms; }
-  .pick, .card-preview, .btn, .seg span, .classics > summary, .picker-drop > summary { transition: background-color 150ms, border-color 150ms, transform 150ms var(--ease); }
+  .pick, .card-preview, .btn, .classics > summary, .picker-drop > summary { transition: background-color 150ms, border-color 150ms, transform 150ms var(--ease); }
   .pick:active, .card-preview:active, .picker-drop > summary:active { transform: scale(0.98); }
   .card-shot img { transition: transform 400ms var(--ease); }
   .card:hover .card-shot img { transform: scale(1.03); }

@@ -3,7 +3,7 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { axeViolations, blocking } from "../../helpers/a11y.mjs";
+import { axeViolations as axeNow, blocking } from "../../helpers/a11y.mjs";
 import { expect, test as base } from "../../helpers/e2e.mjs";
 
 const ROOT = fileURLToPath(new URL("../../../", import.meta.url));
@@ -18,6 +18,16 @@ const test = base.extend({
     { scope: "worker" },
   ],
 });
+
+// Contrast is judged at rest: after the shell's entrance and hover transitions have finished.
+// Scroll-driven entrances never finish on their own clock, and only move content into view.
+async function axeViolations(page, options) {
+  await page.evaluate(() => {
+    const timed = document.getAnimations().filter((a) => a.playState === "running" && !(typeof ScrollTimeline === "function" && a.timeline instanceof ScrollTimeline) && Number.isFinite(a.effect?.getComputedTiming().endTime));
+    return Promise.race([Promise.all(timed.map((a) => a.finished.catch(() => {}))), new Promise((resolve) => setTimeout(resolve, 2000))]);
+  });
+  return axeNow(page, options);
+}
 
 const ROUTES = ["", "themes/longroad-petals/", "themes/solarized-dark/", "make/", "share/", "install/", "privacy/", "credits/", "changelog/", "404.html"];
 
@@ -34,6 +44,8 @@ for (const [label, viewport] of [["phone", { width: 390, height: 844 }], ["deskt
 }
 
 test("every theme's controls and labels, each view and the Before state pass axe with the live preview @a11y", async ({ page, site }) => {
+  // Twenty-five themes, each checked after its live frame is swapped in.
+  test.setTimeout(90000);
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(site);
   await page.locator("[data-window]").dispatchEvent("pointerenter");
@@ -48,11 +60,11 @@ test("every theme's controls and labels, each view and the Before state pass axe
   }
   for (const view of ["repo", "diff"]) {
     await page.locator(`input[name="view"][value="${view}"]`).check({ force: true });
-    for (const v of blocking(await axeViolations(page, { include: "#preview" }))) found.push(`${view} ${v.id}`);
+    for (const v of blocking(await axeViolations(page, { include: "#preview" }))) found.push(`${view} ${v.id}: ${v.targets.slice(0, 3).join(", ")}`);
   }
   await page.locator('input[name="before"][value="before"]').check({ force: true });
   await page.locator('input[name="appearance"][value="calm"]').check({ force: true });
-  for (const v of blocking(await axeViolations(page, { include: "#preview" }))) found.push(`before ${v.id}`);
+  for (const v of blocking(await axeViolations(page, { include: "#preview" }))) found.push(`before ${v.id}: ${v.targets.slice(0, 3).join(", ")}`);
   // The styled frame is inert and out of the tab order; its title names what it shows.
   const frame = page.locator("[data-live] iframe:not([aria-hidden])");
   await expect(frame).toHaveAttribute("tabindex", "-1");

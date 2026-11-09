@@ -18,6 +18,7 @@ export default defineConfig({
   server: { host: "0.0.0.0", port: 4321 },
   vite: {
     plugins: [vitePlugin()],
-    build: { sourcemap: false, modulePreload: { polyfill: false } },
+    // The live preview chunk carries the full Primer ModeIndex; it loads only on intent.
+    build: { sourcemap: false, modulePreload: { polyfill: false }, chunkSizeWarningLimit: 1024 },
   },
 });

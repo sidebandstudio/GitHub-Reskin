@@ -1,6 +1,7 @@
 // C7's check module (CheckRunner in packages/contracts), routed by scripts/check-routes.mjs:
 //   site                  builds dist/site, then runs tests/site/*.test.mjs against it.
-//                         --production also rejects the site/dev adapter and development catalog.
+//                         --production marks the run as the release gate; the output tests reject a
+//                         development adapter, stand-in theme or development catalog in every run.
 //                         --require-live-stores also requires real store listings in release.config.json.
 //   budgets --surface=site  builds, then measures the home page at 390x844 in Chromium against the
 //                         ARCHITECTURE.md site budgets and writes artifacts/reports/site-budgets.json.
