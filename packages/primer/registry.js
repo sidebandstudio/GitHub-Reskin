@@ -256,21 +256,15 @@ export const HOST_SUBJECTS = freeze([
 
 /**
  * Protected UI the host marks data-reskin-protected: account, authentication, permission,
- * billing, verification, merge and warning UI on otherwise reviewed routes. Admission refuses any
- * subject inside or around one, and inside any form at all; structured component rules skip it
- * and everything in it. Not a universal detector: admission rests on the positive signatures
+ * billing, verification, merge and warning UI on otherwise reviewed routes. Every form is one: a
+ * form's action is the account's own, no action list can tell which are safe, and no form
+ * structure has been reviewed. Admission refuses any subject inside or around one; structured
+ * component rules and themed islands skip it and everything in it, and it keeps its nearest
+ * island's native colors. Not a universal detector: admission rests on the positive signatures
  * above, and routes outside ROUTE_CLASSES get no native admission at all.
  */
 export const PROTECTED = [
-  'form[action$="/session"]',
-  'form[action*="/login"]',
-  'form[action*="/sessions/"]',
-  'form[action*="/logout"]',
-  'form[action*="/settings/"]',
-  'form[action*="/account/"]',
-  'form[action*="/billing"]',
-  'form[action*="/invitations"]',
-  'form[action$="/transfer"]',
+  "form",
   'a[href^="/login"]',
   'a[href^="/signup"]',
   'a[href^="/join"]',
@@ -339,7 +333,7 @@ export const AUTHORED = [".markdown-body", ".comment-body", ".js-comment-body", 
  * inventory), and the state attributes beside them.
  */
 export const INVALIDATION = freeze({
-  attributes: ["class", "id", "role", "style", "hidden", "open", "inert", "aria-hidden", "aria-modal", "aria-current", "aria-expanded", "aria-label", "aria-live", "contenteditable", "popover", "data-state", "data-testid", "data-component", "data-tab-item", "data-color-mode", "data-light-theme", "data-dark-theme", "data-static-error-asset", "itemprop", "itemtype", "href", "action", "partial-name", "name", "content"],
+  attributes: ["class", "id", "role", "style", "hidden", "open", "inert", "aria-hidden", "aria-modal", "aria-current", "aria-expanded", "aria-label", "aria-live", "contenteditable", "popover", "data-state", "data-testid", "data-component", "data-tab-item", "data-color-mode", "data-light-theme", "data-dark-theme", "data-static-error-asset", "itemprop", "itemtype", "href", "partial-name", "name", "content"],
   events: ["turbo:before-render", "turbo:before-cache", "turbo:render", "turbo:load", "pjax:beforeReplace", "popstate", "pagehide", "pageshow", "beforetoggle", "toggle", "click", "keydown", "focusin", "change:prefers-color-scheme", "change:forced-colors"],
 });
 

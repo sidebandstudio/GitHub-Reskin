@@ -9,7 +9,7 @@ import { chromium, firefox } from "playwright";
 import { compileCss, sanitizeCss } from "../../packages/format/index.js";
 import { compileGitHub, MODE_INDEX } from "../../packages/primer/index.js";
 import { CSS_TARGET_REGISTRY } from "../../packages/primer/registry.js";
-import { adapterBundle, PREFS, readText, resolvedFromSeed } from "./helpers.mjs";
+import { adapterBundle, PREFS, readText, resolvedFromSeed, stripStyleQueries } from "./helpers.mjs";
 
 const FIXTURE = readText("tests/primer/fixtures/registry.html");
 const bundle = await adapterBundle();
@@ -40,6 +40,35 @@ const STRUCTURED = `<!doctype html><html lang="en" data-color-mode="auto" data-l
 <div id="menu-pop" popover="auto"><button class="btn" id="pop-btn">Leave</button></div>
 <div class="Box" id="free-box">Box</div><button class="btn" id="free-btn">Edit</button><a class="btn btn-primary" id="free-primary" href="/octo/sample">Open</a>
 </main></body></html>`;
+
+// Protected fragments on a themed dark root with GitHub's own mode stylesheets: a plain warning,
+// warnings holding or being a standard island, an ordinary sign-in form with a query and a
+// membership form, warnings inside a light and a dimmed island, past the sixth nested island and
+// inside a light island in a warning, a wrapper that becomes a warning, and a standard island
+// outside protected UI. Islands take their color scheme as primer.css gives it, and boxes and
+// buttons paint from Primer variables.
+const ISLAND = 'data-color-mode="dark" data-light-theme="light" data-dark-theme="dark"';
+const parts = (id) => `<div class="Box" id="${id}-box">Security warning</div><button class="btn btn-primary" id="${id}-btn">Confirm</button>`;
+const FRAGMENTS = `<!doctype html><html lang="en" data-color-mode="auto" data-light-theme="light" data-dark-theme="dark"><head><title>Protected</title>
+<style>${["light", "dark", "dark_dimmed"].map((id) => readText(`vendor/primer/source/${id}.css`)).join("\n")}</style>
+<style>:root,[data-color-mode=light][data-light-theme*=light],[data-color-mode=dark][data-dark-theme*=light]{color-scheme:light}
+[data-color-mode=light][data-light-theme*=dark],[data-color-mode=dark][data-dark-theme*=dark]{color-scheme:dark}
+@media (prefers-color-scheme:dark){[data-color-mode=auto][data-dark-theme*=light]{color-scheme:light}[data-color-mode=auto][data-dark-theme*=dark]{color-scheme:dark}}
+body{color:var(--fgColor-default);background:var(--bgColor-default)}.btn{color:var(--button-primary-fgColor-rest);background:var(--button-primary-bgColor-rest);border:1px solid var(--button-primary-borderColor-rest);border-radius:6px;box-shadow:none}.Box{border:1px solid var(--borderColor-default);border-radius:6px;background:var(--bgColor-default);color:var(--fgColor-default)}</style></head>
+<body><main>
+<div class="flash flash-warn">${parts("plain")}</div>
+<div class="flash flash-warn"><div ${ISLAND}>${parts("nested")}</div></div>
+<div class="flash flash-warn" ${ISLAND}>${parts("self")}</div>
+<form action="/session?return_to=%2F">${parts("query")}</form>
+<form action="/orgs/octo/teams/admin/memberships">${parts("permission")}</form>
+<div data-color-mode="light" data-light-theme="light" data-dark-theme="dark"><div class="flash">${parts("light")}</div></div>
+<div data-color-mode="dark" data-light-theme="light" data-dark-theme="dark_dimmed"><div class="flash">${parts("dimmed")}</div></div>
+${`<div ${ISLAND}>`.repeat(7)}<div class="flash">${parts("deep")}</div>${"</div>".repeat(7)}
+<div class="flash"><div data-color-mode="light" data-light-theme="light" data-dark-theme="dark"><div class="flash">${parts("within")}</div></div></div>
+<div id="later"><div ${ISLAND}>${parts("later")}</div></div>
+<div ${ISLAND}>${parts("free")}</div>
+</main></body></html>`;
+const FRAGMENT_IDS = ["plain", "nested", "self", "query", "permission", "light", "dimmed", "deep", "within"];
 
 // In-page helpers, installed once per page.
 function install({ css, modes }) {
@@ -377,6 +406,51 @@ for (const [name, engine] of [["Chromium", chromium], ["Firefox", firefox]]) {
         assert.equal(await page.evaluate(() => getComputedStyle(document.getElementById("confirm-btn")).getPropertyValue("--reskin-on")), "");
         await context.close();
       });
+
+      // Every protected fragment and everything in it keeps GitHub's own computed colors for its
+      // nearest island's mode, and no island inside or on it reopens structured styling, also in
+      // the first frame after an ordinary wrapper becomes a warning. Firefox also runs the
+      // selector fallback Gecko uses before Firefox 151, which gives a warning inside the plan's
+      // light or dimmed island GitHub's own colors of the seed's mode, dark, as the root has.
+      for (const fallback of name === "Firefox" ? [false, true] : [false]) {
+        test(`protected fragments and forms keep their nearest island's native colors and components in ${appearance === "full" ? "Full" : "Calm"}${fallback ? " through the selector fallback" : ""}`, async () => {
+          const resolved = resolvedFromSeed(MODE_INDEX.modes.dark, { "/tokens/canvas": "#101a2b", "/tokens/text": "#fafbe0", "/tokens/border": "#ff00aa" });
+          resolved.appearance = { ...resolved.appearance, shape: { corners: { style: "sharp", radius: 0 }, borders: { width: 4, style: "solid", color: "#123456" }, shadows: { style: "neon", color: "#fcee0a", opacity: 0.7, blur: 24, offset: 0 }, buttons: { style: "bevel", radius: 8 }, avatar: null } };
+          const primer = compileGitHub(resolved, { seedMode: "dark", policy: "themed" }, { ...PREFS, appearance });
+          const css = fallback ? stripStyleQueries(primer.css) : primer.css;
+          const { page, context } = await open(FRAGMENTS, "https://github.com/octo-sample/protected", { colorScheme: "dark" });
+          const ids = [...FRAGMENT_IDS, "later", "free"].flatMap((id) => [`${id}-box`, `${id}-btn`]);
+          const snapshot = () =>
+            page.evaluate((ids) => Object.fromEntries(ids.map((id) => {
+              const cs = getComputedStyle(document.getElementById(id));
+              return [id, [cs.color, cs.backgroundColor, cs.borderTopColor, cs.borderTopWidth, cs.borderTopLeftRadius, cs.boxShadow, cs.colorScheme, cs.getPropertyValue("--bgColor-default"), cs.getPropertyValue("--fgColor-default"), cs.getPropertyValue("--reskin-on")]];
+            })), ids);
+          const native = await snapshot();
+          await page.evaluate((css) => document.head.append(Object.assign(document.createElement("style"), { textContent: css })), css);
+          const themed = await snapshot();
+          // The island outside protected UI is themed, and the theme's colors differ from GitHub's.
+          assert.equal(themed["free-box"][1], "rgb(16, 26, 43)");
+          assert.notDeepEqual(themed["free-box"], native["free-box"]);
+          assert.notDeepEqual(themed["later-btn"], native["later-btn"]);
+          for (const id of FRAGMENT_IDS) {
+            const own = fallback && (id === "light" || id === "dimmed") ? "plain" : id;
+            for (const part of ["box", "btn"]) assert.deepEqual(themed[`${id}-${part}`], native[`${own}-${part}`], `${appearance} ${id}-${part} keeps GitHub's own colors and components`);
+          }
+          // The light and dimmed warnings take their own island's values, not the dark root's.
+          assert.notEqual(native["light-box"][1], native["plain-box"][1]);
+          assert.notEqual(native["dimmed-box"][1], native["plain-box"][1]);
+          // A wrapper that becomes a warning is native, island and all, in the next frame.
+          const late = await page.evaluate(() => new Promise((resolve) => {
+            document.getElementById("later").className = "flash flash-warn";
+            requestAnimationFrame(() => resolve(["later-box", "later-btn"].map((id) => {
+              const cs = getComputedStyle(document.getElementById(id));
+              return [cs.color, cs.backgroundColor, cs.borderTopColor, cs.borderTopWidth, cs.borderTopLeftRadius, cs.boxShadow, cs.colorScheme, cs.getPropertyValue("--bgColor-default"), cs.getPropertyValue("--fgColor-default"), cs.getPropertyValue("--reskin-on")];
+            })));
+          }));
+          assert.deepEqual(late, [native["later-box"], native["later-btn"]]);
+          await context.close();
+        });
+      }
     }
   });
 }

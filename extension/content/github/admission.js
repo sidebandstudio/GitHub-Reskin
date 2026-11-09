@@ -151,8 +151,6 @@ export function startAdmission(document, { modes, cssAllowed = true, clock, onEv
       return "inside protected UI";
     }
     if (el.closest(AUTHORED) || el.closest(LIVE_REGIONS)) return "inside authored content";
-    // No subject is reviewed inside a form, whose action is the account's own.
-    if (el.closest("form")) return "inside a form";
     // Inheritable kinds reach their descendants, so every descendant must be one the registry
     // lists. Other kinds take only properties nothing inherits.
     if (KINDS[def.kind].inheritable) {

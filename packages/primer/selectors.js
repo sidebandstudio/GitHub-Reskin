@@ -128,6 +128,9 @@ function grouped(modes, baseOf, branch) {
  *   A native island is its own boundary, and a themed island nested in it starts a fresh scope.
  *   For rules that are not inherited custom properties, in Gecko before container style queries.
  *   `nearest` is the same test for any element without theme attributes, for a nested rule.
+ * - `mode(m)` matches the islands of mode `m` in this branch.
+ * - `shallow` is `nearest` through six islands from the root only, where it is exact.
+ * - `deep` matches an element with more than six islands with theme attributes above it.
  *
  * Chromium re-runs each :has() after a DOM change below the element it is anchored on, walking
  * that subtree, so the compiler anchors them only on islands and the body, and keeps them few.
@@ -175,5 +178,8 @@ export function islandScope(covered, known, baseOf, branch) {
     within: (target) => `${target}:not(${ATTRIBUTED}):is(${nearest.join(",")})`,
     // The same test for any element without theme attributes, for a nested rule's parent.
     nearest: `:not(${ATTRIBUTED}):is(${nearest.join(",")})`,
+    mode: (mode) => grouped([mode], baseOf, branch),
+    shallow: `:not(${ATTRIBUTED}):is(${nearest.slice(0, NESTING).join(",")})`,
+    deep: `:is(${below(NESTING)})`,
   };
 }

@@ -23,12 +23,14 @@ function compounds(grouped) {
   }
   return out;
 }
-// The stylesheet without the registry's fixed protected-UI list, whose link and form tests are
-// substring matches on GitHub's own URLs, not on mode attributes or theme input.
-const withoutProtected = (css) => css.replaceAll(PROTECTED, "");
+// The stylesheet without the registry's fixed protected-UI list, whole or by alternative, whose
+// link tests are substring matches on GitHub's own URLs, not on mode attributes or theme input.
+const withoutProtected = (css) => PROTECTED.split(",").reduce((text, s) => text.replaceAll(s, ""), css.replaceAll(PROTECTED, ""));
 const GRAPH = '.js-highlight-blob,.Progress-item:is(main #js-contribution-activity .Progress[role="img"] > *):not(.markdown-body *)';
 const PROTECTED_UI = `${PROTECTED},[data-reskin-protected]`;
 const UNPROTECTED = `:not(${PROTECTED_UI},:is(${PROTECTED_UI}) *)`;
+// A themed island's rule: the one that raises the switch.
+const raises = (r) => r.declarations.some((d) => d.name === "--reskin-on" && d.value === "1");
 const scopeOf = (seedMode, branch) => islandScope(coveredModes(MODE_INDEX, seedMode), Object.keys(MODE_INDEX.modes), (m) => MODE_INDEX.modes[m].base, branch);
 
 // The innermost rules of a compiled stylesheet: [selectors, declarations, media path].
@@ -60,7 +62,7 @@ test("themed output writes every mapped variable from its resolved role, after t
     const [resolved, p] = themed(seedMode);
     const { css, warnings } = compileGitHub(resolved, p, PREFS);
     const list = rules(css);
-    const main = list.filter((r) => r.declarations.some((d) => d.name === "--bgColor-default"));
+    const main = list.filter(raises);
     assert.equal(main.length, 2, `${seedMode}: one rule per color-scheme branch`);
     for (const rule of main) {
       assert.deepEqual(rule.media, ["not all and (forced-colors: active)", rule.media[1]]);
@@ -81,13 +83,14 @@ test("themed output writes every mapped variable from its resolved role, after t
 test("theme scope covers exactly the plan's modes; high-contrast and other families never match", () => {
   const [resolved, p] = themed("dark");
   const { css } = compileGitHub(resolved, p, PREFS);
-  const main = rules(css).filter((r) => r.declarations.some((d) => d.name === "--bgColor-default"));
+  const main = rules(css).filter(raises);
   const [lightBranch, darkBranch] = main;
   assert.deepEqual(lightBranch.media[1], "not all and (prefers-color-scheme: dark)");
   for (const [rule, branch] of [[lightBranch, "light"], [darkBranch, "dark"]]) {
     const scope = scopeOf("dark", branch);
-    // The root and every nested island of the plan, unless an unsafe island depends on it.
-    assert.deepEqual(rule.selectors, [scope.eligible]);
+    // The root and every nested island of the plan, unless an unsafe island depends on it, or it
+    // is protected UI or inside it, or it is past the sixth island and holds protected UI.
+    assert.deepEqual(rule.selectors, [`${scope.eligible}${UNPROTECTED}:not(${scope.deep}:has(${PROTECTED_UI}))`]);
     assert.ok(scope.eligible.startsWith(`${scope.themed}:not(`));
   }
   const themedOf = (rule) => compounds(rule.selectors[0].slice(0, rule.selectors[0].indexOf(":not(")));
@@ -181,17 +184,17 @@ test("component rules follow a subject's own island, then the nearest island: th
     assert.deepEqual(r.media.slice(2), ["style(--reskin-on: 1)"]);
     assert.equal(r.selectors.length, 2);
     // The style query reads the parent's switch, so a subject that is an island never matches,
-    // and protected UI, which clears the switch for its descendants, is refused itself.
+    // and protected UI and everything inside it are refused.
     for (const s of r.selectors) {
-      assert.ok(s.endsWith(`:not([data-color-mode]):not(${PROTECTED_UI})`), s);
-      assert.doesNotMatch(s.replace(PROTECTED_UI, ""), /data-color-mode=|:has/);
+      assert.ok(s.endsWith(`:not([data-color-mode])${UNPROTECTED}`), s);
+      assert.doesNotMatch(s.replaceAll(PROTECTED_UI, ""), /data-color-mode=|:has/);
     }
     const values = Object.fromEntries(r.declarations.map((d) => [d.name, d.value]));
     assert.deepEqual(values, { fill: colorAt(resolved, "/graph/4"), stroke: colorAt(resolved, "/graph/4"), "background-color": colorAt(resolved, "/graph/3") });
   }
   // Themed islands raise the switch and carry the selection colors; every other island with
   // theme attributes clears them, at no specificity.
-  const main = all.find((r) => r.declarations.some((d) => d.name === "--bgColor-default"));
+  const main = all.find(raises);
   const decl = Object.fromEntries(main.declarations.map((d) => [d.name, d.value]));
   assert.equal(decl["--reskin-on"], "1");
   assert.equal(decl["--reskin-selection-text"], colorAt(resolved, "/tokens/selectionText"));
@@ -214,18 +217,15 @@ test("structured component rules never reach protected UI or anything inside it,
     resolved.appearance = { ...resolved.appearance, shape: { corners: { style: "bevel", radius: 12 }, borders: { width: 4, style: "solid", color: "#123456" }, shadows: { style: "glow", color: "#fcee0a", opacity: 0.6, blur: 24, offset: 0 }, buttons: { style: "bevel", radius: 8 }, avatar: null } };
     const { css } = compileGitHub(resolved, p, prefs);
     const all = rules(css);
+    // Protected UI's own native values: under a style query on the nearest island's mode, and
+    // through the selector fallback.
+    const restoring = (r) => r.media.some((m) => m.includes("style(--reskin-mode:")) || r.selectors[0].startsWith(`:is(${PROTECTED_UI}):not(`);
     // Every rule that styles a GitHub element rather than an island: components, graph, labels
     // and scroll containers, in every engine path.
-    const styled = all.filter((r) => r.declarations.length && !r.selectors.some((s) => s.startsWith(":where(") || s.includes("[data-color-mode]:not([data-light-theme],[data-dark-theme])") || s.startsWith("header.HeaderMktg") || s.startsWith(":root") || s.startsWith("::selection") || s.startsWith(":is([data-color-mode=")) && r.selectors.join(",") !== PROTECTED_UI);
+    const styled = all.filter((r) => r.declarations.length && !restoring(r) && !r.selectors.some((s) => s.startsWith(":where(") || s.includes("[data-color-mode]:not([data-light-theme],[data-dark-theme])") || s.startsWith("header.HeaderMktg") || s.startsWith(":root") || s.startsWith("::selection") || s.startsWith(":is([data-color-mode=")) && r.selectors.join(",") !== PROTECTED_UI);
     assert.ok(styled.length > 12, prefs.appearance);
-    for (const r of styled) {
-      for (const s of r.selectors) {
-        const queried = r.media.includes("style(--reskin-on: 1)");
-        // Under the style query a protected subject is refused itself; its descendants read the
-        // cleared switch. The selector paths refuse it and everything inside it.
-        assert.ok(queried ? s.includes(`:not(${PROTECTED_UI})`) : s.includes(UNPROTECTED), `${prefs.appearance} ${r.media.join(" ")} ${s.slice(0, 80)}`);
-      }
-    }
+    // Every path refuses protected UI and everything inside it, under the style query too.
+    for (const r of styled) for (const s of r.selectors) assert.ok(s.includes(UNPROTECTED), `${prefs.appearance} ${r.media.join(" ")} ${s.slice(0, 80)}`);
     // Protected UI clears every Reskin switch, after both branches, as a native island does.
     const guard = all.at(-2);
     assert.deepEqual(guard.selectors, PROTECTED_UI.split(/,(?=[a-z.[])/));
@@ -234,13 +234,73 @@ test("structured component rules never reach protected UI or anything inside it,
   }
 });
 
+test("protected UI takes back its nearest island's own native values for each covered mode under the style query, and the seed mode's through the selector fallback", () => {
+  const [resolved, p] = themed("dark");
+  const all = rules(compileGitHub(resolved, p, PREFS).css);
+  const covered = coveredModes(MODE_INDEX, "dark");
+  const ATTRIBUTED = "[data-color-mode]:is([data-light-theme],[data-dark-theme])";
+  const own = (mode) => new Map(MODE_INDEX.restoreCss[mode].split(";").map((d) => [d.slice(0, d.indexOf(":")), d.slice(d.indexOf(":") + 1)]));
+  const check = (r, mode) => {
+    const values = own(mode);
+    const base = MODE_INDEX.modes[mode].base;
+    for (const d of r.declarations) {
+      assert.equal(d.important, false, `${mode} ${d.name}`);
+      if (d.name === "color-scheme") assert.equal(d.value, base);
+      else if (d.name.startsWith("--lightningcss-")) assert.equal(d.value.trim(), (d.name === `--lightningcss-${base}`) ? "initial" : "");
+      else assert.equal(d.value, values.get(d.name), `${mode} ${d.name} is GitHub's own`);
+    }
+    return Object.fromEntries(r.declarations.map((d) => [d.name, d.value]));
+  };
+  // Engines with style queries: once, after both branches, on protected UI that is no island.
+  const queried = all.filter((r) => r.media.some((m) => m.includes("style(--reskin-mode:")));
+  assert.deepEqual(queried.map((r) => r.media), covered.map((mode) => ["not all and (forced-colors: active)", `style(--reskin-on: 1) and style(--reskin-mode: ${mode})`]));
+  for (const [i, mode] of covered.entries()) {
+    assert.deepEqual(queried[i].selectors, PROTECTED_UI.split(/,(?=[a-z.[])/).map((s) => `${s}:not(${ATTRIBUTED})`));
+    check(queried[i], mode);
+  }
+  // A light island under a dark theme gets back all of light's own colors.
+  assert.equal(check(queried[covered.indexOf("light")], "light")["--bgColor-default"], own("light").get("--bgColor-default"));
+  assert.ok(queried[covered.indexOf("light")].declarations.length > 400);
+  for (const branch of ["light", "dark"]) {
+    const scope = scopeOf("dark", branch);
+    const media = branch === "light" ? "not all and (prefers-color-scheme: dark)" : "(prefers-color-scheme: dark)";
+    // Each covered island names its mode for protected UI inside it.
+    for (const mode of covered) {
+      const tag = all.filter((r) => r.media[1] === media && r.selectors[0] === scope.mode(mode));
+      assert.deepEqual(tag.map((r) => r.declarations.map((d) => [d.name, d.value])), [[["--reskin-mode", mode]]]);
+    }
+    // Gecko before Firefox 151 finds a themed nearest island by selector through six islands, one
+    // neither protected nor inside protected UI, and takes back GitHub's own values for the seed's
+    // mode.
+    const fallback = all.filter((r) => r.media[1] === media && r.selectors[0].startsWith(`:is(${PROTECTED_UI}):not(`));
+    assert.equal(fallback.length, 1);
+    assert.deepEqual(fallback[0].media.slice(2), ["selector(:-moz-focusring) and (not (position-anchor: normal))"]);
+    assert.deepEqual(fallback[0].selectors, [`:is(${PROTECTED_UI})${scope.shallow}:not(:is(${PROTECTED_UI}) ${ATTRIBUTED} *,${ATTRIBUTED}:is(${PROTECTED_UI}) *)`]);
+    assert.ok(scope.nearest.startsWith(scope.shallow.slice(0, -1)));
+    check(fallback[0], "dark");
+  }
+});
+
+test("selection theming is optional: without it both engines keep the browser's own selection colors", () => {
+  const [resolved, p] = themed("dark");
+  const withSelection = compileGitHub(resolved, p, PREFS);
+  const without = compileGitHub(resolved, p, PREFS, MODE_INDEX, { selection: false });
+  assert.match(withSelection.css, /::selection/);
+  assert.doesNotMatch(without.css, /::selection/);
+  assert.notEqual(without.fingerprint, withSelection.fingerprint);
+  // Everything else is the same stylesheet, the islands' selection variables included.
+  assert.equal(compileGitHub(resolved, p, PREFS, MODE_INDEX, { selection: true }).css, withSelection.css);
+  assert.match(without.css, /--reskin-selection-text:/);
+  assert.throws(() => compileGitHub(resolved, p, PREFS, MODE_INDEX, { selection: "no" }), /selection option must be a boolean/);
+});
+
 test("scrollbar colors reach the viewport through the root island and GitHub's scroll containers, not every element", () => {
   const [resolved, p] = themed("dark");
   const all = rules(compileGitHub(resolved, p, PREFS).css);
   const thumb = resolved.appearance.colors.scrollbar;
   const color = `${thumb.thumb} ${thumb.track}`;
   // The eligible island itself carries them, for the viewport.
-  const main = all.find((r) => r.declarations.some((d) => d.name === "--bgColor-default"));
+  const main = all.find(raises);
   assert.equal(main.declarations.find((d) => d.name === "scrollbar-color").value, color);
   // Its children start again from the browser's, at no specificity, so GitHub's own rules win.
   const reset = all.filter((r) => r.selectors[0] === ":where([data-color-mode]:is([data-light-theme],[data-dark-theme])) > *");
@@ -300,6 +360,11 @@ test("the compiler interpolates only validated colors, never metadata, flavor or
   assert.throws(() => compileGitHub(upper, p, PREFS), /lowercase #rrggbb/);
   const badIndex = { ...MODE_INDEX, nativeCss: { ...MODE_INDEX.nativeCss, dark: "--x:red}body{display:none" } };
   assert.throws(() => compileGitHub(resolved, p, PREFS, badIndex), /unsafe declaration/);
+  const badRestore = { ...MODE_INDEX, restoreCss: { ...MODE_INDEX.restoreCss, dark_dimmed: "--bgColor-default:red}body{display:none" } };
+  assert.throws(() => compileGitHub(resolved, p, PREFS, badRestore), /restoreCss\.dark_dimmed has an unsafe declaration/);
+  // Without a covered mode's restoring baseline, nothing compiles that would leave protected UI themed.
+  const { light, ...partial } = MODE_INDEX.restoreCss;
+  assert.throws(() => compileGitHub(resolved, p, PREFS, { ...MODE_INDEX, restoreCss: partial }), /restoreCss has no light baseline/);
 });
 
 test("a resolution from another seed or base cannot be compiled under a plan", () => {

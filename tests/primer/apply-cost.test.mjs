@@ -2,17 +2,20 @@
 // 10,000-line diff with 2,000 added and 2,000 deleted lines, a 53x7 contribution calendar with
 // its five legend swatches and the activity overview, with GitHub's own box and button geometry
 // and color scheme. Each sample inserts the stylesheet and flushes style and layout in one task.
+// The stylesheet is compiled with the options the content adapter gives this page, a large one.
 //
 // Any change to an inherited custom property on the root restyles every element, so a stylesheet
 // that sets one variable is the control. The Primer stylesheet's own matching, beyond that
 // restyle, must stay a small multiple of it and under 50 ms; the absolute times are printed for
-// the record, with the machine's load.
+// the record, with the machine's load. The same page also records C5's own path, resolving,
+// compiling and mounting Choom Circuit as the content host does, against the same control.
 import assert from "node:assert/strict";
 import { loadavg } from "node:os";
 import { after, before, describe, test } from "node:test";
+import { build } from "esbuild";
 import { chromium, firefox } from "playwright";
 import { compileGitHub, MODE_INDEX } from "../../packages/primer/index.js";
-import { PREFS, resolvedFromSeed } from "./helpers.mjs";
+import { adapterBundle, PREFS, readJson, resolvedFromSeed, ROOT } from "./helpers.mjs";
 
 // GitHub's dark mode with the Primer geometry the diff view reads, and a profile's graph.
 const PAGE = `<!doctype html><html lang="en" data-color-mode="auto" data-light-theme="light" data-dark-theme="dark"><head><title>Large diff</title>
@@ -51,11 +54,48 @@ resolved.appearance = {
   graph: { cellStyle: "glow", cellRadius: 1, glow: { levels: [1, 2, 3, 4], radius: 9, opacity: 0.85, color: null } },
   details: { scrollbarWidth: "thin", labels: { style: "bevel" }, topics: { style: "bevel" } },
 };
-const SHEETS = {
-  control: ":root{--reskin-control:1}",
-  full: compileGitHub(resolved, { seedMode: "dark", policy: "themed" }, { ...PREFS, appearance: "full" }).css,
-  calm: compileGitHub(resolved, { seedMode: "dark", policy: "themed" }, { ...PREFS, appearance: "calm" }).css,
-};
+const CONTROL = ":root{--reskin-control:1}";
+const sheets = (options) => ({
+  control: CONTROL,
+  full: compileGitHub(resolved, { seedMode: "dark", policy: "themed" }, { ...PREFS, appearance: "full" }, MODE_INDEX, options).css,
+  calm: compileGitHub(resolved, { seedMode: "dark", policy: "themed" }, { ...PREFS, appearance: "calm" }, MODE_INDEX, options).css,
+});
+const adapter = await adapterBundle();
+// C5's content-host path as the fixture product app runs it: resolve, compile the Primer
+// stylesheet with the adapter's options and the appearance, one owned style node, then mount at
+// located anchors. `window.mountTheme` returns a function that removes everything it added.
+const mountPath = (
+  await build({
+    stdin: {
+      contents: `import { compileAppearance, mountAppearance } from "./packages/appearance/index.js";
+import { repairTheme, resolveTheme } from "./packages/engine/index.js";
+import { compileGitHub, MODE_INDEX, selectMode } from "./packages/primer/index.js";
+import { classifyRoute, compileOptions, locateSlots, readNativeMode } from "./extension/content/github/index.js";
+window.mountTheme = (theme, prefs) => {
+  const native = readNativeMode(document, window);
+  const plan = selectMode(native, theme.base, MODE_INDEX);
+  const seed = MODE_INDEX.modes[plan.seedMode];
+  const resolved = resolveTheme(repairTheme(theme, seed).theme, { seed, policy: plan.policy, reducedMotion: false, forcedColors: false });
+  const owned = { css: theme.css ?? null, cssAllowed: false };
+  const style = document.createElement("style");
+  style.textContent = [compileGitHub(resolved, plan, prefs, MODE_INDEX, compileOptions(document)).css, compileAppearance(resolved, prefs, "github", owned)].join("\\n");
+  document.head.append(style);
+  const decoration = mountAppearance(document.body, resolved, prefs, locateSlots(document, classifyRoute(document)), owned);
+  return () => {
+    decoration.destroy();
+    style.remove();
+  };
+};`,
+      resolveDir: ROOT,
+    },
+    bundle: true,
+    format: "iife",
+    write: false,
+    platform: "browser",
+    logLevel: "silent",
+  })
+).outputFiles[0].text;
+const CHOOM = readJson("tests/fixtures/choom/choom-circuit-faithful.reskin.json");
 
 async function measure(page, sheets) {
   return page.evaluate(async (sheets) => {
@@ -85,7 +125,44 @@ async function measure(page, sheets) {
     return out;
   }, sheets);
 }
+// The same rounds through C5's path, against the control stylesheet.
+async function measureMount(page, theme) {
+  return page.evaluate(async ({ theme, control, prefs }) => {
+    const flush = () => {
+      document.body.offsetHeight;
+      getComputedStyle(document.body).color;
+    };
+    const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+    const out = { control: [], full: [], calm: [] };
+    for (let round = 0; round < 6; round++) {
+      for (const name of Object.keys(out)) {
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+        flush();
+        await pause(20);
+        const start = performance.now();
+        let remove;
+        if (name === "control") {
+          const style = document.createElement("style");
+          style.textContent = control;
+          document.head.append(style);
+          remove = () => style.remove();
+        } else remove = window.mountTheme(theme, { ...prefs, appearance: name });
+        flush();
+        if (round) out[name].push(performance.now() - start);
+        await pause(20);
+        remove();
+        flush();
+      }
+    }
+    return out;
+  }, { theme, control: CONTROL, prefs: PREFS });
+}
 const median = (list) => [...list].sort((a, b) => a - b)[list.length >> 1];
+const report = (name, browser, fixture, label, times, start) => {
+  const m = Object.fromEntries(Object.entries(times).map(([k, v]) => [k, median(v)]));
+  console.log(`${name} ${browser.version()} ${label}: ${fixture.elements} elements; median control ${m.control.toFixed(1)} ms, Full ${m.full.toFixed(1)} ms, Calm ${m.calm.toFixed(1)} ms; samples ${JSON.stringify(Object.fromEntries(Object.entries(times).map(([k, v]) => [k, v.map((n) => Math.round(n))])))}; load ${start.map((n) => n.toFixed(1)).join("/")} to ${loadavg().map((n) => n.toFixed(1)).join("/")}`);
+  return m;
+};
 
 for (const [name, engine] of [["Chromium", chromium], ["Firefox", firefox]]) {
   describe(`Primer apply cost in ${name}`, () => {
@@ -103,10 +180,16 @@ for (const [name, engine] of [["Chromium", chromium], ["Firefox", firefox]]) {
       await page.goto("https://github.com/octo/sample/pull/1/files");
       const fixture = await page.evaluate(grow);
       assert.deepEqual([fixture.additions, fixture.deletions, fixture.days], [2000, 2000, 371]);
+      // The adapter keeps the browser's own selection on a page this large.
+      await page.addScriptTag({ content: adapter });
+      const options = await page.evaluate(() => ReskinGitHub.compileOptions(document));
+      assert.deepEqual(options, { selection: false });
       const start = loadavg();
-      const times = await measure(page, SHEETS);
-      const m = Object.fromEntries(Object.entries(times).map(([k, v]) => [k, median(v)]));
-      console.log(`${name} ${browser.version()}: ${fixture.elements} elements; median control ${m.control.toFixed(1)} ms, Full ${m.full.toFixed(1)} ms, Calm ${m.calm.toFixed(1)} ms; samples ${JSON.stringify(Object.fromEntries(Object.entries(times).map(([k, v]) => [k, v.map((n) => Math.round(n))])))}; load ${start.map((n) => n.toFixed(1)).join("/")} to ${loadavg().map((n) => n.toFixed(1)).join("/")}`);
+      const m = report(name, browser, fixture, "stylesheet", await measure(page, sheets(options)), start);
+      // C5's resolve, compile and mount path, recorded beside it.
+      await page.addScriptTag({ content: mountPath });
+      const mountStart = loadavg();
+      report(name, browser, fixture, "C5 mount path, Choom Circuit", await measureMount(page, CHOOM), mountStart);
       for (const mode of ["full", "calm"]) {
         assert.ok(m[mode] - m.control < 50, `${mode}: ${m[mode].toFixed(1)} ms is more than 50 ms beyond the ${m.control.toFixed(1)} ms control`);
         assert.ok(m[mode] < 2.5 * m.control + 10, `${mode}: ${m[mode].toFixed(1)} ms is more than 2.5 times the ${m.control.toFixed(1)} ms control`);

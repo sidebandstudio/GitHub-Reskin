@@ -130,6 +130,15 @@ test("counterparts are unique, keep the family and never drop high contrast", ()
   assert.equal(MODE_INDEX.counterparts.length, themable.length * 2);
   for (const m of Object.values(MODE_INDEX.modes).filter((m) => m.highContrast)) assert.ok(!MODE_INDEX.counterparts.some((c) => c.nativeMode === m.id), m.id);
   assert.deepEqual(Object.keys(MODE_INDEX.nativeCss).sort(), [...new Set(MODE_INDEX.counterparts.map((c) => c.seedMode))].sort());
+  // Every themable mode has a restoring baseline: its own value of each variable a themed island
+  // writes, the family baseline's and the emitted mode variables alike.
+  assert.deepEqual(Object.keys(MODE_INDEX.restoreCss).sort(), themable.map((m) => m.id).sort());
+  const names = (text) => text.split(";").map((d) => d.slice(0, d.indexOf(":")));
+  const emitted = new Set(names(Object.values(MODE_INDEX.restoreCss)[0]));
+  for (const [id, text] of Object.entries(MODE_INDEX.restoreCss)) {
+    assert.deepEqual(names(text), [...emitted], id);
+    for (const seedMode of Object.keys(MODE_INDEX.nativeCss)) for (const name of names(MODE_INDEX.nativeCss[seedMode])) assert.ok(emitted.has(name), `${id} ${name}`);
+  }
 });
 
 test("GitHub's selectors in every frozen file are exactly the ones the adapter mirrors", () => {

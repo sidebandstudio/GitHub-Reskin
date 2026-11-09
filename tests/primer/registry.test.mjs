@@ -69,7 +69,7 @@ test("every host signature is exact, reviewed per route and inside the registry'
   }
   // Auth, settings, security and billing routes are not route classes at all.
   for (const r of ROUTE_CLASSES) assert.doesNotMatch(r, /login|session|settings|security|billing|auth/);
-  for (const selector of ["dialog", '[role="alertdialog"]', '[role="alert"]', "[popover]", ".flash", '[data-component="Banner"]', 'form[action$="/session"]', ".signed-commit-badge", ".merge-pr"]) assert.ok(PROTECTED.includes(selector), selector);
+  for (const selector of ["dialog", '[role="alertdialog"]', '[role="alert"]', "[popover]", ".flash", '[data-component="Banner"]', ".signed-commit-badge", ".merge-pr"]) assert.ok(PROTECTED.includes(selector), selector);
   for (const selector of ["dialog", '[aria-modal="true"]', ".flash-error", ".flash-warn"]) assert.ok(BLOCKING.includes(selector), selector);
   assert.ok(ACTIVATORS.includes("[aria-haspopup]") && ACTIVATORS.includes("summary"));
 });
@@ -101,7 +101,14 @@ test("the primary-button subject is dormant: theme CSS may name it, the host adm
     assert.equal(s.dormant, undefined, s.id);
     assert.doesNotMatch(s.select, /\bbutton\b|\bform\b|input|btn/, s.id);
   }
-  for (const selector of ['form[action*="/logout"]', 'form[action*="/settings/"]', 'form[action*="/billing"]', 'form[action*="/invitations"]', 'form[action$="/transfer"]', 'a[href^="/join"]']) assert.ok(PROTECTED.includes(selector), selector);
+  assert.ok(PROTECTED.includes('a[href^="/join"]'));
+});
+
+test("every form is protected UI, whatever its action: no action list can tell a safe one", () => {
+  const list = PROTECTED.split(",");
+  assert.equal(list[0], "form");
+  // No narrower form test remains to suggest some forms are reviewed.
+  assert.deepEqual(list.filter((s) => /^form\b/.test(s)), ["form"]);
 });
 
 test("the registry evidence records live admissions only on reviewed routes and none on sign-in", () => {
