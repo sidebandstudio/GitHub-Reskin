@@ -6,9 +6,20 @@ import { CHOOM, expect, openGitHub, storage, test, waitPainted } from "./helpers
 
 const onboardingTabs = (extension) => extension.context.pages().filter((page) => page.url() === extension.url("onboarding"));
 
+// The welcome tab, once the background's install handler has opened it and its page has loaded.
+// Waits on the browser's own page event, not a fixed poll: initialization finishes later on a
+// loaded machine, and only the test's timeout bounds it.
+async function welcomeTab(extension) {
+  const url = extension.url("onboarding");
+  const page = onboardingTabs(extension)[0] ?? (await extension.context.waitForEvent("page", { timeout: 0 }));
+  await page.waitForURL(url, { timeout: 0 });
+  await page.waitForLoadState("domcontentloaded", { timeout: 0 });
+  expect(onboardingTabs(extension)).toHaveLength(1);
+  return page;
+}
+
 test("a genuine install opens the welcome tab once, with Choom Circuit already selected", async ({ extension, packageDir }) => {
-  await expect.poll(() => onboardingTabs(extension).length).toBe(1);
-  const welcome = onboardingTabs(extension)[0];
+  const welcome = await welcomeTab(extension);
   await welcome.setViewportSize({ width: 1440, height: 900 });
   await expect(welcome.getByRole("heading", { level: 1 })).toHaveText("Pick your GitHub world.");
   await expect(welcome.locator("[data-rs=summary-show]")).toHaveText("Cyberpunk: Edgerunners");
@@ -40,8 +51,7 @@ test("a genuine install opens the welcome tab once, with Choom Circuit already s
 });
 
 test("the welcome preview shows the selected theme and Before/After, and a choice there commits", async ({ extension }) => {
-  await expect.poll(() => onboardingTabs(extension).length).toBe(1);
-  const welcome = onboardingTabs(extension)[0];
+  const welcome = await welcomeTab(extension);
   await welcome.setViewportSize({ width: 1440, height: 900 });
   const host = welcome.locator("[data-reskin-preview]");
   await expect(host).toHaveAttribute("data-policy", "themed", { timeout: 15000 });
@@ -67,8 +77,7 @@ test("the welcome preview shows the selected theme and Before/After, and a choic
 });
 
 test("the welcome page reflows to 390px without page-wide horizontal scrolling", async ({ extension }) => {
-  await expect.poll(() => onboardingTabs(extension).length).toBe(1);
-  const welcome = onboardingTabs(extension)[0];
+  const welcome = await welcomeTab(extension);
   await welcome.setViewportSize({ width: 390, height: 844 });
   await expect(welcome.locator("[data-reskin-preview]")).toHaveAttribute("data-policy", "themed", { timeout: 15000 });
   expect(await welcome.evaluate(() => document.scrollingElement.scrollWidth <= innerWidth)).toBe(true);
@@ -82,8 +91,7 @@ const inFirstScreen = (page, selector) =>
   });
 
 test("the result, Undo and Open GitHub stay in the first screen while choosing, at 1440 and 390", async ({ extension }) => {
-  await expect.poll(() => onboardingTabs(extension).length).toBe(1);
-  const welcome = onboardingTabs(extension)[0];
+  const welcome = await welcomeTab(extension);
   for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
     const label = JSON.stringify(viewport);
     await welcome.setViewportSize(viewport);
@@ -124,8 +132,7 @@ test("the result, Undo and Open GitHub stay in the first screen while choosing, 
 });
 
 test("the preview region scrolls by wheel and keyboard and shows the contribution graph", async ({ extension }) => {
-  await expect.poll(() => onboardingTabs(extension).length).toBe(1);
-  const welcome = onboardingTabs(extension)[0];
+  const welcome = await welcomeTab(extension);
   for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
     const label = JSON.stringify(viewport);
     await welcome.setViewportSize(viewport);
@@ -147,18 +154,22 @@ test("the preview region scrolls by wheel and keyboard and shows the contributio
     await expect.poll(() => region.evaluate((el) => el.scrollTop), { message: `${label} wheel` }).toBeGreaterThan(0);
     await region.evaluate((el) => (el.scrollTop = 0));
     await region.focus();
-    await welcome.keyboard.press("PageDown");
-    await expect.poll(() => region.evaluate((el) => el.scrollTop), { message: `${label} PageDown` }).toBeGreaterThan(0);
-    await welcome.keyboard.press("Home");
-    await expect.poll(() => region.evaluate((el) => el.scrollTop)).toBe(0);
+    // Keyboard scrolling may be smooth; each scroll's scrollend says where it stopped.
+    // The listener is in place before the key goes down.
+    const scrollBy = async (key) => {
+      await region.evaluate((el) => void (el.reskinScrollEnd = new Promise((resolve) => el.addEventListener("scrollend", () => resolve(el.scrollTop), { once: true }))));
+      await welcome.keyboard.press(key);
+      return region.evaluate((el) => el.reskinScrollEnd);
+    };
+    expect(await scrollBy("PageDown"), `${label} PageDown`).toBeGreaterThan(0);
+    expect(await scrollBy("Home"), `${label} Home`).toBe(0);
   }
 });
 
 // The theme's own CSS names GitHub's elements as well as its owned slots. The preview compiles it
 // against the same registry as github.com, so its owned slots look as they do there.
 test("the welcome preview paints Choom's own tag and heading treatment as on GitHub", async ({ extension }) => {
-  await expect.poll(() => onboardingTabs(extension).length).toBe(1);
-  const welcome = onboardingTabs(extension)[0];
+  const welcome = await welcomeTab(extension);
   await welcome.setViewportSize({ width: 1440, height: 900 });
   await expect(welcome.locator("[data-reskin-preview]")).toHaveAttribute("data-policy", "themed", { timeout: 15000 });
   const SLOTS = ["profile.tag", "profile.pinned.heading"];

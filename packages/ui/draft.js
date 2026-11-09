@@ -15,6 +15,7 @@ export const COPY = Object.freeze({
   nothingToUndo: "Nothing to undo yet.",
 });
 
+const SHA256 = /^[0-9a-f]{64}$/;
 const isObject = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
 const segments = (path) => path.split("/").slice(1);
 
@@ -151,33 +152,40 @@ export function freshDocument({ base, colors }, name = "My theme") {
 /**
  * The draft state: the document, the one previous valid document, and where it came from.
  * `basedOn` is the bundled theme a new local theme records; `savedId` the local theme it edits;
- * `fresh` marks a new three-color theme that took only its starting colors from `basedOn`.
+ * `fresh` marks a new three-color theme that took only its starting colors from `basedOn`;
+ * `baseHash` is the source hash of the saved version editing started from, kept through Undo,
+ * autosave and resume so a save over a newer version always asks first. `cssEnabled` is only the
+ * person's choice to use the CSS; whether it is approved is decided elsewhere.
  */
-export function createDraft({ document, basedOn = null, savedId = null, cssEnabled = false, fresh = false }) {
-  return { document, previous: null, basedOn, savedId, cssEnabled, fresh };
+export function createDraft({ document, basedOn = null, savedId = null, cssEnabled = false, fresh = false, baseHash = null }) {
+  return { document, previous: null, basedOn, savedId, cssEnabled, fresh, baseHash };
 }
 
 /** Accepts a completed edit: the current document becomes the one Undo restores. */
 export function commitEdit(draft, document, patch = {}) {
   if (JSON.stringify(document) === JSON.stringify(draft.document) && !Object.keys(patch).length) return draft;
-  const previous = { document: draft.document, cssEnabled: draft.cssEnabled, savedId: draft.savedId, basedOn: draft.basedOn, fresh: draft.fresh };
+  const previous = { document: draft.document, cssEnabled: draft.cssEnabled, savedId: draft.savedId, basedOn: draft.basedOn, fresh: draft.fresh, baseHash: draft.baseHash ?? null };
   return { ...draft, ...patch, previous, document };
 }
 
 /** Undo restores the previous document once, then becomes unavailable. There is no Redo. */
 export function undo(draft) {
   if (!draft.previous) return draft;
-  const { document, cssEnabled, savedId, basedOn = draft.basedOn, fresh = draft.fresh } = draft.previous;
-  return { ...draft, document, cssEnabled, savedId, basedOn, fresh, previous: null };
+  const { document, cssEnabled, savedId, basedOn = draft.basedOn, fresh = draft.fresh, baseHash = draft.baseHash ?? null } = draft.previous;
+  return { ...draft, document, cssEnabled, savedId, basedOn, fresh, baseHash, previous: null };
 }
 
-/** The record the background keeps as the recoverable draft. No Undo history is stored. */
-export function draftRecord(draft, { baseRevision, now = Date.now() } = {}) {
-  const record = { draftVersion: DRAFT_VERSION, document: draft.document, cssEnabled: Boolean(draft.cssEnabled), updatedAt: now };
+/**
+ * The record the background keeps as the recoverable draft. No Undo history is stored, and no CSS
+ * approval: a resumed draft has only what storage approved. `baseHash` is the source hash of the
+ * saved theme this draft started from, so resuming it after that theme changed asks first.
+ */
+export function draftRecord(draft, { baseHash = draft.baseHash, now = Date.now() } = {}) {
+  const record = { draftVersion: DRAFT_VERSION, document: draft.document, updatedAt: now };
   if (draft.basedOn) record.basedOn = draft.basedOn;
   if (draft.savedId) record.savedId = draft.savedId;
   if (draft.fresh) record.fresh = true;
-  if (Number.isSafeInteger(baseRevision)) record.baseRevision = baseRevision;
+  if (typeof baseHash === "string" && SHA256.test(baseHash)) record.baseHash = baseHash;
   return record;
 }
 
@@ -190,10 +198,9 @@ export function draftFromRecord(record) {
       document: record.document,
       basedOn: typeof record.basedOn === "string" ? record.basedOn : null,
       savedId: typeof record.savedId === "string" ? record.savedId : null,
-      cssEnabled: record.cssEnabled === true,
       fresh: record.fresh === true,
+      baseHash: typeof record.baseHash === "string" && SHA256.test(record.baseHash) ? record.baseHash : null,
     }),
-    baseRevision: Number.isSafeInteger(record.baseRevision) ? record.baseRevision : null,
     updatedAt: Number.isFinite(record.updatedAt) ? record.updatedAt : null,
   };
 }

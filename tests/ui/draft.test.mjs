@@ -114,12 +114,18 @@ test("CSS edits and background layers", () => {
   assert.deepEqual(doc, THREE);
 });
 
-test("the recoverable draft record round-trips without Undo history and rejects anything invalid", () => {
-  const draft = commitEdit(createDraft({ document: THREE, basedOn: "anime.frieren", cssEnabled: false }), RICH, { cssEnabled: true });
-  const record = draftRecord(draft, { baseRevision: 7, now: 1000 });
-  assert.deepEqual(Object.keys(record).sort(), ["baseRevision", "basedOn", "cssEnabled", "document", "draftVersion", "updatedAt"]);
+const LOCAL = "local:00000000-0000-4000-8000-000000000001";
+
+test("the recoverable draft record round-trips without Undo history or CSS approval and rejects anything invalid", () => {
+  const draft = commitEdit(createDraft({ document: THREE, basedOn: "anime.frieren", savedId: LOCAL, cssEnabled: false }), RICH, { cssEnabled: true });
+  const baseHash = "c".repeat(64);
+  const record = draftRecord(draft, { baseHash, now: 1000 });
+  assert.deepEqual(Object.keys(record).sort(), ["baseHash", "basedOn", "document", "draftVersion", "savedId", "updatedAt"]);
   const restored = draftFromRecord(JSON.parse(JSON.stringify(record)));
-  assert.deepEqual([restored.document, restored.basedOn, restored.cssEnabled, restored.previous, restored.baseRevision], [RICH, "anime.frieren", true, null, 7]);
+  assert.deepEqual([restored.document, restored.basedOn, restored.savedId, restored.cssEnabled, restored.previous, restored.baseHash], [RICH, "anime.frieren", LOCAL, false, null, baseHash]);
+  // A record from before this field, or one claiming Enable advanced CSS, resumes with neither.
+  const legacy = draftFromRecord({ ...record, baseHash: undefined, cssEnabled: true, baseRevision: 7 });
+  assert.deepEqual([legacy.cssEnabled, legacy.baseHash], [false, null]);
   assert.equal(draftFromRecord(null), null);
   assert.equal(draftFromRecord({ ...record, draftVersion: 2 }), null);
   assert.equal(draftFromRecord({ ...record, document: { ...THREE, colors: {} } }), null);

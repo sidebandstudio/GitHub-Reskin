@@ -107,7 +107,7 @@
         </div>
 
         <div class="rb-panel rb-panel--alert" data-rb="conflict" hidden role="group" aria-labelledby="rb-conflict-title">
-          <p class="rb-panel-title" id="rb-conflict-title">Your settings changed in another window, so this draft was not saved.</p>
+          <p class="rb-panel-title" id="rb-conflict-title" data-rb="conflict-title">Your settings changed in another window, so this draft was not saved.</p>
           <div class="rs-actions">
             <button type="button" class="rs-button rs-button--primary" data-rb="keep-editing">Keep editing this draft</button>
             <button type="button" class="rs-button" data-rb="load-saved">Load saved theme</button>
@@ -254,6 +254,9 @@
                 </div>
               </div>
               <p class="rb-field-error" data-rb-error-for="backgrounds" role="alert" hidden></p>
+              <div class="rs-actions" data-rb="image-retry" hidden>
+                <button type="button" class="rs-button" data-rb="image-resize"></button>
+              </div>
             </details>
 
             <details class="rb-more" data-rb-section="shape">

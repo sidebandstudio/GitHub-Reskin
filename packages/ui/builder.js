@@ -6,12 +6,12 @@
 // page's static HTML supplies the controls, marked data-rb="<part>"; repeated color rows are
 // built here from fields.js. Text from themes enters only through textContent and value.
 import { LOCAL_THEME_ID_PREFIX, LIMITS, SANITIZER_VERSION } from "../contracts/index.js";
-import { basePolarityIssue, repairTheme } from "../engine/index.js";
+import { basePolarityIssue, repairTheme, sourceHash } from "../engine/index.js";
 import { acceptsFileName, canonicalize, dataUrlBytes, makeAiPrompt, normalizeHex, rasterInfo, rasterSourceInfo, rasterTotals, UPLOAD_SOURCE_BYTES } from "../format/index.js";
 import { browserRasterEnv, convertRaster, createRasterQueue, fitSize, removeRasterLayer, setRasterLayer } from "../appearance/raster.js";
 import { COPY as DRAFT_COPY, addLayer, checked, commitEdit, copyName, createDraft, draftFromRecord, draftRecord, fixBase, freshDocument, layerCount, removeLayer, setCss, setEffect, setField, setFlavorSlot, setGraphLevel, switchBase, undo, valueAt, withValue } from "./draft.js";
 import { ANSI_COLORS, BACKGROUND_TARGETS, CODE_COLORS, CORE_COLORS, DETAIL_COLORS, DETAIL_FIELDS, DIFF_COLORS, EFFECTS, FLAVOR_FIELDS, GRADIENT_TYPES, GRAPH_FIELDS, GRAPH_LEVEL_LABELS, IMAGE_FITS, IMAGE_POSITIONS, PATTERN_KINDS, SHAPE_FIELDS, SYNTAX_COLORS, fontChoices } from "./fields.js";
-import { effectivePreferences } from "../settings/index.js";
+import { APPROVAL_ISSUE, effectivePreferences, NEW_TARGET } from "../settings/index.js";
 import { analyzeImport, COPY as IMPORT_COPY, cssSummary, exportFile, extractObject, kib, repaired, shareSheet, themeJson } from "./importer.js";
 
 export const COPY = Object.freeze({
@@ -51,7 +51,19 @@ export const COPY = Object.freeze({
   imageRemoved: "Removed the image.",
   freshStarted: "Started a new theme from three colors. Undo puts the last one back.",
   remixed: (name) => `Started from every detail of ${name}. Undo puts the last one back.`,
+  approveAgain: "Advanced CSS needs your approval again. Turn on Enable advanced CSS, then save.",
+  approveFailed: "We couldn't turn on advanced CSS. Try Enable advanced CSS again.",
+  copyCssOff: (name) => `Saved ${name} as a copy and applied it to GitHub. Its advanced CSS stays off until you turn on Enable advanced CSS for the copy.`,
+  conflict: "Your settings changed in another window, so this draft was not saved.",
+  resumeConflict: (name) => `${name} was saved again after this draft was kept. Keep editing to replace the saved version when you save, or load the saved theme.`,
+  imageResize: (width, height) => `Resize to ${width} × ${height} px`,
+  imageTooBig: (bytes) => `The converted image is ${kib(bytes)}, more than this theme has room for. Resize it to make it smaller.`,
+  imageTooManyPixels: "This image doesn't fit beside the theme's other images. Resize it to make it smaller, or remove another image.",
+  imageCannotFit: (width, height) => `This image can't be made small enough to fit in this theme, even at ${width} × ${height} px. Choose a smaller or simpler image, or remove another image first.`,
+  imageNoRoom: "This image has more pixels than this theme has room for, so it can't be converted here. Choose a smaller image, or remove another image first.",
 });
+// Resize halves the longest side, down to this many pixels.
+const MIN_IMAGE_SIDE = 16;
 const ROLE_LABELS = { background: "Background", text: "Text", accent: "Accent" };
 const ROLE_EXAMPLES = { background: "#18212b", text: "#e6edf3", accent: "#ff806c" };
 
@@ -125,6 +137,14 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
   let bgTarget = "page";
   let layerKey = "";
   let destroyed = false;
+  // This editor's identity for CSS approval. It lives only in this page's memory: no draft record,
+  // other window or later page has it, so none of them can redeem this editor's approval.
+  const editor = (win?.crypto ?? globalThis.crypto).randomUUID().replace(/-/g, "");
+  // The approval ticket the settings repository issued when the person turned on Enable advanced
+  // CSS here, for one target and exactly one CSS text: {ticket, target, hash, storedHash, storedConsent}.
+  // It is never part of the draft, its Undo history or its record.
+  let approval = null;
+  let approving = null;
 
   // ----- messages -----
   const say = (text) => (part("status").textContent = text);
@@ -169,7 +189,7 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
   function startFrom(themeId, { remix = false } = {}) {
     if (themeId.startsWith(LOCAL_THEME_ID_PREFIX) && customTheme(themeId)) {
       const saved = customTheme(themeId);
-      return createDraft({ document: structuredClone(saved.document), basedOn: saved.basedOn ?? null, savedId: saved.id, cssEnabled: consentMatches(saved.id, saved.document) });
+      return createDraft({ document: structuredClone(saved.document), basedOn: saved.basedOn ?? null, savedId: saved.id, cssEnabled: consentMatches(saved.id, saved.document), baseHash: sourceHash(saved.document) });
     }
     const id = catalog.has(themeId) ? themeId : catalog.ids[0];
     if (!remix) return createDraft({ document: freshDocument(catalog.document(id)), basedOn: id, fresh: true });
@@ -181,7 +201,69 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
   // on, or the one it last saved.
   let remixFrom = null;
   const remixTarget = () => (remixFrom && (customTheme(remixFrom) || catalog.has(remixFrom)) ? remixFrom : bundledBase());
-  const dirty = () => Boolean(source && (!same(draft.document, source.document) || Boolean(draft.cssEnabled) !== Boolean(source.cssEnabled)));
+  const dirty = () => Boolean(source && (!same(draft.document, source.document) || cssOn(draft) !== Boolean(source.cssEnabled)));
+
+  // ----- CSS approval -----
+  // A draft's CSS applies only with an approval in force for its target and exact CSS: this
+  // editor's ticket, or the stored approval of the saved theme it edits. draft.cssEnabled is only
+  // the person's choice to use it, so no restored, copied or resumed draft carries approval itself.
+  // The settings repository enforces the same rule on every save (packages/settings/consent.js).
+  const targetOf = (d) => d.savedId ?? NEW_TARGET;
+  const cssHash = (document) => {
+    const summary = cssSummary(document);
+    return summary?.ok ? summary.hash : null;
+  };
+  const ticketFor = (d) => Boolean(approval && approval.target === targetOf(d) && approval.hash === cssHash(d.document));
+  function cssOn(d) {
+    if (!d?.cssEnabled || !cssHash(d.document)) return false;
+    return ticketFor(d) || Boolean(d.savedId && consentMatches(d.savedId, d.document));
+  }
+  // Drops this editor's ticket here and in the repository: the person turned Enable off, changed
+  // the CSS or what the draft is, or the approval stopped holding elsewhere.
+  function dropApproval() {
+    approving = null;
+    if (!approval) return;
+    approval = null;
+    host.commit({ type: "withdrawCss", editor }, settings?.revision ?? 0).catch(() => {});
+  }
+  // A ticket covers one target and one CSS text; anything else leaves it behind.
+  function settleApproval() {
+    if (approval && !ticketFor(draft)) dropApproval();
+  }
+  /**
+   * Asks the repository for a ticket for this draft's exact CSS: the explicit Enable choice.
+   * Resolves true once held, false when refused, null when withdrawn or overtaken meanwhile.
+   */
+  function requestApproval() {
+    const text = draft.document.css;
+    const target = targetOf(draft);
+    const request = (async () => {
+      const reply = await host.commit({ type: "approveCss", editor, target, css: text }, settings?.revision ?? 0);
+      if (!reply?.ok || !reply.approval) {
+        if (request !== approving) return null;
+        approving = null;
+        return false;
+      }
+      // Withdrawn, or the draft moved on while the repository answered: the person did not
+      // approve what is shown now, so the new ticket goes too. A newer request has already
+      // replaced it in the repository and answers for itself.
+      if (request !== approving || destroyed || draft.document.css !== text || targetOf(draft) !== target) {
+        const superseded = approving !== null && request !== approving;
+        if (request === approving) approving = null;
+        if (!superseded) {
+          approval = null;
+          host.commit({ type: "withdrawCss", editor }, settings?.revision ?? 0).catch(() => {});
+        }
+        return null;
+      }
+      approving = null;
+      const stored = target === NEW_TARGET ? null : customTheme(target);
+      approval = { ticket: reply.approval.ticket, target, hash: reply.approval.hash, storedHash: stored ? cssHash(stored.document) : null, storedConsent: Boolean(stored && settings?.cssConsent?.[target]) };
+      return true;
+    })().catch(() => false);
+    approving = request;
+    return request;
+  }
 
   /** Replaces the draft after a completed edit, then renders, previews and schedules the autosave. */
   function accept(next, { save = true } = {}) {
@@ -205,7 +287,7 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
     autosave = 0;
     if (destroyed || !draft || pendingRecord) return;
     if (!dirty()) return void host.discardDraft().catch(() => {});
-    const reply = await host.saveDraft(draftRecord(draft, { baseRevision: settings?.revision })).catch((error) => ({ ok: false, issues: [{ message: String(error?.message ?? error) }] }));
+    const reply = await host.saveDraft(draftRecord(draft)).catch((error) => ({ ok: false, issues: [{ message: String(error?.message ?? error) }] }));
     if (!reply?.ok) fail(reply?.issues?.[0]?.message && /1\.25 MiB/.test(reply.issues[0].message) ? reply.issues[0].message : COPY.draftFailed, { offerDownload: true });
   }
 
@@ -215,7 +297,7 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
   const cssAllowed = (document, enabled) => Boolean(enabled && cssSummary(document)?.ok);
 
   /** Shows a document in the preview, unless its base contradicts its colors: then the fix shows. */
-  function showPreview(document, enabled = draft.cssEnabled) {
+  function showPreview(document, enabled = cssOn(draft)) {
     const polarity = basePolarityIssue(document);
     const box = part("polarity");
     box.hidden = !polarity;
@@ -356,6 +438,7 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
 
   function render() {
     if (!draft) return;
+    settleApproval();
     const document = draft.document;
     const resolved = resolvedNow;
     setValue(part("name"), document.name);
@@ -405,7 +488,7 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
     part("save").textContent = draft.savedId ? "Save changes" : "Save as theme";
     part("save-copy").hidden = !draft.savedId;
     part("discard").disabled = !isDirty;
-    if (json(document) !== json(lastPreviewed?.document) || lastPreviewed.cssAllowed !== cssAllowed(document, draft.cssEnabled)) {
+    if (json(document) !== json(lastPreviewed?.document) || lastPreviewed.cssAllowed !== cssAllowed(document, cssOn(draft))) {
       showRepairs(document);
       showPreview(document);
       // The repair pass resolves the theme; colors left to the engine show its values.
@@ -477,7 +560,14 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
   const images = createRasterQueue();
   const convert = convertImage ?? ((bytes, options) => convertRaster(bytes, options, browserRasterEnv(win)));
   let offer = null;
-  const imageError = (text) => fieldError("backgrounds", text);
+  // The conversion that did not fit, kept (at most one upload source, 2 MiB) so Resize can retry it.
+  let retryJob = null;
+  function imageError(text, resize = null) {
+    fieldError("backgrounds", text);
+    retryJob = resize;
+    part("image-retry").hidden = !resize;
+    if (resize) part("image-resize").textContent = COPY.imageResize(resize.size.width, resize.size.height);
+  }
   function closeOffer() {
     offer = null;
     part("image-offer").hidden = true;
@@ -510,7 +600,7 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
     const result = await images.run("image", (signal) => convert(bytes, { ...options, others, signal }));
     if (destroyed || result.code === "cancelled") return;
     say("");
-    if (!result.ok) return imageError(result.message);
+    if (!result.ok) return conversionFailed({ bytes, target, index, name, options }, result, others);
     offer = { target, index, image: result.image };
     part("image-offer-title").textContent = COPY.imageOffer(name);
     part("image-before").textContent = describe(result.before);
@@ -518,6 +608,29 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
     part("image-note").textContent = result.note;
     part("image-offer").hidden = false;
     part("image-accept").focus();
+  }
+
+  // A conversion over the theme's byte or pixel room: offer Resize at half the longest side, keeping
+  // Compress on, until the image fits or reaches the smallest size; then say it cannot fit. The
+  // converter's own wording names Resize, so it is replaced with wording beside a working control.
+  function conversionFailed(job, result, others) {
+    if (result.code !== "image-limit") return imageError(result.message);
+    const source = rasterSourceInfo(job.bytes);
+    if (!source.ok) return imageError(result.message);
+    // The source itself must decode within the pixel room; no size of output changes that.
+    if (others.pixels + source.width * source.height > LIMITS.documentImageDecodedPixels) return imageError(COPY.imageNoRoom);
+    const drawn = fitSize(source.width, source.height, job.options.maxSide ?? LIMITS.imageMaxDimension);
+    const side = Math.floor(Math.max(drawn.width, drawn.height) / 2);
+    if (side < MIN_IMAGE_SIDE) return imageError(COPY.imageCannotFit(drawn.width, drawn.height));
+    const size = fitSize(source.width, source.height, side);
+    const text = result.after ? COPY.imageTooBig(result.after.bytes) : COPY.imageTooManyPixels;
+    imageError(text, { ...job, size, options: { compress: true, quality: job.options.quality ?? 0.9, maxSide: side } });
+  }
+  function resizeRetry() {
+    const job = retryJob;
+    if (!job) return;
+    imageError(null);
+    offerConversion(job);
   }
 
   function acceptOffer() {
@@ -538,7 +651,7 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
     if (!bytes) return;
     imageError(null);
     const options = action === "compress" ? { compress: true, quality: 0.8 } : { maxSide: Math.max(16, Math.ceil(Math.max(layer.width, layer.height) / 2)) };
-    if (action === "resize" && fitSize(layer.width, layer.height, options.maxSide).width === layer.width) return imageError("This image is already as small as Resize makes it.");
+    if (action === "resize" && fitSize(layer.width, layer.height, options.maxSide).width === layer.width) return imageError(COPY.imageCannotFit(layer.width, layer.height));
     offerConversion({ bytes, target: bgTarget, index, name: `Layer ${index + 1}`, options });
   }
 
@@ -607,7 +720,7 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
     meter(summary ? summary.bytes : 0);
     const enable = part("css-enable");
     enable.disabled = !summary?.ok;
-    enable.checked = Boolean(draft.cssEnabled && summary?.ok);
+    enable.checked = cssOn(draft);
   }
   function meter(bytes) {
     part("css-meter").textContent = `${kib(bytes)} of ${kib(LIMITS.cssUtf8Bytes)}${bytes > LIMITS.cssUtf8Bytes ? ", over the limit" : ""}.`;
@@ -639,6 +752,17 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
     else {
       findings.hidden = false;
       findings.replaceChildren(el(doc, "li", { text: result.message }));
+    }
+  }
+
+  /** Enable advanced CSS: the explicit choice, which only a ticket from the repository makes real. */
+  async function enableCss() {
+    const held = await requestApproval();
+    if (destroyed) return;
+    if (held) edit({ ok: true, document: draft.document }, { cssEnabled: true });
+    else {
+      if (held === false) fail(COPY.approveFailed);
+      render();
     }
   }
 
@@ -833,19 +957,28 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
     if (!result.ok) return;
     const enabled = Boolean(part("import-css-enable").checked && importResult.css?.ok);
     const name = result.document.name;
-    edit(result, { cssEnabled: enabled, savedId: null });
+    // An import is a new theme with no approval. Enable advanced CSS ticked in this dialog is the
+    // person's explicit choice for exactly this CSS, so it asks for a ticket like the editor's own.
+    dropApproval();
+    edit(result, { cssEnabled: false, savedId: null });
     closeImport();
     say(COPY.imported(name));
+    if (enabled) enableCss();
   }
 
   // ----- save -----
   // The saved theme or its CSS approval changed elsewhere since this draft loaded it.
+  // The draft's baseHash is the saved version it started from, through Undo, autosave and resume.
   function drifted(asCopy) {
-    if (!draft.savedId || !source) return false;
+    if (!draft.savedId) return false;
     const stored = customTheme(draft.savedId);
     if (!stored) return !asCopy;
-    if (consentMatches(stored.id, stored.document) !== Boolean(source.cssEnabled)) return true;
-    return !asCopy && !same(stored.document, source.document);
+    if (source?.savedId === stored.id && consentMatches(stored.id, stored.document) !== Boolean(source.cssEnabled)) return true;
+    return !asCopy && sourceHash(stored.document) !== draft.baseHash;
+  }
+  function showConflict(text = COPY.conflict) {
+    part("conflict-title").textContent = text;
+    part("conflict").hidden = false;
   }
 
   async function save({ asCopy = false } = {}) {
@@ -868,38 +1001,56 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
     settings = current.settings;
     // Never overwrite an unknown revision silently, and never grant again an approval another
     // window revoked: both need Keep editing or Load saved theme first.
-    if (drifted(asCopy)) return void (part("conflict").hidden = false);
+    if (drifted(asCopy)) return void showConflict();
+    // An Enable choice still waiting on the repository is part of this save.
+    if (approving) await approving;
     const editing = Boolean(draft.savedId && !asCopy);
+    const target = editing ? draft.savedId : NEW_TARGET;
     const document = repairTheme(draft.document, standardSeed(draft.document.base)).theme;
-    const action = { type: "saveCustom", document, select: true };
+    const action = { type: "saveCustom", document, select: true, editor };
     if (editing) action.id = draft.savedId;
     if (draft.basedOn && catalog.has(draft.basedOn)) action.basedOn = draft.basedOn;
-    // Consent names the sanitized hash of exactly this CSS and is written with the theme in one
-    // commit, so a failed save leaves nothing behind and Retry cannot add a second theme. Turning
-    // Enable off revokes it.
-    const css = cssSummary(document);
-    if (draft.cssEnabled && css?.ok) action.cssConsent = { hash: css.hash, sanitizerVersion: css.sanitizerVersion };
-    else if (editing && settings.cssConsent?.[draft.savedId]) action.cssConsent = null;
+    // The theme and its approval are one commit, so a failed save leaves nothing behind and Retry
+    // cannot add a second theme. Only this editor's ticket for this target and exactly this CSS
+    // approves; an edit with unchanged CSS keeps the stored approval, a copy starts without one,
+    // and turning Enable off revokes it. The repository checks all of this again.
+    const hash = cssHash(document);
+    const wanted = Boolean(draft.cssEnabled && hash);
+    if (wanted && approval && approval.target === target && approval.hash === hash) action.approval = approval.ticket;
+    else if (editing && !draft.cssEnabled && settings.cssConsent?.[draft.savedId]) action.approval = null;
     say("Saving…");
     const before = new Set(settings.customThemes.map((t) => t.id));
     const reply = await host.commit(action, settings.revision);
     if (!reply?.ok) return saveFailed(reply, () => save({ asCopy }));
     settings = reply.settings;
+    // The repository dropped every ticket this editor held when it saved.
+    approval = null;
     const id = action.id ?? settings.customThemes.find((t) => !before.has(t.id))?.id;
-    draft = { ...draft, document, savedId: id, fresh: false };
+    const saved = customTheme(id);
+    draft = { ...draft, document, savedId: id, fresh: false, baseHash: saved ? sourceHash(saved.document) : null, cssEnabled: Boolean(saved && consentMatches(id, saved.document)) };
     remixFrom = id;
     source = sourceFor(draft);
     await host.discardDraft().catch(() => {});
     lastPreviewed = null;
     render();
-    say(action.id ? COPY.savedChanges(name) : COPY.saved(name));
+    if (asCopy && wanted && !draft.cssEnabled) say(COPY.copyCssOff(name));
+    else say(action.id ? COPY.savedChanges(name) : COPY.saved(name));
   }
 
   function saveFailed(reply, again) {
     say("");
     if (reply?.code === "conflict") {
       if (reply.current) settings = reply.current;
-      part("conflict").hidden = false;
+      showConflict();
+      return;
+    }
+    // The approval stopped holding (revoked, removed or changed elsewhere): nothing was saved, and
+    // only a fresh Enable choice approves this CSS.
+    if (reply?.issues?.some((i) => i?.reason === APPROVAL_ISSUE)) {
+      dropApproval();
+      draft = withoutCss(draft);
+      render();
+      fail(COPY.approveAgain);
       return;
     }
     const detail = reply?.issues?.find((i) => i?.message)?.message ?? "";
@@ -914,7 +1065,8 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
       const name = draft.fresh || draft.savedId ? draft.document.name : "My theme";
       next = createDraft({ document: freshDocument(draft.document, draft.savedId ? copyName(name) : name), basedOn: bundledBase(), fresh: true });
     } else next = startFrom(remixTarget(), { remix: true });
-    accept(commitEdit(draft, next.document, { basedOn: next.basedOn, savedId: next.savedId, cssEnabled: next.cssEnabled, fresh: next.fresh }));
+    dropApproval();
+    accept(commitEdit(draft, next.document, { basedOn: next.basedOn, savedId: next.savedId, cssEnabled: next.cssEnabled, fresh: next.fresh, baseHash: next.baseHash }));
     source = sourceFor(draft) ?? source;
     render();
     say(kind === "fresh" ? COPY.freshStarted : COPY.remixed(source?.bundledName ?? source?.name ?? ""));
@@ -1046,6 +1198,7 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
     if (target.name === "rb-bg-target") {
       bgTarget = target.value;
       closeOffer();
+      imageError(null);
       return renderBackgrounds();
     }
     if (target === part("image-file")) return void addImageFile(target.files?.[0] ?? null);
@@ -1053,7 +1206,11 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
       win.clearTimeout(cssTimer);
       return checkCss();
     }
-    if (target === part("css-enable")) return void edit({ ok: true, document: draft.document }, { cssEnabled: target.checked });
+    if (target === part("css-enable")) {
+      if (target.checked) return void enableCss();
+      dropApproval();
+      return void edit({ ok: true, document: draft.document }, { cssEnabled: false });
+    }
     if (target.name === "rb-compare") return preview?.setBefore(target.value === "before");
   });
   listen(root, "click", (event) => {
@@ -1091,6 +1248,8 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
   listen(part("undo"), "click", () => {
     if (!draft.previous) return say(DRAFT_COPY.nothingToUndo);
     accept(undo(draft));
+    // Undoing Enable advanced CSS gives up the approval it asked for; Undo never brings one back.
+    if (!draft.cssEnabled) dropApproval();
     source = sourceFor(draft) ?? source;
     render();
     say(DRAFT_COPY.undone);
@@ -1102,27 +1261,30 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
   listen(part("bg-add-gradient"), "click", () => {
     const { accent, background } = draft.document.colors;
     const result = addLayer(draft.document, bgTarget, { gradient: { type: "linear", angle: 180, stops: [{ color: accent, position: 0 }, { color: background, position: 100 }], opacity: 0.3 } });
-    fieldError("backgrounds", result.ok ? null : result.message);
+    imageError(result.ok ? null : result.message);
     edit(result);
   });
   listen(part("bg-add-pattern"), "click", () => {
     const result = addLayer(draft.document, bgTarget, { pattern: { kind: "grid", color: draft.document.colors.accent, opacity: 0.05, size: 32 } });
-    fieldError("backgrounds", result.ok ? null : result.message);
+    imageError(result.ok ? null : result.message);
     edit(result);
   });
   listen(part("reset"), "click", () => {
     if (!source) return;
+    dropApproval();
     accept(commitEdit(draft, structuredClone(source.document), { cssEnabled: source.cssEnabled }));
     say(COPY.reset(source.bundledName ?? source.name));
   });
   listen(part("discard"), "click", () => {
     if (!source) return;
+    dropApproval();
     accept(commitEdit(draft, structuredClone(source.document), { cssEnabled: source.cssEnabled }), { save: false });
     win.clearTimeout(autosave);
     host.discardDraft().catch(() => {});
     say(COPY.discarded);
   });
   listen(part("image-accept"), "click", acceptOffer);
+  listen(part("image-resize"), "click", resizeRetry);
   listen(part("image-cancel"), "click", () => {
     closeOffer();
     part("image-file").value = "";
@@ -1140,8 +1302,11 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
     if (draft.savedId) {
       const stored = customTheme(draft.savedId);
       source = stored ? { ...sourceFor(draft) } : null;
-      if (!stored) draft = { ...draft, savedId: null };
-      else if (!source.cssEnabled) draft = withoutCss(draft);
+      if (!stored) draft = { ...draft, savedId: null, baseHash: null };
+      else {
+        draft = { ...draft, baseHash: sourceHash(stored.document) };
+        if (!source.cssEnabled) draft = withoutCss(draft);
+      }
       source ??= sourceFor(draft);
     }
     part("conflict").hidden = true;
@@ -1155,21 +1320,27 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
     remixFrom = draft.savedId && customTheme(draft.savedId) ? draft.savedId : settings.selectedThemeId;
     const next = startFrom(remixFrom);
     source = sourceFor(next);
-    accept(commitEdit(draft, next.document, { cssEnabled: next.cssEnabled, savedId: next.savedId, basedOn: next.basedOn, fresh: next.fresh }));
+    dropApproval();
+    accept(commitEdit(draft, next.document, { cssEnabled: next.cssEnabled, savedId: next.savedId, basedOn: next.basedOn, fresh: next.fresh, baseHash: next.baseHash }));
   });
   function resumeDraft() {
-    let restored = draftFromRecord(pendingRecord);
+    const restored = draftFromRecord(pendingRecord);
     pendingRecord = null;
     part("resume").hidden = true;
     if (!restored) return false;
-    // A saved theme's approval may have been revoked since this draft was kept.
+    // A record carries no approval: CSS stays on only where storage approved exactly this CSS for
+    // the saved theme it edits.
+    dropApproval();
     const stored = restored.savedId ? customTheme(restored.savedId) : null;
-    if (stored && restored.cssEnabled && !consentMatches(stored.id, restored.document)) restored = withoutCss(restored);
     source = sourceFor(restored) ?? source;
-    draft = restored;
+    draft = { ...restored, cssEnabled: Boolean(stored && consentMatches(stored.id, restored.document)) };
     render();
     say(COPY.resumed);
-    part("name").focus();
+    // The saved theme changed (or went) since this draft was kept: ask before any save replaces it.
+    if (draft.savedId && drifted(false)) {
+      showConflict(stored ? COPY.resumeConflict(stored.document.name) : COPY.conflict);
+      part("keep-editing").focus();
+    } else part("name").focus();
     return true;
   }
   listen(part("resume-draft"), "click", resumeDraft);
@@ -1256,10 +1427,21 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
     const current = await host.read();
     if (!current.ok || destroyed) return;
     const pristine = draft && !dirty() && !draft.previous;
+    const consentBefore = settings?.cssConsent ?? {};
     settings = current.settings;
+    // The repository voids a ticket whose saved theme was removed, revoked or given other CSS;
+    // follow it, so this editor never shows an approval it no longer holds.
+    if (approval && approval.target !== NEW_TARGET) {
+      const stored = customTheme(approval.target);
+      if (!stored || cssHash(stored.document) !== approval.storedHash || (consentBefore[approval.target] && !settings.cssConsent?.[approval.target])) {
+        if (draft?.cssEnabled) say(COPY.cssRevoked);
+        dropApproval();
+      }
+    }
     if (pristine && !draft.savedId) {
       // An untouched draft follows the selected theme.
       remixFrom = settings.selectedThemeId;
+      dropApproval();
       draft = startFrom(remixFrom);
       source = sourceFor(draft);
     } else if (draft?.savedId && !customTheme(draft.savedId)) {
@@ -1272,6 +1454,7 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
         // Enable advanced CSS grants it again.
         source = { ...source, cssEnabled: false };
         if (draft.cssEnabled || draft.previous?.cssEnabled) say(COPY.cssRevoked);
+        dropApproval();
         draft = withoutCss(draft);
       }
     }
@@ -1295,6 +1478,8 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
       part("resume").hidden = false;
       part("resume-name").textContent = restored.document.name;
     } else if (stored) host.discardDraft().catch(() => {});
+    // Settings and any kept draft are in: the controls show what they will act on.
+    root.dataset.rbReady = "";
   })();
 
   return {
@@ -1312,6 +1497,7 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
       clearError();
       part("conflict").hidden = true;
       remixFrom = settings?.selectedThemeId ?? catalog.ids[0];
+      dropApproval();
       draft = startFrom(remixFrom);
       source = sourceFor(draft);
       lastPreviewed = null;
@@ -1325,10 +1511,12 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
     discardDraft() {
       if (pendingRecord) return dismissResume(true);
       win?.clearTimeout(autosave);
+      dropApproval();
       if (source) accept(commitEdit(draft, structuredClone(source.document), { cssEnabled: source.cssEnabled }), { save: false });
       host.discardDraft().catch(() => {});
     },
     destroy() {
+      dropApproval();
       destroyed = true;
       win?.clearTimeout(autosave);
       win?.clearTimeout(cssTimer);

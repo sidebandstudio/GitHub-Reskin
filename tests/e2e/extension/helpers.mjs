@@ -160,11 +160,29 @@ export const painted = (page) =>
     copy: [...document.querySelectorAll("[data-reskin-owned] .rs-copy")].map((node) => node.textContent),
   }));
 
-/** Waits until the GitHub tab's painted state satisfies `check`. */
-export async function waitPainted(page, check) {
-  await expect.poll(async () => check(await painted(page)), { timeout: 5000 }).toBe(true);
-  return painted(page);
+/**
+ * Waits until `read(page)` satisfies `check`, reading again each time the page's DOM changes (the
+ * content script's own signal: its boot attribute, stylesheet and owned nodes), and at least every
+ * 250 ms. Only the test's timeout bounds it: a loaded machine makes it slower, never wrong.
+ */
+export async function waitFor(page, read, check) {
+  for (;;) {
+    const state = await read(page);
+    if (check(state)) return state;
+    await page.evaluate(
+      () =>
+        new Promise((resolve) => {
+          const observer = new MutationObserver(() => done());
+          const timer = setTimeout(() => done(), 250);
+          const done = () => (observer.disconnect(), clearTimeout(timer), resolve());
+          observer.observe(document, { subtree: true, childList: true, attributes: true, characterData: true });
+        }),
+    );
+  }
 }
+
+/** Waits until the GitHub tab's painted state satisfies `check`. */
+export const waitPainted = (page, check) => waitFor(page, painted, check);
 
 export { expect };
 

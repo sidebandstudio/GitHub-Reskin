@@ -17,7 +17,7 @@ import { join } from "node:path";
 import { firefox } from "@playwright/test";
 import { SANITIZER_VERSION, STORAGE_KEYS } from "../../../packages/contracts/index.js";
 import { admitCss } from "../../../packages/format/index.js";
-import { createCatalogSource, defaultSettings, reduceAction, validateSettings } from "../../../packages/settings/index.js";
+import { createCatalogSource, createRepository, defaultSettings } from "../../../packages/settings/index.js";
 import { readCatalogEntries } from "../../../packages/ui/bundle.mjs";
 import { CSS_ADMISSION } from "../../../packages/ui/renderer.js";
 import { build, ROOT as BUILD_ROOT } from "../../../scripts/build.mjs";
@@ -190,7 +190,12 @@ async function consentScenario(page, act, label) {
   const id = saved.settings.customThemes.find((entry) => entry.document.name === "My Choom").id;
   await expect.poll(() => state(page), { message: `${label}: saved without consent` }).toMatchObject({ boot: "ready", ...OFF });
 
-  const granted = await act({ type: "setCssConsent", id, granted: true, hash: SAVED_HASH, sanitizerVersion: SANITIZER_VERSION });
+  // Approval is the explicit Enable choice: a ticket for exactly this CSS, then redeemed for it.
+  const editor = "admission-editor-0000000001";
+  const ticket = await act({ type: "approveCss", editor, target: id, css: SAVED.css });
+  expect(ticket.approval?.hash, `${label}: ticket ${JSON.stringify(ticket.issues ?? null)}`).toBe(SAVED_HASH);
+  expect(ticket.approval?.sanitizerVersion, label).toBe(SANITIZER_VERSION);
+  const granted = await act({ type: "setCssConsent", id, granted: true, editor, approval: ticket.approval.ticket });
   expect(granted.ok, `${label}: consent ${JSON.stringify(granted.issues ?? null)}`).toBe(true);
   await expectAdmitted(page, `${label}: consent granted`);
 
@@ -292,14 +297,23 @@ test("Firefox: the built content script never applies theme CSS in Calm, and a s
     );
     await context.addInitScript({ content: `${STAND_IN.replace("__SETTINGS__", JSON.stringify(settings))}\n${content}` });
     const page = await context.newPage();
-    // The background's commit: the reducer, the revision bump and validation, then the write.
+    // The background's commit: the settings repository over in-memory storage, then the write the
+    // content script sees.
+    const data = new Map([[STORAGE_KEYS.settings, settings]]);
+    const memory = {
+      get: async (keys) => Object.fromEntries(keys.filter((key) => data.has(key)).map((key) => [key, structuredClone(data.get(key))])),
+      set: async (record) => Object.entries(record).forEach(([key, value]) => data.set(key, structuredClone(value))),
+      remove: async (keys) => keys.forEach((key) => data.delete(key)),
+      subscribe: () => () => {},
+    };
+    const repository = createRepository(memory, { catalog, css: CSS_ADMISSION, newId: () => `00000000-0000-4000-8000-${String(++ids).padStart(12, "0")}` });
     const act = async (action) => {
-      const next = { ...reduceAction(settings, action, { catalog, css: CSS_ADMISSION, newId: () => `00000000-0000-4000-8000-${String(++ids).padStart(12, "0")}` }), revision: settings.revision + 1 };
-      const checked = validateSettings(next, catalog);
-      if (!checked.ok) return { ok: false, issues: checked.issues };
-      settings = checked.settings;
-      await page.evaluate(([key, value]) => globalThis.__reskinWrite(key, value), [STORAGE_KEYS.settings, settings]);
-      return { ok: true, settings };
+      const reply = await repository.commit(action, data.get(STORAGE_KEYS.settings).revision);
+      if (reply.ok && !reply.approval) {
+        settings = reply.settings;
+        await page.evaluate(([key, value]) => globalThis.__reskinWrite(key, value), [STORAGE_KEYS.settings, settings]);
+      }
+      return reply;
     };
     await page.goto(REGISTRY_URL);
     await expectAdmitted(page, "firefox content");

@@ -11,6 +11,15 @@ export const SHA256_HEX = /^[0-9a-f]{64}$/;
 const NOTICE_CODE = /^[a-z0-9-]{1,40}$/;
 
 export const issue = (code, path, message, severity = "error") => ({ code, path, message, severity });
+
+/** A rejected action. `code` is the SettingsReply code: invalid, or storage for capacity. */
+export class ActionError extends Error {
+  constructor(code, issues) {
+    super(issues.map((i) => i.message).join(" "));
+    this.code = code;
+    this.issues = issues;
+  }
+}
 const invalid = (path, message) => issue(ISSUE_CODES.invalid, path, message);
 
 export const isPlainObject = (value) => {

@@ -29,6 +29,21 @@ export function counter(prefix = "00000000-0000-4000-8000-") {
 export const context = (extra = {}) => ({ catalog, snapshot, repair, newId: counter(), ...extra });
 
 /**
+ * A CssAdmission shaped like C2b's: it reads only `css`, refuses text containing "INVALID", and
+ * names other CSS by a SHA-256 of the sanitizer version and text, so a version bump changes it.
+ */
+export function standInCss(sanitizerVersion = 1) {
+  return {
+    sanitizerVersion,
+    inspect(document) {
+      if (document?.css === undefined) return { css: null };
+      if (typeof document.css !== "string" || document.css.includes("INVALID")) return { css: { ok: false, issues: [{ code: "invalid", path: "/css", message: "This CSS is not allowed.", severity: "error" }] } };
+      return { css: { ok: true, hash: sha256(new TextEncoder().encode(`${sanitizerVersion}:${document.css}`)), sanitizerVersion } };
+    },
+  };
+}
+
+/**
  * In-memory storage.local. Values are cloned on the way in and out like the real API, and change
  * events arrive asynchronously. hooks.get/hooks.set run before each call and may delay or throw.
  */

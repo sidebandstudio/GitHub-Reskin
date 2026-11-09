@@ -10,7 +10,9 @@
 //   advanced CSS; an older window that never grants that approval again after another revokes it;
 //   a failed save that leaves nothing behind and a Retry that saves once; image upload, conversion
 //   and removal; the draft kept after the page closes; the export round trip through the file, the
-//   share code and the preview link; and Backup & help's export, removal and Reset all.
+//   share code and the preview link; Backup & help's export, removal and Reset all; and the round 2
+//   review's reproductions: removal and Save a copy, Undo after a revocation, a stale draft resumed
+//   and an upload that needs Resize.
 import { readFileSync } from "node:fs";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -65,10 +67,12 @@ async function openBuilder(env, { viewport = { width: 1280, height: 900 }, keepD
   page.on("close", () => expect(errors, "uncaught page errors").toEqual([]));
   await page.setViewportSize(viewport);
   await page.goto(`${env.url("settings")}#make`);
+  // The builder marks itself ready once it has read settings and any kept draft; a loaded machine
+  // only makes that later, so only the test's timeout bounds the wait.
+  await expect(builder(page)).toHaveAttribute("data-rb-ready", "", { timeout: 0 });
   await expect(page.locator('[data-rb="based-on"]')).not.toBeEmpty();
   await expect(page.locator('[data-rb="preview"] iframe').first()).toBeAttached();
   if (!keepDraft) {
-    await page.waitForTimeout(300);
     const fresh = page.getByRole("button", { name: "Start with your saved theme" });
     if (await fresh.isVisible()) await fresh.click();
   }
@@ -346,7 +350,7 @@ const failNextConsent = (page) =>
       Object.defineProperty(ns.runtime, "sendMessage", {
         configurable: true,
         value: (message) => {
-          const consent = message.type === "commit" && (message.action.type === "setCssConsent" || "cssConsent" in message.action);
+          const consent = message.type === "commit" && (message.action.type === "setCssConsent" || typeof message.action.approval === "string");
           if (consent && !failed) return (failed = true), Promise.resolve({ ok: false, code: "storage", issues: [{ message: "Storage failed" }] });
           return send(message);
         },
@@ -414,20 +418,22 @@ async function revokedElsewhere(env) {
   await older.close();
 }
 
-// A noisy PNG over the 128 KiB image cap, drawn by the page itself.
-const noisyPng = (page, size) =>
-  page.evaluate(async (side) => {
+// A noisy PNG over the 128 KiB image cap, drawn by the page itself. `random` fills every channel,
+// transparency included, with random bytes, which no compression brings under the cap at full size.
+const noisyPng = (page, size, random = false) =>
+  page.evaluate(async ([side, incompressible]) => {
     const canvas = new OffscreenCanvas(side, side);
     const context = canvas.getContext("2d");
     const pixels = context.createImageData(side, side);
     let seed = 7;
-    for (let i = 0; i < pixels.data.length; i++) pixels.data[i] = i % 4 === 3 ? 255 : (seed = (seed * 1103515245 + 12345) & 0x7fffffff) >> 23;
+    if (incompressible) for (let i = 0; i < pixels.data.length; i += 65536) crypto.getRandomValues(pixels.data.subarray(i, i + 65536));
+    else for (let i = 0; i < pixels.data.length; i++) pixels.data[i] = i % 4 === 3 ? 255 : (seed = (seed * 1103515245 + 12345) & 0x7fffffff) >> 23;
     context.putImageData(pixels, 0, 0);
     const bytes = new Uint8Array(await (await canvas.convertToBlob({ type: "image/png" })).arrayBuffer());
     let text = "";
     for (const byte of bytes) text += String.fromCharCode(byte);
     return btoa(text);
-  }, size);
+  }, [size, random]);
 
 // A small image is added as it is; a large or animated one only after accepting its converted copy.
 async function imageUpload(env) {
@@ -482,6 +488,158 @@ async function imageUpload(env) {
   await expect(status(page)).toHaveText("Saved Photo wall and applied it to GitHub.");
   const layer = saved(await env.records(), "Photo wall").document.backgrounds.page.layers[0].image;
   expect(layer.data).toMatch(/^data:image\/(webp|png);base64,/);
+  await page.close();
+}
+
+// ----- Regressions for the round 2 review's four reproductions -----
+
+// Imports CSS_THEME as `name` with Enable advanced CSS ticked in the import, and saves it: the
+// explicit choice, so the new theme is approved. Returns its ID.
+async function approvedCssTheme(env, name) {
+  const page = await openBuilder(env);
+  const dialog = await openImport(page);
+  await dialog.getByRole("textbox", { name: "Chatbot answer" }).fill(JSON.stringify({ ...CSS_THEME, name }));
+  await dialog.getByRole("button", { name: "Preview theme" }).click();
+  await dialog.getByRole("checkbox", { name: "Enable advanced CSS" }).check();
+  await dialog.getByRole("button", { name: "Use theme" }).click();
+  await page.getByRole("button", { name: "Save as theme" }).click();
+  await expect(status(page)).toHaveText(`Saved ${name} and applied it to GitHub.`);
+  const theme = saved(await env.records(), name);
+  expect(settingsOf(await env.records()).cssConsent[theme.id]).toEqual({ hash: CSS_HASH, sanitizerVersion: 1 });
+  await page.close();
+  return theme.id;
+}
+// Every stored approval, by theme name.
+const approvedNames = (records) => Object.keys(settingsOf(records).cssConsent).map((id) => settingsOf(records).customThemes.find((t) => t.id === id)?.document.name);
+// Saves, and when Save stops at the conflict, keeps editing and saves again.
+async function saveThrough(page, name) {
+  await page.getByRole("button", { name }).click();
+  const conflict = page.locator('[data-rb="conflict"]');
+  await expect.poll(async () => (await conflict.isVisible()) || /^Saved /.test(await status(page).textContent())).toBe(true);
+  if (await conflict.isVisible()) {
+    await page.getByRole("button", { name: "Keep editing this draft" }).click();
+    await page.locator('[data-rb="save"]').click();
+  }
+  await expect(status(page)).toHaveText(/^Saved /);
+}
+
+// Review finding 1: removing an approved theme from Backup & help in a newer window, then saving
+// the older editor's color change, creates a theme with no approval; Save a copy of an approved
+// theme starts the copy without one.
+async function removedThenCopied(env) {
+  const id = await approvedCssTheme(env, "Removed glow");
+  const older = await openBuilder(env);
+  await expect(older.locator('[data-rb="css-enable"]')).toBeChecked();
+  const backup = await env.newPage();
+  await backup.goto(`${env.url("settings")}#backup`);
+  backup.once("dialog", (dialog) => dialog.accept());
+  await backup.locator('[data-rk="backup"]').getByRole("button", { name: "Remove Removed glow" }).click();
+  await expect(backup.locator('[data-rk="status"]')).toHaveText("Removed Removed glow.");
+  await backup.close();
+  expect(settingsOf(await env.records()).cssConsent[id]).toBeUndefined();
+  await expect(older.locator('[data-rb="css-enable"]')).not.toBeChecked();
+  await setHex(older, "Accent", "#ffaa00");
+  await saveThrough(older, "Save as theme");
+  let records = await env.records();
+  expect(saved(records, "Removed glow").id).not.toBe(id);
+  expect(approvedNames(records)).not.toContain("Removed glow");
+  await older.close();
+
+  await approvedCssTheme(env, "Copied glow");
+  const page = await openBuilder(env);
+  await expect(page.locator('[data-rb="css-enable"]')).toBeChecked();
+  await page.getByRole("textbox", { name: "Theme name" }).fill("Copied glow 2");
+  await page.getByRole("textbox", { name: "Theme name" }).press("Tab");
+  await page.getByRole("button", { name: "Save a copy" }).click();
+  await expect(status(page)).toHaveText("Saved Copied glow 2 as a copy and applied it to GitHub. Its advanced CSS stays off until you turn on Enable advanced CSS for the copy.");
+  await expect(page.locator('[data-rb="css-enable"]')).not.toBeChecked();
+  records = await env.records();
+  expect(approvedNames(records)).toContain("Copied glow");
+  expect(approvedNames(records)).not.toContain("Copied glow 2");
+  await page.close();
+}
+
+// Review finding 2: Undo after an import, once another window revoked the approval, does not
+// bring it back, and saving afterwards leaves it revoked.
+async function undoAfterRevocation(env) {
+  const id = await approvedCssTheme(env, "Undo glow");
+  const first = await openBuilder(env);
+  await expect(first.locator('[data-rb="css-enable"]')).toBeChecked();
+  const dialog = await openImport(first, "Share code");
+  await dialog.getByRole("textbox", { name: "Share code or link" }).fill(encodeShare(SHARED));
+  await dialog.getByRole("button", { name: "Preview theme" }).click();
+  await dialog.getByRole("button", { name: "Use theme" }).click();
+  await expect(hex(first, "Background")).toHaveValue("#f4efe2");
+
+  const other = await openBuilder(env);
+  await other.getByText("Advanced CSS", { exact: true }).first().click();
+  await other.locator('[data-rb="css-enable"]').uncheck();
+  await other.getByRole("button", { name: "Save changes" }).click();
+  await expect(status(other)).toHaveText("Saved changes to Undo glow.");
+  await other.close();
+  expect(settingsOf(await env.records()).cssConsent[id]).toBeUndefined();
+
+  await first.getByRole("button", { name: "Undo last change" }).click();
+  await expect(first.getByRole("button", { name: "Save changes" })).toBeVisible();
+  await expect(first.locator('[data-rb="css-enable"]')).not.toBeChecked();
+  await saveThrough(first, "Save changes");
+  expect(settingsOf(await env.records()).cssConsent[id]).toBeUndefined();
+  await first.close();
+}
+
+// Review finding 3: a draft kept from an older window, resumed after a newer window saved the same
+// theme, shows Keep editing / Load saved theme and never silently puts the older colors back.
+async function staleResume(env) {
+  await approvedCssTheme(env, "Resume base");
+  const older = await openBuilder(env);
+  const newer = await openBuilder(env);
+  await setHex(newer, "Background", "#0d1a22");
+  await newer.getByRole("button", { name: "Save changes" }).click();
+  await expect(status(newer)).toHaveText("Saved changes to Resume base.");
+  await newer.close();
+  await setHex(older, "Accent", "#77ddbb");
+  await expect.poll(async () => (await env.records())[STORAGE_KEYS.draft]?.document?.colors?.accent ?? null).toBe("#77ddbb");
+  await older.close();
+
+  const page = await openBuilder(env, { keepDraft: true });
+  await page.getByRole("button", { name: "Resume your draft" }).click();
+  const conflict = page.getByRole("group", { name: "Resume base was saved again after this draft was kept. Keep editing to replace the saved version when you save, or load the saved theme." });
+  await expect(conflict).toBeVisible();
+  await expect(conflict.getByRole("button", { name: "Keep editing this draft" })).toBeFocused();
+  // Save still stops and asks.
+  await page.getByRole("button", { name: "Save changes" }).click();
+  await expect(page.locator('[data-rb="conflict"]')).toBeVisible();
+  expect(saved(await env.records(), "Resume base").document.colors.background).toBe("#0d1a22");
+  await page.getByRole("button", { name: "Load saved theme" }).click();
+  await expect(hex(page, "Background")).toHaveValue("#0d1a22");
+  expect(saved(await env.records(), "Resume base").document.colors.background).toBe("#0d1a22");
+  await page.close();
+}
+
+// Review finding 4: a new image still over the cap after compression offers a working Resize,
+// which converts a smaller copy that is added only once accepted.
+async function oversizedUpload(env) {
+  const page = await openBuilder(env);
+  await page.getByText("Backgrounds", { exact: true }).click();
+  const layers = page.locator('[data-rb="bg-layers"] > li');
+  await expect(layers).toHaveCount(0);
+  const noise = Buffer.from(await noisyPng(page, 400, true), "base64");
+  expect(noise.length).toBeGreaterThan(131072);
+  await page.getByLabel("Add an image").setInputFiles({ name: "noise.png", mimeType: "image/png", buffer: noise });
+  await expect(builder(page).locator('[data-rb-error-for="backgrounds"]')).toHaveText(/more than this theme has room for\. Resize it to make it smaller\.$/);
+  const resize = page.getByRole("button", { name: "Resize to 200 × 200 px" });
+  await expect(resize).toBeVisible();
+  await expect(layers).toHaveCount(0);
+  await resize.click();
+  const offer = page.getByRole("group", { name: "noise.png doesn't fit as it is. Use this converted copy?" });
+  await expect(offer).toBeVisible({ timeout: 15000 });
+  await expect(offer.locator('[data-rb="image-before"]')).toHaveText(/ PNG, 400 × 400 px$/);
+  await expect(offer.locator('[data-rb="image-after"]')).toHaveText(/, 200 × 200 px$/);
+  await expect(page.locator('[data-rb="image-retry"]')).toBeHidden();
+  await expect(layers).toHaveCount(0);
+  await offer.getByRole("button", { name: "Use converted image" }).click();
+  await expect(status(page)).toHaveText("Added the converted image.");
+  await expect(layers).toHaveCount(1);
   await page.close();
 }
 
@@ -613,6 +771,10 @@ test.describe("Chromium builder", () => {
   test("images upload as they are, or after accepting a converted copy, and Compress and Remove", async ({ extension }) => imageUpload(await chromiumEnv(extension)));
   test("the draft survives closing the page", async ({ extension }) => draftRecovery(await chromiumEnv(extension)));
   test("export round-trips through the file, share code and preview link", async ({ extension }) => exportRoundTrip(await chromiumEnv(extension)));
+  test("removing an approved theme or saving a copy never carries its CSS approval over (review 2, finding 1)", async ({ extension }) => removedThenCopied(await chromiumEnv(extension)));
+  test("Undo after an import never restores an approval revoked in another window (review 2, finding 2)", async ({ extension }) => undoAfterRevocation(await chromiumEnv(extension)));
+  test("resuming a draft whose saved theme changed asks before overwriting it (review 2, finding 3)", async ({ extension }) => staleResume(await chromiumEnv(extension)));
+  test("an upload still too big after compression offers a working Resize (review 2, finding 4)", async ({ extension }) => oversizedUpload(await chromiumEnv(extension)));
   test("Backup & help resumes the draft, exports and removes themes, and resets all", async ({ extension }) => {
     const env = await chromiumEnv(extension);
     await threeColors(env);
@@ -674,6 +836,10 @@ test("Firefox builder: every scenario on the built add-on's pages, and its conte
     await draftRecovery(env);
     await exportRoundTrip(env);
     await imageUpload(env);
+    await removedThenCopied(env);
+    await undoAfterRevocation(env);
+    await staleResume(env);
+    await oversizedUpload(env);
     await backupAndHelp(env);
   } finally {
     await harness.close();

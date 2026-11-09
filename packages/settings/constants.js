@@ -30,17 +30,25 @@ export const STORAGE_LIMITS = freeze({
   maxRecordsBytes: 8 * 1024 * 1024,
   maxRecoveryBytes: 1024 * 1024,
   maxNotices: 16,
+  maxApprovals: 32,
 });
 
 // TODO(C2b): add to contracts STORAGE_KEYS. One bounded copy of unusable 1.x or corrupt v2 data,
 // kept until the person dismisses or exports it.
 export const RECOVERY_KEY = "reskin.recovery";
+// Pending Enable advanced CSS approvals not yet redeemed by a save, as digests (consent.js). Only
+// the background writes it; Reset all clears it.
+export const APPROVALS_KEY = "reskin.cssApprovals";
 
-// TODO(C2b): commit actions beyond the frozen union. setCssConsent records an explicit approval of
-// one sanitized CSS hash, completeOnboarding records first-run completion and dismissMigration
-// clears migration notices and the recovery copy. saveCustom also takes an optional cssConsent
-// (that grant, or null to revoke), so the builder writes a theme and its consent in one commit.
-export const EXTRA_COMMIT_ACTION_TYPES = freeze(["setCssConsent", "completeOnboarding", "dismissMigration"]);
+// TODO(C2b): commit actions beyond the frozen union. approveCss issues a single-use ticket for the
+// explicit Enable advanced CSS choice and withdrawCss drops an editor's tickets (neither changes
+// settings or their revision); setCssConsent revokes, or grants by redeeming a ticket;
+// completeOnboarding records first-run completion and dismissMigration clears migration notices and
+// the recovery copy. saveCustom also takes the saving editor and an optional approval (a ticket to
+// redeem, or null to revoke), so the builder writes a theme and its approval in one commit.
+export const EXTRA_COMMIT_ACTION_TYPES = freeze(["setCssConsent", "approveCss", "withdrawCss", "completeOnboarding", "dismissMigration"]);
+// Approval requests: not settings commits, so they skip the revision check and leave settings alone.
+export const APPROVAL_ACTION_TYPES = freeze(["approveCss", "withdrawCss"]);
 // TODO(C2b): the recovery request reads or dismisses reskin.recovery from an extension page.
 export const EXTRA_REQUEST_TYPES = freeze(["recovery"]);
 
