@@ -427,8 +427,8 @@ export interface CssIrDeclaration {
   layers: number;
 }
 export interface CssIrRule {
-  /** Canonical @media preludes, outermost first. */
-  media: string[];
+  /** Canonical heads of the enclosing @media and @supports rules, outermost first. */
+  conditions: string[];
   selectors: CssIrSelector[];
   declarations: CssIrDeclaration[];
 }

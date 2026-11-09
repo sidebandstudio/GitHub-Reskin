@@ -107,12 +107,13 @@ export function ownedThemeCss(resolved, prefs, source, cssAllowed, registry = nu
  * `options.registry` is the host's GitHub target registry, which lets the theme's CSS reach the
  * GitHub elements the host admits; that CSS then never applies under forced colors.
  * `options.viewport` ({width, height}) resolves paint sizes in viewport units for the preview,
- * whose frame is as tall as its page.
+ * whose frame is as tall as its page. `options.images` is imageAssets(source): the admitted data
+ * of the theme's images by hash. Without it image layers are left out and the rest is drawn.
  */
-export function compileAppearance(resolved, prefs, target, { css: source = null, cssAllowed = false, registry = null, viewport = null } = {}) {
+export function compileAppearance(resolved, prefs, target, { css: source = null, cssAllowed = false, registry = null, viewport = null, images = null } = {}) {
   if (!TARGETS.includes(target)) throw new Error(`Unknown appearance target ${target}`);
   const effective = effectiveAppearance(resolved, prefs);
-  const plan = structuredPlan(resolved, prefs);
+  const plan = structuredPlan(resolved, prefs, images);
   const structured = structuredCss(plan, resolved, target, viewport);
   const owned = effective.text || effective.effects ? ownedThemeCss(resolved, prefs, source, cssAllowed, registry) : null;
   if (!effective.text && !effective.effects && !plan.banner) return structured ? `/* GitHub Reskin appearance, renderer 1 */\n${structured}\n` : "";

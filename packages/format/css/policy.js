@@ -93,9 +93,9 @@ export const POLICY = freeze({
     backgroundPositionPercent: 200,
     mediaWidthPx: 10000,
   },
-  atRules: ["media"],
-  // Deferred general conveniences: rejected with their own reason until increment 2.
-  deferredAtRules: ["supports"],
+  // @supports tests one permitted property and value at a time, joined by not, and or or.
+  atRules: ["media", "supports"],
+  supportsOperators: ["not", "and", "or"],
   mediaFeatures: {
     "prefers-reduced-motion": ["reduce", "no-preference"],
     hover: ["hover", "none"],

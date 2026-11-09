@@ -15,6 +15,7 @@
 //   nativeRoute?(document) -> string | null                         why the route stays native
 import { LEGACY_PAGE_CACHE_KEY, LIMITS, LOCAL_THEME_ID_PREFIX, STORAGE_KEYS } from "../../../packages/contracts/index.js";
 import { sourceHash } from "../../../packages/engine/index.js";
+import { releaseRasters } from "../../../packages/format/viewer.js";
 import {
   BOOT_ATTRIBUTE,
   effectivePreferences,
@@ -59,6 +60,7 @@ export function startContent({ storage, document, view, catalog, renderer, onEve
   let resolvedNow = null;
   let prefsNow = null;
   let contextNow = null;
+  let sourceNow = null;
   let decorations = null;
   let revisionNow = null;
   let routeNow = null; // why the route stays native, as the latest render saw it
@@ -131,6 +133,7 @@ export function startContent({ storage, document, view, catalog, renderer, onEve
   function goNative(reason) {
     clearStyle();
     dropDecorations();
+    releaseSource(null);
     openBudget();
     resolvedNow = null;
     setPhase("native");
@@ -155,6 +158,7 @@ export function startContent({ storage, document, view, catalog, renderer, onEve
     if (!settings.enabled) return goNative("disabled");
     const source = selectedSource(settings, catalog);
     if (!source) return goNative("missing-source");
+    releaseSource(source);
     const page = renderer.readPage(document, view);
     const prefs = effectivePreferences(settings);
     const { plan, seed } = renderer.plan(page, source.base);
@@ -188,6 +192,12 @@ export function startContent({ storage, document, view, catalog, renderer, onEve
     contextNow = context;
     setPhase("ready");
     settle("ready");
+  }
+
+  // A theme that is replaced, removed or no longer drawn takes its images' admitted data with it.
+  function releaseSource(next) {
+    if (sourceNow && sourceNow !== next) releaseRasters(sourceNow, next);
+    sourceNow = next;
   }
 
   function renderSafely() {
@@ -341,6 +351,7 @@ export function startContent({ storage, document, view, catalog, renderer, onEve
       for (const cleanup of cleanups.splice(0)) cleanup();
       dropDecorations();
       clearStyle();
+      releaseSource(null);
       // "off", not removal: an unset attribute would restart the CSS gate.
       setPhase("off");
       resolveReady("off");

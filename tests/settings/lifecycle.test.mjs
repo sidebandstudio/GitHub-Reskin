@@ -1,10 +1,12 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { LEGACY_PAGE_CACHE_KEY, LIMITS, STORAGE_KEYS } from "../../packages/contracts/index.js";
-import { createRepository } from "../../packages/settings/index.js";
+import { DEFAULT_THEME_ID } from "../../packages/contracts/index.js";
+import { rasterInfo } from "../../packages/format/index.js";
+import { createCatalogSource, createRepository } from "../../packages/settings/index.js";
 import { authenticationRoute } from "../../extension/content/github/routes.js";
 import { startContent } from "../../extension/content/lifecycle/index.js";
-import { catalog, context, deferred, fakePage, memoryStorage, testRenderer } from "./helpers.mjs";
+import { catalog, CHOOM, CLASSICS, context, deferred, fakePage, memoryStorage, testRenderer } from "./helpers.mjs";
 
 async function stored(initial = {}) {
   const storage = memoryStorage(initial);
@@ -459,6 +461,41 @@ test("a renderer error releases native GitHub", async () => {
   assert.equal(await content.ready, "native");
   assert.equal(page.style(), null);
   content.destroy();
+});
+
+test("rasters r1 finding 3: a theme that is replaced, no longer drawn or destroyed releases its images' admitted data", async () => {
+  const data = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+  const pictured = { ...CHOOM, backgrounds: { page: { color: "#0a0a17", layers: [{ image: { data, width: 1, height: 1 } }] } } };
+  const withImage = createCatalogSource([{ id: DEFAULT_THEME_ID, document: pictured }, ...CLASSICS]);
+  const storage = memoryStorage();
+  const repository = createRepository(storage, context({ catalog: withImage }));
+  await repository.initialize();
+  const page = fakePage();
+  const content = startContent({ storage, document: page.document, view: page.view, catalog: withImage, renderer: testRenderer({ clock: page.clock }) });
+  assert.equal(await content.ready, "ready");
+  // The drawn theme's image stays admitted; leaving it releases the data, which admits afresh.
+  const drawn = () => {
+    const info = rasterInfo(data);
+    assert.ok(info.ok);
+    assert.equal(rasterInfo(data), info, "kept while its theme is drawn");
+    return info;
+  };
+  let info = drawn();
+  await repository.commit({ type: "selectTheme", id: "nord" }, 0);
+  await page.frame();
+  assert.notEqual(rasterInfo(data), info, "a replaced theme releases its image");
+  await repository.commit({ type: "selectTheme", id: DEFAULT_THEME_ID }, 1);
+  await page.frame();
+  info = drawn();
+  await repository.commit({ type: "setEnabled", enabled: false }, 2);
+  await page.frame();
+  assert.equal(phase(page), "native");
+  assert.notEqual(rasterInfo(data), info, "a disabled renderer releases its theme's image");
+  await repository.commit({ type: "setEnabled", enabled: true }, 3);
+  await page.frame();
+  info = drawn();
+  content.destroy();
+  assert.notEqual(rasterInfo(data), info, "destroy releases it");
 });
 
 test("destroy disconnects everything and leaves the gate closed for good", async () => {

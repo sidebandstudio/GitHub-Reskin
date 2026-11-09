@@ -59,10 +59,14 @@ test("c2b r2 blocker 4: the prompt offers every bundled font and only this incre
     for (const id of ids) assert.deepEqual(parseImport(JSON.stringify({ ...minimal, fonts: { [role]: id } }), "text").notes, [], `${role} ${id}`);
   }
   assert.ok(!FONT_INVENTORY.deferred.some((id) => Object.values(JSON.parse(example()).fonts).includes(id)));
-  // @media is the only at-rule offered; @supports is neither offered nor named.
-  assert.doesNotMatch(prompt, /supports/i);
-  assert.match(prompt, /The only at-rule is @media, with prefers-reduced-motion, hover, pointer, min-width, max-width tests joined by and, widths <=10000px; any other at-rule is rejected\./);
-  assert.equal(sanitizeCss("@supports (color:red){.AppHeader{border-color:var(--reskin-accent)}}").ok, false);
+  // @media and @supports are the at-rules offered, each as the sanitizer admits it.
+  assert.match(prompt, /At-rules: @media, with prefers-reduced-motion, hover, pointer, min-width, max-width tests joined by and, widths <=10000px; and @supports, whose tests are \(property: value\) declarations of properties this CSS may set, such as \(corner-shape: bevel\), alone, after not, or joined by and or by or \(never both, no parenthesized groups\), with literal values and no var\(\) or url\(\)\./);
+  assert.match(prompt, /Any other at-rule is rejected\./);
+  assert.ok(sanitizeCss("@supports (corner-shape: bevel) or (corner-shape: notch){.AppHeader{border-color:var(--reskin-accent)}}").ok);
+  assert.ok(sanitizeCss("@supports not (corner-shape: bevel){.AppHeader{border-color:var(--reskin-accent)}}").ok);
+  for (const refused of ["@supports ((corner-shape: bevel) or (corner-shape: notch)){.AppHeader{border-color:red}}", "@supports (corner-shape: bevel) and (color: red) or (color: blue){.AppHeader{border-color:red}}", "@supports (color: var(--reskin-accent)){.AppHeader{border-color:red}}", "@supports (display: grid){.AppHeader{border-color:red}}"]) {
+    assert.equal(sanitizeCss(refused).ok, false, refused);
+  }
   assert.ok(sanitizeCss("@media (prefers-reduced-motion:reduce) and (min-width:600px){.AppHeader{border-color:var(--reskin-accent)}}").ok);
 });
 

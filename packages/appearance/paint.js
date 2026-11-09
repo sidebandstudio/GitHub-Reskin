@@ -4,12 +4,15 @@
 // and syntax belong to the Primer adapter; this file draws only the layers listed here, from the
 // engine's resolved appearance record, never from theme strings other than admitted gradientCss.
 //
-// Full draws every requested layer. Calm keeps the solid page and header colors, simple avatar
-// corners and the role fonts, and drops paint layers, the banner, neon frames and every glow.
+// Full draws every requested layer, including embedded images, whose data the host passes in by
+// the hash the resolver gave each one. Calm keeps the solid page and header colors, simple avatar
+// corners and the role fonts, and drops paint layers and images, the banner, neon frames and every
+// glow.
 // Effects off drops the same decoration inside Full. Fonts off removes both roles, tracking and
 // case. Native, high-contrast and forced-color resolutions get nothing, and on the page every rule
 // follows the Primer adapter's decision for the subject's nearest mode island.
-import { contrast, oklab } from "../engine/color.js";
+import { contrast, luminance, oklab } from "../engine/color.js";
+import { rasterHash } from "../format/raster.js";
 import { ATTRIBUTED } from "../primer/selectors.js";
 import { FONT_BY_ID } from "./registry.js";
 import { num, rgba } from "./effects.js";
@@ -65,8 +68,41 @@ const POSITION = { center: "center", top: "top", bottom: "bottom", left: "left",
 // paint once from the top left, as the original Cyberpunk bloom does (100% 100vh, no repeat).
 const tiled = (size) => /^\d+(?:\.\d+)?px(?: \d+(?:\.\d+)?px)?$/.test(size ?? "auto");
 
-/** One resolved paint layer as CSS background parts, or null for a layer this increment omits. */
-export function layerCss(layer) {
+// Named image positions as CSS positions, and as the fraction of the free space before the image.
+const IMAGE_POSITION = { center: "center", top: "center top", bottom: "center bottom", left: "left center", right: "right center" };
+const IMAGE_X = { center: "center", top: "center", bottom: "center", left: "left", right: "right" };
+const IMAGE_Y = { center: 0.5, top: 0, bottom: 1, left: 0.5, right: 0.5 };
+
+// An image's size, repeat and position on a target. A header or banner fits its own box. The page
+// is as tall as the document, so there the image fits the first screen, as the original bloom
+// does, and only a tile repeats down the page: an image scaled to a long page would be a blur, and
+// a fixed wallpaper repaints on every scroll. Viewport units become px in the preview (atViewport).
+function imagePlacement(layer, target) {
+  const { width: w, height: h, fit, position } = layer;
+  if (fit === "tile") return { size: "auto", repeat: "repeat", position: IMAGE_POSITION[position] };
+  if (target !== "page") return { size: { cover: "cover", contain: "contain", stretch: "100% 100%" }[fit], repeat: "no-repeat", position: IMAGE_POSITION[position] };
+  if (fit === "stretch") return { size: "100% 100vh", repeat: "no-repeat", position: "0 0" };
+  // The drawn height is the larger (cover) or smaller (contain) of the screen's and the image's
+  // height at screen width; position moves the image within the screen when they differ.
+  const tall = `${num((h / w) * 100)}vw`;
+  const wide = `${num((w / h) * 100)}vh`;
+  const k = IMAGE_Y[position];
+  if (fit === "cover") return { size: `max(100vw,${wide}) auto`, repeat: "no-repeat", position: `${IMAGE_X[position]} ${k ? `calc(${num(-k)} * max(0px,${tall} - 100vh))` : "0px"}` };
+  return { size: `min(100vw,${wide}) auto`, repeat: "no-repeat", position: `${IMAGE_X[position]} ${k ? `calc(${num(k)} * max(0px,100vh - ${tall}))` : "0px"}` };
+}
+
+/**
+ * One resolved paint layer as CSS background parts, or null for a layer that cannot be drawn: an
+ * image whose admitted data `images` (hash to data URL) does not hold. An image part carries its
+ * own opacity; the plan draws it as a veil of the paint's color over the image.
+ */
+export function layerCss(layer, { images = null, target = "page" } = {}) {
+  if (layer.kind === "image") {
+    // Only data that passes admission, and so holds nothing but base64, goes inside url("").
+    const data = images?.get(layer.asset);
+    if (typeof data !== "string" || rasterHash(data) !== layer.asset) return null;
+    return { image: `url("${data}")`, ...imagePlacement(layer, target), opacity: layer.opacity, raster: true };
+  }
   if (layer.kind === "gradient") {
     const stops = layer.stops.map((stop) => `${rgba(stop.color, layer.opacity)} ${num(stop.position)}%`).join(",");
     const image = layer.type === "radial" ? `radial-gradient(circle at ${POSITION[layer.position] ?? "center"},${stops})` : `linear-gradient(${num(layer.angle)}deg,${stops})`;
@@ -102,7 +138,6 @@ export function layerCss(layer) {
     if (period) return { image: layer.value, size: period.axis === "y" ? `100% ${num(period.px)}px` : `${num(period.px)}px 100%`, repeat: "repeat", position: "0 0" };
     return { image: layer.value, size: layer.size ?? "auto", repeat: tiled(layer.size) ? "repeat" : "no-repeat", position: "0 0" };
   }
-  // Raster layers need the browser decode and conversion path, which arrives after this increment.
   return null;
 }
 
@@ -350,6 +385,11 @@ export function layerFills(layer) {
   return null;
 }
 
+// What an image under a veil of `color` at `alpha` may show: any pixel, so the darkest and the
+// lightest, and where the image is transparent the veil alone. Luminance rises with every channel,
+// so these bound every pixel in between.
+const imageFills = (color, alpha) => [{ hex: over({ hex: color, alpha }, "#000000"), alpha: 1 }, { hex: over({ hex: color, alpha }, "#ffffff"), alpha: 1 }, { hex: color, alpha }];
+
 const over = (top, base) => {
   const [t, b] = [rgbOf(top.hex), rgbOf(base)];
   return toHex(...t.map((v, i) => v * top.alpha + b[i] * (1 - top.alpha)));
@@ -359,28 +399,68 @@ const over = (top, base) => {
 const MAX_BACKGROUNDS = 50000;
 
 // The lowest contrast of any text color over any stack of one fill (or none) from each layer, or
-// null when the stack has too many distinct backgrounds to check.
-function worstContrast(base, fills, texts) {
+// null when the stack has too many distinct backgrounds to check. `fills` is in CSS order, nearest
+// first, so the stack is built from its last entry up. With `sided`, which images need, a text
+// whose backgrounds lie on both sides of its own luminance counts as 1:1: a pixel between the
+// extremes would match it.
+function worstContrast(base, fills, texts, sided = false) {
   let backgrounds = [base];
-  for (const layer of fills) {
+  for (const layer of [...fills].reverse()) {
     const next = new Set(backgrounds);
     for (const bg of backgrounds) for (const fill of layer) next.add(over(fill, bg));
     if (next.size > MAX_BACKGROUNDS) return null;
     backgrounds = [...next];
   }
   let worst = Infinity;
-  for (const bg of backgrounds) for (const text of texts) worst = Math.min(worst, contrast(text, bg));
+  for (const text of texts) {
+    let darker = false;
+    let lighter = false;
+    for (const bg of backgrounds) {
+      worst = Math.min(worst, contrast(text, bg));
+      if (sided) (luminance(bg) < luminance(text) ? (darker = true) : (lighter = true));
+    }
+    if (darker && lighter) return 1;
+  }
   return worst;
 }
 
+// The least extra veil, in steps of 1/100, that keeps every text at 4.5:1 over images whose
+// content is unknown, or null when even a veil that hides them fails.
+function legibleVeil(color, parts, layers, texts) {
+  const fillsAt = (extra) =>
+    parts.map((part, i) => (part.raster ? imageFills(color, 1 - (1 - extra) * part.opacity) : layerFills(layers[i])));
+  const passes = (extra) => {
+    const fills = fillsAt(extra);
+    if (fills.some((f) => f === null)) return null;
+    const worst = worstContrast(color, fills, texts, true);
+    return worst === null ? null : worst >= 4.5;
+  };
+  const ends = [passes(0), passes(1)];
+  if (ends.includes(null)) return { unverified: true };
+  if (ends[0]) return { extra: 0 };
+  if (!ends[1]) return null;
+  let low = 0;
+  let high = 100;
+  while (high - low > 1) {
+    const mid = (low + high) >> 1;
+    if (passes(mid / 100)) high = mid;
+    else low = mid;
+  }
+  return { extra: high / 100 };
+}
+
 // ---- Plan ----
+
+// An image over text that needs a veil hiding more than this is not worth its decode; it is left out.
+const MAX_VEIL = 0.95;
 
 /**
  * What the structured layers draw for this resolution and these preferences, before any CSS:
  * { effective, page, header, banner, avatar, fonts, typography, notes }. A paint is
  * { color, layers: [css parts], dropped } with dropped naming why requested layers are not drawn.
+ * `images` maps the hash of each admitted image to its data URL (imageAssets of the source).
  */
-export function structuredPlan(resolved, prefs) {
+export function structuredPlan(resolved, prefs, images = null) {
   const effective = structuredEffective(resolved, prefs);
   const notes = [];
   const empty = { effective, page: null, header: null, banner: null, avatar: null, fonts: null, typography: null, notes };
@@ -393,30 +473,54 @@ export function structuredPlan(resolved, prefs) {
     if (!source) return null;
     const color = HEX.test(source.color ?? "") ? source.color : base;
     if (!effective.decorative || !source.layers.length) return { color, layers: [], dropped: source.layers.length ? (effective.full ? "effects-off" : "calm") : null };
-    const parts = source.layers.map(layerCss);
-    if (parts.some((p) => p === null)) notes.push({ code: "deferred-capability", path: `/backgrounds/${target}`, message: "Image layers arrive in a later version; the other layers are drawn." });
-    const drawn = source.layers.filter((_, i) => parts[i] !== null);
-    // Text drawn straight on the paint must keep its contrast over every fill of every layer.
-    if (texts.length) {
-      const fills = drawn.map(layerFills);
-      const worst = fills.some((f) => f === null) ? null : worstContrast(color, fills, texts);
-      if (worst === null) {
-        notes.push({ code: "paint-unverified", path: `/backgrounds/${target}`, message: "A paint color could not be checked against the text over it, so the layers are not drawn." });
-        return { color, layers: [], dropped: "unverified" };
-      }
-      if (worst < 4.5) {
-        notes.push({ code: "paint-contrast", path: `/backgrounds/${target}`, message: "Text over these layers would fall below 4.5:1, so they are not drawn." });
-        return { color, layers: [], dropped: "contrast" };
+    const all = source.layers.map((layer) => layerCss(layer, { images, target }));
+    all.forEach((part, i) => part === null && notes.push({ code: "image-unavailable", path: `/backgrounds/${target}/layers/${i}`, message: "This image's data is not available here, so the other layers are drawn without it." }));
+    let drawn = source.layers.filter((_, i) => all[i] !== null);
+    let parts = all.filter(Boolean);
+    const unverified = () => {
+      notes.push({ code: "paint-unverified", path: `/backgrounds/${target}`, message: "A paint color could not be checked against the text over it, so the layers are not drawn." });
+      return { color, layers: [], dropped: "unverified" };
+    };
+    const unreadable = () => {
+      notes.push({ code: "paint-contrast", path: `/backgrounds/${target}`, message: "Text over these layers would fall below 4.5:1, so they are not drawn." });
+      return { color, layers: [], dropped: "contrast" };
+    };
+    // An image draws under a veil of the paint's color: its own opacity, and where text sits
+    // straight on the paint, as much more as keeps that text at 4.5:1 whatever the image shows.
+    let extra = 0;
+    if (texts.length && parts.some((p) => p.raster)) {
+      const veil = legibleVeil(color, parts, drawn, texts);
+      if (veil?.unverified) return unverified();
+      if (veil && veil.extra <= MAX_VEIL) extra = veil.extra;
+      else {
+        notes.push({ code: "image-contrast", path: `/backgrounds/${target}`, message: "Text over this image could not keep 4.5:1 without hiding it, so the image is not drawn." });
+        drawn = drawn.filter((_, i) => !parts[i].raster);
+        parts = parts.filter((p) => !p.raster);
       }
     }
-    return { color, layers: parts.filter(Boolean), dropped: null };
+    // Text drawn straight on the paint must keep its contrast over every fill of every layer.
+    if (texts.length && !parts.some((p) => p.raster)) {
+      const fills = drawn.map(layerFills);
+      const worst = fills.some((f) => f === null) ? null : worstContrast(color, fills, texts);
+      if (worst === null) return unverified();
+      if (worst < 4.5) return unreadable();
+    }
+    const layers = parts.flatMap(({ raster, opacity, ...part }) => {
+      if (!raster) return [part];
+      const alpha = Math.round((1 - (1 - extra) * opacity) * 1000) / 1000;
+      if (alpha <= 0) return [part];
+      const veil = rgba(color, alpha);
+      return [{ image: `linear-gradient(${veil},${veil})`, size: part.size, repeat: part.repeat, position: part.position }, part];
+    });
+    return { color, layers, dropped: null, veil: parts.some((p) => p.raster) ? extra : null };
   };
 
   const page = paint("page", a.colors.page?.background ?? t.canvas, [t.text, t.mutedText, t.link]);
   const header = paint("header", a.colors.header?.background ?? t.inset, [a.colors.header?.text ?? t.mutedText]);
-  // The banner is a decorative region of its own with no text, and only Full draws it.
-  const bannerPaint = a.paints.profileBanner && effective.decorative ? paint("profileBanner", a.paints.profileBanner.color ?? t.surface, []) : null;
-  const banner = bannerPaint && (bannerPaint.layers.length || a.paints.profileBanner.color) ? bannerPaint : null;
+  // The banner is a decorative region of its own with no text, and only Full draws it. Whether it
+  // exists follows the request, not which images are at hand, so the owned node plan agrees.
+  const bannerSource = a.paints.profileBanner;
+  const banner = bannerSource && effective.decorative && (bannerSource.layers.length || bannerSource.color) ? paint("profileBanner", bannerSource.color ?? t.surface, []) : null;
 
   let avatar = null;
   if (a.shape.avatar) {

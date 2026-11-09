@@ -3,8 +3,7 @@
 // a v1 theme keeps GitHub's native shape, type and paints; omitted members of a supplied group
 // take the schema defaults. Images resolve to the hash of their decoded bytes and the pointer of
 // their data, never base64; CSS resolves to its canonical hash, never its text.
-import { APPEARANCE_DEFAULTS as D, FONT_ROLES, admitCss, admitGradientCss, rasterInfo } from "../format/viewer.js";
-import { sha256 } from "./sha256.js";
+import { APPEARANCE_DEFAULTS as D, FONT_ROLES, admitCss, admitGradientCss, rasterHash, rasterInfo } from "../format/viewer.js";
 
 const TARGETS = ["page", "profileBanner", "header"];
 const lower = (hex) => (typeof hex === "string" ? hex.toLowerCase() : hex);
@@ -35,7 +34,7 @@ function paint(theme, target) {
       if (!info.ok) throw new TypeError(`resolveTheme needs admitted images: ${at}/image/data ${info.code}`);
       return {
         kind: "image",
-        asset: sha256(info.bytes),
+        asset: rasterHash(image.data),
         source: `${at}/image/data`,
         mime: info.mime,
         width: info.width,

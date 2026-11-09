@@ -278,6 +278,8 @@ export const ISSUE_CODES = freeze({
   // Revision 4 semantic admission: embedded rasters, gradient stops and advanced CSS.
   imageData: "image-data",
   imageLimit: "image-limit",
+  // An animated or metadata-bearing image that the local still-image conversion must rewrite first.
+  imageConversion: "image-conversion",
   gradientOrder: "gradient-order",
   css: "css",
   cssUnavailable: "css-unavailable",
