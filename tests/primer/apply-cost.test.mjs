@@ -190,8 +190,12 @@ for (const [name, engine] of [["Chromium", chromium], ["Firefox", firefox]]) {
       await page.addScriptTag({ content: mountPath });
       const mountStart = loadavg();
       report(name, browser, fixture, "C5 mount path, Choom Circuit", await measureMount(page, CHOOM), mountStart);
+      // The 50 ms budget is set on the reference machine, where the control restyle takes about
+      // 45 ms; the control measures this machine's speed, so a slower runner (CI is about 3.7 times
+      // slower) gets the same budget scaled by it, and the reference machine keeps exactly 50 ms.
+      const allowance = 50 * Math.max(1, m.control / 45);
       for (const mode of ["full", "calm"]) {
-        assert.ok(m[mode] - m.control < 50, `${mode}: ${m[mode].toFixed(1)} ms is more than 50 ms beyond the ${m.control.toFixed(1)} ms control`);
+        assert.ok(m[mode] - m.control < allowance, `${mode}: ${m[mode].toFixed(1)} ms is more than ${allowance.toFixed(1)} ms beyond the ${m.control.toFixed(1)} ms control`);
         assert.ok(m[mode] < 2.5 * m.control + 10, `${mode}: ${m[mode].toFixed(1)} ms is more than 2.5 times the ${m.control.toFixed(1)} ms control`);
       }
       await page.close();
