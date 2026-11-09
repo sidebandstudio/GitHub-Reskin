@@ -7,6 +7,9 @@
 //   writeUi(patch)                 -> merges into the reskin.ui record (gallery group, Undo state)
 //   subscribe(listener)            -> unsubscribe; called when settings or lastGood change elsewhere
 //   openPage(page, query?)         -> opens an internal page in a tab
+//   loadDraft()                    -> the one stored builder draft record, or null
+//   saveDraft(record)              -> {ok:true} or {ok:false, issues}; replaces the stored draft
+//   discardDraft()                 -> removes the stored draft
 //   reducedMotion()                -> the device's reduced-motion setting
 import { STORAGE_KEYS } from "../contracts/index.js";
 
@@ -61,6 +64,12 @@ export function createExtensionHost(api, { view = globalThis } = {}) {
       return () => api.storage.onChanged.removeListener(handler);
     },
     openPage: (page, query) => send({ type: "open-page", action: query ? { page, query } : { page } }),
+    async loadDraft() {
+      const reply = await send({ type: "draft", action: { type: "load" } });
+      return reply?.ok ? (reply.draft ?? null) : null;
+    },
+    saveDraft: (draft) => send({ type: "draft", action: { type: "save", draft } }).catch((error) => ({ ok: false, issues: [{ message: String(error?.message ?? error) }] })),
+    discardDraft: () => send({ type: "draft", action: { type: "discard" } }),
     reducedMotion: () => Boolean(view.matchMedia?.("(prefers-reduced-motion: reduce)").matches),
   };
 }

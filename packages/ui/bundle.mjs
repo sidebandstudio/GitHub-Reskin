@@ -5,12 +5,13 @@
 //   - the bundled fonts and the preview fixture's images, copied from their repository paths.
 // Two build-time modules are embedded: reskin:catalog, the validated catalog with the sanitizer's
 // proofs for its CSS (catalogData), and reskin:cards, each theme's labels and miniature colors
-// resolved against its standard seed. The runtime uses the format and engine viewer entries, which
-// leave out the css-tree parser and admit bundled CSS from those proofs; nothing at runtime
-// imports or edits CSS until the stage 2 builder loads the authoring entry itself.
+// resolved against its standard seed. Every bundle carries the full format entry with C2b's
+// css-tree sanitizer: a saved theme can hold Advanced CSS or a gradientCss layer, and settings
+// validation in the background, the content script and every page checks it, so no entry can be
+// without the parser once the builder saves one. Bundled CSS is still admitted from the proofs.
 // Reads only checked-in files and lockfile-installed packages; same inputs, same bytes.
 import { readFile } from "node:fs/promises";
-import { join, resolve } from "node:path";
+import { join } from "node:path";
 import { cssProofs } from "../format/authoring.js";
 import { createCatalogSource } from "../settings/catalog.js";
 import { standardCard } from "./renderer.js";
@@ -20,9 +21,6 @@ export const BUNDLES = Object.freeze({
   "background.js": "extension/pages/background.mjs",
   "pages/pages.js": "extension/pages/main.mjs",
 });
-// The full entries install the css-tree sanitizer; the runtime bundles take the viewer entries.
-const VIEWER_ENTRIES = { "packages/format/index.js": "packages/format/viewer.js", "packages/engine/index.js": "packages/engine/viewer.js" };
-
 const readJson = async (root, path) => JSON.parse(await readFile(join(root, path), "utf8"));
 
 /** The catalog's entries in display order, read from themes/catalog.json. */
@@ -52,19 +50,6 @@ export function catalogData(entries) {
 /** Each theme's picker card, resolved against the standard seed of its base. */
 export const catalogCards = (entries) => entries.map((entry) => standardCard(entry));
 
-function viewerEntries(root) {
-  const swap = Object.fromEntries(Object.entries(VIEWER_ENTRIES).map(([from, to]) => [resolve(root, from), resolve(root, to)]));
-  return {
-    name: "reskin-viewer-entries",
-    setup(build) {
-      build.onResolve({ filter: /\/index\.js$/ }, (args) => {
-        const path = resolve(args.resolveDir, args.path);
-        return Object.hasOwn(swap, path) ? { path: swap[path] } : null;
-      });
-    },
-  };
-}
-
 function virtualModules(modules) {
   return {
     name: "reskin-virtual",
@@ -88,7 +73,7 @@ async function bundle(root, entry, modules) {
     legalComments: "inline",
     write: false,
     logLevel: "silent",
-    plugins: [virtualModules(modules), viewerEntries(root)],
+    plugins: [virtualModules(modules)],
   });
   return Buffer.from(result.outputFiles[0].contents);
 }

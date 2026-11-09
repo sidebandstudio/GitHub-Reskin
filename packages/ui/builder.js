@@ -1,0 +1,1084 @@
+// mountBuilder(doc, options): the Make a theme view. Three colors first, then progressive
+// disclosures for fonts, effects, flavor text, backgrounds, shape and type, the graph, code and
+// diffs, details and Advanced CSS; one-change Undo, a recoverable draft, Save/Discard/Reset;
+// Import by paste, file or share code; export as a file, theme JSON, share code or preview link;
+// and Copy AI prompt. Editing changes only the draft and its offline preview until Save. The
+// page's static HTML supplies the controls, marked data-rb="<part>"; repeated color rows are
+// built here from fields.js. Text from themes enters only through textContent and value.
+import { LOCAL_THEME_ID_PREFIX, LIMITS, SANITIZER_VERSION } from "../contracts/index.js";
+import { basePolarityIssue, repairTheme } from "../engine/index.js";
+import { acceptsFileName, canonicalize, makeAiPrompt, normalizeHex } from "../format/index.js";
+import { COPY as DRAFT_COPY, addLayer, checked, commitEdit, copyName, createDraft, draftFromRecord, draftRecord, fixBase, layerCount, removeLayer, setCss, setEffect, setField, setFlavorSlot, setGraphLevel, switchBase, undo, valueAt, withValue } from "./draft.js";
+import { ANSI_COLORS, BACKGROUND_TARGETS, CODE_COLORS, CORE_COLORS, DETAIL_COLORS, DETAIL_FIELDS, DIFF_COLORS, EFFECTS, FLAVOR_FIELDS, GRADIENT_TYPES, GRAPH_FIELDS, GRAPH_LEVEL_LABELS, IMAGE_FITS, IMAGE_POSITIONS, PATTERN_KINDS, SHAPE_FIELDS, SYNTAX_COLORS, fontChoices } from "./fields.js";
+import { effectivePreferences } from "../settings/index.js";
+import { analyzeImport, COPY as IMPORT_COPY, cssSummary, exportFile, kib, repaired, shareSheet, themeJson } from "./importer.js";
+
+export const COPY = Object.freeze({
+  promptCopied: "AI prompt copied.",
+  promptBlocked: "Your browser didn't allow copying. Select the prompt below and copy it.",
+  saved: (name) => `Saved ${name} and applied it to GitHub.`,
+  savedChanges: (name) => `Saved changes to ${name}.`,
+  saveFailed: "We couldn't save your theme. Your draft is still here.",
+  full: "Your theme collection is full. Export or remove a saved theme, then try again.",
+  needName: "Give your theme a name.",
+  hex: "Use a color like #18212b.",
+  imported: (name) => `Imported ${name}. Save it to keep it.`,
+  reset: (name) => `Reset to ${name}.`,
+  discarded: "Draft discarded. The preview shows your saved theme.",
+  resumed: "Your draft is back.",
+  copied: (what) => `Copied the ${what}.`,
+  copyBlocked: "Your browser didn't allow copying. Select the text below and copy it.",
+  downloaded: (file) => `Downloaded ${file}.`,
+  draftFailed: "We couldn't keep a recoverable copy of this draft. Download it to keep your work.",
+  fixFirst: "Fix Light or dark first, then export.",
+  cssOff: "Advanced CSS is off for this draft. Turn on Enable advanced CSS to preview it.",
+  fileType: "Choose a .json or .reskin.json file.",
+  fileTooLarge: `This theme exceeds the file, image or CSS limit. Theme files are at most ${kib(LIMITS.fileUtf8Bytes)}.`,
+  baseFix: (base) => `Switch to ${base}`,
+});
+
+const AUTOSAVE_MS = 400;
+const CSS_CHECK_MS = 250;
+const HEX = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
+
+const json = (value) => JSON.stringify(value);
+// Saved documents come back from storage in canonical key order; compare themes the same way.
+const same = (a, b) => (a && b ? canonicalize(a) === canonicalize(b) : a === b);
+const el = (doc, tag, props = {}, children = []) => {
+  const node = doc.createElement(tag);
+  for (const [key, value] of Object.entries(props)) {
+    if (value === undefined || value === null || value === false) continue;
+    if (key === "text") node.textContent = value;
+    else if (key === "dataset") Object.assign(node.dataset, value);
+    else if (key in node && typeof value !== "string") node[key] = value;
+    else node.setAttribute(key, value === true ? "" : value);
+  }
+  node.append(...children);
+  return node;
+};
+const idFor = (path) => `rb${path.replace(/[^a-z0-9]+/gi, "-")}`;
+
+/**
+ * @param {Document} doc
+ * @param {object} options
+ * @param {object} options.host UiHost with loadDraft/saveDraft/discardDraft (host.js)
+ * @param {object} options.catalog CatalogSource of bundled themes
+ * @param {(base:string)=>object} options.standardSeed the standard seed of a base
+ * @param {(container:Element, options:object)=>object} options.mountPreview C5's mountPreview
+ * @param {(fontId:string)=>string} [options.fontFace] @font-face CSS for a bundled face
+ * @param {object} [options.clipboard] {writeText(text)}; navigator.clipboard by default
+ * @param {(file:{filename,mime,bytes})=>void} [options.download]
+ */
+export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, fontFace = null, clipboard = doc.defaultView?.navigator?.clipboard, download = null }) {
+  const root = doc.querySelector('[data-rb="builder"]');
+  if (!root) return null;
+  const part = (name) => root.querySelector(`[data-rb="${name}"]`);
+  const win = doc.defaultView;
+  const cleanups = [];
+  const listen = (target, type, handler, options) => {
+    if (!target) return;
+    target.addEventListener(type, handler, options);
+    cleanups.push(() => target.removeEventListener(type, handler, options));
+  };
+
+  let settings = null;
+  let draft = null;
+  // The committed source the draft started from, to tell whether it changed and to Reset to.
+  let source = null;
+  let pendingRecord = null;
+  let autosave = 0;
+  let cssTimer = 0;
+  let preview = null;
+  let importPreview = null;
+  let view = "profile";
+  let resolvedNow = null;
+  let lastPreviewed = null;
+  let retry = null;
+  let importResult = null;
+  let importKind = "text";
+  let bgTarget = "page";
+  let layerKey = "";
+  let destroyed = false;
+
+  // ----- messages -----
+  const say = (text) => (part("status").textContent = text);
+  function fail(text, { again = null, offerDownload = false } = {}) {
+    retry = again;
+    const box = part("error");
+    box.hidden = false;
+    box.querySelector("[data-rb-text]").textContent = text;
+    part("retry").hidden = !again;
+    part("download-draft").hidden = !offerDownload;
+  }
+  const clearError = () => {
+    retry = null;
+    part("error").hidden = true;
+  };
+  function fieldError(key, text) {
+    const node = root.querySelector(`[data-rb-error-for="${CSS.escape(key)}"]`);
+    if (!node) return;
+    node.hidden = !text;
+    node.textContent = text ?? "";
+  }
+
+  // ----- source and draft -----
+  const customTheme = (id) => settings?.customThemes.find((theme) => theme.id === id) ?? null;
+  function sourceFor(draftLike) {
+    const saved = draftLike.savedId ? customTheme(draftLike.savedId) : null;
+    if (saved) return { name: saved.document.name, document: saved.document, cssEnabled: consentMatches(saved.id, saved.document), savedId: saved.id };
+    const id = draftLike.basedOn && catalog.has(draftLike.basedOn) ? draftLike.basedOn : null;
+    if (!id) return null;
+    const document = catalog.document(id);
+    return { name: document.name, document: { ...structuredClone(document), name: copyName(document.name) }, cssEnabled: false, savedId: null, bundledName: document.name };
+  }
+  function consentMatches(id, document) {
+    const consent = settings?.cssConsent?.[id];
+    const css = cssSummary(document);
+    return Boolean(consent && css?.ok && consent.hash === css.hash && consent.sanitizerVersion === SANITIZER_VERSION);
+  }
+  // The draft a selected theme starts: a bundled theme becomes "My <name>", a saved one is edited.
+  function startFrom(themeId) {
+    if (themeId.startsWith(LOCAL_THEME_ID_PREFIX) && customTheme(themeId)) {
+      const saved = customTheme(themeId);
+      return createDraft({ document: structuredClone(saved.document), basedOn: saved.basedOn ?? null, savedId: saved.id, cssEnabled: consentMatches(saved.id, saved.document) });
+    }
+    const id = catalog.has(themeId) ? themeId : catalog.ids[0];
+    return createDraft({ document: { ...structuredClone(catalog.document(id)), name: copyName(catalog.document(id).name) }, basedOn: id });
+  }
+  const dirty = () => Boolean(source && (!same(draft.document, source.document) || Boolean(draft.cssEnabled) !== Boolean(source.cssEnabled)));
+
+  /** Replaces the draft after a completed edit, then renders, previews and schedules the autosave. */
+  function accept(next, { save = true } = {}) {
+    if (pendingRecord) dismissResume(true);
+    draft = next;
+    render();
+    if (save) scheduleAutosave();
+  }
+  function edit(result, patch = {}) {
+    if (!result.ok) return result;
+    accept(commitEdit(draft, result.document, patch));
+    return result;
+  }
+
+  function scheduleAutosave() {
+    if (!win || pendingRecord) return;
+    win.clearTimeout(autosave);
+    autosave = win.setTimeout(saveDraftNow, AUTOSAVE_MS);
+  }
+  async function saveDraftNow() {
+    autosave = 0;
+    if (destroyed || !draft || pendingRecord) return;
+    if (!dirty()) return void host.discardDraft().catch(() => {});
+    const reply = await host.saveDraft(draftRecord(draft, { baseRevision: settings?.revision })).catch((error) => ({ ok: false, issues: [{ message: String(error?.message ?? error) }] }));
+    if (!reply?.ok) fail(reply?.issues?.[0]?.message && /1\.25 MiB/.test(reply.issues[0].message) ? reply.issues[0].message : COPY.draftFailed, { offerDownload: true });
+  }
+
+  // ----- preview -----
+  // The draft previews as GitHub would show it under the global preferences, with Reskin on.
+  const preferences = () => (settings ? { ...effectivePreferences(settings), enabled: true } : { enabled: true, appearance: "full", extras: true, text: true, motion: true, fonts: true, effects: true });
+  const cssAllowed = (document, enabled) => Boolean(enabled && cssSummary(document)?.ok);
+
+  /** Shows a document in the preview, unless its base contradicts its colors: then the fix shows. */
+  function showPreview(document, enabled = draft.cssEnabled) {
+    const polarity = basePolarityIssue(document);
+    const box = part("polarity");
+    box.hidden = !polarity;
+    if (polarity) {
+      const other = document.base === "dark" ? "light" : "dark";
+      box.querySelector("[data-rb-text]").textContent = IMPORT_COPY.basePolarity(document.base);
+      part("polarity-fix").textContent = COPY.baseFix(other);
+      return false;
+    }
+    const options = { theme: document, preferences: preferences(), cssAllowed: cssAllowed(document, enabled) };
+    try {
+      if (!preview) preview = mountPreview(part("preview"), { view, ...options });
+      else preview.update(options);
+      lastPreviewed = { document, cssAllowed: options.cssAllowed };
+      return true;
+    } catch {
+      // An invalid theme throws in the preview; the last valid one stays.
+      return false;
+    }
+  }
+
+  function showRepairs(document) {
+    const box = part("repairs");
+    if (basePolarityIssue(document)) return void (box.hidden = true);
+    const result = repaired(document, standardSeed);
+    resolvedNow = result.resolved;
+    const messages = result.messages.map((m) => m.text);
+    box.hidden = !messages.length;
+    box.querySelector("[data-rb-text]").textContent = messages.join(" ");
+    fillRepairList(part("repair-list"), result.repairs);
+  }
+
+  function fillRepairList(container, repairs) {
+    const table = el(doc, "table", { class: "rb-repair-table" });
+    table.append(el(doc, "caption", { class: "rs-visually-hidden", text: "Color adjustments" }));
+    table.append(el(doc, "thead", {}, [el(doc, "tr", {}, ["Field", "Before", "After", "Why"].map((h) => el(doc, "th", { scope: "col", text: h })))]));
+    const body = el(doc, "tbody");
+    for (const repair of repairs) {
+      const swatch = (value) => (typeof value === "string" ? el(doc, "span", { class: "rb-swatch-text" }, [el(doc, "span", { class: "rb-swatch", style: `background:${value}`, "aria-hidden": "true" }), value]) : el(doc, "span", { text: Array.isArray(value) ? value.join(" ") : "" }));
+      body.append(
+        el(doc, "tr", {}, [
+          el(doc, "th", { scope: "row" }, [el(doc, "span", { text: repair.field }), el(doc, "span", { class: "rb-persistence", text: repair.persistence })]),
+          el(doc, "td", {}, [swatch(repair.before)]),
+          el(doc, "td", {}, [swatch(repair.after)]),
+          el(doc, "td", { text: repair.reason }),
+        ]),
+      );
+    }
+    table.append(body);
+    container.replaceChildren(repairs.length ? table : el(doc, "p", { class: "rs-note", text: "Nothing needed adjusting." }));
+  }
+
+  // ----- controls -----
+  function colorRow(spec, { removable = !spec.required, group = "" } = {}) {
+    const id = idFor(spec.path);
+    const row = el(doc, "div", { class: "rb-color", dataset: { path: spec.path, group } });
+    const swatch = el(doc, "input", { type: "color", id: `${id}-picker`, "aria-label": `${spec.label} color picker`, class: "rb-picker" });
+    const hex = el(doc, "input", { type: "text", id, class: "rb-input rb-hex", inputmode: "text", autocomplete: "off", spellcheck: "false", maxlength: "7", "aria-describedby": `${id}-error ${id}-state` });
+    const label = el(doc, "label", { for: id, text: spec.label });
+    const state = el(doc, "span", { class: "rb-state", id: `${id}-state` });
+    const error = el(doc, "p", { class: "rb-field-error", id: `${id}-error`, hidden: true });
+    const children = [label, el(doc, "span", { class: "rb-color-inputs" }, [swatch, hex]), state];
+    if (removable) children.push(el(doc, "button", { type: "button", class: "rs-link-button rb-clear", "aria-label": `Use default ${spec.label.toLowerCase()}`, text: "Use default", dataset: { clear: spec.path } }));
+    row.append(...children, error);
+    return row;
+  }
+
+  function buildColors() {
+    const add = (name, specs) => root.querySelector(`[data-rb-colors="${name}"]`).append(...specs.map((spec) => colorRow(spec, { group: name })));
+    add("core", CORE_COLORS);
+    add("code", CODE_COLORS);
+    add("syntax", SYNTAX_COLORS);
+    add("diff", DIFF_COLORS);
+    add("ansi", ANSI_COLORS);
+    add("details", DETAIL_COLORS);
+    const graph = root.querySelector('[data-rb-colors="graph"]');
+    graph.append(...GRAPH_LEVEL_LABELS.map((label, index) => colorRow({ path: `/contributions/levels/${index}`, label, required: true }, { removable: false, group: "graph" })));
+  }
+
+  function fieldControl(spec) {
+    if (spec.kind === "color") return colorRow(spec);
+    const id = idFor(spec.path);
+    const error = el(doc, "p", { class: "rb-field-error", id: `${id}-error`, hidden: true });
+    if (spec.kind === "check") {
+      return el(doc, "div", { class: "rb-field", dataset: { path: spec.path } }, [el(doc, "label", { class: "rb-check" }, [el(doc, "input", { type: "checkbox", id, dataset: { field: spec.path } }), spec.label]), error]);
+    }
+    const control =
+      spec.kind === "select"
+        ? el(doc, "select", { id, class: "rb-input", dataset: { field: spec.path } }, spec.options.map(([value, text]) => el(doc, "option", { value, text })))
+        : el(doc, "input", { type: "number", id, class: "rb-input", min: String(spec.min), max: String(spec.max), step: String(spec.step), inputmode: "decimal", placeholder: "Theme default", dataset: { field: spec.path }, "aria-describedby": `${id}-error` });
+    return el(doc, "div", { class: "rb-field", dataset: { path: spec.path } }, [el(doc, "label", { for: id, text: spec.label }), control, error]);
+  }
+
+  function buildFields() {
+    part("shape").append(...SHAPE_FIELDS.map(fieldControl));
+    part("graph-style").append(...GRAPH_FIELDS.map(fieldControl));
+    part("details-style").append(...DETAIL_FIELDS.map(fieldControl));
+    part("effects").append(
+      ...EFFECTS.map(({ id, label }) => el(doc, "label", { class: "rs-switch" }, [el(doc, "input", { type: "checkbox", role: "switch", dataset: { effect: id } }), label])),
+    );
+    part("flavor-slots").append(
+      ...FLAVOR_FIELDS.filter((f) => f.id !== "profile.tag").map((f) => {
+        const id = idFor(f.id);
+        return el(doc, "div", { class: "rb-field" }, [el(doc, "label", { for: id, text: f.label }), el(doc, "input", { type: "text", id, class: "rb-input", maxlength: String(f.maxLength), autocomplete: "off", dataset: { slot: f.id } })]);
+      }),
+    );
+    const tag = root.querySelector('[data-rb-slot="profile.tag"]');
+    tag.maxLength = FLAVOR_FIELDS.find((f) => f.id === "profile.tag")?.maxLength ?? 24;
+    tag.dataset.slot = "profile.tag";
+    for (const [role, select] of [["heading", part("font-heading")], ["body", part("font-body")]]) {
+      select.append(...fontChoices(role).map((font) => el(doc, "option", { value: font.id, text: font.label })));
+    }
+    part("css-warning").textContent = IMPORT_COPY.cssWarning;
+    part("import-css-warning").textContent = IMPORT_COPY.cssWarning;
+  }
+
+  const focused = (node) => node === doc.activeElement;
+  const setValue = (node, value) => {
+    if (!focused(node) && node.value !== value) node.value = value;
+  };
+
+  function syncColor(row, value, explicit, resolved) {
+    const [picker, hex] = row.querySelectorAll("input");
+    const shown = value ?? resolved ?? "#000000";
+    const six = normalizeHex(shown) ?? "#000000";
+    if (!focused(picker)) picker.value = six.length === 7 ? six : "#000000";
+    if (!row.dataset.invalid) setValue(hex, shown);
+    const state = row.querySelector(".rb-state");
+    if (state) state.textContent = row.dataset.group === "core" || row.dataset.group === "graph" ? "" : explicit ? "Set by this theme" : "From the theme";
+    const clear = row.querySelector("[data-clear]");
+    if (clear) clear.hidden = !explicit;
+  }
+
+  function currentLevels() {
+    return draft.document.contributions?.levels ?? resolvedNow?.graph ?? null;
+  }
+
+  function render() {
+    if (!draft) return;
+    const document = draft.document;
+    const resolved = resolvedNow;
+    setValue(part("name"), document.name);
+    for (const row of root.querySelectorAll(".rb-color[data-path]")) {
+      const path = row.dataset.path;
+      if (row.closest('[data-rb="bg-color"],[data-rb="bg-layers"]')) continue;
+      if (row.dataset.group === "graph") {
+        const index = Number(path.split("/").pop());
+        syncColor(row, currentLevels()?.[index] ?? null, true, null);
+        continue;
+      }
+      const spec = [...CORE_COLORS, ...CODE_COLORS, ...SYNTAX_COLORS, ...DIFF_COLORS, ...ANSI_COLORS, ...DETAIL_COLORS, ...SHAPE_FIELDS, ...GRAPH_FIELDS].find((s) => s.path === path);
+      const own = valueAt(document, path);
+      const alias = spec?.alias ? valueAt(document, spec.alias) : undefined;
+      syncColor(row, own ?? alias ?? null, own !== undefined || alias !== undefined, resolved && spec?.current ? spec.current(resolved) : null);
+    }
+    for (const control of root.querySelectorAll("[data-field]")) {
+      const value = valueAt(document, control.dataset.field);
+      if (control.type === "checkbox") control.checked = value === true;
+      else setValue(control, value === undefined ? "" : String(value));
+    }
+    for (const input of root.querySelectorAll('input[name="rb-base"]')) input.checked = input.value === document.base;
+    const heading = document.fonts?.heading ?? document.fonts?.accent ?? "system";
+    const body = document.fonts?.body ?? "system";
+    syncFont(part("font-heading"), part("heading-sample"), heading);
+    syncFont(part("font-body"), part("body-sample"), body);
+    for (const input of root.querySelectorAll("[data-effect]")) input.checked = Boolean(document.effects?.[input.dataset.effect]);
+    part("flavor-enabled").checked = Boolean(document.flavor) && document.flavor.enabled !== false;
+    for (const input of root.querySelectorAll("[data-slot]")) setValue(input, document.flavor?.slots?.[input.dataset.slot] ?? "");
+    part("text-off").hidden = !(settings && settings.preferences.text === false && document.flavor);
+    renderBackgrounds();
+    renderCss();
+    part("undo").disabled = !draft.previous;
+    const isDirty = dirty();
+    part("dirty").hidden = !isDirty;
+    part("based-on").textContent = source ? (draft.savedId ? `Editing ${source.name}` : `Based on ${source.bundledName ?? source.name}`) : "";
+    part("reset").textContent = source ? `Reset to ${source.bundledName ?? source.name}` : "Reset";
+    part("save").textContent = draft.savedId ? "Save changes" : "Save as theme";
+    part("save-copy").hidden = !draft.savedId;
+    part("discard").disabled = !isDirty;
+    if (json(document) !== json(lastPreviewed?.document) || lastPreviewed.cssAllowed !== cssAllowed(document, draft.cssEnabled)) {
+      showRepairs(document);
+      showPreview(document);
+      // The repair pass resolves the theme; colors left to the engine show its values.
+      if (resolved !== resolvedNow) renderResolvedColors();
+    }
+    renderExport();
+  }
+
+  function renderResolvedColors() {
+    const resolved = resolvedNow;
+    if (!resolved) return;
+    for (const row of root.querySelectorAll(".rb-color[data-path]")) {
+      const spec = [...CODE_COLORS, ...SYNTAX_COLORS, ...DIFF_COLORS, ...ANSI_COLORS, ...DETAIL_COLORS, ...SHAPE_FIELDS, ...GRAPH_FIELDS].find((s) => s.path === row.dataset.path);
+      if (row.dataset.group === "graph") syncColor(row, currentLevels()?.[Number(row.dataset.path.split("/").pop())] ?? null, true, null);
+      else if (spec?.current) {
+        const own = valueAt(draft.document, spec.path);
+        const alias = spec.alias ? valueAt(draft.document, spec.alias) : undefined;
+        syncColor(row, own ?? alias ?? null, own !== undefined || alias !== undefined, spec.current(resolved));
+      }
+    }
+  }
+
+  const faces = new Set();
+  let faceStyle = null;
+  function syncFont(select, sample, id) {
+    setValue(select, id);
+    const font = fontChoices(select === part("font-heading") ? "heading" : "body").find((f) => f.id === id);
+    if (font?.bundled && fontFace && !faces.has(id)) {
+      faces.add(id);
+      // A face that cannot load leaves the sample in its fallback stack.
+      try {
+        const css = fontFace(id);
+        faceStyle ??= doc.head.appendChild(el(doc, "style", { "data-rb-faces": "" }));
+        faceStyle.append(css);
+      } catch {}
+    }
+    sample.style.fontFamily = font?.family ? `"${font.family}", ${font.fallback ?? "system-ui, sans-serif"}` : "";
+  }
+
+  // ----- backgrounds -----
+  function renderBackgrounds() {
+    const target = draft.document.backgrounds?.[bgTarget];
+    const colorBox = part("bg-color");
+    if (!colorBox.firstChild) colorBox.append(colorRow({ path: "/backgrounds/target/color", label: "Solid color" }, { group: "bg" }));
+    const row = colorBox.firstChild;
+    row.dataset.path = `/backgrounds/${bgTarget}/color`;
+    syncColor(row, target?.color ?? null, target?.color !== undefined, bgTarget === "page" ? draft.document.colors.background : resolvedNow?.appearance?.colors?.header?.background ?? draft.document.colors.background);
+    row.querySelector(".rb-state").textContent = target?.color ? "Set by this theme" : "Not set";
+    const layers = target?.layers ?? [];
+    const key = json([bgTarget, layers.map((layer) => Object.keys(layer)[0])]);
+    const list = part("bg-layers");
+    if (key !== layerKey) {
+      layerKey = key;
+      list.replaceChildren(...layers.map((layer, index) => layerItem(layer, index)));
+    }
+    for (const item of list.children) syncLayer(item, layers[Number(item.dataset.index)]);
+    const full = layerCount(draft.document, bgTarget) >= LIMITS.maxBackgroundLayers;
+    part("bg-add-gradient").disabled = full;
+    part("bg-add-pattern").disabled = full;
+  }
+
+  function layerItem(layer, index) {
+    const kind = Object.keys(layer)[0];
+    const base = `/backgrounds/${bgTarget}/layers/${index}/${kind}`;
+    const title = { gradient: "Gradient", pattern: "Pattern", image: "Image", gradientCss: "CSS gradient" }[kind];
+    const item = el(doc, "li", { class: "rb-layer", dataset: { index: String(index), kind } });
+    const heading = el(doc, "p", { class: "rb-layer-title" }, [el(doc, "span", { text: `${index + 1}. ${title}` })]);
+    const remove = el(doc, "button", { type: "button", class: "rs-link-button", text: "Remove", "aria-label": `Remove layer ${index + 1}, ${title.toLowerCase()}`, dataset: { removeLayer: String(index) } });
+    heading.append(remove);
+    item.append(heading);
+    const select = (path, label, values) => {
+      const id = idFor(path);
+      return el(doc, "div", { class: "rb-field" }, [el(doc, "label", { for: id, text: label }), el(doc, "select", { id, class: "rb-input", dataset: { field: path } }, values.map(([value, text]) => el(doc, "option", { value, text })))]);
+    };
+    const number = (path, label, min, max, step) => {
+      const id = idFor(path);
+      return el(doc, "div", { class: "rb-field" }, [el(doc, "label", { for: id, text: label }), el(doc, "input", { type: "number", id, class: "rb-input", min: String(min), max: String(max), step: String(step), placeholder: "Default", dataset: { field: path } })]);
+    };
+    const grid = el(doc, "div", { class: "rb-grid" });
+    if (kind === "gradient") {
+      grid.append(select(`${base}/type`, "Type", GRADIENT_TYPES), number(`${base}/angle`, "Angle (degrees)", 0, 360, 1), number(`${base}/opacity`, "Opacity (0 to 1)", 0, 1, 0.05));
+      const stops = layer.gradient.stops;
+      grid.append(colorRow({ path: `${base}/stops/0/color`, label: "First color", required: true }, { group: "bg" }), colorRow({ path: `${base}/stops/${stops.length - 1}/color`, label: "Last color", required: true }, { group: "bg" }));
+    } else if (kind === "pattern") {
+      grid.append(select(`${base}/kind`, "Pattern", PATTERN_KINDS), colorRow({ path: `${base}/color`, label: "Pattern color", required: true }, { group: "bg" }), number(`${base}/opacity`, "Opacity (0 to 0.2)", 0, 0.2, 0.01), number(`${base}/size`, "Size (px, 2 to 128)", 2, 128, 1));
+    } else if (kind === "image") {
+      grid.append(el(doc, "p", { class: "rs-note", dataset: { imageInfo: "" } }), select(`${base}/fit`, "Fit", [["", "Default (cover)"], ...IMAGE_FITS]), select(`${base}/position`, "Position", [["", "Default (center)"], ...IMAGE_POSITIONS]), number(`${base}/opacity`, "Opacity (0 to 1)", 0, 1, 0.05));
+    } else {
+      grid.append(el(doc, "p", { class: "rs-note", text: "Imported as CSS. Edit it in the theme file." }));
+    }
+    item.append(grid);
+    return item;
+  }
+
+  function syncLayer(item, layer) {
+    if (!layer) return;
+    for (const control of item.querySelectorAll("[data-field]")) {
+      const value = valueAt(draft.document, control.dataset.field);
+      setValue(control, value === undefined ? "" : String(value));
+    }
+    for (const row of item.querySelectorAll(".rb-color")) syncColor(row, valueAt(draft.document, row.dataset.path) ?? null, true, null);
+    const info = item.querySelector("[data-image-info]");
+    if (info && layer.image) {
+      const bytes = Math.floor((layer.image.data.length - layer.image.data.indexOf(",") - 1) * 0.75);
+      info.textContent = `${layer.image.width} × ${layer.image.height} px, about ${kib(bytes)}.`;
+    }
+  }
+
+  // ----- Advanced CSS -----
+  let cssShown = null;
+  function renderCss() {
+    const css = draft.document.css ?? "";
+    const area = part("css");
+    if (cssShown !== css && !focused(area)) area.value = css;
+    cssShown = css;
+    const summary = cssSummary(draft.document);
+    meter(summary ? summary.bytes : 0);
+    const enable = part("css-enable");
+    enable.disabled = !summary?.ok;
+    enable.checked = Boolean(draft.cssEnabled && summary?.ok);
+  }
+  function meter(bytes) {
+    part("css-meter").textContent = `${kib(bytes)} of ${kib(LIMITS.cssUtf8Bytes)}${bytes > LIMITS.cssUtf8Bytes ? ", over the limit" : ""}.`;
+  }
+  function checkCss() {
+    cssTimer = 0;
+    const text = part("css").value;
+    const findings = part("css-findings");
+    const bytes = new TextEncoder().encode(text).length;
+    meter(bytes);
+    if (!text.trim()) {
+      findings.hidden = true;
+      if (draft.document.css !== undefined) edit(setCss(draft.document, ""), { cssEnabled: false });
+      return;
+    }
+    const summary = cssSummary({ css: text });
+    if (!summary.ok || bytes > LIMITS.cssUtf8Bytes) {
+      // Invalid CSS never applies or replaces the last valid preview.
+      findings.hidden = false;
+      const issues = summary.ok ? [{ message: `This CSS is ${kib(bytes)}; the limit is ${kib(LIMITS.cssUtf8Bytes)}.` }] : summary.issues;
+      findings.replaceChildren(...issues.map((issue) => el(doc, "li", { text: issue.message })));
+      return;
+    }
+    findings.hidden = true;
+    if (text === draft.document.css) return;
+    // Changed CSS needs a fresh choice to enable it.
+    const result = setCss(draft.document, text);
+    if (result.ok) edit(result, { cssEnabled: false });
+    else {
+      findings.hidden = false;
+      findings.replaceChildren(el(doc, "li", { text: result.message }));
+    }
+  }
+
+  // ----- export -----
+  function exportable() {
+    if (basePolarityIssue(draft.document)) return null;
+    return repairTheme(draft.document, standardSeed(draft.document.base)).theme;
+  }
+  function renderExport() {
+    if (!part("export").open) return;
+    const theme = exportable();
+    for (const name of ["download", "copy-json", "copy-code", "copy-link"]) part(name).disabled = !theme;
+    if (!theme) return void (part("export-note").textContent = COPY.fixFirst);
+    const css = typeof theme.css === "string";
+    part("export-css").hidden = !css;
+    part("export-css-note").hidden = !css;
+    part("export-css-note").textContent = css ? IMPORT_COPY.sharedCss : "";
+    const images = imagesIn(theme);
+    part("export-images").hidden = !images;
+    part("export-images").textContent = images ? IMPORT_COPY.sharedImages(images) : "";
+  }
+  const imagesIn = (theme) => ["page", "profileBanner", "header"].reduce((n, t) => n + (theme.backgrounds?.[t]?.layers ?? []).filter((layer) => layer.image).length, 0);
+
+  // True only once the clipboard accepted the text.
+  async function copy(text) {
+    try {
+      await clipboard.writeText(text);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  function showExportText(text, label) {
+    const box = part("export-fallback");
+    box.hidden = false;
+    part("export-label").textContent = label;
+    part("export-text").value = text;
+  }
+
+  // ----- import -----
+  const dialog = part("import");
+  function openImport(kind = "text") {
+    importResult = null;
+    setImportKind(kind);
+    part("import-error").hidden = true;
+    part("import-result").hidden = true;
+    part("import-use").disabled = true;
+    if (typeof dialog.showModal === "function") dialog.showModal();
+    else dialog.setAttribute("open", "");
+    (kind === "text" ? part("paste") : kind === "code" ? part("code") : part("file")).focus();
+  }
+  function closeImport() {
+    importPreview?.destroy();
+    importPreview = null;
+    importResult = null;
+    if (dialog.open) dialog.close();
+    part("import-open").focus();
+  }
+  function setImportKind(kind) {
+    importKind = kind;
+    for (const button of part("import-kinds").querySelectorAll("[data-kind]")) button.setAttribute("aria-pressed", String(button.dataset.kind === kind));
+    for (const box of root.querySelectorAll("[data-rb-kind]")) box.hidden = box.dataset.rbKind !== kind;
+  }
+
+  async function runImport(input = null, kind = importKind) {
+    let value = input;
+    if (value === null) {
+      if (kind === "text") value = part("paste").value;
+      else if (kind === "code") value = part("code").value;
+      else {
+        const file = part("file").files?.[0];
+        if (!file) return importError({ ok: false, message: "Choose a theme file first.", details: [], actions: [] });
+        if (!acceptsFileName(file.name)) return importError({ ok: false, message: COPY.fileType, details: [], actions: [] });
+        if (file.size > LIMITS.fileUtf8Bytes) return importError({ ok: false, message: COPY.fileTooLarge, details: [], actions: [] });
+        value = new Uint8Array(await file.arrayBuffer());
+      }
+    }
+    if (typeof value === "string" && !value.trim()) return importError({ ok: false, message: kind === "code" ? "Paste a share code first." : "Paste the chatbot's answer first.", details: [], actions: [] });
+    const result = analyzeImport(value, kind, { standardSeed });
+    if (!result.ok) return importError(result);
+    showImport(result);
+  }
+
+  function importError(view) {
+    importResult = null;
+    part("import-result").hidden = true;
+    part("import-use").disabled = true;
+    const box = part("import-error");
+    box.hidden = false;
+    box.querySelector("[data-rb-text]").textContent = view.message;
+    part("import-details").replaceChildren(...(view.details ?? []).map((d) => el(doc, "li", {}, [d.path ? el(doc, "code", { text: d.path }) : "", d.path ? " " : "", d.message])));
+    const choices = [];
+    for (const candidate of view.candidates ?? []) choices.push(el(doc, "button", { type: "button", class: "rs-button", text: `Preview ${candidate.name || "this theme"}`, onclick: () => runImport(candidate.input, candidate.input.startsWith("RS1.") ? "code" : "text") }));
+    for (const action of view.actions ?? []) {
+      choices.push(el(doc, "button", { type: "button", class: "rs-button", text: action.label, title: `Leaves out: ${action.omitted.join(", ")}`, onclick: () => runImport(action.input, "text") }));
+      choices.push(el(doc, "p", { class: "rs-note", text: `${action.label} leaves out: ${action.omitted.join(", ")}.` }));
+    }
+    if (view.fixRequest) choices.push(el(doc, "button", { type: "button", class: "rs-button", text: "Copy fix request", onclick: async (event) => (event.target.textContent = (await copy(view.fixRequest)) ? "Fix request copied" : "Copy blocked; select the answer and retry") }));
+    if (view.help) choices.push(el(doc, "a", { href: view.help, target: "_blank", rel: "noopener noreferrer", text: "Update help" }));
+    part("import-choices").replaceChildren(...choices);
+  }
+
+  function showImport(result) {
+    importResult = result;
+    part("import-error").hidden = true;
+    part("import-result").hidden = false;
+    const theme = result.theme;
+    part("import-show").textContent = theme.inspiredBy ?? theme.name;
+    part("import-name").textContent = theme.inspiredBy ? theme.name : theme.author ? `by ${theme.author}` : "";
+    part("import-messages").replaceChildren(
+      ...result.messages.map((m) => el(doc, "li", { class: `rb-message rb-message--${m.kind}` }, [m.text, ...(m.details?.length ? [el(doc, "span", { class: "rs-note rb-message-detail", text: ` ${m.details.join(" ")}` })] : [])])),
+    );
+    const fix = part("import-polarity");
+    fix.hidden = !result.polarity;
+    if (result.polarity) part("import-polarity-fix").textContent = COPY.baseFix(theme.base === "dark" ? "light" : "dark");
+    part("import-changes").hidden = !result.repairs.length;
+    fillRepairList(part("import-repair-list"), result.repairs);
+    const images = result.images ?? [];
+    part("import-images").hidden = !images.length;
+    part("import-images").textContent = images.length ? `This theme carries ${images.length} embedded ${images.length === 1 ? "image" : "images"}: ${images.map((i) => `${i.width} × ${i.height} px${i.bytes ? `, ${kib(i.bytes)}` : ""}`).join("; ")}.` : "";
+    const css = result.css;
+    part("import-css").hidden = !css;
+    const enable = part("import-css-enable");
+    enable.checked = false;
+    if (css) {
+      part("import-css-size").textContent = `${kib(css.bytes)} of CSS. It is off in this preview until you enable it.`;
+      part("import-css-source").textContent = css.ok ? css.canonical : css.source;
+      enable.disabled = !css.ok;
+    }
+    part("import-use").disabled = Boolean(result.polarity);
+    updateImportPreview();
+  }
+
+  function updateImportPreview() {
+    if (!importResult || importResult.polarity) return;
+    const options = { theme: importResult.theme, preferences: preferences(), cssAllowed: Boolean(part("import-css-enable").checked && importResult.css?.ok) };
+    try {
+      if (!importPreview) importPreview = mountPreview(part("import-frame"), { view: "profile", ...options });
+      else importPreview.update(options);
+    } catch {
+      // The import's summary stays; its preview keeps the last valid frame.
+    }
+  }
+
+  function useImport() {
+    if (!importResult || importResult.polarity) return;
+    const result = checked(importResult.theme);
+    if (!result.ok) return;
+    const enabled = Boolean(part("import-css-enable").checked && importResult.css?.ok);
+    const name = result.document.name;
+    edit(result, { cssEnabled: enabled, savedId: null });
+    closeImport();
+    say(COPY.imported(name));
+  }
+
+  // ----- save -----
+  async function save({ asCopy = false } = {}) {
+    clearError();
+    part("conflict").hidden = true;
+    const name = draft.document.name?.trim();
+    if (!name) {
+      fieldError("name", COPY.needName);
+      part("name").focus();
+      return;
+    }
+    const polarity = basePolarityIssue(draft.document);
+    if (polarity) {
+      fail(IMPORT_COPY.basePolarity(draft.document.base));
+      part("polarity-fix").focus();
+      return;
+    }
+    const current = await host.read();
+    if (!current.ok) return fail(COPY.saveFailed, { again: () => save({ asCopy }), offerDownload: true });
+    settings = current.settings;
+    // The saved theme this draft edits changed elsewhere: never overwrite it silently.
+    if (draft.savedId && !asCopy) {
+      const stored = customTheme(draft.savedId);
+      if (!stored || (source && !same(stored.document, source.document))) return void (part("conflict").hidden = false);
+    }
+    const document = repairTheme(draft.document, standardSeed(draft.document.base)).theme;
+    const action = { type: "saveCustom", document, select: true };
+    if (draft.savedId && !asCopy) action.id = draft.savedId;
+    if (draft.basedOn && catalog.has(draft.basedOn)) action.basedOn = draft.basedOn;
+    say("Saving…");
+    const before = new Set(settings.customThemes.map((t) => t.id));
+    const reply = await host.commit(action, settings.revision);
+    if (!reply?.ok) return saveFailed(reply, () => save({ asCopy }));
+    settings = reply.settings;
+    const id = action.id ?? settings.customThemes.find((t) => !before.has(t.id))?.id;
+    // Consent names the sanitized hash of exactly this CSS; turning it off revokes it.
+    const css = cssSummary(document);
+    const wanted = Boolean(draft.cssEnabled && css?.ok);
+    const has = consentMatches(id, document);
+    if (id && wanted !== has && (wanted || settings.cssConsent?.[id])) {
+      const consent = await host.commit(wanted ? { type: "setCssConsent", id, granted: true, hash: css.hash, sanitizerVersion: css.sanitizerVersion } : { type: "setCssConsent", id, granted: false }, settings.revision);
+      if (consent?.ok) settings = consent.settings;
+      else return saveFailed(consent, () => save({ asCopy: false }));
+    }
+    draft = { ...draft, document, savedId: id };
+    source = sourceFor(draft);
+    await host.discardDraft().catch(() => {});
+    lastPreviewed = null;
+    render();
+    say(action.id ? COPY.savedChanges(name) : COPY.saved(name));
+  }
+
+  function saveFailed(reply, again) {
+    say("");
+    if (reply?.code === "conflict") {
+      if (reply.current) settings = reply.current;
+      part("conflict").hidden = false;
+      return;
+    }
+    const detail = reply?.issues?.find((i) => i?.message)?.message ?? "";
+    fail(/full|exceed|capacity/i.test(detail) ? COPY.full : COPY.saveFailed, { again, offerDownload: true });
+  }
+
+  function downloadDraft() {
+    const file = exportFile(draft.document);
+    download?.(file);
+    say(COPY.downloaded(file.filename));
+  }
+
+  // ----- resume -----
+  function dismissResume(discard) {
+    part("resume").hidden = true;
+    if (discard) host.discardDraft().catch(() => {});
+    pendingRecord = null;
+  }
+
+  // ----- events -----
+  function onColorInput(event) {
+    const row = event.target.closest(".rb-color");
+    if (!row) return;
+    const path = row.dataset.path;
+    const [picker, hex] = row.querySelectorAll("input");
+    const error = row.querySelector(".rb-field-error");
+    const raw = event.target === picker ? picker.value : hex.value.trim();
+    const valid = HEX.test(raw);
+    // An invalid partial hex stays in its field with an inline error; the preview keeps the last
+    // valid value, and render leaves the field alone until it is valid again.
+    if (event.target === picker) hex.value = raw;
+    if (valid) delete row.dataset.invalid;
+    else row.dataset.invalid = "1";
+    error.hidden = valid;
+    error.textContent = valid ? "" : COPY.hex;
+    if (valid) hex.removeAttribute("aria-invalid");
+    else hex.setAttribute("aria-invalid", "true");
+    if (!valid) return;
+    // Dragging previews locally; the change event accepts the value.
+    const value = normalizeHex(raw);
+    if (event.type === "input") {
+      const candidate = previewCandidate(path, value);
+      if (candidate) showPreview(candidate);
+      return;
+    }
+    if (valueAt(draft.document, path) === value) return;
+    const result = applyColor(path, value);
+    if (!result.ok) {
+      error.hidden = false;
+      error.textContent = result.message;
+    }
+  }
+  function previewCandidate(path, value) {
+    const result = colorResult(path, value);
+    return result.ok ? result.document : null;
+  }
+  function colorResult(path, value) {
+    if (path.startsWith("/contributions/levels/")) return setGraphLevel(draft.document, Number(path.split("/").pop()), value, currentLevels());
+    return setField(draft.document, path, value, { levels: currentLevels() });
+  }
+  function applyColor(path, value) {
+    return edit(colorResult(path, value));
+  }
+
+  function onFieldChange(event) {
+    const control = event.target;
+    const path = control.dataset.field;
+    let value;
+    if (control.type === "checkbox") value = control.checked ? true : undefined;
+    else if (control.type === "number") value = control.value === "" ? undefined : Number(control.value);
+    else value = control.value === "" ? undefined : control.value;
+    const errorNode = control.closest(".rb-field")?.querySelector(".rb-field-error");
+    if (control.type === "number" && control.value !== "" && !Number.isFinite(value)) {
+      if (errorNode) Object.assign(errorNode, { hidden: false, textContent: "Enter a number." });
+      return;
+    }
+    const result = setField(draft.document, path, value, { levels: currentLevels() });
+    if (errorNode) {
+      errorNode.hidden = result.ok;
+      errorNode.textContent = result.ok ? "" : friendly(result, control);
+    }
+    if (result.ok) edit(result);
+  }
+  const friendly = (result, control) => (control.min !== undefined && control.max ? `Use a value from ${control.min} to ${control.max}.` : result.message);
+
+  listen(root, "input", (event) => {
+    const target = event.target;
+    if (target.closest(".rb-color")) return onColorInput(event);
+    if (target === part("css")) {
+      win.clearTimeout(cssTimer);
+      cssTimer = win.setTimeout(checkCss, CSS_CHECK_MS);
+      meter(new TextEncoder().encode(target.value).length);
+    }
+  });
+  listen(root, "change", (event) => {
+    const target = event.target;
+    if (!draft) return;
+    if (target.closest(".rb-color")) return onColorInput(event);
+    if (target.dataset.field) return onFieldChange(event);
+    if (target === part("name")) {
+      const name = target.value.trim();
+      if (!name) return fieldError("name", COPY.needName);
+      const result = setField(draft.document, "/name", target.value.trim());
+      fieldError("name", result.ok ? null : result.message);
+      return void edit(result);
+    }
+    if (target.name === "rb-base") {
+      const result = switchBase(draft.document, target.value);
+      if (edit(result).ok && result.note) say(result.note);
+      return;
+    }
+    if (target === part("font-heading") || target === part("font-body")) {
+      const role = target === part("font-heading") ? "heading" : "body";
+      const path = `/fonts/${role}`;
+      const legacy = role === "heading" && draft.document.fonts?.accent !== undefined;
+      return void edit(setField(draft.document, path, target.value === "system" && !legacy ? undefined : target.value));
+    }
+    if (target.dataset.effect) {
+      const result = setEffect(draft.document, target.dataset.effect, target.checked);
+      fieldError("effects", result.ok ? null : result.message);
+      if (!result.ok) target.checked = !target.checked;
+      return void edit(result);
+    }
+    if (target === part("flavor-enabled")) return void edit(setField(draft.document, "/flavor/enabled", target.checked));
+    if (target.dataset.slot) return void edit(setFlavorSlot(draft.document, target.dataset.slot, target.value));
+    if (target.name === "rb-bg-target") {
+      bgTarget = target.value;
+      return renderBackgrounds();
+    }
+    if (target === part("css")) {
+      win.clearTimeout(cssTimer);
+      return checkCss();
+    }
+    if (target === part("css-enable")) return void edit({ ok: true, document: draft.document }, { cssEnabled: target.checked });
+    if (target.name === "rb-compare") return preview?.setBefore(target.value === "before");
+  });
+  listen(root, "click", (event) => {
+    const button = event.target.closest("button");
+    if (!button || !draft) return;
+    if (button.dataset.clear) {
+      const path = button.closest(".rb-color").dataset.path;
+      const spec = [...SYNTAX_COLORS, ...DETAIL_COLORS].find((s) => s.path === path);
+      let document = withValue(draft.document, path, undefined);
+      if (spec?.alias && valueAt(document, spec.alias) !== undefined && valueAt(draft.document, path) === undefined) document = withValue(document, spec.alias, undefined);
+      edit(checked(document));
+      return;
+    }
+    if (button.dataset.removeLayer !== undefined) {
+      const result = removeLayer(draft.document, bgTarget, Number(button.dataset.removeLayer));
+      edit(result);
+      part("bg-add-gradient").focus();
+      return;
+    }
+    if (button.dataset.view) {
+      view = button.dataset.view;
+      for (const b of part("views").querySelectorAll("[data-view]")) b.setAttribute("aria-pressed", String(b === button));
+      preview?.setView(view);
+      return;
+    }
+    if (button.dataset.kind) return setImportKind(button.dataset.kind);
+  });
+
+  // Enter in a field accepts its value; it never submits the controls.
+  listen(part("controls"), "submit", (event) => event.preventDefault());
+  listen(part("undo"), "click", () => {
+    if (!draft.previous) return say(DRAFT_COPY.nothingToUndo);
+    accept(undo(draft));
+    say(DRAFT_COPY.undone);
+  });
+  listen(part("polarity-fix"), "click", () => {
+    const result = fixBase(draft.document);
+    if (edit(result).ok) say(`Switched to ${result.document.base}.`);
+  });
+  listen(part("bg-add-gradient"), "click", () => {
+    const { accent, background } = draft.document.colors;
+    const result = addLayer(draft.document, bgTarget, { gradient: { type: "linear", angle: 180, stops: [{ color: accent, position: 0 }, { color: background, position: 100 }], opacity: 0.3 } });
+    fieldError("backgrounds", result.ok ? null : result.message);
+    edit(result);
+  });
+  listen(part("bg-add-pattern"), "click", () => {
+    const result = addLayer(draft.document, bgTarget, { pattern: { kind: "grid", color: draft.document.colors.accent, opacity: 0.05, size: 32 } });
+    fieldError("backgrounds", result.ok ? null : result.message);
+    edit(result);
+  });
+  listen(part("reset"), "click", () => {
+    if (!source) return;
+    accept(commitEdit(draft, structuredClone(source.document), { cssEnabled: source.cssEnabled }));
+    say(COPY.reset(source.bundledName ?? source.name));
+  });
+  listen(part("discard"), "click", () => {
+    if (!source) return;
+    accept(commitEdit(draft, structuredClone(source.document), { cssEnabled: source.cssEnabled }), { save: false });
+    win.clearTimeout(autosave);
+    host.discardDraft().catch(() => {});
+    say(COPY.discarded);
+  });
+  listen(part("save"), "click", () => save());
+  listen(part("save-copy"), "click", () => save({ asCopy: true }));
+  listen(part("retry"), "click", () => retry?.());
+  listen(part("download-draft"), "click", downloadDraft);
+  listen(part("keep-editing"), "click", async () => {
+    const current = await host.read();
+    if (current.ok) settings = current.settings;
+    // Keep this draft, now based on what is saved: the next Save is a deliberate overwrite.
+    if (draft.savedId) {
+      const stored = customTheme(draft.savedId);
+      source = stored ? { ...sourceFor(draft) } : null;
+      if (!stored) draft = { ...draft, savedId: null };
+      source ??= sourceFor(draft);
+    }
+    part("conflict").hidden = true;
+    render();
+    part("save").focus();
+  });
+  listen(part("load-saved"), "click", async () => {
+    const current = await host.read();
+    if (current.ok) settings = current.settings;
+    part("conflict").hidden = true;
+    const next = startFrom(draft.savedId && customTheme(draft.savedId) ? draft.savedId : settings.selectedThemeId);
+    source = sourceFor(next);
+    accept(commitEdit(draft, next.document, { cssEnabled: next.cssEnabled, savedId: next.savedId, basedOn: next.basedOn }));
+  });
+  listen(part("resume-draft"), "click", () => {
+    const restored = draftFromRecord(pendingRecord);
+    pendingRecord = null;
+    part("resume").hidden = true;
+    if (!restored) return;
+    source = sourceFor(restored) ?? source;
+    draft = restored;
+    render();
+    say(COPY.resumed);
+    part("name").focus();
+  });
+  listen(part("resume-saved"), "click", () => {
+    dismissResume(true);
+    part("name").focus();
+  });
+
+  // Copy AI prompt: Copied only after the clipboard accepted it.
+  listen(part("prompt-copy"), "click", async () => {
+    const prompt = makeAiPrompt();
+    const ok = await copy(prompt);
+    part("prompt-steps").hidden = false;
+    // Success is said once, in the status above the steps; a refusal stays beside the prompt text.
+    part("prompt-result").hidden = ok;
+    part("prompt-result").textContent = ok ? "" : COPY.promptBlocked;
+    part("prompt-fallback").hidden = ok;
+    if (!ok) part("prompt-text").value = prompt;
+    say(ok ? COPY.promptCopied : "");
+  });
+  listen(part("prompt-select"), "click", () => {
+    part("prompt-text").focus();
+    part("prompt-text").select();
+  });
+  listen(part("import-paste"), "click", () => openImport("text"));
+  listen(part("import-open"), "click", () => openImport("text"));
+  listen(part("import-close"), "click", closeImport);
+  listen(part("import-cancel"), "click", closeImport);
+  listen(dialog, "cancel", (event) => {
+    event.preventDefault();
+    closeImport();
+  });
+  listen(part("import-preview"), "click", () => runImport());
+  listen(part("import-use"), "click", useImport);
+  listen(part("import-css-enable"), "change", updateImportPreview);
+  listen(part("import-polarity-fix"), "click", () => {
+    const fixed = fixBase(importResult.theme);
+    if (!fixed.ok) return;
+    const result = repaired(fixed.document, standardSeed);
+    showImport({ ...importResult, ...result, messages: [{ kind: "info", text: `Switched to ${fixed.document.base}.` }, ...result.messages], css: importResult.css, images: importResult.images });
+  });
+  listen(part("export"), "toggle", renderExport);
+  listen(part("download"), "click", () => {
+    const theme = exportable();
+    if (!theme) return;
+    const file = exportFile(theme);
+    download?.(file);
+    part("export-note").textContent = COPY.downloaded(file.filename);
+  });
+  const exportCopy = async (what, text, label, extra = "") => {
+    const ok = await copy(text);
+    part("export-note").textContent = `${ok ? COPY.copied(what) : COPY.copyBlocked}${extra ? ` ${extra}` : ""}`;
+    // Success leaves the text selectable too.
+    showExportText(text, label);
+  };
+  listen(part("copy-json"), "click", () => {
+    const theme = exportable();
+    if (theme) exportCopy("theme JSON", themeJson(theme), "Theme JSON");
+  });
+  listen(part("copy-code"), "click", () => {
+    const theme = exportable();
+    if (theme) exportCopy("share code", shareSheet(theme).code, "Share code", IMPORT_COPY.linkTooLong);
+  });
+  listen(part("copy-link"), "click", () => {
+    const theme = exportable();
+    if (!theme) return;
+    const sheet = shareSheet(theme);
+    if (sheet.linkTooLong) {
+      part("export-note").textContent = IMPORT_COPY.linkOverLimit;
+      return;
+    }
+    exportCopy("preview link", sheet.link, "Preview link");
+  });
+  listen(part("export-select"), "click", () => {
+    part("export-text").focus();
+    part("export-text").select();
+  });
+
+  buildColors();
+  buildFields();
+
+  // Saved theme changes elsewhere: keep the draft; refresh the source and whether CSS applies.
+  const unsubscribe = host.subscribe(async () => {
+    const current = await host.read();
+    if (!current.ok || destroyed) return;
+    const pristine = draft && !dirty() && !draft.previous;
+    settings = current.settings;
+    if (pristine && !draft.savedId) {
+      // An untouched draft follows the selected theme.
+      draft = startFrom(settings.selectedThemeId);
+      source = sourceFor(draft);
+    } else if (draft?.savedId && !customTheme(draft.savedId)) {
+      draft = { ...draft, savedId: null };
+      source = sourceFor(draft);
+    }
+    lastPreviewed = null;
+    render();
+  });
+
+  const ready = (async () => {
+    const current = await host.read();
+    if (destroyed) return;
+    settings = current.ok ? current.settings : null;
+    draft = startFrom(settings?.selectedThemeId ?? catalog.ids[0]);
+    source = sourceFor(draft);
+    render();
+    const stored = await host.loadDraft().catch(() => null);
+    if (destroyed) return;
+    const restored = draftFromRecord(stored);
+    if (restored) {
+      pendingRecord = stored;
+      part("resume").hidden = false;
+      part("resume-name").textContent = restored.document.name;
+    } else if (stored) host.discardDraft().catch(() => {});
+  })();
+
+  return {
+    ready,
+    state: () => ({ draft, source, settings }),
+    destroy() {
+      destroyed = true;
+      win?.clearTimeout(autosave);
+      win?.clearTimeout(cssTimer);
+      unsubscribe();
+      for (const cleanup of cleanups.splice(0)) cleanup();
+      preview?.destroy();
+      importPreview?.destroy();
+    },
+  };
+}
