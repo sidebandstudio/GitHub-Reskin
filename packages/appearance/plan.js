@@ -48,8 +48,8 @@ export function effectiveAppearance(resolved, prefs) {
  * The owned-node plan for the given slots, in registry order. Each entry is
  * { slot, kind, box, copy, effects: [{ id, nodes }] }, and the totals are counted the way the
  * DOM will be: the slot wrapper, its box, the copy span and every effect node. `styled` lists the
- * slots the theme's admitted CSS styles: that CSS is the whole treatment of a styled tag badge, so
- * packaged effects stay out of it rather than drawing over its copy.
+ * slots the theme's admitted CSS styles: that CSS is the whole treatment of a styled tag or caption,
+ * so packaged effects stay out of it rather than drawing over or beside its copy.
  */
 export function planAppearance(resolved, prefs, slots, { styled = [] } = {}) {
   const effective = effectiveAppearance(resolved, prefs);
@@ -76,7 +76,7 @@ export function planAppearance(resolved, prefs, slots, { styled = [] } = {}) {
   const moved = new Set();
   let animated = 0;
   for (const entry of entries) {
-    if (entry.box === "badge" && styled.includes(entry.slot)) continue;
+    if (entry.box !== "strip" && styled.includes(entry.slot)) continue;
     const effects = BOX_EFFECTS[entry.box]
       .filter((id) => requested.includes(id))
       .map((id) => {

@@ -141,12 +141,14 @@ test("the banner is one owned node, planned only in Full with a reserved anchor"
   assert.match(compileAppearance(banner, FULL, "preview"), /\.rs-banner\[data-reskin-owned\]\{background-color:#11112a;background-image:none\}/);
 });
 
-test("a tag badge the theme's CSS styles carries no packaged effects over its copy", () => {
-  const slots = ["profile.tag", "profile.pinned.heading"];
+test("a tag or caption the theme's CSS styles carries no packaged effects over or beside its copy", () => {
+  const slots = ["profile.tag", "profile.pinned.heading", "error.notFound.caption"];
   const plain = planAppearance(r, FULL, slots);
   assert.ok(plain.slots.find((e) => e.slot === "profile.tag").effects.length);
   const styled = planAppearance(r, FULL, slots, { styled: ownedThemeCss(r, FULL, choom.css, true).slots });
   assert.deepEqual(styled.slots.find((e) => e.slot === "profile.tag").effects, []);
+  assert.ok(plain.slots.find((e) => e.slot === "error.notFound.caption").effects.length);
+  assert.deepEqual(styled.slots.find((e) => e.slot === "error.notFound.caption").effects, []);
   // Heading strips keep their effects beside the styled copy.
   assert.ok(styled.slots.find((e) => e.slot === "profile.pinned.heading").effects.length);
   assert.ok(styled.owned < plain.owned);
