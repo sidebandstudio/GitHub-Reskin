@@ -54,7 +54,8 @@ test("flavor copy never enters CSS, and CSS is deterministic", () => {
   assert.ok(!css.includes(choom.name));
   assert.equal(css, compileAppearance(resolve(choom), ON, "github"));
   assert.match(css, /pointer-events:none!important/);
-  assert.doesNotMatch(compileAppearance(r, ON, "preview"), /pointer-events:none!important/);
+  // Both targets emit the same declarations, so a theme's owned CSS reaches the same properties.
+  assert.equal(compileAppearance(r, ON, "preview").replace(/!important/g, ""), css.replace(/!important/g, ""));
   assert.throws(() => compileAppearance(r, ON, "elsewhere"), /target/);
 });
 

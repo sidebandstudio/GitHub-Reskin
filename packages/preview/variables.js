@@ -42,6 +42,12 @@ export const PREVIEW_VARIABLES = Object.freeze({
   "--contribution-default-bgColor-3": "/graph/3",
   "--contribution-default-bgColor-4": "/graph/4",
   "--contribution-default-borderColor-0": "/tokens/controlBorder",
+  "--header-bgColor": "/tokens/inset",
+  "--header-fgColor-default": "/tokens/mutedText",
+  "--header-fgColor-logo": "/tokens/text",
+  "--header-borderColor-divider": "/tokens/border",
+  "--headerSearch-bgColor": "/tokens/canvas",
+  "--headerSearch-borderColor": "/tokens/controlBorder",
 });
 
 /** The value at a ColorPath of a ColorSet (a seed's colors or a themed resolution). */
