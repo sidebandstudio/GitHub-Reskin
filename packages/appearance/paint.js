@@ -7,16 +7,26 @@
 // Full draws every requested layer. Calm keeps the solid page and header colors, simple avatar
 // corners and the role fonts, and drops paint layers, the banner, neon frames and every glow.
 // Effects off drops the same decoration inside Full. Fonts off removes both roles, tracking and
-// case. Native, high-contrast and forced-color resolutions get nothing.
-import { contrast } from "../engine/color.js";
-import { FONT_BY_ID, SYSTEM_SANS } from "./registry.js";
+// case. Native, high-contrast and forced-color resolutions get nothing, and on the page every rule
+// follows the Primer adapter's decision for the subject's nearest mode island.
+import { contrast, oklab } from "../engine/color.js";
+import { ATTRIBUTED } from "../primer/selectors.js";
+import { FONT_BY_ID } from "./registry.js";
 import { num, rgba } from "./effects.js";
 
 const HEX = /^#[0-9a-f]{6}$/;
 
 // GitHub's elements this file styles. The preview fixture uses the same class names, so both
-// targets share one selector list. Each selector also steps out of native and protected islands.
-export const GUARD = ":not([data-reskin-native],[data-reskin-native] *,[data-reskin-protected],[data-reskin-protected] *)";
+// targets share one selector list. Each selector also steps out of native and protected islands,
+// and never styles a mode island's own element, whose mode is its own, not its parent's.
+export const GUARD = ":not([data-color-mode],[data-reskin-native],[data-reskin-native] *,[data-reskin-protected],[data-reskin-protected] *)";
+// The Primer adapter's compiled CSS raises this inherited switch on the mode islands it themes and
+// clears it on native, high-contrast, unknown and suppressed ones. A container style query reads
+// it from the subject's parent, so every structured rule follows the subject's nearest island, as
+// the adapter's own component rules do. An engine without container style queries (Gecko before
+// Firefox 151) draws none of these rules, and GitHub keeps its own look there.
+export const THEMED_SWITCH = "--reskin-on";
+const THEMED = `@container style(${THEMED_SWITCH}: 1)`;
 export const SURFACES = Object.freeze({
   page: "body",
   header: [".AppHeader", "header.Header", ".HeaderMktg"],
@@ -29,10 +39,13 @@ export const SURFACES = Object.freeze({
   // GitHub-owned chrome that takes the heading role with its tracking, never its case.
   headingChrome: [".UnderlineNav-item", ".AppHeader-context-item", ".HeaderMenu-link", ".btn", ".Button"],
   // Code, diff and editor text keep their native family, tracking and case whatever the roles say.
-  code: ["pre", "code", "kbd", "samp", "tt", "textarea", ".blob-code", ".blob-num", ".diff-table", ".react-code-text", ".react-code-lines", ".cm-editor", ".CodeMirror"],
+  code: ["pre", "code", "kbd", "samp", "tt", "var", "textarea", ".text-mono", ".blob-code", ".blob-num", ".diff-table", ".react-code-text", ".react-code-lines", ".cm-editor", ".CodeMirror"],
   // Authored prose: a heading inside it is the author's, so the heading role does not reach it.
   authored: [".markdown-body", ".comment-body", ".js-comment-body"],
 });
+
+// GitHub's own body stack, for a page that does not define its variable.
+const GITHUB_SANS = '-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif';
 
 const list = (selectors) => selectors.map((s) => `${s}${GUARD}`).join(",");
 
@@ -163,10 +176,11 @@ function color(token) {
     const cb = b.c ?? { hex: "#000000", alpha: 0 };
     const alpha = ca.alpha * pa + cb.alpha * pb;
     if (alpha === 0) return null;
-    // Premultiplied mixing, as color-mix() interpolates with alpha.
+    // Premultiplied mixing, as color-mix() interpolates with alpha. The result is not a legacy
+    // sRGB color, so a gradient holding it interpolates in OKLab.
     const rgb = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
     const [ra, rb] = [rgb(ca.hex), rgb(cb.hex)];
-    return { hex: toHex(...ra.map((v, i) => (v * ca.alpha * pa + rb[i] * cb.alpha * pb) / alpha)), alpha };
+    return { hex: toHex(...ra.map((v, i) => (v * ca.alpha * pa + rb[i] * cb.alpha * pb) / alpha)), alpha, modern: true };
   }
   return undefined;
 }
@@ -239,12 +253,74 @@ export function repeatPeriod(value) {
 
 const px = (position) => (position === "0" ? 0 : /^-?\d+(?:\.\d+)?px$/.test(position ?? "") ? parseFloat(position) : null);
 
+// A stop position as { value, unit } for 0, px and %, or null for one that cannot be compared.
+const at = (position) => {
+  if (position === undefined || position === null) return null;
+  if (position === "0") return { value: 0, unit: "px" };
+  const m = /^(-?\d+(?:\.\d+)?)(px|%)$/.exec(position);
+  return m ? { value: parseFloat(m[1]), unit: m[2] } : null;
+};
+// Whether the gradient jumps straight from one stop to the next: a later stop at or before an
+// earlier one's position takes that position, so nothing is drawn between them.
+const hard = (a, b) => a !== null && b !== null && a.unit === b.unit && b.value <= a.value;
+
+// Points sampled between two stops. Luminance along an sRGB segment is convex, so its darkest
+// point can lie between the stops, where text over it is least legible; 16 steps find it closely.
+const STEPS = 16;
+
+const encode = (v) => 255 * (v <= 0.0031308 ? 12.92 * v : 1.055 * Math.max(0, v) ** (1 / 2.4) - 0.055);
+// sRGB hex for an OKLab color, clipped to the sRGB gamut, as a browser paints it.
+function fromOklab([L, A, B]) {
+  const l = (L + 0.3963377774 * A + 0.2158037573 * B) ** 3;
+  const m = (L - 0.1055613458 * A - 0.0638541728 * B) ** 3;
+  const s = (L - 0.0894841775 * A - 1.291485548 * B) ** 3;
+  return toHex(
+    encode(4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s),
+    encode(-1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s),
+    encode(-0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s),
+  );
+}
+
+const rgbOf = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+const CLEAR = { hex: "#000000", alpha: 0 };
+
+// The color t of the way from a to b, interpolated with premultiplied alpha in sRGB or OKLab.
+function between(a, b, t, space) {
+  const alpha = a.alpha + (b.alpha - a.alpha) * t;
+  if (alpha <= 0) return null;
+  const [x, y] = space === "oklab" ? [oklab(a.hex), oklab(b.hex)] : [rgbOf(a.hex), rgbOf(b.hex)];
+  const mixed = x.map((v, i) => (v * a.alpha + (y[i] * b.alpha - v * a.alpha) * t) / alpha);
+  return { hex: space === "oklab" ? fromOklab(mixed) : toHex(...mixed), alpha };
+}
+
+/**
+ * Every color a list of stops ({ color, at }) paints: the stops and points sampled between each
+ * pair that is not a hard edge, in sRGB and, when a stop is not a legacy sRGB color, also in
+ * OKLab, the space a browser then interpolates in.
+ */
+function stopFills(stops) {
+  const spaces = stops.some((s) => s.color?.modern) ? ["srgb", "oklab"] : ["srgb"];
+  const out = new Map();
+  const add = (c) => {
+    if (c && c.alpha > 0) out.set(`${c.hex}/${Math.round(c.alpha * 1000)}`, { hex: c.hex, alpha: c.alpha });
+  };
+  stops.forEach((s, i) => {
+    add(s.color);
+    const next = stops[i + 1];
+    if (!next || hard(s.at, next.at)) return;
+    const [a, b] = [s.color ?? CLEAR, next.color ?? CLEAR];
+    for (const space of spaces) for (let k = 1; k < STEPS; k++) add(between(a, b, k / STEPS, space));
+  });
+  return [...out.values()];
+}
+
 /**
  * The colors one gradient value paints over an area, as [{hex, alpha}], or null when a color
- * cannot be evaluated. A hard band of at most 2px is a drawn rule, not a fill, and is left out:
- * text crossing a hairline stays legible, and rules carry no text.
+ * cannot be evaluated: every stop, every band, repeating or not, and the colors between stops.
+ * The one exception is a hard band of at most 2px at the start of a linear gradient painted once,
+ * such as a header's bottom rule: a drawn edge at the box's border, which no line of text reaches. `once` says the value is painted once over the whole box, at size auto.
  */
-export function gradientFills(value) {
+export function gradientFills(value, { once = false } = {}) {
   const fn = args(value);
   if (!fn || !GRADIENT_FUNCTIONS.has(fn.name) || fn.rest.trim()) return null;
   const stops = [];
@@ -252,41 +328,44 @@ export function gradientFills(value) {
     const s = stop(arg);
     if (s === null) continue;
     if (s.color === undefined) return null;
-    stops.push(s);
+    for (const position of s.positions.length ? s.positions : [null]) stops.push({ color: s.color, at: at(position) });
   }
-  const fills = [];
-  stops.forEach((s, i) => {
-    if (s.color === null) return;
-    const end = px(s.positions.at(-1));
-    const start = s.positions.length === 2 ? px(s.positions[0]) : i === 0 ? 0 : px(stops[i - 1].positions.at(-1));
-    const next = px(stops[i + 1]?.positions[0]);
-    const band = end !== null && start !== null && next !== null && next === end && end - start <= 2;
-    if (!band) fills.push(s.color);
-  });
-  return fills;
+  let first = 0;
+  if (fn.name === "linear-gradient" && once) {
+    let end = 0;
+    while (end + 1 < stops.length && stops[end + 1].color === stops[0].color) end++;
+    const edge = stops[end].at;
+    const leads = stops.slice(0, end).every((s) => s.at === null || s.at.value === 0);
+    if (stops[0].color && leads && edge?.unit === "px" && edge.value <= 2 && end + 1 < stops.length && hard(edge, stops[end + 1].at)) first = end + 1;
+  }
+  return stopFills(stops.slice(first));
 }
 
 /** The colors a resolved layer paints over an area, or null when they cannot be evaluated. */
 export function layerFills(layer) {
-  if (layer.kind === "gradient") return layer.stops.map((s) => ({ hex: s.color, alpha: layer.opacity }));
+  if (layer.kind === "gradient") return stopFills(layer.stops.map((s) => ({ color: { hex: s.color, alpha: layer.opacity }, at: { value: s.position, unit: "%" } })));
   // Patterns are hairlines and small dots, at most 0.2 opaque by the schema; they still count.
   if (layer.kind === "pattern") return [{ hex: layer.color, alpha: layer.opacity }];
-  if (layer.kind === "gradientCss") return gradientFills(layer.value);
+  if (layer.kind === "gradientCss") return gradientFills(layer.value, { once: (layer.size ?? "auto") === "auto" });
   return null;
 }
 
 const over = (top, base) => {
-  const rgb = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
-  const [t, b] = [rgb(top.hex), rgb(base)];
+  const [t, b] = [rgbOf(top.hex), rgbOf(base)];
   return toHex(...t.map((v, i) => v * top.alpha + b[i] * (1 - top.alpha)));
 };
 
-// The lowest contrast of any text color over any stack of one fill (or none) from each layer.
+// Distinct backgrounds a stack of layers may show before the check gives up and fails closed.
+const MAX_BACKGROUNDS = 50000;
+
+// The lowest contrast of any text color over any stack of one fill (or none) from each layer, or
+// null when the stack has too many distinct backgrounds to check.
 function worstContrast(base, fills, texts) {
   let backgrounds = [base];
   for (const layer of fills) {
     const next = new Set(backgrounds);
     for (const bg of backgrounds) for (const fill of layer) next.add(over(fill, bg));
+    if (next.size > MAX_BACKGROUNDS) return null;
     backgrounds = [...next];
   }
   let worst = Infinity;
@@ -320,11 +399,12 @@ export function structuredPlan(resolved, prefs) {
     // Text drawn straight on the paint must keep its contrast over every fill of every layer.
     if (texts.length) {
       const fills = drawn.map(layerFills);
-      if (fills.some((f) => f === null)) {
+      const worst = fills.some((f) => f === null) ? null : worstContrast(color, fills, texts);
+      if (worst === null) {
         notes.push({ code: "paint-unverified", path: `/backgrounds/${target}`, message: "A paint color could not be checked against the text over it, so the layers are not drawn." });
         return { color, layers: [], dropped: "unverified" };
       }
-      if (worstContrast(color, fills, texts) < 4.5) {
+      if (worst < 4.5) {
         notes.push({ code: "paint-contrast", path: `/backgrounds/${target}`, message: "Text over these layers would fall below 4.5:1, so they are not drawn." });
         return { color, layers: [], dropped: "contrast" };
       }
@@ -437,10 +517,19 @@ export function structuredCss(plan, resolved, target, viewport = null) {
   if (ty?.uppercaseHeadings) rules.push(`${headings}{text-transform:uppercase${mark}}`);
   if (plan.fonts?.body) rules.push(`${list([SURFACES.page])}{font-family:${plan.fonts.body}${mark}}`);
   if (ty?.bodyLetterSpacing) rules.push(`${list([SURFACES.page])}{letter-spacing:${num(ty.bodyLetterSpacing)}em${mark}}`);
-  if (plan.fonts?.body || ty?.bodyLetterSpacing) {
-    // Islands and protected UI keep GitHub's own type, and code keeps its native metrics.
-    rules.push(`:is([data-reskin-native],[data-reskin-protected]){font-family:var(--fontStack-sansSerif,${SYSTEM_SANS})${mark};letter-spacing:normal${mark}}`);
-    rules.push(`:is(${SURFACES.code.join(",")}){letter-spacing:normal${mark}}`);
-  }
-  return rules.join("\n");
+
+  // What a role passes down stops at every boundary below it: a mode island, native and protected
+  // UI keep GitHub's sans, tracking and case, and code, diff and editor text keep their tracking
+  // and case. The resets have no specificity and no !important, so GitHub's own rules for these
+  // elements still win; they only replace what would otherwise be inherited.
+  const code = SURFACES.code.join(",");
+  const boundary = `:where(${ATTRIBUTED},[data-reskin-native],[data-reskin-protected]):where(:not(${code}))`;
+  const family = `font-family:var(--fontStack-sansSerif,${GITHUB_SANS})`;
+  const reset = (scope, subjects, declarations) => declarations.length && rules.push(`${scope}${subjects}{${declarations.join(";")}}`);
+  const under = `:where(${headings},${chrome}) `;
+  reset(under, boundary, [plan.fonts?.heading && family, ty?.headingLetterSpacing && "letter-spacing:normal", ty?.uppercaseHeadings && "text-transform:none"].filter(Boolean));
+  reset(under, `:where(${code})`, [ty?.headingLetterSpacing && "letter-spacing:normal", ty?.uppercaseHeadings && "text-transform:none"].filter(Boolean));
+  reset("", boundary, [plan.fonts?.body && family, ty?.bodyLetterSpacing && "letter-spacing:normal"].filter(Boolean));
+  reset("", `:where(${code})`, [ty?.bodyLetterSpacing && "letter-spacing:normal"].filter(Boolean));
+  return rules.length ? `${THEMED}{\n${rules.join("\n")}\n}` : "";
 }

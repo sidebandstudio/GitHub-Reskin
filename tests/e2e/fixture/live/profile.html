@@ -1,0 +1,74 @@
+<!doctype html>
+<!-- Modeled on the logged-out profile sidebar at https://github.com/whoisaldo, recorded at 1440x900
+     and 390x844 on 2026-11-09, with a fictional user. The inline layout reproduces the measured
+     geometry of GitHub's stylesheet: at 1440 the 296px avatar circle sits directly above the names
+     (no gap), the names have 16px of padding and the Follow button starts where the names end; at
+     390 the avatar sits beside the names under a 52px header. -->
+<html lang="en" data-color-mode="dark" data-light-theme="light" data-dark-theme="dark">
+<head>
+  <title>octo-sample (Octo Sample) · GitHub</title>
+  <meta name="route-pattern" content="/:user_id(.:format)">
+  <meta name="route-controller" content="profiles">
+  <meta name="route-action" content="show">
+  <style>
+    body{margin:0;font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+    header{display:flex;align-items:center;gap:16px;height:68px;padding:0 16px;box-sizing:border-box}
+    header a{color:inherit}
+    .container-xl{max-width:1280px;margin:0 auto;padding:0 32px;box-sizing:border-box}
+    .Layout{display:grid;grid-template-columns:296px minmax(0,1fr);gap:24px}
+    .Layout-sidebar,.Layout-main{min-width:0}
+    .h-card{margin-top:41px}
+    .clearfix::after{content:"";display:table;clear:both}
+    .avatar-box{position:relative;display:inline-block;width:100%;flex-shrink:0}
+    .avatar-box a{display:block}
+    .avatar{display:block;width:100%;height:auto;border-radius:50%;border:1px solid #3d444d;box-sizing:border-box}
+    .vcard-names-container{float:left;width:100%;padding:16px 0;box-sizing:border-box}
+    .vcard-names{margin:0;line-height:1}
+    .vcard-fullname{display:block;overflow:hidden;font-size:24px;line-height:1.25;font-weight:600}
+    .vcard-username{display:block;font-size:20px;line-height:24px;font-weight:300}
+    .btn-block{display:block;box-sizing:border-box;width:100%;height:32px;padding:5px 16px;border:1px solid #3d444d;border-radius:6px;text-align:center;font-weight:500}
+    .user-profile-bio{margin:16px 0}
+    @media (max-width:767.98px){
+      header{height:52px}
+      .container-xl{padding:0 16px}
+      .Layout{display:block}
+      .h-card{margin-top:32px}
+      .names-row{display:flex;align-items:center;margin-bottom:16px}
+      .avatar-box{width:16.66667%;margin-right:16px}
+    }
+  </style>
+</head>
+<body>
+<div class="logged-out env-production page-responsive page-profile">
+<header class="HeaderMktg"><a href="/" aria-label="Homepage">GitHub</a><a href="/login">Sign in</a></header>
+<div class="application-main"><main>
+<div class="container-xl"><div class="Layout">
+  <div class="Layout-sidebar">
+    <div class="h-card" itemscope itemtype="http://schema.org/Person">
+      <div class="js-profile-editable-replace">
+        <div class="clearfix names-row">
+          <div class="avatar-box" style="z-index:4">
+            <a class="d-block" itemprop="image" href="/octo-sample.png"><img alt="View octo-sample's full-sized avatar" width="260" height="260" class="avatar avatar-user width-full border" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Crect width='260' height='260' fill='%236e7781'/%3E%3Ccircle cx='130' cy='104' r='52' fill='%23d0d7de'/%3E%3C/svg%3E"></a>
+          </div>
+          <div class="vcard-names-container float-left js-profile-editable-names col-12 tmp-py-3 js-toggle-stuck js-user-profile-sticky-fields">
+            <h1 class="vcard-names">
+              <span class="p-name vcard-fullname d-block overflow-hidden" itemprop="name">Octo Sample</span>
+              <span class="p-nickname vcard-username d-block" itemprop="additionalName">octo-sample</span>
+            </h1>
+          </div>
+        </div>
+        <div class="d-flex flex-column">
+          <span class="user-following-container"><span class="follow d-block"><a class="btn btn-block" href="/login?return_to=%2Focto-sample">Follow</a></span></span>
+          <div class="js-profile-editable-area">
+            <div class="p-note user-profile-bio">Builds small tools.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="Layout-main"><p>Overview</p></div>
+</div></div>
+</main></div>
+</div>
+</body>
+</html>

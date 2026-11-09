@@ -3,7 +3,7 @@
 // page, under Full, Calm and without CSS consent. The two hosts must compute the same styles.
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { PREFS, expect, inFrame, mount, painted, rgb, test } from "./helpers.mjs";
+import { PREFS, expect, inFrame, mount, painted, rgb, test, update } from "./helpers.mjs";
 
 const CHOOM = JSON.parse(readFileSync(fileURLToPath(new URL("../../appearance/fixtures/choom-circuit.reskin.json", import.meta.url)), "utf8"));
 const CALM = { ...PREFS, extras: false };
@@ -87,14 +87,17 @@ test("the Flatlined stamp sits in the 404 illustration's blank corner, and flows
   await page.setViewportSize({ width: 390, height: 900 });
   await page.waitForFunction(() => document.querySelector("#preview iframe:not([aria-hidden])")?.getBoundingClientRect().width < 400);
   await painted(page);
-  await expect.poll(() => inFrame(page, (doc) => doc.querySelector("[data-rs-flow] [data-reskin-slot]") !== null)).toBe(true);
-  const narrow = await inFrame(page, (doc) => {
-    const stamp = doc.querySelector('[data-reskin-slot="error.notFound.caption"]').getBoundingClientRect();
-    const art = doc.querySelector(".error-illustration").getBoundingClientRect();
-    const h1 = doc.querySelector(".error-page h1").getBoundingClientRect();
-    return { below: stamp.top >= art.bottom, beforeHeading: stamp.bottom <= h1.top, width: stamp.width <= doc.documentElement.clientWidth };
-  });
-  expect(narrow).toEqual({ below: true, beforeHeading: true, width: true });
+  // A width change replaces the frame, and a scrollbar that comes or goes can replace it once
+  // more, so each read retries on the frame shown when it runs.
+  const narrow = () =>
+    inFrame(page, (doc) => {
+      if (!doc.querySelector("[data-rs-flow] [data-reskin-slot]")) return null;
+      const stamp = doc.querySelector('[data-reskin-slot="error.notFound.caption"]').getBoundingClientRect();
+      const art = doc.querySelector(".error-illustration").getBoundingClientRect();
+      const h1 = doc.querySelector(".error-page h1").getBoundingClientRect();
+      return { below: stamp.top >= art.bottom, beforeHeading: stamp.bottom <= h1.top, width: stamp.width <= doc.documentElement.clientWidth };
+    }).catch(() => null);
+  await expect.poll(narrow).toEqual({ below: true, beforeHeading: true, width: true });
 });
 
 test("Calm keeps solid paints, avatar and heading role, and drops wallpaper, rule, decoration and owned CSS", async ({ page, fixtureApp }) => {
@@ -153,4 +156,125 @@ test("live structured appearance never edits the page and leaves with its style 
   expect(code).toBeTruthy();
   await page.evaluate(() => window.reskinNative.remove());
   expect(await page.evaluate(() => [getComputedStyle(document.body).backgroundImage, document.documentElement.getAttribute("data-reskin-css")])).toEqual(["none", before.aria]);
+});
+
+// The review's probes: a high-contrast island, native, protected and island children of a themed
+// heading, code inside it, and the profile card inside a high-contrast island.
+// A frame color of its own, since the fixture has no high-contrast CSS and an island's native
+// avatar ring inherits the themed border color.
+const TYPED = { ...CHOOM, typography: { uppercaseHeadings: true, headingLetterSpacing: 0.1 }, shape: { ...CHOOM.shape, avatar: { shape: "circle", frame: { style: "solid", width: 3, color: "#ff00ff" } } } };
+const ISLAND = 'data-color-mode="dark" data-light-theme="light" data-dark-theme="dark_high_contrast"';
+
+async function probeIslands(page, fixtureApp, island) {
+  await page.goto(fixtureApp.url("adversarial.html"));
+  await page.waitForFunction(() => document.documentElement.dataset.ready === "true");
+  await page.evaluate((attrs) => {
+    const section = document.createElement("section");
+    section.innerHTML = `<h2 id="themed">Themed heading <span id="marked" data-reskin-native>marked child</span> <span id="guarded" data-reskin-protected>protected child</span> <span id="nested" ${attrs}>island child</span> <code id="code">const lowerCase = true</code></h2><span id="themed-avatar" class="avatar avatar-user" style="display:inline-block;width:32px;height:32px"></span><div ${attrs}><h2 id="island">Island heading <code id="island-code">x</code></h2><span id="island-avatar" class="avatar avatar-user" style="display:inline-block;width:32px;height:32px"></span></div>`;
+    document.querySelector("main.application-main").append(section);
+    const card = document.querySelector(".h-card");
+    const wrap = document.createElement("div");
+    for (const [, name, value] of attrs.matchAll(/([\w-]+)="([^"]*)"/g)) wrap.setAttribute(name, value);
+    card.before(wrap);
+    wrap.append(card);
+  }, island);
+  const read = () =>
+    page.evaluate(() =>
+      Object.fromEntries(["themed", "marked", "guarded", "nested", "code", "island", "island-code", "island-avatar", "themed-avatar"].map((id) => {
+        const s = getComputedStyle(document.getElementById(id));
+        return [id, { font: s.fontFamily, tracking: s.letterSpacing, transform: s.textTransform, radius: s.borderTopLeftRadius, shadow: s.boxShadow }];
+      })),
+    );
+  return { read, owned: () => page.evaluate(() => ({ card: document.querySelectorAll(".h-card [data-reskin-owned]").length, page: document.querySelectorAll("[data-reskin-owned]").length })) };
+}
+
+for (const [label, prefs] of [["Full", PREFS], ["Calm", CALM]]) {
+  test(`${label}: high-contrast islands and native children keep GitHub's type, avatar and decoration; code keeps its tracking and case`, async ({ page, fixtureApp }) => {
+    const probe = await probeIslands(page, fixtureApp, ISLAND);
+    const before = await probe.read();
+    await page.evaluate(([t, p]) => window.reskinNative.apply(t, p, { cssAllowed: true }), [TYPED, prefs]);
+    const after = await probe.read();
+    // The themed heading itself takes the role.
+    expect(after.themed.font).toMatch(/^Bahnschrift/);
+    expect(after.themed.transform).toBe("uppercase");
+    expect(parseFloat(after.themed.tracking)).toBeGreaterThan(1);
+    for (const id of ["marked", "guarded", "nested", "island", "island-code"]) expect(after[id], id).toEqual(before[id]);
+    expect(after["island-avatar"]).toMatchObject({ font: before["island-avatar"].font, radius: before["island-avatar"].radius });
+    expect(after["island-avatar"].shadow).not.toMatch(/255, 0, 255|3px/);
+    expect(after["themed-avatar"]).toMatchObject({ radius: "50%", shadow: "rgb(255, 0, 255) 0px 0px 0px 3px" });
+    expect(after.code).toEqual({ ...before.code, tracking: "normal", transform: "none" });
+    expect(after.code.font).toMatch(/mono/i);
+    const owned = await probe.owned();
+    expect(owned.card).toBe(0);
+    if (label === "Full") expect(owned.page).toBeGreaterThan(0);
+  });
+}
+
+test("an unknown island keeps its heading native, and the page follows the Primer adapter's suppression", async ({ page, fixtureApp }) => {
+  const probe = await probeIslands(page, fixtureApp, 'data-color-mode="dark" data-light-theme="light" data-dark-theme="dark_future"');
+  const before = await probe.read();
+  const body = () => page.evaluate(() => getComputedStyle(document.body).backgroundImage);
+  await page.evaluate((t) => window.reskinNative.apply(t, { enabled: true, extras: true, text: true, motion: true, fonts: true, effects: true }, { cssAllowed: true }), TYPED);
+  const after = await probe.read();
+  expect(after.island).toEqual(before.island);
+  expect(after.nested).toEqual(before.nested);
+  expect(after.code).toEqual(before.code);
+  // An unknown island suppresses the root island it inherits from, so nothing of C5 is drawn.
+  expect(after.themed).toEqual(before.themed);
+  expect(await body()).toBe("none");
+  expect((await probe.owned()).page).toBe(0);
+});
+
+test("the live 404 stamp follows its illustration through resizes and a late size change", async ({ page, fixtureApp }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(fixtureApp.url("views.html"));
+  await page.waitForFunction(() => window.reskinViews);
+  await page.evaluate((t) => window.reskinViews.render({ view: "404", theme: t, preferences: { enabled: true, extras: true, text: true, motion: true, fonts: true, effects: true }, cssAllowed: true }), CHOOM);
+  const state = () =>
+    page.evaluate(() => {
+      const stamp = document.querySelector('[data-reskin-slot="error.notFound.caption"]').getBoundingClientRect();
+      const art = document.querySelector(".error-illustration").getBoundingClientRect();
+      const width = document.documentElement.clientWidth;
+      return {
+        corner: document.querySelector("[data-rs-corner]") !== null,
+        flow: document.querySelector("[data-rs-flow]") !== null,
+        inArt: stamp.left >= art.left && stamp.right <= art.right && stamp.top >= art.top && stamp.bottom <= art.bottom,
+        inView: stamp.left >= 0 && stamp.right <= width,
+        scroll: document.documentElement.scrollWidth <= width,
+      };
+    });
+  const corner = { corner: true, flow: false, inArt: true, inView: true, scroll: true };
+  const flow = { corner: false, flow: true, inView: true, scroll: true };
+  expect(await state()).toEqual(corner);
+  await page.setViewportSize({ width: 390, height: 900 });
+  await expect.poll(state).toMatchObject(flow);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await expect.poll(state).toEqual(corner);
+  // A late image or font that narrows the illustration without a viewport change.
+  await page.evaluate(() => (document.querySelector(".error-illustration").style.maxWidth = "360px"));
+  await expect.poll(state).toMatchObject(flow);
+  await page.evaluate(() => document.querySelector(".error-illustration").style.removeProperty("max-width"));
+  await expect.poll(state).toEqual(corner);
+});
+
+// Black ink on white, as in the review: a red-to-green ramp passes at both ends and fails between.
+const { css: _css, flavor: _flavor, code: _code, ...BARE } = CHOOM;
+const INK = { ...BARE, name: "Ink", base: "light", colors: { accent: "#000000", background: "#ffffff", contribution: "#1a7f37", text: "#000000" }, overrides: { mutedText: "#000000", border: "#d0d7de", surface: "#ffffff" } };
+const paints = (page) => inFrame(page, (doc) => [doc.body, doc.querySelector(".AppHeader")].map((node) => doc.defaultView.getComputedStyle(node).backgroundImage));
+
+test("bright repeating stripes and a gradient whose middle fails are not drawn under text", async ({ page, fixtureApp }) => {
+  const stripes = { gradientCss: { size: "auto", value: "repeating-linear-gradient(#ffffff 0 2px,transparent 2px 3px)" } };
+  await mount(page, fixtureApp, { theme: { ...CHOOM, backgrounds: { page: { color: "#0a0a17", layers: [stripes] }, header: { color: "#070710", layers: [stripes] } } } });
+  expect(await paints(page)).toEqual(["none", "none"]);
+  const ramps = [
+    { gradient: { type: "linear", angle: 90, stops: [{ color: "#ff0000", position: 0 }, { color: "#009900", position: 100 }] } },
+    { gradientCss: { size: "auto", value: "linear-gradient(90deg,#ff0000,#009900)" } },
+  ];
+  for (const layer of ramps) {
+    await update(page, { ...INK, backgrounds: { page: { color: "#ffffff", layers: [layer] } } });
+    expect((await paints(page))[0]).toBe("none");
+  }
+  // Each end alone reads, so it is drawn.
+  await update(page, { ...INK, backgrounds: { page: { color: "#ffffff", layers: [{ gradientCss: { size: "auto", value: "linear-gradient(90deg,#ff0000,#ff0000)" } }] } } });
+  expect((await paints(page))[0]).toMatch(/^linear-gradient\(/);
 });
