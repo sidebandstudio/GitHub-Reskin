@@ -1,36 +1,141 @@
 {
   "$schema": "https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json",
   "author": "sidebandstudio",
+  "backgrounds": {
+    "header": {
+      "color": "#102d4e"
+    },
+    "page": {
+      "color": "#071322",
+      "layers": [
+        {
+          "gradientCss": {
+            "size": "100% 460px",
+            "value": "linear-gradient(90deg,transparent 0 9px,#843740 9px 11px,transparent 11px)"
+          }
+        },
+        {
+          "gradientCss": {
+            "size": "100% 100vh",
+            "value": "radial-gradient(circle at 112% 58%,transparent 0 33%,#843740 33% 33.3%,transparent 33.3% 42%,#3d4e86 42% 42.2%,transparent 42.2%)"
+          }
+        },
+        {
+          "gradientCss": {
+            "size": "100% 100vh",
+            "value": "radial-gradient(ellipse at 0 30%,#3157be41,transparent 65%)"
+          }
+        },
+        {
+          "gradientCss": {
+            "size": "100% 100vh",
+            "value": "linear-gradient(#071322,#101b35)"
+          }
+        }
+      ]
+    }
+  },
   "base": "dark",
+  "code": {
+    "ansi": {
+      "black": "#b5c5d8",
+      "blue": "#b5c7ff",
+      "brightBlack": "#b5c5da",
+      "brightBlue": "#d0dcff",
+      "brightCyan": "#a3e8dc",
+      "brightGreen": "#c9ffe0",
+      "brightMagenta": "#e0c6f6",
+      "brightRed": "#ffd0d0",
+      "brightWhite": "#ffffff",
+      "brightYellow": "#ffe0a0",
+      "cyan": "#9edce9",
+      "green": "#a4edc2",
+      "magenta": "#ceb9ff",
+      "red": "#ffb2b3",
+      "white": "#d8e2f1",
+      "yellow": "#f6d399"
+    },
+    "background": "#040c17",
+    "diff": {
+      "addedBackground": "#123529",
+      "addedText": "#c9ffe0",
+      "removedBackground": "#401c2b",
+      "removedText": "#ffd5df",
+      "wordAddedBackground": "#255b42",
+      "wordAddedText": "#c9ffe0",
+      "wordRemovedBackground": "#6b3044",
+      "wordRemovedText": "#ffd5df"
+    },
+    "syntax": {
+      "attribute": "#f6d399",
+      "comment": "#b5c5d8",
+      "constant": "#ffb2b3",
+      "function": "#b5c7ff",
+      "keyword": "#ceb9ff",
+      "number": "#ffc9a0",
+      "punctuation": "#d8e2f1",
+      "string": "#a3e8dc",
+      "tag": "#9edce9",
+      "type": "#e0c6f6"
+    },
+    "text": "#f0f4ff"
+  },
   "colors": {
-    "accent": "#9193ff",
-    "background": "#0b101b",
-    "contribution": "#a0a3ff",
-    "text": "#f0f3fa"
+    "accent": "#a7baff",
+    "background": "#071322",
+    "contribution": "#d0dcff",
+    "text": "#f0f4ff"
   },
   "contributions": {
+    "cellBoundary": "#93acc4",
+    "cellRadius": 1,
+    "cellStyle": "square",
     "levels": [
-      "#1e223b",
-      "#6162a1",
-      "#6a6cba",
-      "#7778cf",
-      "#a0a3ff"
+      "#203551",
+      "#47609b",
+      "#6b80bc",
+      "#95a8e2",
+      "#d0dcff"
     ]
   },
-  "description": "Ink-blue records, periwinkle activity and spare barrier geometry give GitHub an occult technical edge.",
+  "css": ".AppHeader,.Header,.HeaderMktg,.GlobalNav{border-bottom-color:#a7baff;box-shadow:0 1px 0#a7baff,0 6px 18px -6px color-mix(in srgb,#4d76dc 60%,transparent)}.btn-primary{border-radius:0 14px 0 0;font-family:var(--reskin-font-heading);font-weight:700;box-shadow:0 0 14px color-mix(in srgb,#4d76dc 35%,transparent)}.btn-primary:hover{box-shadow:0 0 18px color-mix(in srgb,#4d76dc 55%,transparent)}.UnderlineNav-item[aria-current=\"page\"],.tabnav-tab[aria-current=\"page\"],a[aria-current=\"page\"]{font-weight:600;border-top-right-radius:10px;box-shadow:0 2px 0 color-mix(in srgb,var(--reskin-accent) 80%,transparent)}a[data-testid=\"repo-name-link\"]{font-family:var(--reskin-font-heading);font-weight:700}h2.h4.mb-2,h2[data-component=\"Heading\"]{font-family:var(--reskin-font-heading);font-weight:700;text-shadow:2px 2px 0 color-mix(in srgb,#ff6f6c 35%,transparent)}[data-reskin-slot=\"profile.tag\"]{width:fit-content;margin:0 0 8px;padding:2px 10px;font-family:ui-monospace,monospace;font-weight:600;font-size:11px;line-height:1.45;letter-spacing:.12em;text-transform:uppercase;color:var(--reskin-text);background-color:var(--reskin-inset);border:1px solid #ff9693;border-radius:0 10px 0 0}[data-reskin-slot=\"profile.pinned.heading\"],[data-reskin-slot=\"profile.activity.heading\"],[data-reskin-slot=\"profile.organizations.heading\"],[data-reskin-slot=\"profile.achievements.heading\"]{font-family:var(--reskin-font-heading);font-weight:700;text-shadow:2px 2px 0 color-mix(in srgb,#ff6f6c 35%,transparent)}[data-reskin-slot=\"footer.signoff\"]{font-family:var(--reskin-font-heading);color:var(--reskin-link)}[data-reskin-slot=\"contributions.caption\"],[data-reskin-slot=\"empty.pinned.caption\"],[data-reskin-slot=\"empty.issues.caption\"]{margin:8px 0 16px;font-family:var(--reskin-font-heading);font-weight:600;font-size:15px;line-height:1.3;color:var(--reskin-muted-text)}[data-reskin-slot=\"error.notFound.caption\"]{position:absolute;right:6%;bottom:10%;max-width:340px;padding:8px 20px;font-family:var(--reskin-font-heading);font-weight:700;font-size:24px;line-height:1.2;color:var(--reskin-text);background-color:var(--reskin-inset);border:2px solid var(--reskin-accent);border-radius:0 24px 0 0;transform:rotate(-3deg);box-shadow:4px 4px 0 color-mix(in srgb,#ff6f6c 70%,transparent),0 0 18px color-mix(in srgb,#4d76dc 45%,transparent)}@media (max-width:799px){[data-reskin-slot=\"error.notFound.caption\"]{font-size:19px}}@media (max-width:599px){[data-reskin-slot=\"error.notFound.caption\"]{font-size:15px}}",
+  "description": "A cold blue field record split by warm red barrier arcs: ink-blue panels, periwinkle buttons with one rounded corner, a periwinkle calendar and serif headings.",
+  "details": {
+    "headerText": "#f0f4ff",
+    "labels": {
+      "fill": "tinted",
+      "style": "rounded"
+    },
+    "scrollbar": {
+      "thumb": "#93acc4",
+      "track": "#040c17",
+      "width": "auto"
+    },
+    "selection": {
+      "background": "#a7baff",
+      "text": "#10192a"
+    },
+    "topics": {
+      "background": "#1e3250",
+      "border": "#93acc4",
+      "fill": "tinted",
+      "style": "rounded",
+      "text": "#c9d3ff"
+    }
+  },
   "effects": {
     "glow": {
-      "strength": 0.12
+      "strength": 0.17
     },
     "orbit": {
       "count": 2,
-      "opacity": 0.16,
+      "opacity": 0.25,
       "shape": "arc"
     },
     "rail": {
-      "opacity": 0.16,
+      "opacity": 0.4,
       "shape": "slash",
-      "thickness": 1
+      "thickness": 2
     }
   },
   "flavor": {
@@ -41,6 +146,8 @@
       "empty.issues.caption": "No field records in this view.",
       "empty.pinned.caption": "Room for a first field record.",
       "error.notFound.caption": "No trace of a domain at this address.",
+      "footer.signoff": "// record sealed",
+      "profile.achievements.heading": "Graded records",
       "profile.activity.heading": "Field record log",
       "profile.organizations.heading": "Record outposts",
       "profile.pinned.heading": "Selected domains",
@@ -48,33 +155,67 @@
     }
   },
   "fonts": {
-    "accent": "cormorant-garamond"
+    "body": "ibm-plex-sans",
+    "heading": "cormorant-garamond"
   },
   "inspiredBy": "Jujutsu Kaisen",
   "name": "Cursed Aperture",
   "overrides": {
-    "accentMuted": "#20253f",
-    "border": "#354258",
-    "controlBorder": "#a0aec4",
-    "danger": "#ff8b94",
-    "focus": "#a0aec4",
-    "hover": "#262b36",
-    "inset": "#070b12",
-    "link": "#b9beff",
-    "mutedText": "#a0aec4",
-    "primaryBackground": "#4649b9",
-    "primaryText": "#ffffff",
-    "raised": "#1d222d",
-    "selectionBackground": "#4649b9",
-    "selectionText": "#ffffff",
-    "success": "#76d9a3",
-    "surface": "#151e2d",
-    "warning": "#efcb78"
+    "accentMuted": "#1e3250",
+    "border": "#54677b",
+    "controlBorder": "#93acc4",
+    "danger": "#ffb3bb",
+    "focus": "#a7baff",
+    "hover": "#24425a",
+    "inset": "#040c17",
+    "link": "#c4caff",
+    "mutedText": "#b4c5da",
+    "primaryBackground": "#a7baff",
+    "primaryText": "#10192a",
+    "raised": "#19334c",
+    "success": "#a4edc2",
+    "surface": "#0b2038",
+    "warning": "#ffe0a0"
   },
   "schemaVersion": 1,
+  "shape": {
+    "avatar": {
+      "frame": {
+        "color": "#a7baff",
+        "style": "neon",
+        "width": 2
+      },
+      "shape": "circle"
+    },
+    "borders": {
+      "color": "#93acc4",
+      "style": "solid",
+      "width": 1
+    },
+    "buttons": {
+      "radius": 3,
+      "style": "filled"
+    },
+    "corners": {
+      "radius": 3,
+      "style": "rounded"
+    },
+    "shadows": {
+      "blur": 14,
+      "color": "#4d76dc",
+      "offset": 0,
+      "opacity": 0.35,
+      "style": "soft"
+    }
+  },
   "tags": [
     "anime",
+    "barrier",
     "dark"
   ],
-  "version": "1.0.0"
+  "typography": {
+    "headingLetterSpacing": 0,
+    "uppercaseHeadings": false
+  },
+  "version": "2.0.0"
 }
