@@ -1,16 +1,19 @@
 // Fixture app entry, bundled by build.mjs. Four pages share it:
 //   preview.html      window.reskinPreview drives one mountPreview handle.
 //   views.html        window.reskinViews paints a view straight into the page for axe.
+//   any page          window.reskinRaster converts local images as the theme builder will.
 //   adversarial.html  window.reskinNative applies a theme the way the GitHub content adapter
 //                     does: compiled CSS in one owned style node plus mountAppearance at located
 //                     slot anchors, on a page full of authored text and native controls.
 //   C3's profile page window.reskinGithub does the same with C3's real locateSlots, when the
 //                     tests serve C3's fixture as github.com and C3 is in the checkout.
-import { compileAppearance, fontFaceCss, mountAppearance, siteResources } from "../../../packages/appearance/index.js";
+import { compileAppearance, convertRaster, createRasterQueue, fontFaceCss, imageAssets, mountAppearance, siteResources } from "../../../packages/appearance/index.js";
+import { rasterInfo, rasterSourceInfo } from "../../../packages/format/viewer.js";
 import { repairTheme, resolveTheme } from "../../../packages/engine/index.js";
 import { FIXTURE_CSS, PREVIEW_VARIABLES, colorAt, configurePreview, createFixtureRenderer, mountPreview, nativeBaseline, serializeFixture } from "../../../packages/preview/index.js";
 import * as github from "reskin:github";
 import * as primer from "reskin:primer";
+import { artTheme, paintArt } from "./art.js";
 import { hostileAnchors, locateSlots } from "./locator.js";
 
 const resources = siteResources("/");
@@ -71,6 +74,10 @@ window.reskinPreview = {
 
 window.reskinSerialize = { serializeFixture };
 
+// The builder's local image conversion, run in the page with the browser's own decoder.
+window.reskinRaster = { convertRaster, createRasterQueue, rasterInfo, rasterSourceInfo };
+window.reskinArt = { paintArt, artTheme };
+
 let renderer = null;
 window.reskinViews = {
   render(state, options) {
@@ -88,7 +95,8 @@ function applyTheme(theme, prefs, anchors, { play = false, extraCss = "", cssAll
   style.setAttribute("data-reskin-style", "");
   const fontUrl = prefs.enabled && prefs.fonts && resolved.policy === "themed" ? resources.fontUrl(resolved.font) : null;
   const owned = { css: theme.css ?? null, cssAllowed };
-  style.textContent = [extraCss, primer.compileGitHub(resolved, plan, prefs).css, fontUrl ? fontFaceCss(resolved.font, fontUrl) : "", compileAppearance(resolved, prefs, "github", owned)].join("\n");
+  const images = imageAssets(theme);
+  style.textContent = [extraCss, primer.compileGitHub(resolved, plan, prefs).css, fontUrl ? fontFaceCss(resolved.font, fontUrl) : "", compileAppearance(resolved, prefs, "github", { ...owned, images })].join("\n");
   document.head.append(style);
   if (cssAllowed && resolved.policy === "themed") document.documentElement.setAttribute("data-reskin-css", "active");
   const decoration = mountAppearance(document.body, resolved, prefs, anchors(), owned);

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { ISSUE_CODES, LIMITS } from "../../packages/contracts/index.js";
-import { crc32, rasterInfo, validateTheme } from "../../packages/format/index.js";
+import { crc32, dataUrlBytes, rasterInfo, rasterSourceInfo, rasterTotals, UPLOAD_SOURCE_BYTES, validateTheme } from "../../packages/format/index.js";
 
 const ROOT = new URL("../../", import.meta.url).pathname;
 const MINIMAL = { schemaVersion: 1, name: "Probe", base: "dark", colors: { background: "#0a0a17", text: "#e4f3ff", accent: "#fcee0a" } };
@@ -83,7 +83,7 @@ test("base64 must be canonical, and damaged headers are refused before any decod
   assert.equal(rasterInfo(`${good}\n`).ok, false);
 });
 
-test("deferred conversion: animated or metadata-bearing images are rejected until local conversion lands", () => {
+test("animated or metadata-bearing images are refused as needing the local conversion, which accepts them as sources", () => {
   const cases = [
     ["png", png(2, 2, [chunk("acTL", Buffer.alloc(8))])],
     ["png", png(2, 2, [chunk("tEXt", Buffer.from("Comment\0hello"))])],
@@ -95,9 +95,36 @@ test("deferred conversion: animated or metadata-bearing images are rejected unti
   for (const [mime, bytes] of cases) {
     const info = rasterInfo(url(mime, bytes));
     assert.equal(info.ok, false, mime);
-    assert.equal(info.code, ISSUE_CODES.deferred, `${mime}: ${info.message}`);
-    assert.deepEqual(codes(page(image(url(mime, bytes), 2, 2))), [[ISSUE_CODES.deferred, "/backgrounds/page/layers/0/image/data"]], mime);
+    assert.equal(info.code, ISSUE_CODES.imageConversion, `${mime}: ${info.message}`);
+    assert.match(info.message, /Convert/);
+    assert.deepEqual(codes(page(image(url(mime, bytes), 2, 2))), [[ISSUE_CODES.imageConversion, "/backgrounds/page/layers/0/image/data"]], mime);
+    // The builder may convert it: its header passes as a source, with what conversion removes.
+    const source = rasterSourceInfo(new Uint8Array(bytes));
+    assert.ok(source.ok, mime);
+    assert.ok(source.animated || source.metadata, mime);
   }
+});
+
+test("a conversion source is at most 2 MiB with the stored image's dimension and pixel limits; SVG is never one", () => {
+  const big = png(1, 1, [chunk("zzPd", Buffer.alloc(UPLOAD_SOURCE_BYTES))]);
+  assert.equal(rasterSourceInfo(new Uint8Array(big)).code, ISSUE_CODES.imageLimit);
+  assert.equal(rasterSourceInfo(new Uint8Array(png(2049, 2))).code, ISSUE_CODES.imageLimit);
+  assert.equal(rasterSourceInfo(new Uint8Array(png(2048, 1025))).code, ISSUE_CODES.imageLimit);
+  assert.deepEqual(rasterSourceInfo(new Uint8Array(png(2048, 1024))), { ok: true, mime: "image/png", width: 2048, height: 1024, animated: false, metadata: false });
+  const svg = new TextEncoder().encode('<svg xmlns="http://www.w3.org/2000/svg" width="4" height="4"/>');
+  assert.match(rasterSourceInfo(svg).message, /SVG and other formats are not accepted/);
+  assert.equal(rasterInfo(`data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`).code, ISSUE_CODES.imageData);
+});
+
+test("document totals count repeats and can leave out the layer being replaced", () => {
+  const one = url("png", png(10, 10));
+  const theme = page(image(one, 10, 10), image(one, 10, 10));
+  theme.backgrounds.header = { layers: [image(one, 10, 10)] };
+  const bytes = png(10, 10).length;
+  assert.deepEqual(rasterTotals(theme), { bytes: 3 * bytes, pixels: 300 });
+  assert.deepEqual(rasterTotals(theme, "/backgrounds/header/layers/0/image"), { bytes: 2 * bytes, pixels: 200 });
+  assert.deepEqual([...dataUrlBytes(one)], [...png(10, 10)]);
+  assert.equal(dataUrlBytes("data:image/png;base64,abc"), null);
 });
 
 test("each image is at most 128 KiB decoded and all images together 256 KiB, counting repeats", () => {

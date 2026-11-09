@@ -10,7 +10,7 @@
 import { PREVIEW_VIEWS, RENDERER_VERSION } from "../contracts/index.js";
 import { repairTheme, resolveTheme } from "../engine/index.js";
 import { escapeCssForHtml, validateTheme } from "../format/index.js";
-import { FONT_BY_ID, compileAppearance, fontFaceCss, mountAppearance, noResources } from "../appearance/index.js";
+import { FONT_BY_ID, compileAppearance, fontFaceCss, imageAssets, mountAppearance, noResources } from "../appearance/index.js";
 import { motionMs } from "../appearance/effects.js";
 import { THEMED_SWITCH } from "../appearance/paint.js";
 import { LIMITS } from "../appearance/registry.js";
@@ -168,7 +168,7 @@ export function createFixtureRenderer(fdoc, rt = runtime) {
         native: nativeBaseline(rt.modeIndex, plan.seedMode ?? standardMode(rt.modeIndex, state.theme.base)),
         theme: compiled?.css ?? "",
         fonts: face && url ? fontFaceCss(face.id, url) : "",
-        appearance: themed ? escapeCssForHtml(compileAppearance(resolved, prefs, "preview", { ...owned, viewport: screen() })) : "",
+        appearance: themed ? escapeCssForHtml(compileAppearance(resolved, prefs, "preview", { ...owned, viewport: screen(), images: imageAssets(state.theme) })) : "",
       };
       // Colors reach the body only through the style layers, so a color edit keeps the body. The
       // structured appearance can move text (fonts, case, tracking, a banner), so it is structure.

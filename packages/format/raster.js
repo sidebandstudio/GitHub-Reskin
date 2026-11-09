@@ -1,10 +1,11 @@
 // Byte and header admission for embedded rasters (THEME-EXPANSION.md, "Images and storage").
 // Nothing here decodes pixels. Before any decoder sees an image: canonical base64 and padding,
 // the decoded size, magic bytes against the declared media type, a bounded header walk for the
-// real dimensions, and detection of animation and metadata. A static, clean image passes; an
-// animated or metadata-bearing one needs the local first-frame conversion, which arrives with the
-// codecs in increment 2, so it is rejected for now. C5 owns browser decoding.
+// real dimensions, and detection of animation and metadata. A static, clean image passes. An
+// animated or metadata-bearing one is refused with image-conversion: a theme stores only still,
+// clean images, and the browser conversion in packages/appearance/raster.js makes one locally.
 import { ISSUE_CODES, LIMITS } from "../contracts/index.js";
+import { sha256 } from "../engine/sha256.js";
 import { crc32 } from "./share.js";
 
 const DATA_URL = /^data:image\/(png|jpeg|webp|gif);base64,([A-Za-z0-9+/]*={0,2})$/;
@@ -174,12 +175,67 @@ function webp(b) {
 const READERS = { png, jpeg, gif, webp };
 const MAGIC_ORDER = ["png", "jpeg", "gif", "webp"];
 
+// A local file the builder may convert: at most 2 MiB, and the same dimension and pixel limits as
+// a stored image, checked from its header before anything decodes it.
+export const UPLOAD_SOURCE_BYTES = 2 * 1024 * 1024;
+
+const fits = (info) => info.width <= LIMITS.imageMaxDimension && info.height <= LIMITS.imageMaxDimension && info.width * info.height <= LIMITS.imageMaxPixels;
+
+/**
+ * Header facts for the bytes of a local image file the builder may convert, or why it cannot be
+ * converted. Animation and metadata are allowed here; conversion removes them.
+ * @param {Uint8Array} bytes
+ * @returns {{ok:true, mime:string, width:number, height:number, animated:boolean, metadata:boolean} | {ok:false, code:string, message:string}}
+ */
+export function rasterSourceInfo(bytes) {
+  const fail = (code, message) => ({ ok: false, code, message });
+  if (!(bytes instanceof Uint8Array)) return fail(ISSUE_CODES.imageData, "This is not image data Reskin can read.");
+  if (bytes.length > UPLOAD_SOURCE_BYTES) return fail(ISSUE_CODES.imageLimit, `An image to convert is at most ${UPLOAD_SOURCE_BYTES / 1048576} MiB.`);
+  const type = MAGIC_ORDER.find((t) => READERS[t](bytes) !== null);
+  if (!type) return fail(ISSUE_CODES.imageData, "This is not a PNG, JPEG, WebP or GIF image. SVG and other formats are not accepted.");
+  const info = READERS[type](bytes);
+  if (info.error) return fail(ISSUE_CODES.imageData, `This image cannot be read: ${info.error}.`);
+  if (info.width < 1 || info.height < 1) return fail(ISSUE_CODES.imageData, "This image has no size.");
+  if (!fits(info)) return fail(ISSUE_CODES.imageLimit, `Images are at most ${LIMITS.imageMaxDimension}px a side and ${LIMITS.imageMaxPixels} pixels.`);
+  return { ok: true, mime: `image/${type}`, width: info.width, height: info.height, animated: info.animated, metadata: info.metadata };
+}
+
+/** Decoded bytes of a canonical base64 data URL, or null. */
+export function dataUrlBytes(data) {
+  const match = typeof data === "string" ? DATA_URL.exec(data) : null;
+  return match ? decodeBase64(match[2]) : null;
+}
+
+// Validation, repair and resolution each admit a theme's images again, and a preview resolves on
+// every edit, so recent results are kept by exact data. Results are pure and never mutated.
+const recent = new Map();
+const hashes = new Map();
+const RECENT = 16;
+const remember = (cache, key, value) => {
+  if (cache.size >= RECENT) cache.delete(cache.keys().next().value);
+  cache.set(key, value);
+  return value;
+};
+
 /**
  * Header facts for one embedded raster data URL, or a reason it cannot be admitted. Checks length
  * and padding before decoding.
  * @returns {{ok:true, mime:string, bytes:Uint8Array, width:number, height:number} | {ok:false, code:string, message:string}}
  */
 export function rasterInfo(data) {
+  if (typeof data === "string" && recent.has(data)) return recent.get(data);
+  const info = admit(data);
+  return typeof data === "string" ? remember(recent, data, info) : info;
+}
+
+/** SHA-256 of an admitted image's decoded bytes, the asset identity the resolver records, or null. */
+export function rasterHash(data) {
+  if (hashes.has(data)) return hashes.get(data);
+  const info = rasterInfo(data);
+  return info.ok ? remember(hashes, data, sha256(info.bytes)) : null;
+}
+
+function admit(data) {
   const fail = (code, message) => ({ ok: false, code, message });
   const match = typeof data === "string" ? DATA_URL.exec(data) : null;
   if (!match) return fail(ISSUE_CODES.imageData, "Images are PNG, JPEG, WebP or GIF data in canonical base64.");
@@ -194,11 +250,9 @@ export function rasterInfo(data) {
   const info = READERS[declared](bytes);
   if (info.error) return fail(ISSUE_CODES.imageData, `This image cannot be read: ${info.error}.`);
   if (info.width < 1 || info.height < 1) return fail(ISSUE_CODES.imageData, "This image has no size.");
-  if (info.width > LIMITS.imageMaxDimension || info.height > LIMITS.imageMaxDimension || info.width * info.height > LIMITS.imageMaxPixels) {
-    return fail(ISSUE_CODES.imageLimit, `Images are at most ${LIMITS.imageMaxDimension}px a side and ${LIMITS.imageMaxPixels} pixels.`);
-  }
-  if (info.animated) return fail(ISSUE_CODES.deferred, "Animated images need converting to one still frame, which this version of Reskin cannot do yet.");
-  if (info.metadata) return fail(ISSUE_CODES.deferred, "This image carries metadata that must be removed first, which this version of Reskin cannot do yet.");
+  if (!fits(info)) return fail(ISSUE_CODES.imageLimit, `Images are at most ${LIMITS.imageMaxDimension}px a side and ${LIMITS.imageMaxPixels} pixels.`);
+  if (info.animated) return fail(ISSUE_CODES.imageConversion, "Animated images are kept as one still frame. Convert this image in the theme builder, which keeps its first frame, then import again.");
+  if (info.metadata) return fail(ISSUE_CODES.imageConversion, "This image carries metadata such as camera or text data. Convert it in the theme builder, which removes it, then import again.");
   return { ok: true, mime: `image/${declared}`, bytes, width: info.width, height: info.height };
 }
 
@@ -213,6 +267,24 @@ export function rasterLayers(theme) {
     });
   }
   return out;
+}
+
+/**
+ * The decoded bytes and pixels of every raster in a theme, counting repeated occurrences, for the
+ * document caps. Images that fail header admission count nothing; their own issue reports them.
+ * `except` leaves out one layer's pointer, as when the builder replaces that layer.
+ */
+export function rasterTotals(theme, except = null) {
+  let bytes = 0;
+  let pixels = 0;
+  for (const { path, image } of rasterLayers(theme)) {
+    if (path === except) continue;
+    const info = rasterInfo(image.data);
+    if (!info.ok) continue;
+    bytes += info.bytes.length;
+    pixels += info.width * info.height;
+  }
+  return { bytes, pixels };
 }
 
 /**

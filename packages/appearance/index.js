@@ -8,3 +8,4 @@ export { extensionResources, siteResources, embeddedResources, noResources, isAs
 export { effectiveAppearance, planAppearance, ownedNodePlan, SLOT_KINDS } from "./plan.js";
 export { effectCss, effectNodes, boundedParams, motionMs, rgba, BOX_EFFECTS } from "./effects.js";
 export { EFFECTS, FONTS, FONT_BY_ID, LIMITS, BOX, SYSTEM_MONO, SYSTEM_SANS, registryProblems } from "./registry.js";
+export { imageAssets, convertRaster, createRasterQueue, browserRasterEnv, fitSize, setRasterLayer, removeRasterLayer, COMPRESS_QUALITIES } from "./raster.js";

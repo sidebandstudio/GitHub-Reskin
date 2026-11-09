@@ -7,7 +7,7 @@
 // against C3b's target registry. That CSS applies only in Full, for a bundled theme or a saved one
 // whose consent names its exact sanitized hash, never under forced colors; its rules for GitHub's
 // own elements reach only what C3b's admission marks while the decoration lives.
-import { compileAppearance, fontFaceCss, mountAppearance } from "../appearance/index.js";
+import { compileAppearance, fontFaceCss, imageAssets, mountAppearance } from "../appearance/index.js";
 import { CSS_MARKERS, SANITIZER_VERSION } from "../contracts/index.js";
 import { repairTheme, resolveTheme } from "../engine/index.js";
 import { admitCss } from "../format/viewer.js";
@@ -63,7 +63,9 @@ export function createRenderer({ github, resources, catalog = null, index = MODE
       // The heading face applies in Full and Calm alike while Fonts is on, as in C5's preview.
       const fontUrl = prefs.fonts && resolved.font !== "system" ? resources.fontUrl(resolved.font) : null;
       const theme = themeCss(resolved, context);
-      const css = [primer.css, fontUrl ? fontFaceCss(resolved.font, fontUrl) : "", compileAppearance(resolved, prefs, "github", theme)].join("\n");
+      // Image layers draw the admitted data of the very source that was resolved.
+      const images = imageAssets(context?.source ?? bundled.get(resolved.sourceHash) ?? null);
+      const css = [primer.css, fontUrl ? fontFaceCss(resolved.font, fontUrl) : "", compileAppearance(resolved, prefs, "github", { ...theme, images })].join("\n");
       return { css, fingerprint: `${primer.fingerprint}:${fontUrl ? 1 : 0}:${theme.cssAllowed ? 1 : 0}` };
     },
     // Owned decoration at C3's verified anchors, and C3b's admission of GitHub's own elements. The

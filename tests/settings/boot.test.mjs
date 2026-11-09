@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { DEFAULT_THEME_ID } from "../../packages/contracts/index.js";
+import { DEFAULT_THEME_ID, LOCAL_THEME_ID_PREFIX } from "../../packages/contracts/index.js";
 import { resolveTheme } from "../../packages/engine/index.js";
 import { bootMismatches, bootRecordProblems, buildBootRecord, defaultSettings, effectivePreferences, RUNNING_VERSIONS, snapshotProblems, usableSnapshot } from "../../packages/settings/index.js";
 import { catalog, CHOOM, ROOT, SEEDS, snapshot } from "./helpers.mjs";
@@ -179,4 +179,18 @@ test("the package's boot.css gate is finite, bounded and bypassed by forced colo
   assert.match(css, /from,\s*to \{\s*visibility: hidden;\s*opacity: 0;\s*\}/);
   assert.equal(/infinite|forwards|both|transition|url\(|@import|display/.test(css.replace(/\/\*[\s\S]*?\*\//g, "")), false);
   assert.ok(Buffer.byteLength(css) < 1024);
+});
+
+test("a theme's images are recorded by hash only; the snapshot carries no image data", () => {
+  const PNG = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+  const image = { image: { data: PNG, width: 1, height: 1 } };
+  const document = { ...CHOOM, name: "Pictured", backgrounds: { profileBanner: { layers: [image] }, header: { color: "#070710", layers: [image] } } };
+  const id = `${LOCAL_THEME_ID_PREFIX}00000000-0000-4000-8000-000000000001`;
+  const local = { ...settings, selectedThemeId: id, customThemes: [{ id, document }] };
+  const value = buildBootRecord(local, { catalog, snapshot });
+  assert.ok(value, "the record builds");
+  assert.equal(value.assetHashes.length, 1);
+  assert.match(value.assetHashes[0], /^[0-9a-f]{64}$/);
+  assert.doesNotMatch(JSON.stringify(value), /data:image|base64/);
+  assert.deepEqual(record().assetHashes, []);
 });

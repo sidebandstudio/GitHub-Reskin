@@ -2,16 +2,21 @@
 // the fixture app (npm run test:e2e -- --project=fixture-chromium builds it):
 //   node tests/fixture-app/product/trace.mjs [--out report.json] [--theme choom.reskin.json]
 // The adversarial GitHub-like page grows a 10,000-line diff with 2,000 added and 2,000 removed lines
-// and a 53x7 full-year graph with its legend, then each measurement runs natively and with the
-// theme's maximum structured background: four gradient layers on the page and four on the header.
-// Raster wallpaper is not admitted in this increment, so it is not in the set.
+// and a 53x7 full-year graph with its legend, then each measurement runs natively, with the
+// theme's maximum structured background (four gradient layers on the page and four on the header)
+// and with the maximum admitted wallpaper set: one 2048x1024 WebP as page wallpaper, banner and
+// header image, 6,291,456 decoded pixels counting repeats, converted in the page by the builder's
+// conversion (art.js).
 //
 // Measured per engine, native and themed: scroll frame intervals, diff expansion, year change and
 // theme change flushes (style and layout forced synchronously), long tasks where the engine reports
-// them, and owned nodes and style nodes left after repeated apply/remove cycles. Chromium also
+// them, and owned nodes and style nodes left after repeated apply/remove cycles. Memory: the
+// browser's processes' resident size, sampled every 100 ms (peak per engine), and in Chromium the
+// documents, nodes and listeners left after the apply/remove cycles and after the preview's edits. Chromium also
 // reports main-thread task time per scroll frame from the DevTools protocol, at normal speed and at
 // a 4x CPU slowdown, and the JS heap. The preview runs 50 edits 100 ms apart, then a burst that
 // cancels obsolete jobs, and reports completion latency and frames left behind.
+import { execFileSync } from "node:child_process";
 import { readFile, writeFile } from "node:fs/promises";
 import { loadavg, cpus } from "node:os";
 import { join } from "node:path";
@@ -34,6 +39,28 @@ const choom = JSON.parse(await readFile(values.theme, "utf8"));
 // The maximum structured set: the header gets four layers too, the rule plus the page's grid and scanlines.
 const solid = { ...choom, name: `${choom.name} solid`, backgrounds: { page: { color: choom.backgrounds.page.color }, header: { color: choom.backgrounds.header.color } } };
 const max = { ...choom, name: `${choom.name} max`, backgrounds: { ...choom.backgrounds, header: { ...choom.backgrounds.header, layers: [choom.backgrounds.header.layers[0], ...choom.backgrounds.page.layers.slice(1)] } } };
+
+// Resident memory of every process below this one: the browser and its children, in MiB.
+function browserRss() {
+  const rows = execFileSync("ps", ["-A", "-o", "pid=,ppid=,rss="], { encoding: "utf8" }).trim().split("\n").map((l) => l.trim().split(/\s+/).map(Number));
+  const kids = new Map();
+  for (const [pid, ppid] of rows) kids.set(ppid, [...(kids.get(ppid) ?? []), pid]);
+  const rss = new Map(rows.map(([pid, , kb]) => [pid, kb]));
+  let total = 0;
+  const walk = (pid) => {
+    for (const child of kids.get(pid) ?? []) {
+      total += rss.get(child) ?? 0;
+      walk(child);
+    }
+  };
+  walk(process.pid);
+  return Math.round(total / 1024);
+}
+function sampler() {
+  let peak = 0;
+  const timer = setInterval(() => (peak = Math.max(peak, browserRss())), 100);
+  return { stop: () => (clearInterval(timer), peak) };
+}
 
 const stats = (list) => {
   const s = [...list].sort((a, b) => a - b);
@@ -165,16 +192,20 @@ async function themeChanges(themes) {
 }
 
 async function engine(type, launcher, url) {
+  const memory = sampler();
   const browser = await launcher.launch();
   const version = browser.version();
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   await page.goto(new URL("adversarial.html", url).href);
   await page.waitForFunction(() => document.documentElement.dataset.ready === "true");
   await page.evaluate((p) => (window.tracePrefs = p), PREFS);
+  // The maximum wallpaper set, converted in the page: one 2048x1024 WebP in all three places.
+  const wall = await page.evaluate(() => window.reskinArt.artTheme({ max: true }).then((r) => ({ theme: r.theme, bytes: r.bytes })));
   const fixture = await page.evaluate(grow);
   const cdp = type === "chromium" ? await page.context().newCDPSession(page) : null;
   if (cdp) await cdp.send("Performance.enable");
   const metrics = async () => (cdp ? Object.fromEntries((await cdp.send("Performance.getMetrics")).metrics.map((m) => [m.name, m.value])) : null);
+  const counters = async (session = cdp) => (session ? session.send("Memory.getDOMCounters") : "not reported by this engine");
 
   const run = async (theme) => {
     const before = await metrics();
@@ -198,28 +229,32 @@ async function engine(type, launcher, url) {
     return result;
   };
 
-  const report = { version, fixture };
+  const report = { version, fixture, wallpaper: { bytes: wall.bytes, pixels: 3 * 2048 * 1024 } };
   for (const rate of cdp ? [1, 4] : [1]) {
     if (cdp) await cdp.send("Emulation.setCPUThrottlingRate", { rate });
     const key = rate === 1 ? "normal" : "cpu4x";
-    report[key] = { native: await run(null), solid: await run(solid), themed: await run(max) };
+    report[key] = { native: await run(null), solid: await run(solid), themed: await run(max), wallpaper: await run(wall.theme) };
     if (cdp) {
       const n = report[key].native.mainThreadPerFrameMs;
       const t = report[key].themed.mainThreadPerFrameMs;
       report[key].attributablePerFrameMs = Math.round((t - n) * 100) / 100;
       report[key].layersPerFrameMs = Math.round((t - report[key].solid.mainThreadPerFrameMs) * 100) / 100;
+      report[key].wallpaperAttributablePerFrameMs = Math.round((report[key].wallpaper.mainThreadPerFrameMs - n) * 100) / 100;
     }
+    report[key].wallpaperScrollDelta = { p95: Math.round((report[key].wallpaper.scroll.p95 - report[key].native.scroll.p95) * 100) / 100, p99: Math.round((report[key].wallpaper.scroll.p99 - report[key].native.scroll.p99) * 100) / 100 };
     report[key].layersScrollDelta = { p95: Math.round((report[key].themed.scroll.p95 - report[key].solid.scroll.p95) * 100) / 100, p99: Math.round((report[key].themed.scroll.p99 - report[key].solid.scroll.p99) * 100) / 100 };
     report[key].scrollIntervalDelta = { p95: Math.round((report[key].themed.scroll.p95 - report[key].native.scroll.p95) * 100) / 100, p99: Math.round((report[key].themed.scroll.p99 - report[key].native.scroll.p99) * 100) / 100 };
   }
   if (cdp) await cdp.send("Emulation.setCPUThrottlingRate", { rate: 1 });
-  const changes = await page.evaluate(themeChanges, [choom, max]);
-  report.themeChanges = { ...stats(changes.times), retainedAfter20Cycles: changes.retained };
+  const domBefore = await counters();
+  const changes = await page.evaluate(themeChanges, [choom, max, wall.theme]);
+  report.themeChanges = { ...stats(changes.times), retainedAfter20Cycles: changes.retained, domCountersBefore: domBefore, domCountersAfter: await counters() };
 
   // The preview: 50 edits 100 ms apart, then a burst of 20 that cancels all but the last.
   const preview = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   await preview.goto(new URL("preview.html", url).href);
-  const result = await preview.evaluate(
+  const previewCdp = type === "chromium" ? await preview.context().newCDPSession(preview) : null;
+  const edits = (theme) => preview.evaluate(
     async ({ theme, prefs }) => {
       window.reskinPreview.mount({ view: "profile", theme, preferences: prefs, cssAllowed: true });
       const element = document.querySelector("[data-reskin-preview]");
@@ -239,10 +274,16 @@ async function engine(type, launcher, url) {
       await new Promise((r) => setTimeout(r, 300));
       return { times, burst, frames: document.querySelectorAll("#preview iframe").length };
     },
-    { theme: choom, prefs: PREFS },
+    { theme, prefs: PREFS },
   );
+  const result = await edits(choom);
   report.preview = { edits: stats(result.times), burstCompletionMs: result.burst, framesAfter: result.frames };
+  const walled = await edits(wall.theme);
+  const before = await counters(previewCdp);
+  await preview.evaluate(() => window.reskinPreview.destroy());
+  report.previewWallpaper = { edits: stats(walled.times), burstCompletionMs: walled.burst, framesAfter: walled.frames, domCountersBeforeDestroy: before, domCountersAfterDestroy: await counters(previewCdp) };
   await browser.close();
+  report.peakBrowserRssMiB = memory.stop();
   return report;
 }
 
@@ -251,6 +292,7 @@ const report = {
   machine: { cpu: cpus()[0].model, cores: cpus().length, loadBefore: loadavg().map((n) => Math.round(n * 100) / 100) },
   theme: max.name,
   layers: { page: max.backgrounds.page.layers.length, header: max.backgrounds.header.layers.length },
+  wallpaperTheme: "Neon Skyline max (tests/fixture-app/product/art.js)",
 };
 try {
   report.chromium = await engine("chromium", chromium, server.url);
