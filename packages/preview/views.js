@@ -227,7 +227,9 @@ const DIFF = [
   ["add", null, 5, [["pl-k", "export function"], " ", ["pl-en", "label"], "(", ["pl-v", "name"], ": ", ["pl-ent", "string"], ") {"]],
   ["ctx", 6, 6, ["  ", ["pl-k", "const"], " ", ["pl-v", "text"], " = ", ["pl-s", "`${greeting}, ${name}`"], ";"]],
   ["del", 7, null, ["  ", ["pl-k", "return"], " ", ["pl-v", "text"], ";"]],
-  ["add", null, 7, ["  ", ["pl-k", "return"], " ", ["pl-v", "text"], ".", ["pl-en", "slice"], "(", ["pl-c1", "0"], ", ", ["x", ["pl-v", "maxLength"]], ");"]],
+  // GitHub's JavaScript highlighting leaves a plain reference uncolored, so the highlighted word
+  // takes the word highlight's own text color.
+  ["add", null, 7, ["  ", ["pl-k", "return"], " ", ["pl-v", "text"], ".", ["pl-en", "slice"], "(", ["pl-c1", "0"], ", ", ["x", "maxLength"], ");"]],
   ["add", null, 8, ""],
   ["add", null, 9, [["pl-c", "// Short names stay readable in narrow cards."]]],
   ["ctx", 8, 10, "}"],

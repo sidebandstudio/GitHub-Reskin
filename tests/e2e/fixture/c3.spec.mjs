@@ -11,7 +11,8 @@ import { APP, PREFS, decorated, expect, test } from "./helpers.mjs";
 const ROOT = fileURLToPath(new URL("../../../", import.meta.url));
 const PROFILE = join(ROOT, "tests/primer/fixtures/profile.html");
 const C3 = existsSync(PROFILE) && existsSync(join(ROOT, "extension/content/github/index.js"));
-const THEME = decorated("dracula", { rail: { shape: "notch" }, scanlines: {}, seal: { shape: "diamond" } }, { font: "rajdhani" });
+// One effect per box leaves room in the 24-node budget for every slot's decoration.
+const THEME = decorated("dracula", { rail: { shape: "notch" } }, { font: "rajdhani" });
 
 const c3Test = C3 ? test : () => {};
 

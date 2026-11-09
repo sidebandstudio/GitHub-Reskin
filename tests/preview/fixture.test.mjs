@@ -64,10 +64,13 @@ test("every preview variable resolves for seeds and themes, and the fixture CSS 
 });
 
 test("the native baseline wraps the ModeIndex declaration list in a root rule with the mode's color scheme", () => {
+  const seed = primer.MODE_INDEX.modes["fixture.standard-dark"];
   const css = nativeBaseline(primer.MODE_INDEX, "fixture.standard-dark");
-  assert.match(css, /^:root\{color-scheme:dark;--bgColor-default:#[0-9a-f]{6};/);
+  assert.ok(css.startsWith(`:root{color-scheme:dark;${primer.MODE_INDEX.nativeCss["fixture.standard-dark"]};`));
   assert.ok(css.endsWith("}"));
   assert.equal((css.match(/[{}]/g) || []).length, 2, "one rule");
+  // The fixture's variables carry the seed's native colors.
+  for (const [name, path] of Object.entries(PREVIEW_VARIABLES)) assert.ok(css.includes(`${name}:${colorAt(seed.colors, path)};`), name);
   for (const bad of ["", "--x:#000}body{color:red", "--x:</style>"]) {
     const index = { ...primer.MODE_INDEX, nativeCss: { ...primer.MODE_INDEX.nativeCss, "fixture.standard-dark": bad } };
     assert.throws(() => nativeBaseline(index, "fixture.standard-dark"), /native CSS/);
@@ -75,7 +78,8 @@ test("the native baseline wraps the ModeIndex declaration list in a root rule wi
 });
 
 // C3's production mapping and native CSS, when C3 is in the checkout: every variable the fixture
-// reads must be emitted by the compiler and declared by each standard mode's native CSS.
+// reads must be one the compiler emits with the same role, and the native baseline built from
+// C3's index must declare it at the seed's native color.
 const C3 = existsSync(`${ROOT}packages/primer/index.js`) && existsSync(`${ROOT}vendor/primer/modes.json`);
 // Registered only with C3 present, since the runner fails on a skipped test.
 (C3 ? test : () => {})("every fixture variable is one C3 emits and declares natively", async () => {
@@ -84,9 +88,10 @@ const C3 = existsSync(`${ROOT}packages/primer/index.js`) && existsSync(`${ROOT}v
   const emitted = new Map(mappings.emit.map((entry) => [entry.variable, entry.role]));
   for (const [name, path] of Object.entries(PREVIEW_VARIABLES)) assert.equal(emitted.get(name), path, `${name} maps to ${emitted.get(name)} in C3`);
   for (const mode of ["light", "dark"]) {
-    const declared = new Set(c3.MODE_INDEX.nativeCss[mode].split(";").map((d) => d.slice(0, d.indexOf(":"))));
-    for (const name of Object.keys(PREVIEW_VARIABLES)) assert.ok(declared.has(name), `${mode} native CSS lacks ${name}`);
-    assert.doesNotThrow(() => nativeBaseline(c3.MODE_INDEX, mode));
+    const css = nativeBaseline(c3.MODE_INDEX, mode);
+    const declared = new Set(css.slice(css.indexOf("{") + 1, -1).split(";").map((d) => d.slice(0, d.indexOf(":"))));
+    for (const name of Object.keys(PREVIEW_VARIABLES)) assert.ok(declared.has(name), `${mode} baseline lacks ${name}`);
+    for (const [name, path] of Object.entries(PREVIEW_VARIABLES)) assert.ok(css.includes(`${name}:${colorAt(c3.MODE_INDEX.modes[mode].colors, path)};`), `${mode} ${name}`);
   }
 });
 

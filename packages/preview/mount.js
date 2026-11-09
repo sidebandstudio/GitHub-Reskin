@@ -15,6 +15,7 @@ import { motionMs } from "../appearance/effects.js";
 import { LIMITS } from "../appearance/registry.js";
 import { fixtureBody, serializeFixture } from "./serialize.js";
 import { FIXTURE_CSS } from "./styles.js";
+import { variableDeclarations } from "./variables.js";
 import { VIEWS, builder } from "./views.js";
 
 // Slots without evidence on current GitHub markup stay dormant in the preview too, so it never
@@ -52,13 +53,15 @@ function standardMode(index, base) {
 
 /**
  * GitHub's native stylesheet for one mode, as a rule on the document root. The ModeIndex stores
- * each mode's native CSS as a declaration list without a selector.
+ * each mode's native CSS as a declaration list without a selector, and only for the variables
+ * the Primer compiler does not write itself; the variables the fixture reads, which the compiler
+ * does write, take the mode's frozen seed colors, which record GitHub's own values for them.
  */
 export function nativeBaseline(index, modeId) {
   const declarations = index.nativeCss[modeId];
-  const base = index.modes[modeId]?.base;
-  if (typeof declarations !== "string" || !declarations || /[{}<]/.test(declarations) || !["light", "dark"].includes(base)) throw new Error(`The ModeIndex has no usable native CSS for ${modeId}`);
-  return `:root{color-scheme:${base};${declarations}}`;
+  const seed = index.modes[modeId];
+  if (typeof declarations !== "string" || !declarations || /[{}<]/.test(declarations) || !["light", "dark"].includes(seed?.base)) throw new Error(`The ModeIndex has no usable native CSS for ${modeId}`);
+  return `:root{color-scheme:${seed.base};${declarations};${variableDeclarations(seed.colors)}}`;
 }
 
 function checkOptions({ theme, preferences }) {
@@ -75,9 +78,10 @@ const SHELL = `<!doctype html><html lang="en"><head><meta charset="utf-8">${LAYE
  * build-time DOM. The document gets the fixture's five style layers in its head and the view as
  * its body. paint(state, options) applies { view, theme, preferences, before }; it resolves only
  * when the theme or preferences changed, and plays motion only when asked to for an explicit
- * selection. options: { play, omit: layer names left empty, fontUrl: overrides the adapter's }.
- * A paint whose structure (view, base, Before, preferences, flavor, effects, font and width)
- * matches the previous one changes only the style layers and keeps the laid-out body.
+ * selection. options: { play, omit: layer names left empty, fontUrl: overrides the adapter's,
+ * layoutOnly: write the style layers only when the body is laid out again }. A paint whose
+ * structure (view, base, Before, preferences, flavor, effects, font and width) matches the
+ * previous one changes only the style layers and keeps the laid-out body.
  * Returns { resolved, plan, sourceRepairs, compiled, owned, css, decoration, structure, rebuilt }.
  */
 export function createFixtureRenderer(fdoc, rt = runtime) {
@@ -127,7 +131,7 @@ export function createFixtureRenderer(fdoc, rt = runtime) {
   return {
     resolve,
     font,
-    paint(state, { play = false, omit = [], fontUrl } = {}) {
+    paint(state, { play = false, omit = [], fontUrl, layoutOnly = false } = {}) {
       const { native, plan, resolved, sourceRepairs } = resolve(state);
       const prefs = state.preferences;
       const themed = prefs.enabled && !state.before && resolved.policy === "themed";
@@ -146,20 +150,28 @@ export function createFixtureRenderer(fdoc, rt = runtime) {
         fonts: face && url ? fontFaceCss(face.id, url) : "",
         appearance: themed ? compileAppearance(resolved, prefs, "preview") : "",
       };
-      for (const name of LAYERS) {
-        const text = omit.includes(name) ? "" : css[name];
-        if (layer(name).textContent !== text) layer(name).textContent = text;
-      }
-
       // Colors reach the body only through the style layers, so a color edit keeps the body.
       const structure = JSON.stringify([state.view, state.theme.base, state.before, themed, prefs, resolved.policy, resolved.flavor, resolved.effects, resolved.font, Boolean(css.fonts), win?.innerWidth ?? 0]);
       const rebuilt = play || structure !== built?.structure || !fdoc.body.contains(built.root);
+      // A layout document needs new styles only for a new layout; colors never move anything.
+      if (rebuilt || !layoutOnly) {
+        for (const name of LAYERS) {
+          const text = omit.includes(name) ? "" : css[name];
+          if (layer(name).textContent !== text) layer(name).textContent = text;
+        }
+      }
       if (rebuilt) {
         decoration?.destroy();
         decoration = null;
-        const view = VIEWS[state.view](builder(fdoc, rt.resources, state.theme.base));
-        fdoc.body.replaceChildren(view.root);
-        built = { structure, root: view.root };
+        // The view's native markup depends only on the view and the base; a new theme or
+        // preference of the same view keeps it and mounts its decoration again.
+        const nativeKey = `${state.view}|${state.theme.base}`;
+        let view = built?.nativeKey === nativeKey && fdoc.body.contains(built.root) ? built.view : null;
+        if (!view) {
+          view = VIEWS[state.view](builder(fdoc, rt.resources, state.theme.base));
+          fdoc.body.replaceChildren(view.root);
+        }
+        built = { structure, nativeKey, view, root: view.root };
         if (themed) {
           decoration = mountAppearance(fdoc.body, resolved, prefs, view.anchors.filter((anchor) => !rt.dormantSlots.includes(anchor.slot)));
           if (play) decoration.play();
@@ -403,9 +415,9 @@ export function mountPreview(container, options) {
     }
     endMotion();
     laidWidth = Math.round(host.getBoundingClientRect().width);
-    const painted = renderer.paint(state, { omit: ["theme"], fontUrl });
+    const painted = renderer.paint(state, { omit: ["theme"], fontUrl, layoutOnly: true });
     const { resolved, compiled, owned, css, decoration, sourceRepairs, structure, rebuilt } = painted;
-    measure();
+    // Height follows the layout document through the ResizeObserver.
     // The view's images, embedded; the first update of a view reads them once.
     const missing = [...new Set([...ldoc.images].map((img) => img.getAttribute("src")))].filter((src) => src && !embeddedCopy(src));
     if (missing.length) {
