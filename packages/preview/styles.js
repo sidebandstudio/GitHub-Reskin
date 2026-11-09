@@ -24,6 +24,20 @@ svg.octicon{fill:currentColor;vertical-align:text-bottom;flex:none}
 .color-fg-muted{color:var(--fgColor-muted)}
 .f4{font-size:16px}.text-normal{font-weight:400}.text-bold{font-weight:600}.mb-2{margin-bottom:8px}
 .page{max-width:1280px;margin:0 auto;padding:24px 32px 40px}
+
+/* Header */
+.AppHeader{display:block;background:var(--header-bgColor);color:var(--header-fgColor-default);border-bottom:1px solid var(--header-borderColor-divider)}
+.AppHeader-globalBar{display:flex;align-items:center;justify-content:space-between;gap:12px;height:64px;padding:0 16px}
+.AppHeader-globalBar-start,.AppHeader-globalBar-end{display:flex;align-items:center;gap:8px;min-width:0}
+.AppHeader-button{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;flex:none;border:1px solid var(--headerSearch-borderColor);border-radius:6px;color:var(--header-fgColor-default)}
+.AppHeader-logo{display:inline-flex;color:var(--header-fgColor-logo);flex:none;margin:0 4px}
+.AppHeader-logo svg.octicon{fill:none}
+.AppHeader-context{display:flex;align-items:center;gap:4px;min-width:0;font-size:14px;line-height:20px}
+.AppHeader-context a{color:var(--header-fgColor-logo);min-width:0}
+.AppHeader-context-item{display:block;padding:2px 6px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.AppHeader-context-divider{color:var(--header-fgColor-default)}
+.AppHeader-search{display:inline-flex;align-items:center;gap:8px;width:272px;height:32px;padding:0 8px;border:1px solid var(--headerSearch-borderColor);border-radius:6px;background:var(--headerSearch-bgColor);color:var(--header-fgColor-default);font-size:14px;white-space:nowrap;overflow:hidden}
+.AppHeader-avatar{width:32px;height:32px;flex:none}
 .Box{border:1px solid var(--borderColor-default);border-radius:6px;background:var(--bgColor-default)}
 .Box-header{padding:12px 16px;border-bottom:1px solid var(--borderColor-default);background:var(--bgColor-muted);border-radius:6px 6px 0 0}
 .Box-row{padding:8px 16px;border-top:1px solid var(--borderColor-muted);display:flex;gap:10px;align-items:center}
@@ -136,12 +150,13 @@ svg.octicon{fill:currentColor;vertical-align:text-bottom;flex:none}
 .blankslate h3{font-size:20px;font-weight:600;margin-bottom:4px}
 .blankslate p{color:var(--fgColor-muted)}
 .issues-head{display:flex;gap:16px;align-items:center;margin:24px 0 16px;flex-wrap:wrap}
-.error-page{max-width:640px;margin:24px auto;text-align:center}
-.error-illustration{position:relative;height:180px;margin-bottom:24px}
+.error-page{margin:0 auto 24px;text-align:center}
+.error-illustration{position:relative;height:320px;margin:-24px -32px 32px;background:var(--bgColor-muted);border-bottom:1px solid var(--borderColor-default);overflow:hidden}
+.error-illustration .art{position:absolute;left:24%;top:0;bottom:0;width:240px;margin-left:-120px}
 .error-illustration .ring{position:absolute;left:50%;top:50%;border:2px solid var(--borderColor-default);border-radius:50%}
 .error-illustration .code{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:72px;font-weight:700;color:var(--fgColor-muted);letter-spacing:4px}
 .error-page h1{font-size:28px;font-weight:600;margin-bottom:8px}
-.error-page p{color:var(--fgColor-muted);font-size:16px;margin-bottom:16px}
+.error-page p{color:var(--fgColor-muted);font-size:16px;margin:0 auto 16px;max-width:640px}
 .error-links{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
 
 @media (max-width:767px){
@@ -160,7 +175,10 @@ svg.octicon{fill:currentColor;vertical-align:text-bottom;flex:none}
   .ContributionCalendar-months{display:none}
   .calendar-crop{display:block}
   .UnderlineNav{margin:0 -16px 16px;padding:0 16px}
-  .error-illustration{height:140px}
+  .error-illustration{height:160px;margin:-16px -16px 24px}
+  .error-illustration .art{left:50%}
   .error-illustration .code{font-size:56px}
+  .AppHeader-search-text,.AppHeader-context-divider,.AppHeader-context a:not(:last-child),.AppHeader-globalBar-end>.AppHeader-button{display:none}
+  .AppHeader-search{width:32px;justify-content:center;padding:0}
 }
 `;

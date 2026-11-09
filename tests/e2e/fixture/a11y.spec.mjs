@@ -1,6 +1,8 @@
 // Fixture accessibility. The preview frame is sandboxed without scripts or same-origin access, so
 // axe checks the same views painted straight into views.html by the same renderer, plus the
 // preview host page and the adversarial adapter page. Serious and critical findings fail.
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { axeViolations, blocking } from "../../helpers/a11y.mjs";
 import { PREFS, classic, decorated, expect, mount, previewFrame, test } from "./helpers.mjs";
 
@@ -17,6 +19,21 @@ for (const [id, theme] of Object.entries(THEMES)) {
       for (const before of [false, true]) {
         await page.evaluate(([state]) => window.reskinViews.render(state), [{ view, theme, preferences: PREFS, before }]);
         expect(blocking(await axeViolations(page)), `${view}${before ? " before" : ""}`).toEqual([]);
+      }
+    }
+  });
+}
+
+// Choom Circuit with its own CSS: wallpaper, header rule, condensed headings, tag and stamp.
+const CHOOM = JSON.parse(readFileSync(fileURLToPath(new URL("../../appearance/fixtures/choom-circuit.reskin.json", import.meta.url)), "utf8"));
+for (const [mode, preferences] of [["Full", PREFS], ["Calm", { ...PREFS, extras: false }]]) {
+  test(`every fixture view passes axe with Choom Circuit in ${mode} @a11y`, async ({ page, fixtureApp }) => {
+    for (const width of [390, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto(fixtureApp.url("views.html?slots=all"));
+      for (const view of ["profile", "repo", "diff", "empty", "404"]) {
+        await page.evaluate(([state]) => window.reskinViews.render(state), [{ view, theme: CHOOM, preferences, cssAllowed: true }]);
+        expect(blocking(await axeViolations(page)), `${view} at ${width}`).toEqual([]);
       }
     }
   });
