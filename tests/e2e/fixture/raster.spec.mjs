@@ -169,3 +169,76 @@ test("replacing or removing an image theme leaves no image data, frame or style 
   await page.evaluate(() => window.reskinNative.remove());
   expect(await page.evaluate(() => ({ styles: document.querySelectorAll("style[data-reskin-style]").length, data: [...document.querySelectorAll("style")].some((s) => s.textContent.includes("data:image/webp")), owned: document.querySelectorAll("[data-reskin-owned]").length }))).toEqual({ styles: 0, data: false, owned: 0 });
 });
+
+// In the page: header admission, then conversion with the browser's own primitives, counting decodes.
+async function admitAndConvert([bytes, mime]) {
+  const { browserRasterEnv, convertRaster, rasterInfo, rasterSourceInfo } = window.reskinRaster;
+  const env = browserRasterEnv();
+  let decodes = 0;
+  const counted = { ...env, decode: (blob) => (decodes++, env.decode(blob)) };
+  const binary = String.fromCharCode(...bytes);
+  const admitted = rasterInfo(`data:image/${mime};base64,${btoa(binary)}`);
+  const source = rasterSourceInfo(new Uint8Array(bytes));
+  const result = await convertRaster(new Uint8Array(bytes), {}, counted);
+  const converted = result.ok ? rasterInfo(result.image.data) : null;
+  return { admitted: admitted.ok || admitted.code, source: source.ok || source.message, result: result.ok || result.message, note: result.note ?? null, converted: converted?.ok ?? null, decodes };
+}
+
+// plain.jpg without its comment, the same with a comment after its frame header, and cut off at
+// the end of the frame header.
+function jpegSegments(bytes) {
+  const out = [];
+  for (let i = 2; i < bytes.length; ) {
+    const length = (bytes[i + 2] << 8) | bytes[i + 3];
+    out.push({ at: i, marker: bytes[i + 1], end: i + 2 + length });
+    if (bytes[i + 1] === 0xda) break;
+    i += 2 + length;
+  }
+  return out;
+}
+
+test("rasters r1 findings 1 and 2: a GIF frame past its screen and a truncated JPEG never reach the decoder; a late JPEG comment is metadata", async ({ page, fixtureApp }) => {
+  await page.goto(fixtureApp.url("preview.html"));
+  await page.waitForFunction(() => window.reskinRaster);
+  // The review's GIF: a 1x1 logical screen whose frame is 2050x1, which both engines decode at 2050x1.
+  const gif = await page.evaluate(admitAndConvert, [image("oversized-frame.gif"), "gif"]);
+  expect(gif).toEqual({ admitted: "image-data", source: expect.stringMatching(/frame lies outside the image/), result: expect.stringMatching(/frame lies outside the image/), note: null, converted: null, decodes: 0 });
+
+  const plain = image("plain.jpg");
+  const segments = jpegSegments(plain);
+  const comment = segments.find((s) => s.marker === 0xfe);
+  const clean = [...plain.slice(0, comment.at), ...plain.slice(comment.end)];
+  const sof = jpegSegments(clean).find((s) => s.marker === 0xc0);
+  const text = [...Buffer.from("private-review-marker")];
+  const late = [...clean.slice(0, sof.end), 0xff, 0xfe, 0, text.length + 2, ...text, ...clean.slice(sof.end)];
+  const truncated = clean.slice(0, sof.end);
+
+  // The clean JPEG passes as it is; the late comment is refused until conversion removes it, and
+  // conversion says so; the truncated file is refused before any decode.
+  expect(await page.evaluate(admitAndConvert, [clean, "jpeg"])).toMatchObject({ admitted: true, source: true, result: true, converted: true, decodes: 1 });
+  const commented = await page.evaluate(admitAndConvert, [late, "jpeg"]);
+  expect(commented).toMatchObject({ admitted: "image-conversion", source: true, result: true, converted: true, decodes: 1 });
+  expect(commented.note).toMatch(/removed metadata/);
+  expect(await page.evaluate(admitAndConvert, [truncated, "jpeg"])).toEqual({ admitted: "image-data", source: expect.stringMatching(/does not end cleanly/), result: expect.stringMatching(/does not end cleanly/), note: null, converted: null, decodes: 0 });
+});
+
+test("rasters r1 finding 3: the preview releases the admitted data of a replaced or destroyed theme's images", async ({ page, fixtureApp }) => {
+  await page.goto(fixtureApp.url("preview.html"));
+  await page.waitForFunction(() => window.reskinArt);
+  const { theme } = await page.evaluate(() => window.reskinArt.artTheme());
+  const data = Object.values(theme.backgrounds).flatMap((target) => (target.layers ?? []).filter((layer) => layer.image).map((layer) => layer.image.data));
+  expect(data.length).toBe(3);
+  // In the page: hold what admission returns now, or say whether each image was admitted afresh.
+  const hold = (images) => (window.held = images.map((d) => window.reskinRaster.rasterInfo(d))).every((info, i) => info.ok && window.reskinRaster.rasterInfo(images[i]) === info);
+  const fresh = (images) => images.map((d, i) => window.reskinRaster.rasterInfo(d) !== window.held[i]);
+  await mount(page, fixtureApp, { theme });
+  expect(await page.evaluate(hold, data)).toBe(true);
+  await update(page, { ...theme, name: "Recolored", colors: { ...theme.colors, accent: "#00f0ff" } });
+  expect(await page.evaluate(fresh, data), "an edit that keeps the images keeps their admission").toEqual([false, false, false]);
+  await update(page, { ...theme, name: "Plain", backgrounds: undefined });
+  expect(await page.evaluate(fresh, data), "a replaced theme releases its images").toEqual([true, true, true]);
+  await update(page, theme);
+  expect(await page.evaluate(hold, data)).toBe(true);
+  await page.evaluate(() => window.reskinPreview.destroy());
+  expect(await page.evaluate(fresh, data), "destroy releases them").toEqual([true, true, true]);
+});

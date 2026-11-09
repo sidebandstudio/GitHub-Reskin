@@ -2,11 +2,13 @@
 // decode, draw, encode and release. Real decoding and encoding run in the fixture browser tests
 // (tests/e2e/fixture/raster.spec.mjs).
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { LIMITS } from "../../packages/contracts/index.js";
 import { COMPRESS_QUALITIES, convertRaster, createRasterQueue, fitSize, imageAssets, removeRasterLayer, setRasterLayer } from "../../packages/appearance/raster.js";
 import { sha256 } from "../../packages/engine/sha256.js";
-import { crc32, rasterInfo, rasterTotals, validateTheme } from "../../packages/format/index.js";
+import { crc32, rasterInfo, rasterTotals, releaseRasters, validateTheme } from "../../packages/format/index.js";
 
 const MINIMAL = { schemaVersion: 1, name: "Probe", base: "dark", colors: { background: "#0a0a17", text: "#e4f3ff", accent: "#fcee0a" } };
 const u32 = (n) => {
@@ -207,4 +209,59 @@ test("imageAssets keys each admitted image by the hash of its bytes and leaves o
   const assets = imageAssets(theme);
   assert.deepEqual([...assets.entries()], [[sha256(png(4, 4)), good]]);
   assert.equal(imageAssets(null).size, 0);
+});
+
+test("rasters r1 finding 1: a GIF frame larger than its logical screen is refused before any decode", async () => {
+  // The review's complete GIF: a 1x1 screen whose frame is 2050x1, decoded at 2050x1 by browsers.
+  const bytes = new Uint8Array(readFileSync(new URL("../fixtures/images/oversized-frame.gif", import.meta.url)));
+  const { env, log } = fakeEnv({ decoded: { width: 2050, height: 1 } });
+  const result = await convertRaster(bytes, {}, env);
+  assert.equal(result.ok, false);
+  assert.match(result.message, /frame lies outside the image/);
+  assert.deepEqual([log.decodes, log.canvases], [0, 0]);
+});
+
+test("rasters r1 finding 3: a removed or replaced image leaves no admitted data behind", () => {
+  const [kept, replaced, removed] = [png(3, 3), png(5, 5), png(7, 7)].map((bytes) => dataUrl("png", bytes));
+  // In its own process, so the collection is forced and nothing else in this file holds the data.
+  const module = (path) => JSON.stringify(new URL(`../../packages/${path}`, import.meta.url).href);
+  const script = `
+    import { imageAssets, removeRasterLayer, setRasterLayer } from ${module("appearance/raster.js")};
+    import { rasterInfo, validateTheme } from ${module("format/index.js")};
+    import { setImmediate } from "node:timers/promises";
+    const [kept, replaced, removed] = ${JSON.stringify([kept, replaced, removed])};
+    const layer = (data, side) => ({ data, width: side, height: side });
+    const weak = {};
+    let theme = ${JSON.stringify(MINIMAL)};
+    theme = setRasterLayer(theme, "page", 0, layer(replaced, 5)).theme;
+    theme = setRasterLayer(theme, "header", 0, layer(removed, 7)).theme;
+    // Validation, resolution and the paint admit and hash every image the theme carries.
+    if (!validateTheme(theme).ok || imageAssets(theme).size !== 2) throw new Error("the images were not admitted");
+    weak.replaced = new WeakRef(rasterInfo(replaced).bytes);
+    weak.removed = new WeakRef(rasterInfo(removed).bytes);
+    theme = setRasterLayer(theme, "page", 0, layer(kept, 3)).theme;
+    theme = removeRasterLayer(theme, "header", 0).theme;
+    weak.kept = new WeakRef(rasterInfo(kept).bytes);
+    await setImmediate();
+    for (let i = 0; i < 4; i++) globalThis.gc();
+    await setImmediate();
+    console.log(JSON.stringify(Object.fromEntries(Object.entries(weak).map(([name, ref]) => [name, ref.deref() !== undefined]))), theme.backgrounds.page.layers.length);
+  `;
+  const out = execFileSync(process.execPath, ["--expose-gc", "--input-type=module", "-e", script], { encoding: "utf8" }).trim();
+  // The image the theme still carries stays admitted; the replaced and removed ones are gone.
+  assert.equal(out, `${JSON.stringify({ replaced: false, removed: false, kept: true })} 1`);
+});
+
+test("only admitted images are kept, and releasing a theme spares an image another document still carries", () => {
+  const shared = dataUrl("png", png(6, 6));
+  const own = dataUrl("png", png(8, 8));
+  const theme = { ...MINIMAL, backgrounds: { page: { layers: [{ image: { data: shared, width: 6, height: 6 } }, { image: { data: own, width: 8, height: 8 } }] } } };
+  const other = { ...MINIMAL, backgrounds: { header: { layers: [{ image: { data: shared, width: 6, height: 6 } }] } } };
+  const [sharedInfo, ownInfo] = [rasterInfo(shared), rasterInfo(own)];
+  assert.equal(rasterInfo(shared), sharedInfo, "an admitted image is kept by its data");
+  releaseRasters(theme, other);
+  assert.equal(rasterInfo(shared), sharedInfo, "the other document still carries it");
+  assert.notEqual(rasterInfo(own), ownInfo, "the released image is admitted again");
+  const refused = `data:image/png;base64,${Buffer.from("not an image").toString("base64")}`;
+  assert.notEqual(rasterInfo(refused), rasterInfo(refused), "a refused string is never kept");
 });

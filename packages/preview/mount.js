@@ -9,7 +9,7 @@
 // decoration.
 import { PREVIEW_VIEWS, RENDERER_VERSION } from "../contracts/index.js";
 import { repairTheme, resolveTheme } from "../engine/index.js";
-import { escapeCssForHtml, validateTheme } from "../format/index.js";
+import { escapeCssForHtml, releaseRasters, validateTheme } from "../format/index.js";
 import { FONT_BY_ID, compileAppearance, imageAssets, mountAppearance, noResources, roleFontFaceCss, roleFontIds } from "../appearance/index.js";
 import { motionMs } from "../appearance/effects.js";
 import { THEMED_SWITCH } from "../appearance/paint.js";
@@ -113,10 +113,14 @@ export function createFixtureRenderer(fdoc, rt = runtime) {
   let built = null;
   let cacheKey = null;
   let cached = null;
+  let theme = null;
 
   function resolve(state) {
     const key = JSON.stringify([state.theme, state.preferences]);
     if (key === cacheKey) return cached;
+    // A new theme releases the images only the old one carried before its own are admitted.
+    if (theme && theme !== state.theme) releaseRasters(theme, state.theme);
+    theme = state.theme;
     const { modeIndex: index, primer } = rt;
     const base = state.theme.base;
     const native = { colorMode: base, lightTheme: standardMode(index, "light"), darkTheme: standardMode(index, "dark"), systemDark: base === "dark" };
@@ -213,6 +217,8 @@ export function createFixtureRenderer(fdoc, rt = runtime) {
       decoration?.destroy();
       decoration = null;
       built = null;
+      if (theme) releaseRasters(theme);
+      theme = cacheKey = cached = null;
       fdoc.body.replaceChildren();
       for (const name of LAYERS) layer(name).textContent = "";
     },

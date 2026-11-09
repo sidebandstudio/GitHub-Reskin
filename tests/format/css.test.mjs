@@ -169,6 +169,29 @@ test("@supports tests permitted properties one declaration at a time, negated or
   assert.match(reasons(`@supports (display:grid){${tag}}`), /line 1, column 12/);
 });
 
+test("rasters r1 finding 4: an @supports test keeps each property's value bounds", () => {
+  const rule = ".AppHeader{border-color:var(--reskin-accent)}";
+  const gradient = "linear-gradient(red,blue)";
+  const refused = {
+    "(border-width:10000px)": /border-width value is outside its allowed range/,
+    "(opacity:2)": /opacity value is outside its allowed range/,
+    "(border-radius:calc(1px / 0))": /cannot be checked for a finite range/,
+    [`(background-image:${Array(5).fill(gradient).join(",")})`]: /at most 4 layers/,
+    "(font-family:evil)": /themes cannot request other fonts/,
+    "(box-shadow:0 0 30px red)": /blur stays within 0-24px/,
+    "(font-weight:900)": /font-weight is 400, 500, 600 or 700/,
+    "(transform:rotate(45deg))": /rotates at most 8deg/,
+    // Each joined or negated test is bounded alike.
+    "not (border-width:10000px)": /border-width value is outside/,
+    "(corner-shape:bevel) and (opacity:2)": /opacity value is outside/,
+    "(corner-shape:bevel) or (font-family:evil)": /cannot request other fonts/,
+  };
+  for (const [test, reason] of Object.entries(refused)) assert.match(reasons(`@supports ${test}{${rule}}`), reason, test);
+  for (const test of ["(border-width:4px)", "(opacity:0.5)", "(border-radius:calc(4px + 2px))", `(background-image:${Array(4).fill(gradient).join(",")})`, "(font-family:serif)", "(box-shadow:0 0 24px red)", "(font-weight:700)"]) {
+    ok(`@supports ${test}{${rule}}`);
+  }
+});
+
 test("without a registry, native-node CSS fails closed and owned decorations still compile", () => {
   const owned = ok('[data-reskin-slot="profile.tag"]{border:1px solid var(--reskin-accent)}');
   const compiled = compileCss(owned, { registry: null, cssAllowed: true, preferences: FULL });

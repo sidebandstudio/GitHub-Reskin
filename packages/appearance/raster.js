@@ -12,7 +12,7 @@
 // time through a queue that cancels a job its replacement makes obsolete. The functions take
 // their browser primitives as an argument, so a worker can run them as well as a page.
 import { LIMITS } from "../contracts/index.js";
-import { rasterHash, rasterInfo, rasterLayers, rasterSourceInfo, rasterTotals } from "../format/viewer.js";
+import { rasterHash, rasterInfo, rasterLayers, rasterSourceInfo, rasterTotals, releaseRasters } from "../format/viewer.js";
 
 // ---- Assets of a source document ----
 
@@ -277,6 +277,8 @@ export function setRasterLayer(theme, target, index, image, { fit, position, opa
   const totals = rasterTotals(next);
   if (totals.bytes > LIMITS.documentImageDecodedBytes) return failure("image-limit", `All images in a theme come to at most ${LIMITS.documentImageDecodedBytes / 1024} KiB, counting repeats.`);
   if (totals.pixels > LIMITS.documentImageDecodedPixels) return failure("image-limit", `All images in a theme come to at most ${LIMITS.documentImageDecodedPixels} pixels, counting repeats.`);
+  // A replaced image's data goes with it.
+  releaseRasters(theme, next);
   return { ok: true, theme: next };
 }
 
@@ -289,5 +291,6 @@ export function removeRasterLayer(theme, target, index) {
   if (!background.layers.length) delete background.layers;
   if (!Object.keys(background).length) delete next.backgrounds[target];
   if (!Object.keys(next.backgrounds).length) delete next.backgrounds;
+  releaseRasters(theme, next);
   return { ok: true, theme: next };
 }

@@ -111,6 +111,8 @@ export declare function rasterInfo(
 export declare function rasterLayers(theme: unknown): { path: string; image: ThemeRaster }[];
 /** SHA-256 of an admitted image's decoded bytes, the asset identity the resolver records, or null. */
 export declare function rasterHash(data: unknown): string | null;
+/** Forgets the cached admission, bytes and hash of each image in `theme` that no `keep` document carries. */
+export declare function releaseRasters(theme: unknown, ...keep: unknown[]): void;
 /** Decoded bytes of a canonical base64 data URL, or null. */
 export declare function dataUrlBytes(data: unknown): Uint8Array | null;
 /** The largest local file the builder's conversion accepts, 2 MiB. */

@@ -753,16 +753,22 @@ function checkFontFamily(nodes, ctx, loc) {
 function checkDeclaration(decl, ctx, subjects) {
   const { property } = decl;
   const loc = decl.loc;
-  const nodes = children(decl.value);
   const owned = subjects.owned && !subjects.native && !subjects.root;
   const allowed = has(POLICY.nativeProperties, property) || (owned && has(POLICY.ownedProperties, property)) || (owned && subjects.corner && has(POLICY.cornerProperties, property));
   if (!allowed) {
     const why = has(POLICY.ownedProperties, property) || has(POLICY.cornerProperties, property) ? `${property} is allowed only on an exact Reskin decoration` : `${property} is not an allowed property`;
     return ctx.problems.add(why, loc), null;
   }
+  return checkValue(property, decl.value, ctx, loc, subjects);
+}
+
+// The value rules for one property, wherever its value appears: in a declaration for its
+// subjects, or in an @supports test. Returns what the value draws, or null.
+function checkValue(property, value, ctx, loc, subjects) {
+  const nodes = children(value);
   if (!nodes.length) return ctx.problems.add(`${property} has no value`, loc), null;
   if (!checkNodes(nodes, ctx, loc, 0, { strings: property === "content" })) return null;
-  if (!lexerMatches(property, decl.value)) return ctx.problems.add(`This is not a valid ${property} value`, loc), null;
+  if (!lexerMatches(property, value)) return ctx.problems.add(`This is not a valid ${property} value`, loc), null;
   if (!finiteMath(nodes)) return ctx.problems.add(`The math in this ${property} value cannot be checked for a finite range: use one unit and no variables inside calc(), min(), max() or clamp()`, loc), null;
   const info = { blur: false, layers: 0 };
   if (property === "box-shadow" || property === "text-shadow") {
@@ -844,6 +850,9 @@ function collectRules(list, ctx, conditions, depth) {
   }
 }
 
+// The subjects an @supports test is checked for: none of its own.
+const TEST_SUBJECTS = Object.freeze({ owned: false, native: false, root: false });
+
 // @supports over permitted appearance properties: each test is one (property: value) declaration a
 // theme could write itself, with no resource, variable or vendor syntax, joined by "not", "and" or
 // "or" as CSS allows. Selector, font and other function tests are refused. css-tree 3.1.0 reads a
@@ -882,7 +891,9 @@ function checkSupports(node, ctx) {
     if (decl.value?.type !== "Value" || !nodes.length) return ctx.problems.add(`The @supports test of ${decl.property} has no value`, loc), false;
     if (!checkNodes(nodes, ctx, loc)) return false;
     if (variablesIn(nodes).size) return ctx.problems.add("An @supports test uses literal values, no variables", loc), false;
-    if (!lexerMatches(decl.property, decl.value)) return ctx.problems.add(`This is not a valid ${decl.property} value`, loc), false;
+    // The test keeps the bounds its value has in a declaration. It paints nothing, so no subject's
+    // own limits apply beyond those every subject shares.
+    if (!checkValue(decl.property, decl.value, ctx, loc, TEST_SUBJECTS)) return false;
     expectTest = false;
   }
   if (expectTest) return ctx.problems.add("This @supports condition is incomplete", node.loc), false;

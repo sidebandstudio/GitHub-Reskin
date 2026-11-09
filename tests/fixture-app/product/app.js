@@ -7,7 +7,7 @@
 //                     slot anchors, on a page full of authored text and native controls.
 //   C3's profile page window.reskinGithub does the same with C3's real locateSlots, when the
 //                     tests serve C3's fixture as github.com and C3 is in the checkout.
-import { compileAppearance, convertRaster, createRasterQueue, imageAssets, mountAppearance, roleFontFaceCss, siteResources } from "../../../packages/appearance/index.js";
+import { browserRasterEnv, compileAppearance, convertRaster, createRasterQueue, imageAssets, mountAppearance, roleFontFaceCss, siteResources } from "../../../packages/appearance/index.js";
 import { rasterInfo, rasterSourceInfo } from "../../../packages/format/viewer.js";
 import { repairTheme, resolveTheme } from "../../../packages/engine/index.js";
 import { FIXTURE_CSS, PREVIEW_VARIABLES, colorAt, configurePreview, createFixtureRenderer, mountPreview, nativeBaseline, serializeFixture } from "../../../packages/preview/index.js";
@@ -75,7 +75,7 @@ window.reskinPreview = {
 window.reskinSerialize = { serializeFixture };
 
 // The builder's local image conversion, run in the page with the browser's own decoder.
-window.reskinRaster = { convertRaster, createRasterQueue, rasterInfo, rasterSourceInfo };
+window.reskinRaster = { browserRasterEnv, convertRaster, createRasterQueue, rasterInfo, rasterSourceInfo };
 window.reskinArt = { paintArt, artTheme };
 
 let renderer = null;
