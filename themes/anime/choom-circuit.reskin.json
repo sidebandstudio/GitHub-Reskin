@@ -1,81 +1,229 @@
 {
   "$schema": "https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json",
   "author": "sidebandstudio",
+  "backgrounds": {
+    "header": {
+      "color": "#070710",
+      "layers": [
+        {
+          "gradientCss": {
+            "size": "auto",
+            "value": "linear-gradient(0deg,#fcee0a 1px,transparent 1px)"
+          }
+        }
+      ]
+    },
+    "page": {
+      "color": "#0a0a17",
+      "layers": [
+        {
+          "gradientCss": {
+            "size": "100% 100vh",
+            "value": "radial-gradient(ellipse 80% 50%at 50% -10%,color-mix(in srgb,#00f0ff 10%,transparent),transparent 70%)"
+          }
+        },
+        {
+          "gradientCss": {
+            "size": "48px 48px",
+            "value": "linear-gradient(color-mix(in srgb,#00f0ff 5%,transparent) 1px,transparent 1px)"
+          }
+        },
+        {
+          "gradientCss": {
+            "size": "48px 48px",
+            "value": "linear-gradient(90deg,color-mix(in srgb,#00f0ff 5%,transparent) 1px,transparent 1px)"
+          }
+        },
+        {
+          "gradientCss": {
+            "size": "auto",
+            "value": "repeating-linear-gradient(color-mix(in srgb,#e4f3ff 2%,transparent)0 1px,transparent 1px 3px)"
+          }
+        }
+      ]
+    }
+  },
   "base": "dark",
+  "code": {
+    "ansi": {
+      "black": "#b7b5cc",
+      "blue": "#7fbbff",
+      "brightBlack": "#b3b5d9",
+      "brightBlue": "#a4cfff",
+      "brightCyan": "#97edfa",
+      "brightGreen": "#a4edc2",
+      "brightMagenta": "#c5b3ff",
+      "brightRed": "#ffb3bb",
+      "brightWhite": "#ffffff",
+      "brightYellow": "#fff27a",
+      "cyan": "#00f0ff",
+      "green": "#3fe0a0",
+      "magenta": "#ff97c2",
+      "red": "#ff9aad",
+      "white": "#d1dcea",
+      "yellow": "#fcee0a"
+    },
+    "background": "#070710",
+    "diff": {
+      "addedBackground": "#0f201e",
+      "addedText": "#e4f3ff",
+      "removedBackground": "#22111c",
+      "removedText": "#e4f3ff",
+      "wordAddedBackground": "#1b532d",
+      "wordAddedText": "#e4f3ff",
+      "wordRemovedBackground": "#782b2e",
+      "wordRemovedText": "#e4f3ff"
+    },
+    "syntax": {
+      "attribute": "#a4cfff",
+      "comment": "#b3b5d9",
+      "constant": "#67eaff",
+      "function": "#fcee0a",
+      "keyword": "#ff97c2",
+      "number": "#ffd48a",
+      "punctuation": "#d1dcea",
+      "string": "#97edfa",
+      "tag": "#67e8cf",
+      "type": "#c5b3ff"
+    },
+    "text": "#e4f3ff"
+  },
   "colors": {
-    "accent": "#d5ff35",
-    "background": "#091312",
-    "contribution": "#d5ff35",
-    "text": "#f0f7ed"
+    "accent": "#fcee0a",
+    "background": "#0a0a17",
+    "contribution": "#00f0ff",
+    "text": "#e4f3ff"
   },
   "contributions": {
+    "cellRadius": 1,
+    "cellStyle": "glow",
+    "glow": {
+      "levels": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "opacity": 0.85,
+      "radius": 9
+    },
     "levels": [
-      "#24372f",
-      "#4e8c60",
-      "#78b94d",
-      "#a9dc3b",
-      "#d5ff35"
+      "#1e1f2c",
+      "#066876",
+      "#058997",
+      "#02bdcc",
+      "#00f0ff"
     ]
   },
-  "description": "Acid lime, cyan signals and a brief decorative afterimage turn GitHub into a late-night city workspace.",
+  "css": "[data-reskin-slot=\"profile.tag\"]{width:fit-content;margin:0 0 8px;padding:3px 8px 2px;font-family:ui-monospace,monospace;font-weight:600;font-size:11px;line-height:1.45;letter-spacing:.2em;text-transform:uppercase;color:var(--reskin-link);border:1px solid var(--reskin-link);box-shadow:0 0 10px color-mix(in srgb,var(--reskin-accent) 35%,transparent),inset 0 0 8px color-mix(in srgb,var(--reskin-accent) 15%,transparent);text-shadow:0 0 6px color-mix(in srgb,var(--reskin-accent) 60%,transparent)}[data-reskin-slot=\"profile.pinned.heading\"],[data-reskin-slot=\"profile.activity.heading\"],[data-reskin-slot=\"profile.organizations.heading\"]{font-family:var(--reskin-font-heading);letter-spacing:.02em;text-shadow:0 0 12px color-mix(in srgb,var(--reskin-accent) 35%,transparent)}[data-reskin-slot=\"error.notFound.caption\"]{position:absolute;right:6%;bottom:10%;padding:4px 16px;font-family:var(--reskin-font-heading);font-weight:700;font-size:44px;line-height:1.1;letter-spacing:.14em;text-transform:uppercase;color:var(--reskin-link);background-color:color-mix(in srgb,var(--reskin-canvas) 88%,transparent);border:2px solid var(--reskin-link);transform:rotate(-6deg);box-shadow:0 0 18px color-mix(in srgb,var(--reskin-accent) 55%,transparent);text-shadow:-2px 0 color-mix(in srgb,var(--reskin-graph-4) 70%,transparent),2px 0 color-mix(in srgb,var(--reskin-accent) 50%,transparent),0 0 12px color-mix(in srgb,var(--reskin-accent) 60%,transparent)}@media (max-width:1099px){[data-reskin-slot=\"error.notFound.caption\"]{font-size:36px}}@media (max-width:799px){[data-reskin-slot=\"error.notFound.caption\"]{font-size:28px}}@media (max-width:599px){[data-reskin-slot=\"error.notFound.caption\"]{font-size:22px}}",
+  "description": "Indigo-black panels, electric yellow controls, a cyan contribution graph, a faint 48px grid, beveled corners and static neon glow.",
+  "details": {
+    "headerText": "#9a9ccc",
+    "labels": {
+      "fill": "tinted",
+      "style": "bevel"
+    },
+    "scrollbar": {
+      "thumb": "#8f8710",
+      "track": "#070710",
+      "width": "auto"
+    },
+    "selection": {
+      "background": "#fcee0a",
+      "text": "#000000"
+    },
+    "topics": {
+      "background": "#092633",
+      "fill": "tinted",
+      "style": "bevel",
+      "text": "#fcee0a"
+    }
+  },
   "effects": {
     "echo": {
-      "durationMs": 160,
-      "offset": 3,
-      "opacity": 0.12
+      "durationMs": 200,
+      "offset": 2,
+      "opacity": 0.24
+    },
+    "glow": {
+      "strength": 0.35
     },
     "rail": {
-      "opacity": 0.22,
+      "opacity": 0.4,
       "shape": "notch",
-      "thickness": 2
-    },
-    "scanlines": {
-      "opacity": 0.015,
-      "spacing": 6
+      "thickness": 3
     }
   },
   "flavor": {
     "enabled": true,
     "locale": "en",
     "slots": {
-      "contributions.caption": "A year of gigs, one contribution at a time.",
-      "empty.issues.caption": "No signals in this view.",
-      "empty.pinned.caption": "Room for a first pick.",
-      "error.notFound.caption": "This route went dark. Try a familiar path.",
+      "error.notFound.caption": "Flatlined",
       "profile.activity.heading": "Gig log",
-      "profile.organizations.heading": "Crew outposts",
-      "profile.pinned.heading": "Signal picks",
-      "profile.tag": "// choom view"
+      "profile.organizations.heading": "Crews",
+      "profile.pinned.heading": "Preem picks",
+      "profile.tag": "// choom"
     }
   },
   "fonts": {
-    "accent": "rajdhani"
+    "body": "system",
+    "heading": "roboto-condensed"
   },
   "inspiredBy": "Cyberpunk: Edgerunners",
   "name": "Choom Circuit",
   "overrides": {
-    "accentMuted": "#2a3918",
-    "border": "#6b8179",
-    "controlBorder": "#6d837b",
-    "danger": "#ff8295",
-    "focus": "#d5ff35",
-    "hover": "#252e2c",
-    "inset": "#060d0c",
-    "link": "#7de9f5",
-    "mutedText": "#aac2b7",
-    "primaryBackground": "#d5ff35",
-    "primaryText": "#10170a",
-    "raised": "#1b2524",
-    "selectionBackground": "#d5ff35",
-    "selectionText": "#10170a",
-    "success": "#8de2a2",
-    "surface": "#142622",
-    "warning": "#ffd078"
+    "accentMuted": "#092633",
+    "border": "#2d2a52",
+    "controlBorder": "#787690",
+    "focus": "#fcee0a",
+    "hover": "#242633",
+    "inset": "#070710",
+    "link": "#fcee0a",
+    "mutedText": "#9a9ccc",
+    "primaryBackground": "#fcee0a",
+    "primaryText": "#000000",
+    "raised": "#1b1d2a",
+    "surface": "#11112a"
   },
   "schemaVersion": 1,
+  "shape": {
+    "avatar": {
+      "frame": {
+        "color": "#2d2a52",
+        "style": "solid",
+        "width": 1
+      },
+      "shape": "circle"
+    },
+    "borders": {
+      "color": "#2d2a52",
+      "style": "solid",
+      "width": 1
+    },
+    "buttons": {
+      "radius": 8,
+      "style": "bevel"
+    },
+    "corners": {
+      "radius": 12,
+      "style": "bevel"
+    },
+    "shadows": {
+      "blur": 14,
+      "color": "#fcee0a",
+      "offset": 0,
+      "opacity": 0.55,
+      "style": "neon"
+    }
+  },
   "tags": [
     "anime",
+    "neon",
     "dark"
   ],
-  "version": "1.0.0"
+  "typography": {
+    "headingLetterSpacing": 0.02,
+    "uppercaseHeadings": false
+  },
+  "version": "2.0.0"
 }
