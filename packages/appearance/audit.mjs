@@ -6,6 +6,7 @@ import { readFile, readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { FLAVOR_SLOT_IDS } from "../contracts/index.js";
 import { repairTheme, resolveTheme } from "../engine/index.js";
+import { FONT_ROLES } from "../format/index.js";
 import { BOX_EFFECTS, EFFECTS, FONTS, LIMITS, compileAppearance, effectCss, fontFaceCss, planAppearance, registryProblems } from "./index.js";
 import { EFFECT_PARAMETERS } from "./registry.js";
 import { codePoints, names, readWoff2, weightClass } from "./woff2.mjs";
@@ -34,7 +35,11 @@ export async function fontAudit(root) {
   const provenance = JSON.parse(await readFile(join(dir, "provenance.json"), "utf8"));
   const recorded = Object.fromEntries(provenance.fonts.map((font) => [font.id, font]));
   check(provenance.subset.replace(/\s/g, "") === schema.fontBudget.subset.replace(/^Latin\s*/, "").replace(/\s/g, ""), "provenance subset differs from the schema's");
-  check(FONTS.length === schema.fontBudget.families, `${FONTS.length} families, schema says ${schema.fontBudget.families}`);
+  // The schema's family count is the release inventory. Families whose files arrive later resolve
+  // natively (FONT_ROLES source "deferred" or "native-stack"); every "bundled" role has its file here.
+  const bundled = FONT_ROLES.filter((font) => font.source === "bundled").map((font) => font.id);
+  check(JSON.stringify(FONTS.map((font) => font.id)) === JSON.stringify(bundled), `bundled files ${FONTS.map((font) => font.id)} differ from the bundled roles ${bundled}`);
+  check(FONT_ROLES.filter((font) => font.id !== "system").length === schema.fontBudget.families, `${FONT_ROLES.length - 1} font roles, schema says ${schema.fontBudget.families}`);
   for (const entry of await readdir(dir, { withFileTypes: true })) {
     check(entry.isDirectory() ? FONTS.some((font) => font.id === entry.name) : FONT_FILES.has(entry.name), `unexpected assets/fonts/${entry.name}`);
   }
@@ -145,7 +150,9 @@ export async function themeAudit(root, documents) {
     const reduced = resolveTheme(repairTheme(theme, seed).theme, { seed, policy: "themed", reducedMotion: true, forcedColors: false });
     check(!/@keyframes/.test(compileAppearance(reduced, PREFS, "github")), `${label} keeps keyframes under reduced motion`);
     check(!/\.rs-fx-/.test(compileAppearance(resolved, { ...PREFS, effects: false }, "github")), `${label} keeps effects with Effects off`);
-    check(compileAppearance(resolved, { ...PREFS, extras: false }, "github") === "", `${label} keeps decoration with Flavor extras off`);
+    // Calm keeps solid paints, simple avatar corners and the role fonts, and draws no decoration.
+    const calm = compileAppearance(resolved, { ...PREFS, extras: false }, "github");
+    check(!/\.rs-|data-reskin-owned|gradient\(|0 0 12px/.test(calm), `${label} keeps decoration in Calm`);
     check(compileAppearance(resolved, { ...PREFS, enabled: false }, "github") === "", `${label} keeps decoration with the extension off`);
     const native = resolveTheme(theme, { seed: null, policy: "native-high-contrast", reducedMotion: false, forcedColors: false });
     check(compileAppearance(native, PREFS, "github") === "", `${label} decorates a native high-contrast island`);

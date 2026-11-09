@@ -3,6 +3,11 @@
 import { FLAVOR_SLOT_IDS } from "../contracts/index.js";
 import { BOX_EFFECTS, boundedParams, effectNodes } from "./effects.js";
 import { LIMITS } from "./registry.js";
+import { structuredPlan } from "./paint.js";
+
+// The profile banner is a decorative region, not a flavor slot: a host that can reserve one above
+// the profile passes an anchor for this slot.
+export const BANNER_SLOT = "profile.banner";
 
 // Each slot's shape: headings get an out-of-flow strip in the blank end of their row, the profile
 // tag a badge, captions an in-flow paragraph of copy with an optional out-of-flow edge at the
@@ -61,6 +66,9 @@ export function planAppearance(resolved, prefs, slots) {
   // Copy comes first: every slot with text gets its structural nodes before any decoration.
   let owned = entries.reduce((n, e) => n + (e.copy ? structural(e.kind, e.copy, false) : 0), 0);
   while (owned > LIMITS.maxOwnedNodes) owned -= structural(entries.pop().kind, true, false);
+  // Then the banner, one node, when Full draws a banner paint and the host reserved its place.
+  const banner = wanted.has(BANNER_SLOT) && Boolean(structuredPlan(resolved, prefs).banner) && owned < LIMITS.maxOwnedNodes;
+  if (banner) owned += 1;
   // Then decoration, slot by slot, while it fits. drift and echo move in the first box that has
   // them and stay still everywhere else.
   const moved = new Set();
@@ -84,13 +92,15 @@ export function planAppearance(resolved, prefs, slots) {
   }
   const planned = entries.filter((entry) => entry.copy || entry.effects.length);
   if (animated > LIMITS.maxAnimatedNodes) throw new Error(`Appearance plan animates ${animated} nodes; the limit is ${LIMITS.maxAnimatedNodes}`);
-  return { effective, slots: planned, owned, animated };
+  return { effective, slots: planned, banner, owned, animated };
 }
 
 /** CompiledStyle.ownedNodePlan entries for the given slots: one { slot, animated } per owned node. */
 export function ownedNodePlan(resolved, prefs, slots) {
   const out = [];
-  for (const entry of planAppearance(resolved, prefs, slots).slots) {
+  const plan = planAppearance(resolved, prefs, slots);
+  if (plan.banner) out.push({ slot: BANNER_SLOT, animated: false });
+  for (const entry of plan.slots) {
     for (let i = 0; i < structural(entry.kind, entry.copy, entry.effects.length); i++) out.push({ slot: entry.slot, animated: false });
     for (const effect of entry.effects) for (const node of effect.nodes) out.push({ slot: entry.slot, animated: node.animated });
   }

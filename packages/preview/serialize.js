@@ -7,7 +7,7 @@
 // fonts travel embedded, so the frame's policy allows no network request of any kind.
 
 const HTML_ELEMENTS = new Set([
-  "a", "article", "aside", "blockquote", "br", "code", "col", "colgroup", "div", "em", "i", "h1", "h2", "h3", "h4", "h5", "h6", "hr",
+  "a", "article", "aside", "blockquote", "br", "code", "col", "colgroup", "div", "em", "header", "i", "h1", "h2", "h3", "h4", "h5", "h6", "hr",
   "img", "li", "main", "nav", "ol", "p", "pre", "section", "span", "strong", "table", "tbody", "td", "th", "thead", "tr", "ul",
 ]);
 const SVG_ELEMENTS = new Set(["svg", "path", "circle", "rect", "line", "polyline", "polygon", "ellipse", "g"]);

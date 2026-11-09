@@ -3,9 +3,14 @@
 // pointer-transparent, and no GitHub element is edited, moved, relabeled or restyled.
 import { LIMITS } from "./registry.js";
 import { motionMs } from "./effects.js";
-import { planAppearance } from "./plan.js";
+import { BANNER_SLOT, planAppearance } from "./plan.js";
+import { CORNER_SLOTS, ownedThemeCss } from "./compile.js";
 
 export const OWNED_ATTRIBUTE = "data-reskin-owned";
+// The node a theme's owned CSS styles carries its exact slot, as the CSS compiler requires.
+export const SLOT_ATTRIBUTE = "data-reskin-slot";
+// Below this width an illustration has no reliable blank corner, and a corner caption flows.
+const CORNER_MIN_WIDTH = 480;
 const INSERTS = ["after", "append", "before"];
 // Defense in depth behind the adapter's own locator rules: never decorate inside authored or
 // interactive content, even if an anchor points there.
@@ -62,19 +67,29 @@ function obstacles(doc, host) {
   return rects;
 }
 
+// The nearest native element after node, skipping owned ones.
+function nativeAfter(node) {
+  let next = node.nextElementSibling;
+  while (next?.hasAttribute(OWNED_ATTRIBUTE)) next = next.nextElementSibling;
+  return next;
+}
+
 /**
  * Mounts the owned nodes for root's anchors. Returns { destroy(), play(), motionBoxes(), owned,
  * animated }. play() runs the theme's one finite pass of motion, for an explicit theme selection
  * only; it returns false and leaves the static state when motion is off, reduced, hidden or
- * offscreen, and stops a box's pass when the box leaves the viewport.
+ * offscreen, and stops a box's pass when the box leaves the viewport. `options` carries the same
+ * { css, cssAllowed } as compileAppearance, so a corner caption is framed only when the theme's
+ * CSS will place it.
  */
-export function mountAppearance(root, resolved, prefs, anchors) {
+export function mountAppearance(root, resolved, prefs, anchors, { css = null, cssAllowed = false } = {}) {
   const doc = root?.ownerDocument ?? root;
   const view = doc?.defaultView;
   if (!doc?.createElement || view?.matchMedia?.("(forced-colors: active)").matches) return noop;
   const usable = usableAnchors(root, anchors);
   const plan = planAppearance(resolved, prefs, usable.map((anchor) => anchor.slot));
-  if (!plan.slots.length) return noop;
+  if (!plan.slots.length && !plan.banner) return noop;
+  const styled = new Set(plan.slots.length ? (ownedThemeCss(resolved, prefs, css, cssAllowed)?.slots ?? []) : []);
 
   const created = [];
   const moving = [];
@@ -84,6 +99,23 @@ export function mountAppearance(root, resolved, prefs, anchors) {
     if (parent) parent.append(node);
     return node;
   };
+  const insert = (anchor, node) => {
+    if (anchor.insert === "after") anchor.host.after(node);
+    else if (anchor.insert === "before") anchor.host.before(node);
+    else anchor.host.append(node);
+  };
+  const face = (node, slot) => {
+    node.setAttribute(OWNED_ATTRIBUTE, slot);
+    node.setAttribute(SLOT_ATTRIBUTE, slot);
+    node.setAttribute("aria-hidden", "true");
+  };
+  if (plan.banner) {
+    const banner = make("div", "rs-banner");
+    banner.setAttribute(OWNED_ATTRIBUTE, BANNER_SLOT);
+    banner.setAttribute("aria-hidden", "true");
+    insert(usable.find((a) => a.slot === BANNER_SLOT), banner);
+    created.push(banner);
+  }
   for (const entry of plan.slots) {
     const anchor = usable.find((a) => a.slot === entry.slot);
     const caption = entry.kind === "caption";
@@ -105,6 +137,9 @@ export function mountAppearance(root, resolved, prefs, anchors) {
     }
     // Copy reads after the decoration so it stacks above it; a caption's copy leads its paragraph.
     if (copy) (caption ? wrapper.prepend(copy) : box.append(copy));
+    // The face a theme's CSS for this slot styles: a heading strip or tag badge, whose copy takes
+    // its type from it, or a caption's own copy.
+    if (caption ? copy : box) face(caption ? copy : box, entry.slot);
     // A zero-height wrapper leaves block flow untouched. In a flex row it fills the free space
     // beside the host; under grid or column layout it would become an item, so it leaves the
     // flow and hangs from the top right of the containing block instead. An appended wrapper's
@@ -116,9 +151,33 @@ export function mountAppearance(root, resolved, prefs, anchors) {
       if (/flex/.test(display) && !/column/.test(parent.flexDirection)) wrapper.setAttribute("data-rs-row", "");
       else if (!/^(block|flow-root|list-item)$/.test(display)) wrapper.setAttribute("data-rs-out", "");
     }
-    if (anchor.insert === "after") anchor.host.after(wrapper);
-    else if (anchor.insert === "before") anchor.host.before(wrapper);
-    else anchor.host.append(wrapper);
+    insert(anchor, wrapper);
+    // A corner caption the theme places: lay a frame exactly over the illustration and keep the
+    // copy in its blank corner. Narrow illustrations, a corner that covers native text or copy
+    // that does not fit the frame fall back to an ordinary flow caption.
+    if (caption && copy && CORNER_SLOTS.includes(entry.slot) && styled.has(entry.slot) && anchor.insert === "after") {
+      const edge = box;
+      edge?.remove();
+      const frame = make("span", "rs-frame", wrapper);
+      frame.append(copy);
+      wrapper.setAttribute("data-rs-corner", "");
+      const host = anchor.host.getBoundingClientRect();
+      const at = wrapper.getBoundingClientRect();
+      frame.style.cssText = `left:${host.left - at.left}px;bottom:${at.top - host.bottom}px;width:${host.width}px;height:${host.height}px`;
+      const rect = copy.getBoundingClientRect();
+      const fits = rect.left >= host.left && rect.right <= host.right && rect.top >= host.top && rect.bottom <= host.bottom;
+      const next = nativeAfter(wrapper);
+      const covered = [...textRects(doc, anchor.host, true), ...(next ? textRects(doc, next, true) : [])].some((other) => overlaps(rect, other));
+      if (host.width >= CORNER_MIN_WIDTH && fits && !covered) {
+        box = null;
+      } else {
+        wrapper.removeAttribute("data-rs-corner");
+        wrapper.setAttribute("data-rs-flow", "");
+        wrapper.prepend(copy);
+        frame.remove();
+        if (edge) wrapper.append(edge);
+      }
+    }
     // Decoration must land in blank space. An overlay may not cover the host's native text or a
     // native neighbor; a caption edge, which hangs out of flow at the end of its paragraph, may
     // not cover the caption's own copy either. If the first place is not blank, try the one
