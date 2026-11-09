@@ -159,6 +159,8 @@
     "locale": "en",
     "slots": {
       "error.notFound.caption": "Flatlined",
+      "footer.signoff": "// stay preem, choom",
+      "profile.achievements.heading": "Street cred",
       "profile.activity.heading": "Gig log",
       "profile.organizations.heading": "Crews",
       "profile.pinned.heading": "Preem picks",
@@ -172,6 +174,7 @@
   "inspiredBy": "Cyberpunk: Edgerunners",
   "name": "Choom Circuit",
   "overrides": {
+    "accentEmphasis": "#007880",
     "accentMuted": "#092633",
     "border": "#2d2a52",
     "controlBorder": "#787690",
