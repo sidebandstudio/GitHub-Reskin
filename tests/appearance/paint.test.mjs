@@ -7,7 +7,8 @@ import { test } from "node:test";
 import { repairTheme, resolveTheme } from "../../packages/engine/index.js";
 import { compileAppearance, ownedNodePlan, planAppearance } from "../../packages/appearance/index.js";
 import { ownedThemeCss } from "../../packages/appearance/compile.js";
-import { gradientFills, layerCss, repeatPeriod, structuredCss, structuredPlan } from "../../packages/appearance/paint.js";
+import { GUARD, THEMED_SWITCH, gradientFills, layerCss, repeatPeriod, structuredCss, structuredPlan } from "../../packages/appearance/paint.js";
+import { MODE_INDEX, compileGitHub } from "../../packages/primer/index.js";
 
 const ROOT = new URL("../../", import.meta.url).pathname;
 const read = (path) => JSON.parse(readFileSync(`${ROOT}${path}`, "utf8"));
@@ -30,7 +31,7 @@ test("Choom Full draws its four page layers, header rule, circle avatar frame an
   assert.equal(plan.banner, null);
   assert.deepEqual(plan.notes, []);
   const css = structuredCss(plan, r, "github");
-  assert.match(css, /body:not\(\[data-reskin-native\][^{]*\{background-color:#0a0a17!important;background-image:radial-gradient\(ellipse 80% 50%at 50% -10%/);
+  assert.match(css, /body:not\(\[data-color-mode\],\[data-reskin-native\][^{]*\{background-color:#0a0a17!important;background-image:radial-gradient\(ellipse 80% 50%at 50% -10%/);
   assert.match(css, /\.AppHeader:not\([^{]*\{background-color:#070710!important;background-image:linear-gradient\(0deg,#fcee0a 1px,transparent 1px\)/);
   assert.match(css, /\.avatar-user[^{]*\{box-shadow:0 0 0 1px #2d2a52!important\}/);
   assert.match(css, /letter-spacing:0\.02em!important/);
@@ -79,7 +80,7 @@ test("uppercase, tracking and a body role compile with code kept native", () => 
   assert.match(css, /\{text-transform:uppercase\}/);
   assert.match(css, /letter-spacing:0\.1em/);
   assert.match(css, /body:not\([^{]*\{letter-spacing:0\.04em\}/);
-  assert.match(css, /:is\(pre,code,kbd,samp,tt,textarea,[^)]*\)\{letter-spacing:normal\}/);
+  assert.match(css, /\n:where\(pre,code,kbd,samp,tt,var,textarea,[^)]*\)\{letter-spacing:normal\}/);
   assert.doesNotMatch(css, /!important/);
 });
 
@@ -101,11 +102,15 @@ test("structured gradients and patterns become bounded CSS layers; images wait f
 });
 
 test("text over a paint keeps 4.5:1 over every fill; hairline rules and unreadable colors are judged", () => {
-  assert.deepEqual(gradientFills("linear-gradient(0deg,#fcee0a 1px,transparent 1px)"), []);
-  assert.deepEqual(gradientFills("repeating-linear-gradient(color-mix(in srgb,#e4f3ff 2%,transparent)0 1px,transparent 1px 3px)"), []);
+  // A header's bottom rule, painted once at its border, is the one band left out.
+  assert.deepEqual(gradientFills("linear-gradient(0deg,#fcee0a 1px,transparent 1px)", { once: true }), []);
+  assert.deepEqual(gradientFills("linear-gradient(0deg,#fcee0a 1px,transparent 1px)"), [{ hex: "#fcee0a", alpha: 1 }]);
+  assert.deepEqual(gradientFills("repeating-linear-gradient(color-mix(in srgb,#e4f3ff 2%,transparent)0 1px,transparent 1px 3px)", { once: true }), [{ hex: "#e4f3ff", alpha: 0.02 }]);
   const [mixed] = gradientFills("radial-gradient(ellipse 80% 50%at 50% -10%,color-mix(in srgb,#00f0ff 10%,transparent),transparent 70%)");
   assert.deepEqual(mixed, { hex: "#00f0ff", alpha: 0.1 });
-  assert.deepEqual(gradientFills("linear-gradient(90deg,rgb(255 0 0 / 50%),#0000ff 40%)"), [{ hex: "#ff0000", alpha: 0.5 }, { hex: "#0000ff", alpha: 1 }]);
+  const ramp = gradientFills("linear-gradient(90deg,rgb(255 0 0 / 50%),#0000ff 40%)");
+  assert.deepEqual([ramp[0], ramp.at(-1)], [{ hex: "#ff0000", alpha: 0.5 }, { hex: "#0000ff", alpha: 1 }]);
+  assert.deepEqual(ramp.find((c) => c.alpha === 0.75), { hex: "#5500aa", alpha: 0.75 });
   assert.equal(gradientFills("linear-gradient(hsl(10 50% 50%),#000)"), null);
   const bright = resolve({ ...choom, backgrounds: { page: { color: "#0a0a17", layers: [{ gradient: { type: "linear", stops: [{ color: "#0a0a17", position: 0 }, { color: "#f0f0f0", position: 100 }] } }] } } });
   const loud = structuredPlan(bright, FULL);
@@ -164,4 +169,60 @@ test("an auto-sized straight repeating gradient is drawn as one tiled period, wh
   assert.equal(layerCss({ kind: "gradientCss", value, size: "50% 50%" }).size, "50% 50%");
   // The diagonal pattern is a tile too, never one image as large as the page.
   assert.equal(layerCss({ kind: "pattern", pattern: "diagonal", color: "#00f0ff", opacity: 0.1, size: 24 }).size, "24px 24px");
+});
+
+test("the structured rules follow the Primer adapter's island switch and never style an island's own element", () => {
+  const css = structuredCss(structuredPlan(r, FULL), r, "github");
+  assert.ok(css.startsWith(`@container style(${THEMED_SWITCH}: 1){\n`) && css.endsWith("\n}"));
+  assert.match(GUARD, /^:not\(\[data-color-mode\],/);
+  // The adapter raises the switch on the islands it themes and clears it on every other island.
+  const seed = MODE_INDEX.modes.dark;
+  const resolved = resolveTheme(repairTheme(choom, seed).theme, { seed, policy: "themed", reducedMotion: false, forcedColors: false });
+  const primer = compileGitHub(resolved, { seedMode: "dark", policy: "themed" }, FULL).css;
+  assert.ok(primer.includes(`${THEMED_SWITCH}:1 !important`));
+  assert.ok(primer.includes(`${THEMED_SWITCH}:initial !important`));
+});
+
+test("a role's inherited type stops at islands, native and protected UI, and code under it", () => {
+  const typed = resolve({ ...choom, typography: { uppercaseHeadings: true, headingLetterSpacing: 0.1 } });
+  const css = structuredCss(structuredPlan(typed, FULL), typed, "github");
+  const resets = css.split("\n").filter((rule) => rule.startsWith(":where(h1"));
+  assert.equal(resets.length, 2);
+  assert.match(resets[0], /\) :where\(\[data-color-mode\]:is\(\[data-light-theme\],\[data-dark-theme\]\),\[data-reskin-native\],\[data-reskin-protected\]\):where\(:not\(pre,code,[^{]*\{font-family:var\(--fontStack-sansSerif,[^;]*;letter-spacing:normal;text-transform:none\}$/);
+  assert.match(resets[1], /\) :where\(pre,code,kbd,samp,[^{]*\{letter-spacing:normal;text-transform:none\}$/);
+  // Resets only replace what is inherited: no specificity and no !important.
+  for (const rule of resets) assert.doesNotMatch(rule, /!important/);
+  // Tracking alone still keeps code's tracking, without a body role.
+  const tracked = structuredCss(structuredPlan(r, FULL), r, "github");
+  assert.match(tracked, /\) :where\(pre,code,[^{]*\{letter-spacing:normal\}/);
+});
+
+// A light theme with black ink on white, as in the review: every interior color decides.
+const light = resolve(read("themes/classics/solarized-light.reskin.json"));
+const inked = (paint) => ({ ...light, tokens: { ...light.tokens, canvas: "#ffffff", text: "#000000", mutedText: "#000000", link: "#000000" }, appearance: { ...light.appearance, colors: {}, paints: { page: paint } } });
+
+test("a bright repeating band counts against the text over it, on the page and in the header", () => {
+  const stripes = { kind: "gradientCss", value: "repeating-linear-gradient(#ffffff 0 2px,transparent 2px 3px)", size: "auto" };
+  const page = structuredPlan({ ...r, appearance: { ...r.appearance, paints: { ...r.appearance.paints, page: { color: "#0a0a17", layers: [stripes] } } } }, FULL);
+  assert.deepEqual([page.page.layers.length, page.page.dropped], [0, "contrast"]);
+  assert.deepEqual(gradientFills(stripes.value, { once: true }), [{ hex: "#ffffff", alpha: 1 }]);
+  const header = structuredPlan({ ...r, appearance: { ...r.appearance, paints: { ...r.appearance.paints, header: { color: "#070710", layers: [stripes] } } } }, FULL);
+  assert.deepEqual([header.header.layers.length, header.header.dropped], [0, "contrast"]);
+  // A thin band in a tiled layer repeats too.
+  const tile = { kind: "gradientCss", value: "linear-gradient(#ffffff 2px,transparent 2px)", size: "3px 3px" };
+  assert.equal(structuredPlan({ ...r, appearance: { ...r.appearance, paints: { ...r.appearance.paints, page: { color: "#0a0a17", layers: [tile] } } } }, FULL).page.dropped, "contrast");
+  // Choom's own faint scanlines and grid still pass.
+  assert.equal(structuredPlan(r, FULL).page.dropped, null);
+});
+
+test("a gradient whose stops pass but whose middle fails is not drawn under text", () => {
+  const stops = [{ color: "#ff0000", position: 0 }, { color: "#009900", position: 100 }];
+  const structured = structuredPlan(inked({ color: "#ffffff", layers: [{ kind: "gradient", type: "linear", angle: 90, position: "center", stops, opacity: 1 }] }), FULL);
+  assert.deepEqual([structured.page.layers.length, structured.page.dropped], [0, "contrast"]);
+  const css = structuredPlan(inked({ color: "#ffffff", layers: [{ kind: "gradientCss", value: "linear-gradient(90deg,#ff0000,#009900)", size: "auto" }] }), FULL);
+  assert.deepEqual([css.page.layers.length, css.page.dropped], [0, "contrast"]);
+  // The midpoint is the browser's own: rgb(127.5 76.5 0).
+  assert.ok(gradientFills("linear-gradient(90deg,#ff0000,#009900)").some((c) => c.hex === "#804d00"));
+  // Each endpoint alone reads.
+  for (const color of ["#ff0000", "#009900"]) assert.equal(structuredPlan(inked({ color: "#ffffff", layers: [{ kind: "gradientCss", value: `linear-gradient(${color},${color})`, size: "auto" }] }), FULL).page.dropped, null);
 });

@@ -42,13 +42,14 @@ test("the styled frame is scriptless, has an opaque origin and holds the complet
   expect(inside.scripts).toBe(0);
   expect(inside.layers).toEqual(["fixture", "native", "theme", "fonts", "appearance"]);
   expect(inside.csp).toBe("default-src 'none'; img-src data:; font-src data:; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'");
-  // The layout document is same-origin but never shown and never styled by the compiled theme.
+  // The layout document is same-origin but never shown and never styled by the compiled theme;
+  // only the root's island switch stands for it, so the structured rules lay out as shown.
   const layout = await page.evaluate(() => {
     const frame = document.querySelector("#preview iframe[aria-hidden]");
     const doc = frame.contentDocument;
     return { sandbox: frame.getAttribute("sandbox"), inert: frame.hasAttribute("inert"), visibility: getComputedStyle(frame).visibility, theme: doc.querySelector('style[data-layer="theme"]').textContent, scripts: doc.scripts.length };
   });
-  expect(layout).toEqual({ sandbox: "allow-same-origin", inert: true, visibility: "hidden", theme: "", scripts: 0 });
+  expect(layout).toEqual({ sandbox: "allow-same-origin", inert: true, visibility: "hidden", theme: ":root{--reskin-on:1}", scripts: 0 });
 });
 
 test("each update completes in a new frame, coalesces bursts and cancels obsolete jobs", async ({ page, fixtureApp }) => {
@@ -406,6 +407,8 @@ test("completed previews stay within 50 ms at the 95th percentile across 50 edit
     const summary = `${label}: completed preview p50 ${p50.toFixed(1)} ms, p95 ${p95.toFixed(1)} ms, max ${max.toFixed(1)} ms over ${edits.length}; ${verdict} the 50 ms budget; load ${loadavg().map((n) => n.toFixed(2)).join(" ")}`;
     info.annotations.push({ type: "latency", description: summary });
     console.log(`[${info.project.name}] ${summary}`);
+    // A measurement that does not fail stays visible in every report as tracked work for C3b.
+    if (!enforced) info.annotations.push({ type: "tracked (C3b)", description: `Firefox preview p95 ${p95.toFixed(1)} ms for ${label} against 50 ms; enforced once C5 consumes C3b's preview compile target` });
     if (enforced) expect(p95, label).toBeLessThanOrEqual(50);
   }
 });
