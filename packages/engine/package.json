@@ -2,13 +2,17 @@
   "name": "@github-reskin/engine",
   "version": "1.0.0",
   "private": true,
-  "description": "GitHub Reskin color engine: mode-seeded resolution, source repair and the contrast pair matrix.",
+  "description": "GitHub Reskin color engine: mode-seeded resolution, the appearance record, source repair and the contrast pair matrix.",
   "license": "MIT",
   "type": "module",
   "exports": {
     ".": {
       "types": "./index.d.ts",
       "default": "./index.js"
+    },
+    "./viewer": {
+      "types": "./index.d.ts",
+      "default": "./viewer.js"
     },
     "./pairs.json": "./pairs.json"
   },

@@ -1,10 +1,19 @@
 // Validation against the bundled schema through the precompiled standalone validator, plus the
 // content rules JSON Schema cannot express. Errors become Issues with plain-language messages.
-import { ISSUE_CODES } from "../contracts/index.js";
+// After the schema passes, the semantic layer runs: nondecreasing gradient stops, raster header
+// and document byte/pixel admission, the shared CSS byte budget and mandatory AST admission of
+// css and each gradientCss layer. Only those exact paths and the $schema hint skip the
+// resource-string scan; each goes to its own admission instead.
+import { ISSUE_CODES, LIMITS } from "../contracts/index.js";
+import { admitCss, admitGradientCss } from "./css/admission.js";
 import { pointer } from "./json.js";
+import { rasterIssues } from "./raster.js";
 import validateSchema from "./schema-validator.js";
 
 const COLOR_PATH = /^\/(?:colors|overrides(?:\/syntax)?)\/[^/]+$|^\/contributions\/levels\/\d$/;
+// Strings with their own admission rather than the resource scan.
+const ADMITTED_STRING = /^\/(?:\$schema|css)$|^\/backgrounds\/(?:page|profileBanner|header)\/layers\/\d+\/(?:image\/data|gradientCss\/(?:value|size))$/;
+const LAYER_BRANCHES = ["gradient", "pattern", "image", "gradientCss"];
 const CONTROL = /[\u0000-\u001f\u007f-\u009f‪-‮⁦-⁩]/;
 // Web addresses and resource schemes. The exact $schema hint is the only URL a theme may carry.
 // Each alternative here starts at a word boundary or a literal, so matching stays linear; a
@@ -30,6 +39,10 @@ const issue = (code, path, message) => ({ code, path, message, severity: "error"
 
 function describe(error, value) {
   const { keyword, instancePath: path, params } = error;
+  if (keyword === "pattern" && /\/hexColor\//.test(error.schemaPath)) return issue(ISSUE_CODES.invalidValue, path, "Colors must look like #18212b: six hex digits, no transparency, names or code.");
+  if (keyword === "pattern" && /\/image\/data$/.test(path)) return issue(ISSUE_CODES.imageData, path, "Images are PNG, JPEG, WebP or GIF data in canonical base64; links, SVG and other files are not allowed.");
+  if (keyword === "oneOf") return issue(ISSUE_CODES.invalidValue, path, "A background layer holds exactly one gradient, pattern, image or gradientCss.");
+  if (/^\/contributions\/glow\/levels(?:\/\d+)?$/.test(path)) return issue(keyword === "uniqueItems" ? ISSUE_CODES.invalidValue : ISSUE_CODES.outOfBounds, "/contributions/glow/levels", "Glow levels are distinct whole numbers from 1 to 4.");
   const at = (key) => pointer(path, key);
   switch (keyword) {
     case "additionalProperties": {
@@ -38,6 +51,8 @@ function describe(error, value) {
       if (path === "/flavor/slots") return issue(ISSUE_CODES.unknownField, at(key), `${key} isn't one of the places Reskin can add text.`);
       if (path === "/overrides") return issue(ISSUE_CODES.unknownField, at(key), `${key} isn't a color a theme can set. Reskin works out that color itself.`);
       if (/^\/effects\/[^/]+$/.test(path)) return issue(ISSUE_CODES.unknownField, at(key), `This effect has no ${key} setting.`);
+      if (/^\/(?:code|overrides)\/syntax$/.test(path)) return issue(ISSUE_CODES.unknownField, at(key), `${key} isn't one of the syntax roles a theme can color.`);
+      if (path === "/code/diff" || path === "/code/ansi") return issue(ISSUE_CODES.unknownField, at(key), `${key} isn't one of the ${path === "/code/diff" ? "diff" : "terminal"} colors a theme can set.`);
       return issue(ISSUE_CODES.unknownField, at(key), `"${key}" isn't part of the theme format. Reskin theme files hold colors and a few named options, not code or custom fields.`);
     }
     case "required": {
@@ -55,7 +70,8 @@ function describe(error, value) {
       if (path === "/$schema") return issue(ISSUE_CODES.invalidValue, path, "This schema link isn't Reskin's. Remove it to use the theme.");
       return issue(ISSUE_CODES.invalidValue, path, `This value must be ${JSON.stringify(params.allowedValue)}.`);
     case "enum":
-      if (path === "/fonts/accent") return issue(ISSUE_CODES.invalidValue, path, "This font isn't included. Preview with GitHub's default font, or choose one of Reskin's fonts.");
+      if (/^\/fonts\/(?:accent|heading)$/.test(path)) return issue(ISSUE_CODES.invalidValue, path, "This font isn't included. Preview with GitHub's default font, or choose one of Reskin's fonts.");
+      if (path === "/fonts/body") return issue(ISSUE_CODES.invalidValue, path, "Body text uses system or one of Reskin's readable body fonts.");
       if (path === "/base") return issue(ISSUE_CODES.invalidValue, path, 'base must be "dark" or "light".');
       return issue(ISSUE_CODES.invalidValue, path, `Choose one of: ${params.allowedValues.join(", ")}.`);
     case "pattern":
@@ -102,12 +118,61 @@ function valueAt(root, path) {
   return value;
 }
 
-// Resource-like strings anywhere except the exact $schema hint, which the schema already pins.
+// Resource-like strings anywhere except the paths with their own admission: the exact $schema
+// hint, which the schema pins, embedded raster data and the CSS fields.
 function resourceIssues(value, path, out) {
   if (typeof value === "string") {
-    if (path !== "/$schema" && (hasScheme(value) || RESOURCE.test(value))) out.push(issue(ISSUE_CODES.resourceString, path, "Theme text can't include links, web addresses or code."));
+    if (!ADMITTED_STRING.test(path) && (hasScheme(value) || RESOURCE.test(value))) out.push(issue(ISSUE_CODES.resourceString, path, "Theme text can't include links, web addresses or code."));
   } else if (Array.isArray(value)) value.forEach((item, index) => resourceIssues(item, pointer(path, index), out));
   else if (value && typeof value === "object") for (const [key, item] of Object.entries(value)) resourceIssues(item, pointer(path, key), out);
+}
+
+// A failed paint layer reports every oneOf branch. Keep the branch the layer chose by its key.
+function layerBranchNoise(error, root) {
+  const match = /^#\/\$defs\/paintLayer\/oneOf\/(\d)\//.exec(error.schemaPath);
+  if (!match) return false;
+  const at = /^(\/backgrounds\/[^/]+\/layers\/\d+)/.exec(error.instancePath)?.[1];
+  const layer = at && valueAt(root, at);
+  const chosen = layer && typeof layer === "object" ? LAYER_BRANCHES.findIndex((key) => Object.hasOwn(layer, key)) : -1;
+  return chosen >= 0 && Number(match[1]) !== chosen;
+}
+
+const utf8 = (text) => new TextEncoder().encode(text).length;
+
+// Rules a schema-valid theme still has to meet.
+function semanticIssues(theme) {
+  const issues = [];
+  const cssSources = [];
+  for (const target of ["page", "profileBanner", "header"]) {
+    (theme.backgrounds?.[target]?.layers ?? []).forEach((layer, index) => {
+      const at = `/backgrounds/${target}/layers/${index}`;
+      const stops = layer.gradient?.stops;
+      if (stops && stops.some((stop, i) => i > 0 && stop.position < stops[i - 1].position)) {
+        issues.push(issue(ISSUE_CODES.gradientOrder, `${at}/gradient/stops`, "Gradient stop positions must not go backwards."));
+      }
+      if (layer.gradientCss) cssSources.push({ at: `${at}/gradientCss`, layer: layer.gradientCss });
+    });
+  }
+  issues.push(...rasterIssues(theme));
+  const sourceBytes = (typeof theme.css === "string" ? utf8(theme.css) : 0) + cssSources.reduce((sum, { layer }) => sum + utf8(layer.value) + utf8(layer.size ?? ""), 0);
+  if (sourceBytes > LIMITS.cssUtf8Bytes) return [...issues, issue(ISSUE_CODES.outOfBounds, "/css", `Advanced CSS and gradientCss layers come to at most ${LIMITS.cssUtf8Bytes} UTF-8 bytes together.`)];
+  let outputBytes = 0;
+  for (const { at, layer } of cssSources) {
+    if (utf8(layer.value) > LIMITS.gradientCssUtf8Bytes) {
+      issues.push(issue(ISSUE_CODES.outOfBounds, `${at}/value`, `A gradientCss value is at most ${LIMITS.gradientCssUtf8Bytes} UTF-8 bytes.`));
+      continue;
+    }
+    const result = admitGradientCss(layer, at);
+    if (!result.ok) issues.push(...result.issues);
+    else outputBytes += utf8(result.value) + utf8(result.size ?? "");
+  }
+  if (typeof theme.css === "string") {
+    const result = admitCss(theme.css, "/css");
+    if (!result.ok) issues.push(...result.issues);
+    else outputBytes += result.value.bytes;
+  }
+  if (outputBytes > LIMITS.cssUtf8Bytes) issues.push(issue(ISSUE_CODES.outOfBounds, "/css", `Advanced CSS and gradientCss layers expand to more than ${LIMITS.cssUtf8Bytes} UTF-8 bytes together.`));
+  return issues;
 }
 
 const order = (a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : a.code < b.code ? -1 : a.code > b.code ? 1 : 0);
@@ -118,14 +183,17 @@ const order = (a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : a.code < b
  */
 export function validateTheme(value) {
   const issues = [];
-  if (!validateSchema(value)) {
+  const schemaValid = validateSchema(value);
+  if (!schemaValid) {
     for (const error of validateSchema.errors) {
       // Ajv reports a failed $ref branch and its parent; describe the most specific error only.
-      if (error.keyword === "if" || error.keyword === "$ref") continue;
+      if (error.keyword === "if" || error.keyword === "$ref" || layerBranchNoise(error, value)) continue;
+      if (error.keyword === "oneOf" && validateSchema.errors.some((e) => e !== error && e.instancePath.startsWith(error.instancePath) && !layerBranchNoise(e, value) && e.keyword !== "oneOf")) continue;
       issues.push(describe(error, valueAt(value, error.instancePath)));
     }
   }
   resourceIssues(value, "", issues);
+  if (schemaValid && !issues.length) issues.push(...semanticIssues(value));
   if (!issues.length) return { ok: true, theme: value };
   const seen = new Set();
   const unique = issues.filter((i) => {

@@ -1,0 +1,158 @@
+{
+  "schemaVersion": 1,
+  "name": "Midnight signal",
+  "inspiredBy": "Original night-radio palette",
+  "description": "Midnight panels, yellow controls and cyan signals.",
+  "tags": [
+    "dark",
+    "signal"
+  ],
+  "base": "dark",
+  "colors": {
+    "background": "#0a0a17",
+    "text": "#e4f3ff",
+    "accent": "#fcee0a",
+    "contribution": "#00f0ff"
+  },
+  "overrides": {
+    "surface": "#11112a",
+    "inset": "#070710",
+    "mutedText": "#9a9ccc",
+    "border": "#2d2a52",
+    "primaryBackground": "#fcee0a",
+    "primaryText": "#0a0a17"
+  },
+  "fonts": {
+    "heading": "oxanium",
+    "body": "atkinson-hyperlegible"
+  },
+  "backgrounds": {
+    "page": {
+      "layers": [
+        {
+          "gradient": {
+            "type": "radial",
+            "position": "top",
+            "stops": [
+              {
+                "color": "#00f0ff",
+                "position": 0
+              },
+              {
+                "color": "#0a0a17",
+                "position": 70
+              }
+            ],
+            "opacity": 0.1
+          }
+        },
+        {
+          "pattern": {
+            "kind": "grid",
+            "color": "#00f0ff",
+            "opacity": 0.05,
+            "size": 48
+          }
+        },
+        {
+          "pattern": {
+            "kind": "scanlines",
+            "color": "#e4f3ff",
+            "opacity": 0.02,
+            "size": 3
+          }
+        }
+      ]
+    },
+    "header": {
+      "color": "#070710"
+    }
+  },
+  "shape": {
+    "corners": {
+      "style": "bevel",
+      "radius": 12
+    },
+    "buttons": {
+      "style": "bevel",
+      "radius": 8
+    },
+    "shadows": {
+      "style": "neon",
+      "color": "#fcee0a",
+      "opacity": 0.55,
+      "blur": 14
+    },
+    "avatar": {
+      "shape": "circle",
+      "frame": {
+        "style": "solid",
+        "width": 2,
+        "color": "#2d2a52"
+      }
+    }
+  },
+  "typography": {
+    "uppercaseHeadings": true,
+    "headingLetterSpacing": 0.06,
+    "bodyLetterSpacing": 0
+  },
+  "details": {
+    "selection": {
+      "background": "#fcee0a",
+      "text": "#0a0a17"
+    },
+    "scrollbar": {
+      "thumb": "#b4aa18",
+      "track": "#070710",
+      "width": "auto"
+    },
+    "topics": {
+      "style": "bevel",
+      "fill": "tinted"
+    },
+    "labels": {
+      "style": "bevel",
+      "fill": "outline"
+    }
+  },
+  "code": {
+    "background": "#0a0a17",
+    "text": "#e4f3ff",
+    "syntax": {
+      "comment": "#9a9ccc",
+      "keyword": "#fcee0a",
+      "string": "#75e9d5",
+      "function": "#00f0ff",
+      "number": "#ffb86c",
+      "variable": "#e4f3ff",
+      "type": "#c4a7ff",
+      "operator": "#fcee0a",
+      "punctuation": "#bcc0dc",
+      "constant": "#ffb86c",
+      "tag": "#fcee0a",
+      "attribute": "#00f0ff",
+      "regex": "#75e9d5",
+      "escape": "#ffb86c",
+      "invalid": "#ff9aa5",
+      "inserted": "#9ee4b0",
+      "deleted": "#ff9aa5",
+      "markupHeading": "#fcee0a",
+      "markupEmphasis": "#e4f3ff",
+      "markupLink": "#00f0ff",
+      "markupQuote": "#bcc0dc",
+      "markupList": "#fcee0a"
+    },
+    "diff": {
+      "addedBackground": "#102a27",
+      "addedText": "#9ee4b0",
+      "removedBackground": "#321820",
+      "removedText": "#ff9aa5",
+      "wordAddedBackground": "#174039",
+      "wordAddedText": "#bff5ce",
+      "wordRemovedBackground": "#51232f",
+      "wordRemovedText": "#ffb7bf"
+    }
+  },
+  "css": ".AppHeader { box-shadow: 0 1px 0 var(--reskin-accent); }"
+}

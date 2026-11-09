@@ -1,6 +1,8 @@
-// Frozen renderer 1 declarations, copied from ARCHITECTURE.md "Frozen engine declarations".
-// This is the only definition of these types; index.d.ts re-exports them. Changing one is a
-// contract change that needs owner review before consumers change.
+// Frozen renderer 1 declarations, copied from ARCHITECTURE.md "Frozen engine declarations", with
+// the Revision 4 expansion: the resolved appearance record, extended syntax roles, heading/body
+// fonts, pair-matrix version 2 and the expansion/sanitizer versions. ModeSeed and ColorSet are
+// unchanged. This is the only definition of these types; index.d.ts re-exports them. Changing one
+// is a contract change that needs owner review before consumers change.
 //
 // Inputs are immutable: deep-freeze them before use. Hex strings are validated at runtime; the
 // template type alone is insufficient. No extra color keys are allowed.
@@ -17,7 +19,35 @@ export type Family = "standard" | "colorblind" | "tritanopia";
 export type Policy = "themed" | "native-high-contrast" | "native-unknown";
 export type DeepReadonly<T> = T extends object ? { readonly [K in keyof T]: DeepReadonly<T[K]> } : T;
 export type GraphRamp = readonly [Hex, Hex, Hex, Hex, Hex];
+/** The seven core roles every ModeSeed carries. */
 export type SyntaxRole = "comment" | "keyword" | "string" | "function" | "number" | "variable" | "type";
+/** The fifteen added roles, resolved into the appearance record from core roles when omitted. */
+export type ExtendedSyntaxRole =
+  | "operator"
+  | "punctuation"
+  | "constant"
+  | "tag"
+  | "attribute"
+  | "regex"
+  | "escape"
+  | "invalid"
+  | "inserted"
+  | "deleted"
+  | "markupHeading"
+  | "markupEmphasis"
+  | "markupLink"
+  | "markupQuote"
+  | "markupList";
+export type ThemeSyntaxRole = SyntaxRole | ExtendedSyntaxRole;
+export type DiffRole =
+  | "addedBackground"
+  | "addedText"
+  | "removedBackground"
+  | "removedText"
+  | "wordAddedBackground"
+  | "wordAddedText"
+  | "wordRemovedBackground"
+  | "wordRemovedText";
 export type SemanticRole = "success" | "danger" | "warning" | "done" | "sponsor";
 export type AnsiRole =
   | "black"
@@ -145,21 +175,41 @@ export type ResolveContext = DeepReadonly<{
   reducedMotion: boolean;
   forcedColors: boolean;
 }>;
+/** Paired appearance colors. They extend resolved output, never the ModeSeed inventory. */
+export interface AppearanceColors {
+  syntax: Record<ExtendedSyntaxRole, Hex>;
+  page: { background: Hex };
+  header: { background: Hex; text: Hex };
+  scrollbar: { thumb: Hex; track: Hex };
+  labels: { background: Hex; text: Hex; border: Hex };
+  topics: { background: Hex; text: Hex; border: Hex };
+  graph: { cellBoundary: Hex };
+}
+export type AppearanceColorPath =
+  | `/appearance/colors/syntax/${ExtendedSyntaxRole}`
+  | "/appearance/colors/page/background"
+  | `/appearance/colors/header/${"background" | "text"}`
+  | `/appearance/colors/scrollbar/${"thumb" | "track"}`
+  | `/appearance/colors/${"labels" | "topics"}/${"background" | "text" | "border"}`
+  | "/appearance/colors/graph/cellBoundary";
+/** Any color a pair record or render repair can name. */
+export type PairPath = ColorPath | AppearanceColorPath;
 export interface PairRecord {
   id: string;
-  foreground: ColorPath;
-  backgrounds: readonly [ColorPath, ...ColorPath[]];
+  foreground: PairPath;
+  backgrounds: readonly [PairPath, ...PairPath[]];
   minimum: 3 | 4.5;
   purpose: "text" | "boundary" | "focus";
 }
+/** Version 2 keeps every version 1 record, first and unchanged, and adds the appearance pairs. */
 export interface PairMatrix {
-  version: 1;
+  version: 2;
   records: readonly PairRecord[];
 }
 export interface PairResult {
   id: string;
-  foreground: ColorPath;
-  background: ColorPath;
+  foreground: PairPath;
+  background: PairPath;
   ratio: number;
   minimum: 3 | 4.5;
   passed: boolean;
@@ -183,10 +233,20 @@ export type OverrideColorKey =
   | "danger"
   | "warning"
   | "done";
+/** Every portable color field source repair may write. */
 export type SourceColorPath =
   | `/colors/${"background" | "text" | "accent" | "contribution"}`
   | `/overrides/${OverrideColorKey}`
-  | `/overrides/syntax/${SyntaxRole}`;
+  | `/overrides/syntax/${ThemeSyntaxRole}`
+  | `/code/syntax/${ThemeSyntaxRole}`
+  | `/code/${"background" | "text"}`
+  | `/code/ansi/${AnsiRole}`
+  | `/code/diff/${DiffRole}`
+  | "/details/headerText"
+  | `/details/selection/${"background" | "text"}`
+  | `/details/scrollbar/${"thumb" | "track"}`
+  | `/details/${"labels" | "topics"}/${"background" | "text" | "border"}`
+  | "/contributions/cellBoundary";
 export type Repair =
   | {
       persistence: "source";
@@ -195,7 +255,8 @@ export type Repair =
       after: Hex | GraphRamp;
       reason: string;
     }
-  | { persistence: "render"; path: ColorPath; before: Hex; after: Hex; reason: string };
+  | { persistence: "render"; path: PairPath; before: Hex; after: Hex; reason: string };
+/** Every heading font the schema names. FONT_INVENTORY says which ship files in this build. */
 export type FontId =
   | "system"
   | "rajdhani"
@@ -205,7 +266,19 @@ export type FontId =
   | "cormorant-garamond"
   | "josefin-sans"
   | "bungee"
-  | "space-grotesk";
+  | "space-grotesk"
+  | "bebas-neue"
+  | "cinzel"
+  | "orbitron"
+  | "oxanium"
+  | "ibm-plex-sans"
+  | "source-sans-3"
+  | "nunito-sans"
+  | "atkinson-hyperlegible"
+  | "roboto-condensed"
+  | "barlow";
+/** Readable families that may also style body text and rendered prose. */
+export type BodyFontId = "system" | "ibm-plex-sans" | "source-sans-3" | "nunito-sans" | "atkinson-hyperlegible" | "barlow";
 export interface ResolvedEffects {
   glow?: { strength: number };
   grid?: { opacity: number; size: number };
@@ -232,9 +305,87 @@ export interface ResolvedFlavor {
   locale: "en";
   slots: Partial<Record<FlavorSlotId, string>>;
 }
+export type GradientPosition = "center" | "top" | "bottom" | "left" | "right" | "top-left" | "top-right" | "bottom-left" | "bottom-right";
+/**
+ * One resolved background layer, nearest first. Images carry the SHA-256 of their decoded bytes
+ * and the source pointer of their data, never base64; gradientCss carries its canonical admitted
+ * value.
+ */
+export type ResolvedPaintLayer =
+  | { kind: "gradient"; type: "linear" | "radial"; angle: number; position: GradientPosition; stops: { color: Hex; position: number }[]; opacity: number }
+  | { kind: "pattern"; pattern: "grid" | "scanlines" | "dots" | "diagonal" | "grain"; color: Hex; opacity: number; size: number }
+  | {
+      kind: "image";
+      asset: string;
+      source: string;
+      mime: "image/png" | "image/jpeg" | "image/webp" | "image/gif";
+      width: number;
+      height: number;
+      fit: "cover" | "contain" | "tile" | "stretch";
+      position: "center" | "top" | "bottom" | "left" | "right";
+      opacity: number;
+    }
+  | { kind: "gradientCss"; value: string; size: string | null };
+export interface ResolvedPaint {
+  color: Hex | null;
+  layers: ResolvedPaintLayer[];
+}
+export interface ResolvedFontRole {
+  /** The font that renders. A deferred family resolves to "system". */
+  id: FontId;
+  requested: FontId;
+  /** "bundled" loads the family's file; "native-stack" and "system" load none. */
+  source: "system" | "bundled" | "native-stack";
+  family: string | null;
+  /**
+   * The reviewed native font-family list. A compiler puts its own @font-face family first for a
+   * bundled face; for "native-stack" this is the whole list. null for "system": keep GitHub's font.
+   */
+  fallback: string | null;
+  weights: number[];
+}
+/** A resolution note: a deferred font, for example. Notes never change portable source. */
+export interface AppearanceNote {
+  code: string;
+  path: string;
+  message: string;
+}
+/**
+ * The closed Revision 4 record. Groups a theme omits are null, so a v1 document keeps GitHub's
+ * native shape, type and paints. Preferences (Full/Calm, Fonts, Effects) and CSS consent apply
+ * when compiling, never here.
+ */
+export interface ResolvedAppearance {
+  colors: AppearanceColors;
+  paints: { page: ResolvedPaint | null; profileBanner: ResolvedPaint | null; header: ResolvedPaint | null };
+  shape: {
+    corners: { style: "sharp" | "rounded" | "bevel" | "pill"; radius: number } | null;
+    borders: { width: number; style: "solid" | "dashed" | "double"; color: Hex } | null;
+    shadows: { style: "none" | "soft" | "hard" | "neon"; color: Hex; opacity: number; blur: number; offset: number } | null;
+    buttons: { style: "filled" | "outline" | "soft" | "bevel"; radius: number } | null;
+    avatar: { shape: "circle" | "square" | "rounded" | "bevel" | "arch"; frame: { style: "none" | "solid" | "double" | "neon"; width: number; color: Hex } | null } | null;
+  };
+  fonts: { heading: ResolvedFontRole; body: ResolvedFontRole };
+  typography: { uppercaseHeadings: boolean; headingLetterSpacing: number; bodyLetterSpacing: number } | null;
+  graph: {
+    cellStyle: "square" | "round" | "glow" | "diamond";
+    cellRadius: number | null;
+    glow: { radius: number; opacity: number; levels: (1 | 2 | 3 | 4)[]; color: Hex | null } | null;
+  };
+  details: {
+    scrollbarWidth: "auto" | "thin";
+    labels: { style: "sharp" | "rounded" | "bevel" | "pill" | null; fill: "solid" | "tinted" | "outline" } | null;
+    topics: { style: "sharp" | "rounded" | "bevel" | "pill" | null; fill: "solid" | "tinted" | "outline" } | null;
+  };
+  /** Identity of the admitted advanced CSS. The canonical text stays in the source document. */
+  css: { hash: string; bytes: number; sanitizerVersion: 1; policyHash: string } | null;
+  notes: AppearanceNote[];
+}
 export type ThemedResolved = DeepReadonly<
   ColorSet & {
     rendererVersion: 1;
+    expansionVersion: 1;
+    sanitizerVersion: 1;
     sourceHash: string;
     seedId: ModeId;
     seedHash: string;
@@ -244,12 +395,15 @@ export type ThemedResolved = DeepReadonly<
     effects: ResolvedEffects;
     flavor: ResolvedFlavor;
     motionAllowed: boolean;
+    appearance: ResolvedAppearance;
     repairs: Repair[];
     pairAudit: PairResult[];
   }
 >;
 export type NativeResolved = DeepReadonly<{
   rendererVersion: 1;
+  expansionVersion: 1;
+  sanitizerVersion: 1;
   sourceHash: string;
   seedId: ModeId | null;
   seedHash: string | null;
@@ -264,13 +418,17 @@ export type NativeResolved = DeepReadonly<{
   effects: Record<string, never>;
   flavor: { enabled: false; locale: "en"; slots: Record<string, never> };
   motionAllowed: false;
+  appearance: null;
   repairs: readonly [];
   pairAudit: readonly [];
 }>;
 export type ResolvedTheme = ThemedResolved | NativeResolved;
 export type PreviewView = "profile" | "repo" | "diff" | "empty" | "404";
+export type AppearanceMode = "full" | "calm";
 export type EffectivePreferences = DeepReadonly<{
   enabled: boolean;
+  /** The primary Full / Calm switch. Absent means the old extras flag decides: false is Calm. */
+  appearance?: AppearanceMode;
   extras: boolean;
   text: boolean;
   motion: boolean;

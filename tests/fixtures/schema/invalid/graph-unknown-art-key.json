@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "name": "Art additions",
+  "base": "light",
+  "colors": {
+    "background": "#f6f2e8",
+    "text": "#27372d",
+    "accent": "#446851"
+  },
+  "fonts": {
+    "heading": "roboto-condensed",
+    "body": "barlow"
+  },
+  "shape": {
+    "avatar": {
+      "shape": "arch"
+    }
+  },
+  "contributions": {
+    "levels": [
+      "#eeeeee",
+      "#bbbbbb",
+      "#888888",
+      "#555555",
+      "#222222"
+    ],
+    "cellStyle": "diamond",
+    "cellRadius": 2,
+    "cellBoundary": "#555555",
+    "glow": {
+      "radius": 4,
+      "opacity": 0.4,
+      "levels": [
+        4
+      ],
+      "color": "#71e0ff"
+    },
+    "diamondScale": 5
+  }
+}

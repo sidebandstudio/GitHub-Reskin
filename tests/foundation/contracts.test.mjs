@@ -49,12 +49,19 @@ test("deferred editor and settings features have no contract", () => {
   for (const [file, text] of Object.entries(sources)) assert.doesNotMatch(text, deferred, file);
   assert.deepEqual(
     [...contracts.EDITOR_ACTION_TYPES],
-    ["setColor", "setBase", "setFont", "toggleEffect", "setFlavorEnabled", "setFlavorSlot", "undo", "reset", "loadImport"],
+    [
+      ...["setColor", "setBase", "setFont", "toggleEffect", "setFlavorEnabled", "setFlavorSlot", "undo", "reset", "loadImport"],
+      ...["setBackground", "setImage", "setShape", "setTypography", "setCode", "setDetails", "setGraphStyle", "setGraphLevels", "setCss"],
+    ],
   );
+  // Image upload and the Advanced CSS editor are deferred to the second expansion increment.
+  assert.deepEqual([...contracts.DEFERRED_EDITOR_ACTION_TYPES], ["setImage", "setCss"]);
   // Dimmed is a standard-family mode ID, not a family.
   assert.deepEqual([...contracts.MODE_FAMILIES], ["standard", "colorblind", "tritanopia"]);
   assert.deepEqual([...contracts.MODE_POLICIES], ["themed", "native-high-contrast", "native-unknown"]);
-  assert.equal(contracts.PAIR_MATRIX_VERSION, 1);
+  assert.equal(contracts.PAIR_MATRIX_VERSION, 2);
+  assert.equal(contracts.EXPANSION_VERSION, 1);
+  assert.equal(contracts.SANITIZER_VERSION, 1);
   assert.deepEqual([...contracts.SHARED_BUILD_SCOPES], ["engine", "primer", "preview"]);
 });
 
@@ -91,13 +98,18 @@ test("registries match the theme format's IDs and limits", () => {
   assert.equal(contracts.EFFECT_IDS.length, 10);
   assert.equal(contracts.FLAVOR_SLOT_IDS.length, 8);
   assert.equal(contracts.LIMITS.maxEffectsPerTheme, 3);
-  assert.equal(contracts.LIMITS.fontTotalWoff2Bytes, 240 * 1024);
-  assert.equal(contracts.LIMITS.fontMaxPerFamilyBytes, 30 * 1024);
+  // Revision 4: eighteen families at most, 768 KiB of WOFF2, 64 KiB a family, 32 KiB a file.
+  assert.equal(contracts.HEADING_FONT_IDS.length, 19);
+  assert.equal(contracts.LIMITS.fontTotalWoff2Bytes, 768 * 1024);
+  assert.equal(contracts.LIMITS.fontMaxPerFamilyBytes, 64 * 1024);
+  assert.equal(contracts.LIMITS.fontMaxPerFileBytes, 32 * 1024);
   assert.deepEqual(
     [contracts.LIMITS.fileUtf8Bytes, contracts.LIMITS.pastedUtf8Bytes, contracts.LIMITS.compressedBytes, contracts.LIMITS.expandedBytes, contracts.LIMITS.maxDepth],
-    [65536, 131072, 16384, 65536, 12],
+    [512 * 1024, 768 * 1024, 384 * 1024, 512 * 1024, 12],
   );
-  assert.equal(contracts.BUDGETS.runtimeZipBytes, 1.5 * 1024 * 1024);
+  assert.equal(contracts.LIMITS.cssUtf8Bytes, 32 * 1024);
+  assert.equal(contracts.BUDGETS.runtimeZipBytes, 2.5 * 1024 * 1024);
+  assert.equal(contracts.BUDGETS.cssParserGzipBytes, 60 * 1024);
   assert.ok(contracts.HEX_COLOR.test("#0a0a17"));
   assert.ok(!contracts.HEX_COLOR.test("#0A0A17"), "normalized colors are lowercase");
   for (const role of contracts.OVERRIDE_COLOR_ROLES) assert.ok(contracts.COLOR_ROLES.includes(role), role);

@@ -5,7 +5,7 @@
   "inspiredBy": "Cyberpunk: Edgerunners",
   "author": "sidebandstudio",
   "version": "1.0.0",
-  "description": "Acid lime, cold signal blue and a quiet afterimage. Original geometry.",
+  "description": "Port of the owner's Cyberpunk 1.1.0: midnight, neon yellow, cyan graph, grid, bevels and static glow.",
   "tags": [
     "anime",
     "neon",
@@ -13,40 +13,31 @@
   ],
   "base": "dark",
   "colors": {
-    "background": "#091312",
-    "text": "#f0f7ed",
-    "accent": "#d5ff35",
-    "contribution": "#d5ff35"
+    "background": "#0a0a17",
+    "text": "#e4f3ff",
+    "accent": "#fcee0a",
+    "contribution": "#00f0ff"
   },
   "overrides": {
-    "surface": "#142622",
-    "inset": "#060d0c",
-    "mutedText": "#aac2b7",
-    "link": "#7de9f5",
-    "controlBorder": "#6b8179",
-    "primaryBackground": "#d5ff35",
-    "primaryText": "#10170a",
-    "syntax": {
-      "comment": "#aac2b7"
-    }
+    "surface": "#11112a",
+    "inset": "#070710",
+    "mutedText": "#9a9ccc",
+    "border": "#2d2a52",
+    "primaryBackground": "#fcee0a",
+    "primaryText": "#0a0a17"
   },
   "fonts": {
-    "accent": "rajdhani"
+    "heading": "rajdhani",
+    "body": "system"
   },
   "effects": {
+    "glow": {
+      "strength": 0.35
+    },
     "rail": {
       "shape": "notch",
-      "opacity": 0.18,
+      "opacity": 0.3,
       "thickness": 2
-    },
-    "scanlines": {
-      "opacity": 0.015,
-      "spacing": 6
-    },
-    "echo": {
-      "offset": 3,
-      "durationMs": 160,
-      "opacity": 0.12
     }
   },
   "flavor": {
@@ -54,18 +45,151 @@
     "locale": "en",
     "slots": {
       "profile.pinned.heading": "Preem picks",
-      "profile.tag": "//choom",
-      "error.notFound.caption": "This route went dark. Try a familiar path.",
+      "profile.tag": "// CHOOM",
+      "error.notFound.caption": "FLATLINED",
       "contributions.caption": "A year of gigs, one contribution at a time."
     }
   },
   "contributions": {
     "levels": [
-      "#24372f",
-      "#4e8c60",
-      "#78b94d",
-      "#a9dc3b",
-      "#d5ff35"
-    ]
-  }
+      "#11112a",
+      "#007885",
+      "#009dab",
+      "#00c5d4",
+      "#00f0ff"
+    ],
+    "cellStyle": "glow",
+    "glow": {
+      "radius": 9,
+      "opacity": 0.85
+    }
+  },
+  "backgrounds": {
+    "page": {
+      "layers": [
+        {
+          "gradient": {
+            "type": "radial",
+            "position": "top",
+            "stops": [
+              {
+                "color": "#00f0ff",
+                "position": 0
+              },
+              {
+                "color": "#0a0a17",
+                "position": 70
+              }
+            ],
+            "opacity": 0.1
+          }
+        },
+        {
+          "pattern": {
+            "kind": "grid",
+            "color": "#00f0ff",
+            "opacity": 0.05,
+            "size": 48
+          }
+        },
+        {
+          "pattern": {
+            "kind": "scanlines",
+            "color": "#e4f3ff",
+            "opacity": 0.02,
+            "size": 3
+          }
+        }
+      ]
+    },
+    "header": {
+      "color": "#070710"
+    }
+  },
+  "shape": {
+    "corners": {
+      "style": "bevel",
+      "radius": 12
+    },
+    "buttons": {
+      "style": "bevel",
+      "radius": 8
+    },
+    "shadows": {
+      "style": "neon",
+      "color": "#fcee0a",
+      "opacity": 0.55,
+      "blur": 14
+    },
+    "avatar": {
+      "shape": "circle",
+      "frame": {
+        "style": "solid",
+        "width": 2,
+        "color": "#2d2a52"
+      }
+    }
+  },
+  "typography": {
+    "uppercaseHeadings": false,
+    "headingLetterSpacing": 0.02
+  },
+  "details": {
+    "selection": {
+      "background": "#fcee0a",
+      "text": "#0a0a17"
+    },
+    "scrollbar": {
+      "thumb": "#b4aa18",
+      "track": "#070710",
+      "width": "auto"
+    },
+    "topics": {
+      "style": "bevel",
+      "fill": "tinted"
+    },
+    "labels": {
+      "style": "bevel",
+      "fill": "outline"
+    }
+  },
+  "code": {
+    "background": "#0a0a17",
+    "text": "#e4f3ff",
+    "syntax": {
+      "comment": "#9a9ccc",
+      "keyword": "#fcee0a",
+      "string": "#75e9d5",
+      "function": "#00f0ff",
+      "number": "#ffb86c",
+      "variable": "#e4f3ff",
+      "type": "#c4a7ff",
+      "operator": "#fcee0a",
+      "punctuation": "#bcc0dc",
+      "constant": "#ffb86c",
+      "tag": "#fcee0a",
+      "attribute": "#00f0ff",
+      "regex": "#75e9d5",
+      "escape": "#ffb86c",
+      "invalid": "#ff9aa5",
+      "inserted": "#9ee4b0",
+      "deleted": "#ff9aa5",
+      "markupHeading": "#fcee0a",
+      "markupEmphasis": "#e4f3ff",
+      "markupLink": "#00f0ff",
+      "markupQuote": "#bcc0dc",
+      "markupList": "#fcee0a"
+    },
+    "diff": {
+      "addedBackground": "#102a27",
+      "addedText": "#9ee4b0",
+      "removedBackground": "#321820",
+      "removedText": "#ff9aa5",
+      "wordAddedBackground": "#174039",
+      "wordAddedText": "#bff5ce",
+      "wordRemovedBackground": "#51232f",
+      "wordRemovedText": "#ffb7bf"
+    }
+  },
+  "css": ".AppHeader, .Header, .HeaderMktg { box-shadow: 0 1px 0 var(--reskin-accent), 0 4px 24px -6px color-mix(in srgb, var(--reskin-accent) 55%, transparent); }\n[data-reskin-slot=\"profile.tag\"] { border: 1px solid var(--reskin-accent); box-shadow: 0 0 10px color-mix(in srgb, var(--reskin-accent) 35%, transparent); letter-spacing: .2em; text-transform: uppercase; }\n[data-reskin-slot=\"error.notFound.caption\"] { position: absolute; right: 6%; bottom: 10%; border: 2px solid var(--reskin-accent); background-color: var(--reskin-canvas); padding: 4px 16px; transform: rotate(-6deg); font-size: 32px; letter-spacing: .14em; text-transform: uppercase; box-shadow: 0 0 18px color-mix(in srgb, var(--reskin-accent) 55%, transparent); }"
 }

@@ -1,0 +1,191 @@
+{
+  "$schema": "https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json",
+  "schemaVersion": 1,
+  "name": "Choom Circuit",
+  "inspiredBy": "Cyberpunk: Edgerunners",
+  "author": "sidebandstudio",
+  "version": "2.0.0",
+  "description": "Faithful port of the owner's Cyberpunk 1.1.0: midnight panels, neon yellow controls, cyan graph, 48px grid, bevels and static glow.",
+  "tags": [
+    "anime",
+    "neon",
+    "dark"
+  ],
+  "base": "dark",
+  "colors": {
+    "background": "#0a0a17",
+    "text": "#e4f3ff",
+    "accent": "#fcee0a",
+    "contribution": "#00f0ff"
+  },
+  "overrides": {
+    "surface": "#11112a",
+    "inset": "#070710",
+    "raised": "#1b1d2a",
+    "hover": "#242633",
+    "mutedText": "#9a9ccc",
+    "link": "#fcee0a",
+    "border": "#2d2a52",
+    "controlBorder": "#8582a9",
+    "accentMuted": "#092633",
+    "primaryBackground": "#fcee0a",
+    "primaryText": "#000000",
+    "focus": "#fcee0a"
+  },
+  "fonts": {
+    "heading": "roboto-condensed",
+    "body": "system"
+  },
+  "typography": {
+    "uppercaseHeadings": false,
+    "headingLetterSpacing": 0.02
+  },
+  "backgrounds": {
+    "page": {
+      "color": "#0a0a17",
+      "layers": [
+        {
+          "gradientCss": {
+            "value": "radial-gradient(ellipse 80% 50% at 50% -10%,#00f0ff1a,transparent 70%)",
+            "size": "100% 100vh"
+          }
+        },
+        {
+          "gradientCss": {
+            "value": "linear-gradient(#00f0ff0d 1px,transparent 1px)",
+            "size": "48px 48px"
+          }
+        },
+        {
+          "gradientCss": {
+            "value": "linear-gradient(90deg,#00f0ff0d 1px,transparent 1px)",
+            "size": "48px 48px"
+          }
+        },
+        {
+          "gradientCss": {
+            "value": "repeating-linear-gradient(#e4f3ff05 0 1px,transparent 1px 3px)",
+            "size": "auto"
+          }
+        }
+      ]
+    },
+    "header": {
+      "color": "#070710"
+    }
+  },
+  "shape": {
+    "corners": {
+      "style": "bevel",
+      "radius": 12
+    },
+    "buttons": {
+      "style": "bevel",
+      "radius": 8
+    },
+    "shadows": {
+      "style": "neon",
+      "color": "#fcee0a",
+      "opacity": 0.55,
+      "blur": 14
+    },
+    "avatar": {
+      "shape": "circle",
+      "frame": {
+        "style": "solid",
+        "width": 2,
+        "color": "#2d2a52"
+      }
+    }
+  },
+  "details": {
+    "headerText": "#e4f3ff",
+    "selection": {
+      "background": "#fcee0a",
+      "text": "#000000"
+    },
+    "scrollbar": {
+      "thumb": "#8f8710",
+      "track": "#070710",
+      "width": "auto"
+    },
+    "labels": {
+      "style": "bevel",
+      "fill": "outline"
+    },
+    "topics": {
+      "style": "bevel",
+      "fill": "tinted"
+    }
+  },
+  "code": {
+    "background": "#070710",
+    "text": "#e4f3ff",
+    "syntax": {
+      "keyword": "#ff88b9",
+      "string": "#97edfa",
+      "number": "#ffd48a",
+      "comment": "#9a9ccc",
+      "function": "#fcee0a",
+      "type": "#c5b3ff",
+      "constant": "#67eaff",
+      "punctuation": "#d1dcea",
+      "tag": "#67e8cf",
+      "attribute": "#a4cfff"
+    },
+    "diff": {
+      "addedBackground": "#0f201e",
+      "addedText": "#e4f3ff",
+      "removedBackground": "#22111c",
+      "removedText": "#e4f3ff",
+      "wordAddedBackground": "#1b532d",
+      "wordAddedText": "#e4f3ff",
+      "wordRemovedBackground": "#782b2e",
+      "wordRemovedText": "#e4f3ff"
+    }
+  },
+  "contributions": {
+    "levels": [
+      "#11112a",
+      "#007885",
+      "#009dab",
+      "#00c5d4",
+      "#00f0ff"
+    ],
+    "cellStyle": "glow",
+    "cellRadius": 1,
+    "cellBoundary": "#8582a9",
+    "glow": {
+      "radius": 9,
+      "opacity": 0.85,
+      "levels": [
+        1,
+        2,
+        3,
+        4
+      ]
+    }
+  },
+  "effects": {
+    "glow": {
+      "strength": 0.35
+    },
+    "rail": {
+      "shape": "notch",
+      "opacity": 0.3,
+      "thickness": 2
+    }
+  },
+  "flavor": {
+    "enabled": true,
+    "locale": "en",
+    "slots": {
+      "profile.pinned.heading": "Preem picks",
+      "profile.activity.heading": "Gig log",
+      "profile.organizations.heading": "Crews",
+      "profile.tag": "// CHOOM",
+      "error.notFound.caption": "FLATLINED"
+    }
+  },
+  "css": ".AppHeader, .Header, .HeaderMktg { box-shadow: 0 1px 0 var(--reskin-accent), 0 4px 24px -6px color-mix(in srgb, var(--reskin-accent) 55%, transparent); }\n[data-reskin-slot=\"profile.tag\"] { border: 1px solid var(--reskin-accent); box-shadow: 0 0 10px color-mix(in srgb, var(--reskin-accent) 35%, transparent); letter-spacing: .2em; text-transform: uppercase; }\n[data-reskin-slot=\"error.notFound.caption\"] { position: absolute; right: 6%; bottom: 10%; border: 2px solid var(--reskin-accent); background-color: var(--reskin-canvas); padding: 4px 16px; transform: rotate(-6deg); font-size: 32px; letter-spacing: .14em; text-transform: uppercase; box-shadow: 0 0 18px color-mix(in srgb, var(--reskin-accent) 55%, transparent); }"
+}

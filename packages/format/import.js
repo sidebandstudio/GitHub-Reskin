@@ -1,6 +1,7 @@
 // Tolerant, non-executing import. Bound the input, decode it, find exactly one theme object,
 // normalize documented equivalents, then validate. Parsing never repairs, resolves or saves.
 import { ISSUE_CODES, LIMITS, SHARE_CODE_PREFIX } from "../contracts/index.js";
+import { capabilityNotes } from "./capabilities.js";
 import { NOTE_CODES } from "./codes.js";
 import { findObjectSpans, parseJson } from "./json.js";
 import { normalizeTheme } from "./normalize.js";
@@ -9,6 +10,8 @@ import { validateTheme } from "./validate.js";
 
 const BYTE_LIMITS = { text: LIMITS.pastedUtf8Bytes, file: LIMITS.fileUtf8Bytes, code: LIMITS.pastedUtf8Bytes };
 const MAX_CANDIDATES = 8;
+const MAX_PARSED_SPANS = 64;
+const THEME_KEY_OR_ESCAPE = /"(?:schemaVersion|colors|base)"|\\/;
 const SHARE_IN_TEXT = /(?:^|[\s#(<"'])(RS1\.[A-Za-z0-9_-]+\.[0-9a-f]{8})(?![A-Za-z0-9_.-])/g;
 
 const fail = (issues, candidates) => (candidates ? { ok: false, issues, candidates } : { ok: false, issues });
@@ -32,7 +35,7 @@ function finish(source, value, notes) {
   const normalized = normalizeTheme(value);
   const result = validateTheme(normalized.theme);
   if (!result.ok) return fail(result.issues);
-  return { ok: true, source, normalized: normalized.theme, notes: [...notes, ...normalized.notes] };
+  return { ok: true, source, normalized: normalized.theme, notes: [...notes, ...normalized.notes, ...capabilityNotes(normalized.theme)] };
 }
 
 function parseText(source, text, notes) {
@@ -48,8 +51,13 @@ function parseText(source, text, notes) {
   const { spans, truncated } = findObjectSpans(text);
   const found = [];
   let firstSyntax = null;
+  let parsedSpans = 0;
   for (const span of spans) {
     const input = text.slice(span.start, span.end);
+    // A span that never spells a theme key, even escaped, cannot be a candidate. After the first
+    // few, such spans are skipped unparsed, so a paste of thousands of small objects stays fast.
+    if (parsedSpans >= MAX_PARSED_SPANS && !THEME_KEY_OR_ESCAPE.test(input)) continue;
+    parsedSpans++;
     const parsed = parseJson(input, { maxDepth: LIMITS.maxDepth });
     if (!parsed.ok) {
       // A safety failure inside something that names theme fields fails the whole import.
@@ -102,7 +110,7 @@ export function parseImport(input, kind) {
   if (!Object.hasOwn(BYTE_LIMITS, kind)) throw new TypeError(`Unknown import kind ${kind}`);
   const limit = BYTE_LIMITS[kind];
   const tooLarge = () =>
-    fail([error(ISSUE_CODES.inputTooLarge, kind === "file" ? "This file includes more than a theme needs. Import a .reskin.json file without images or code." : "This text is longer than any theme needs. Paste only the chatbot's answer.")]);
+    fail([error(ISSUE_CODES.inputTooLarge, kind === "file" ? `This file is larger than a theme can be (${LIMITS.fileUtf8Bytes / 1024} KiB). Shrink its images and import it again.` : "This text is longer than any theme needs. Paste only the chatbot's answer.")]);
 
   let text;
   if (input instanceof Uint8Array) {

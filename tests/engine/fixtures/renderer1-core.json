@@ -1,0 +1,305 @@
+{
+  "note": "SHA-256 of each renderer-1 core resolution (ColorSet, font, effects, flavor, render repairs, the 287 pair-matrix-1 audits and sourceHash) and each standard-seed source repair, captured from main 1b1aa40 before the Revision 4 expansion. tests/engine/expansion.test.mjs recomputes them; the expansion must leave every one unchanged. The old green Choom fixture is tests/fixtures/schema/valid/legacy-rich-v1.reskin.json.",
+  "cases": [
+    {
+      "file": "tests/fixtures/roundtrip/accessibility-output.reskin.json",
+      "seed": "fixture.standard-dark",
+      "sha256": "1ea85355d210c9604118dd980206bc5fe98f4667e592ead69044f5306197cbcf"
+    },
+    {
+      "file": "tests/fixtures/roundtrip/accessibility-output.reskin.json",
+      "seed": "fixture.colorblind-dark",
+      "sha256": "4e5798f1e0f6ecd3ab37d6c31a4ca1a7161fbed611c559cac2157429cbc20ec2"
+    },
+    {
+      "file": "tests/fixtures/roundtrip/accessibility-output.reskin.json",
+      "seed": "repair",
+      "sha256": "30d353c31dfa1dc98d12c516cb7e8ee685fb3280c6849c99ebe6729a0b4dd74a"
+    },
+    {
+      "file": "tests/fixtures/roundtrip/primary-states.reskin.json",
+      "seed": "fixture.standard-dark",
+      "sha256": "376e68fd81ad0f768a6be0a84efedacd9a86c5e26d821bf210d8c1269ff2b8a5"
+    },
+    {
+      "file": "tests/fixtures/roundtrip/primary-states.reskin.json",
+      "seed": "fixture.colorblind-dark",
+      "sha256": "4c3b64cd84ea12fb34c3211cc839b951906c7ef925a5ad2f2c887943188db8b8"
+    },
+    {
+      "file": "tests/fixtures/roundtrip/primary-states.reskin.json",
+      "seed": "repair",
+      "sha256": "a9454e730f256c0f832729decca73e42cf0a4cb0d46a8c0a6c4d796442479445"
+    },
+    {
+      "file": "tests/fixtures/roundtrip/syntax-diff.reskin.json",
+      "seed": "fixture.standard-light",
+      "sha256": "2d4abebec719404adca74ad0635bd126e235c28913240deb01476a6d6c873df9"
+    },
+    {
+      "file": "tests/fixtures/roundtrip/syntax-diff.reskin.json",
+      "seed": "fixture.tritanopia-light",
+      "sha256": "8b21a802683c9dbdcd386f675798c1ac45c167c366a851b46bc0d3868c5720e0"
+    },
+    {
+      "file": "tests/fixtures/roundtrip/syntax-diff.reskin.json",
+      "seed": "repair",
+      "sha256": "f54c8b8fc3a04c50d1ae6d8450cf4105e61ac8ca3a40f4bb109c2d41070cb79a"
+    },
+    {
+      "file": "tests/fixtures/schema/repair/graph-collapses.reskin.json",
+      "seed": "fixture.standard-light",
+      "sha256": "56d87f807ea9d1837c561c16847c698d17d46edcf5c55ffe7189cc501b58ed29"
+    },
+    {
+      "file": "tests/fixtures/schema/repair/graph-collapses.reskin.json",
+      "seed": "fixture.tritanopia-light",
+      "sha256": "e4ad190157635e0cc5042c5b15e89166a7d2239f14303b10c1993a34b7ca2b6c"
+    },
+    {
+      "file": "tests/fixtures/schema/repair/graph-collapses.reskin.json",
+      "seed": "repair",
+      "sha256": "0affcadcb18569f05cc6481a91cd0e85562c84da5edddd0c12b9e5d40d8ff2f3"
+    },
+    {
+      "file": "tests/fixtures/schema/repair/text-equals-background.reskin.json",
+      "seed": "fixture.standard-light",
+      "sha256": "1f9c1fbcd7abc4897b52426bc5f01a7d8995ad079cf8e64ccde96004079cddfd"
+    },
+    {
+      "file": "tests/fixtures/schema/repair/text-equals-background.reskin.json",
+      "seed": "fixture.tritanopia-light",
+      "sha256": "a4a8c5f0cd939a3dc48364cbb30a0825a1c62265261d51f49af4431b1bd8c9ed"
+    },
+    {
+      "file": "tests/fixtures/schema/repair/text-equals-background.reskin.json",
+      "seed": "repair",
+      "sha256": "601867adcd64867543b4bec2f0c63cd2dba6c2fcd6c13a62ebca97b1a8d7c3be"
+    },
+    {
+      "file": "tests/fixtures/schema/valid/legacy-rich-v1.reskin.json",
+      "seed": "fixture.standard-dark",
+      "sha256": "adb3c7d46da20f32e0ad870aa4a7e03e07a09b327e84a10ec4f865570e620e35"
+    },
+    {
+      "file": "tests/fixtures/schema/valid/legacy-rich-v1.reskin.json",
+      "seed": "fixture.colorblind-dark",
+      "sha256": "73138d71f05b39b7fa3d50bc31dfb16d27c8d6710f20e8da88329c89587f26a9"
+    },
+    {
+      "file": "tests/fixtures/schema/valid/legacy-rich-v1.reskin.json",
+      "seed": "repair",
+      "sha256": "4c2a055c113b3c44c4f2d3de738de61d58b6a436940504289cb035f3939f771d"
+    },
+    {
+      "file": "tests/fixtures/schema/valid/effect-defaults.reskin.json",
+      "seed": "fixture.standard-light",
+      "sha256": "2e3f69b3f47774879d7ae3594963ae917ac66ffccf87909df34004589a94a920"
+    },
+    {
+      "file": "tests/fixtures/schema/valid/effect-defaults.reskin.json",
+      "seed": "fixture.tritanopia-light",
+      "sha256": "ffb6191342542180e8f6b44325c3f6fe94275dbe31c016c6e51f7f0f16593e26"
+    },
+    {
+      "file": "tests/fixtures/schema/valid/effect-defaults.reskin.json",
+      "seed": "repair",
+      "sha256": "bbcd6c79d44a72360962a9ed5c5d1aa311bd9d85edd289580c9f5466322af51a"
+    },
+    {
+      "file": "tests/fixtures/schema/valid/minimal-light.reskin.json",
+      "seed": "fixture.standard-light",
+      "sha256": "46b259b47728015599d70faed22cf6da83c9e8815c842e60e5fa8774b40e762c"
+    },
+    {
+      "file": "tests/fixtures/schema/valid/minimal-light.reskin.json",
+      "seed": "fixture.tritanopia-light",
+      "sha256": "dbe957216ab33d6340d27b9c74e1f67fed4e46925b4d3ccf37c62d11fc98f675"
+    },
+    {
+      "file": "tests/fixtures/schema/valid/minimal-light.reskin.json",
+      "seed": "repair",
+      "sha256": "c712e421f85eaa200ef2460108d6da95750b0a956d6d888adf5f6b45c9dea8d1"
+    },
+    {
+      "file": "themes/classics/catppuccin-latte.reskin.json",
+      "seed": "fixture.standard-light",
+      "sha256": "4cbe95af25843f94264ec3fc8205698627548d497cacf9f5a2fe42a2ae738ab4"
+    },
+    {
+      "file": "themes/classics/catppuccin-latte.reskin.json",
+      "seed": "fixture.tritanopia-light",
+      "sha256": "b0b523da96e883d18e0a5c1c6f21c78be94db2073f25087c612190dd6946662d"
+    },
+    {
+      "file": "themes/classics/catppuccin-latte.reskin.json",
+      "seed": "repair",
+      "sha256": "003e9809baa5ab465f81195f20286d2be74d327999b2547f5ba901d18b7b86e9"
+    },
+    {
+      "file": "themes/classics/catppuccin-mocha.reskin.json",
+      "seed": "fixture.standard-dark",
+      "sha256": "b39105bfcfd12b5ee4510a8bfb48fe3e094651f7c0932ced052da5b99ccb87e7"
+    },
+    {
+      "file": "themes/classics/catppuccin-mocha.reskin.json",
+      "seed": "fixture.colorblind-dark",
+      "sha256": "fa8a52f826064760eb1f114a654ff74cd0a1e25d14d60bcef4c663f3919b8be3"
+    },
+    {
+      "file": "themes/classics/catppuccin-mocha.reskin.json",
+      "seed": "repair",
+      "sha256": "e4f22720ea1d15dd8f395723cdd54953c4c31b96a36ad7e56bd40eff8466ffa7"
+    },
+    {
+      "file": "themes/classics/dracula.reskin.json",
+      "seed": "fixture.standard-dark",
+      "sha256": "390dd2c0816af75c574fd44e75484f30a28dd2e26d55ce3c8cd3397ef9610440"
+    },
+    {
+      "file": "themes/classics/dracula.reskin.json",
+      "seed": "fixture.colorblind-dark",
+      "sha256": "f06383e656286252ff7a54bd1993f6b038962bca88d13e7731b5d54ce235bbf1"
+    },
+    {
+      "file": "themes/classics/dracula.reskin.json",
+      "seed": "repair",
+      "sha256": "cf82284bb06db6d91a0ae7550cd5b1d36cfec63efdc6996adf9c798197363d21"
+    },
+    {
+      "file": "themes/classics/editing-suite.reskin.json",
+      "seed": "fixture.standard-dark",
+      "sha256": "6f61a642df73abbb7d832c9f0c7d1b080d954582125ffcda1faee26f33719032"
+    },
+    {
+      "file": "themes/classics/editing-suite.reskin.json",
+      "seed": "fixture.colorblind-dark",
+      "sha256": "d974cb4a2faf9b3a0f904c6b89c076be1facee41ae6b6a58aa5048bca93efb80"
+    },
+    {
+      "file": "themes/classics/editing-suite.reskin.json",
+      "seed": "repair",
+      "sha256": "74c5009af97d1de58d097445e2f6f565f434d3aecf2e70cd7297de7d72ff53fe"
+    },
+    {
+      "file": "themes/classics/gruvbox.reskin.json",
+      "seed": "fixture.standard-dark",
+      "sha256": "25eb04f580308a8e7445426dc3b6a3eb1ea1bfb0a3c161c6145fbbceeee073a7"
+    },
+    {
+      "file": "themes/classics/gruvbox.reskin.json",
+      "seed": "fixture.colorblind-dark",
+      "sha256": "372dfae44f82d34535fcc0b3bd457b38a2404fda3247d25fa54e39e072a2b812"
+    },
+    {
+      "file": "themes/classics/gruvbox.reskin.json",
+      "seed": "repair",
+      "sha256": "cdc1c79d740a33211058e0b0b7c90c046768b149ab203a0204fd09e3b768526d"
+    },
+    {
+      "file": "themes/classics/nord.reskin.json",
+      "seed": "fixture.standard-dark",
+      "sha256": "4464ac405e48e2f3ebe41cca1bc802c5b44777a5b0b8f94cb6657a6c05590a57"
+    },
+    {
+      "file": "themes/classics/nord.reskin.json",
+      "seed": "fixture.colorblind-dark",
+      "sha256": "20c375b4fca6a357d3e8dbf7066b95704c9440cac25c90cb84e08a977808009d"
+    },
+    {
+      "file": "themes/classics/nord.reskin.json",
+      "seed": "repair",
+      "sha256": "58fd98f2aca4565bb08199594f1bc2b034bdc7dcebc6512293d32cc7b72b7cd2"
+    },
+    {
+      "file": "themes/classics/one-dark.reskin.json",
+      "seed": "fixture.standard-dark",
+      "sha256": "f8721007d83343bcbcbbd54b7d8939759f2fcda111f9a6b81f26ba79bfea2f1b"
+    },
+    {
+      "file": "themes/classics/one-dark.reskin.json",
+      "seed": "fixture.colorblind-dark",
+      "sha256": "301dc38fb7f11e0532a3ec6b3e08145b3999b7a7e0a44bb45533a9e50f739593"
+    },
+    {
+      "file": "themes/classics/one-dark.reskin.json",
+      "seed": "repair",
+      "sha256": "dac9659627f851b44777e5d62ca3486cf6df9f6f455e65ad0a5252f239472954"
+    },
+    {
+      "file": "themes/classics/rose-pine-dawn.reskin.json",
+      "seed": "fixture.standard-light",
+      "sha256": "a884ad5b65ea5ac6f3db92be26aae831636a2748bb06b03e1739b65740b50dfe"
+    },
+    {
+      "file": "themes/classics/rose-pine-dawn.reskin.json",
+      "seed": "fixture.tritanopia-light",
+      "sha256": "976e2f118afa82ecfacf3c1de64884764af555a1602651ae6cdfdfef6816a721"
+    },
+    {
+      "file": "themes/classics/rose-pine-dawn.reskin.json",
+      "seed": "repair",
+      "sha256": "a2e51451d61d187fe5643500f77ed54c91ca600bb2c99a3ebbffb9ae5c317850"
+    },
+    {
+      "file": "themes/classics/rose-pine.reskin.json",
+      "seed": "fixture.standard-dark",
+      "sha256": "11633c32db0bd4f27b449852101e4015a82a4d3d34f3bb6d9ce1af61beed5244"
+    },
+    {
+      "file": "themes/classics/rose-pine.reskin.json",
+      "seed": "fixture.colorblind-dark",
+      "sha256": "7c99cdeab347702b9f26706ab958d17a32858c728ccf8338b686f9b8250b88cc"
+    },
+    {
+      "file": "themes/classics/rose-pine.reskin.json",
+      "seed": "repair",
+      "sha256": "dbb68219a00ca3bd5746b025f4e4ab9a0a25f39363540e44a86060c487ab90e0"
+    },
+    {
+      "file": "themes/classics/solarized-dark.reskin.json",
+      "seed": "fixture.standard-dark",
+      "sha256": "7e99e8f300122a45d712d8279f6bae716518ce2b339271fa45d843d20a2b45b0"
+    },
+    {
+      "file": "themes/classics/solarized-dark.reskin.json",
+      "seed": "fixture.colorblind-dark",
+      "sha256": "4595113b3a4a655874dea3159663660430dceab67c65cedaa8932e61693e1f3a"
+    },
+    {
+      "file": "themes/classics/solarized-dark.reskin.json",
+      "seed": "repair",
+      "sha256": "34a0ee1557a1d099210920b5f161acd63066718176bfed9747729b24b1bc70ec"
+    },
+    {
+      "file": "themes/classics/solarized-light.reskin.json",
+      "seed": "fixture.standard-light",
+      "sha256": "888000fb1d95989659275bf1b75e8a09d86445c844b4894398c282c1e31f8071"
+    },
+    {
+      "file": "themes/classics/solarized-light.reskin.json",
+      "seed": "fixture.tritanopia-light",
+      "sha256": "ca63780cdbffd0595a588bd875d13041b9d6d126c37edf15090bbe2890fc9385"
+    },
+    {
+      "file": "themes/classics/solarized-light.reskin.json",
+      "seed": "repair",
+      "sha256": "71bf61321059dd6443a7b5ceb19288b82fc9649875e4ddff80c9b70b298b7683"
+    },
+    {
+      "file": "themes/classics/tokyo-night.reskin.json",
+      "seed": "fixture.standard-dark",
+      "sha256": "b0b91536d7e0d72b770bda2577fc1710edb37f841c62b7d81172ac7e12b1f085"
+    },
+    {
+      "file": "themes/classics/tokyo-night.reskin.json",
+      "seed": "fixture.colorblind-dark",
+      "sha256": "ccc15ad180842b2665049cb29d912568d9adefc1380433d5a0c4c6cc69302c8b"
+    },
+    {
+      "file": "themes/classics/tokyo-night.reskin.json",
+      "seed": "repair",
+      "sha256": "12e1353cf7477a73bea9471855dae3ab0fdbd38f597ae91d3f676ccfa1f60105"
+    }
+  ]
+}
