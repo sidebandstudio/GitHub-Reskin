@@ -1,0 +1,1560 @@
+{
+ "source": {
+  "capture": "content/site-fixture",
+  "capturedAt": "2026-11-08T20:15:15Z",
+  "profileUrl": "https://github.com/whoisaldo",
+  "profileSha256": "56aced5a1cb768d295a172ecb09c12817850ca98c4ba9b8046375526f6be74ba",
+  "manifestSha256": "a239eeecbc30e8b8b317a230a57e82739c40e95e3bed1688f402d89b99d4a422"
+ },
+ "profile": {
+  "displayName": "Ali Younes",
+  "login": "whoisaldo",
+  "bio": "Northeastern '27 | incoming AWS SDE \nCoding, Fitness, Cars, and more!!",
+  "company": "@aws",
+  "location": "Boston, MA",
+  "followers": 28,
+  "following": 18,
+  "links": [
+   {
+    "label": "https://aliyounes.dev",
+    "href": "https://aliyounes.dev"
+   },
+   {
+    "label": "in/alialdoyounes",
+    "href": "https://www.linkedin.com/in/alialdoyounes"
+   }
+  ],
+  "avatar": {
+   "asset": "avatar-whoisaldo.webp",
+   "width": 256,
+   "height": 256,
+   "alt": "@whoisaldo"
+  },
+  "organizationsHeadingVisible": true,
+  "organizations": [
+   {
+    "login": "sidebandstudio",
+    "avatar": {
+     "asset": "organization-sidebandstudio.webp",
+     "width": 64,
+     "height": 64,
+     "alt": "@sidebandstudio"
+    }
+   }
+  ],
+  "pinnedHeading": "Pinned",
+  "pinned": [
+   {
+    "owner": "sidebandstudio",
+    "name": "EternalMonitor",
+    "description": "Use your iPad as a second screen for Windows. Mirror or extend over Wi-Fi or USB, with touch, keyboard, Apple Pencil and PC audio.",
+    "language": "Rust",
+    "stars": 140,
+    "forks": 8,
+    "visibility": "Public"
+   },
+   {
+    "owner": "sidebandstudio",
+    "name": "Eternal-Rich-Presence",
+    "description": "Discord Rich Presence bridge for Apple Music and Spotify with live cover art and a cross-platform \"Listen Along\" sync feature.",
+    "language": "Python",
+    "stars": 22,
+    "forks": 1,
+    "visibility": "Public"
+   },
+   {
+    "owner": "sidebandstudio",
+    "name": "gpubridge",
+    "description": "Run one PyTorch training job across NVIDIA and AMD GPUs at once: native NCCL/RCCL per vendor, joined by a CPU bridge.",
+    "language": "Python",
+    "stars": 0,
+    "forks": 1,
+    "visibility": "Public"
+   },
+   {
+    "owner": "pingdotgg",
+    "name": "t3code",
+    "description": null,
+    "language": "TypeScript",
+    "stars": 52313,
+    "forks": 9993,
+    "visibility": "Public"
+   },
+   {
+    "owner": "sidebandstudio",
+    "name": "Exerly-Fitness",
+    "description": "Fitness app for iOS and web: SwiftUI client, Node.js API and a Gemini coach.",
+    "language": "Swift",
+    "stars": 0,
+    "forks": 0,
+    "visibility": "Public"
+   },
+   {
+    "owner": "whoisaldo",
+    "name": "aldos-agentic-workflow",
+    "description": "A configurable fleet of machines and AI coding accounts that works like a small dev team: a coordinator agent hands builds and reviews across Claude and Codex, fails over when usage runs out, pages the owner only when blocked, and syncs skills and secrets.",
+    "language": "Python",
+    "stars": 0,
+    "forks": 0,
+    "visibility": "Public"
+   }
+  ],
+  "readme": [
+   [
+    "p",
+    null,
+    [
+     "a",
+     {
+      "href": "https://aliyounes.dev"
+     },
+     [
+      "img",
+      {
+       "asset": "whoisaldo-readme-hero.webp",
+       "width": 880,
+       "height": 300,
+       "alt": "Ali Younes, software engineer: systems, infrastructure, AI tooling and backend. Boston, MA. His 2013 Audi S4 and 2013 Audi S6 turn side by side on a yellow ring."
+      }
+     ]
+    ]
+   ],
+   [
+    "p",
+    null,
+    " ",
+    [
+     "a",
+     {
+      "href": "https://aliyounes.dev"
+     },
+     [
+      "strong",
+      null,
+      "aliyounes.dev"
+     ]
+    ],
+    " · ",
+    [
+     "a",
+     {
+      "href": "https://aliyounes.dev/blog/"
+     },
+     "Writing"
+    ],
+    " · ",
+    [
+     "a",
+     {
+      "href": "https://aliyounes.dev/resume.pdf"
+     },
+     "Resume"
+    ],
+    " · ",
+    [
+     "a",
+     {
+      "href": "https://sideband.studio"
+     },
+     "Sideband Studio"
+    ],
+    " · ",
+    [
+     "a",
+     {
+      "href": "https://x.com/whoisaldooo"
+     },
+     "X"
+    ],
+    " · ",
+    [
+     "a",
+     {
+      "href": "https://www.linkedin.com/in/alialdoyounes/"
+     },
+     "LinkedIn"
+    ]
+   ],
+   [
+    "p",
+    null,
+    "Hi! I'm Ali, or you can call me Aldo. I'm a fourth year studying computer science and political science at Northeastern University in Boston, MA 📍."
+   ],
+   [
+    "p",
+    null,
+    "I like to work with deeply architected systems. Most of my work tends to revolve around automating, but I usually just kinda build a solution to anything really 🤷‍♂️. The work I did at Philips and AWS is what I've enjoyed the most so far."
+   ],
+   [
+    "p",
+    null,
+    "I have a 2013 Audi S4 that makes around 540 whp. It's on a Jackal Stage 2+ tune and I love to work on it myself :p. I also have a 2013 Audi S6 with the 4.0 twin-turbo V8, on a Stage 1 Integrated Engineering tune. It runs Virtual Link, the lowering module I'm lead engineer on at Pinnatec."
+   ],
+   [
+    "p",
+    null,
+    "Check out my portfolio, it's pretty cool, especially if you're a cyberpunk fan 👇"
+   ],
+   [
+    "p",
+    null,
+    [
+     "a",
+     {
+      "href": "https://aliyounes.dev/playground/"
+     },
+     [
+      "img",
+      {
+       "asset": "whoisaldo-readme-city.webp",
+       "width": 880,
+       "height": 400,
+       "alt": "The intro of the playground at aliyounes.dev/playground: the S4 drifts through a neon city at night. Enter the playground."
+      }
+     ]
+    ]
+   ],
+   [
+    "h3",
+    null,
+    "History"
+   ],
+   [
+    "ul",
+    null,
+    [
+     "li",
+     null,
+     [
+      "img",
+      {
+       "asset": "whoisaldo-readme-logos-aws.webp",
+       "width": 80,
+       "height": 48,
+       "alt": "AWS",
+       "dark": "whoisaldo-readme-logos-aws-dark.webp"
+      }
+     ],
+     " · ",
+     [
+      "a",
+      {
+       "href": "https://github.com/aws"
+      },
+      [
+       "strong",
+       null,
+       "Amazon Web Services"
+      ]
+     ],
+     " · SDE, Amazon Dedicated Cloud · Incoming FTE July 2027"
+    ],
+    [
+     "li",
+     null,
+     [
+      "a",
+      {
+       "href": "https://github.com/whoisaldo/Whoisaldo/blob/main/logos/philips.png"
+      },
+      [
+       "img",
+       {
+        "asset": "whoisaldo-readme-logos-philips.webp",
+        "width": 38,
+        "height": 48,
+        "alt": "Philips"
+       }
+      ]
+     ],
+     " · ",
+     [
+      "a",
+      {
+       "href": "https://github.com/philips-software"
+      },
+      [
+       "strong",
+       null,
+       "Philips"
+      ]
+     ],
+     " · SDE Co-op, back part-time · Aug 2026 to now"
+    ],
+    [
+     "li",
+     null,
+     [
+      "img",
+      {
+       "asset": "whoisaldo-readme-logos-pinnatec.webp",
+       "width": 157,
+       "height": 48,
+       "alt": "Pinnatec Auto",
+       "dark": "whoisaldo-readme-logos-pinnatec-dark.webp"
+      }
+     ],
+     " · ",
+     [
+      "a",
+      {
+       "href": "https://pinnatecauto.com/"
+      },
+      [
+       "strong",
+       null,
+       "Pinnatec Auto"
+      ]
+     ],
+     " · Lead Full Stack Engineer, Virtual Link · Sep 2026 to now"
+    ],
+    [
+     "li",
+     null,
+     [
+      "a",
+      {
+       "href": "https://github.com/whoisaldo/Whoisaldo/blob/main/logos/pawtograder.png"
+      },
+      [
+       "img",
+       {
+        "asset": "whoisaldo-readme-logos-pawtograder.webp",
+        "width": 48,
+        "height": 48,
+        "alt": "Pawtograder"
+       }
+      ]
+     ],
+     " · ",
+     [
+      "a",
+      {
+       "href": "https://github.com/pawtograder"
+      },
+      [
+       "strong",
+       null,
+       "Pawtograder"
+      ]
+     ],
+     " · Backend Engineer, grading server · Aug 2026 to now"
+    ],
+    [
+     "li",
+     null,
+     [
+      "img",
+      {
+       "asset": "whoisaldo-readme-logos-aws.webp",
+       "width": 80,
+       "height": 48,
+       "alt": "AWS",
+       "dark": "whoisaldo-readme-logos-aws-dark.webp"
+      }
+     ],
+     " · ",
+     [
+      "a",
+      {
+       "href": "https://github.com/aws"
+      },
+      [
+       "strong",
+       null,
+       "Amazon Web Services"
+      ]
+     ],
+     " · SDE Intern, CloudFormation Registry · Jun to Sep 2026"
+    ],
+    [
+     "li",
+     null,
+     [
+      "a",
+      {
+       "href": "https://github.com/whoisaldo/Whoisaldo/blob/main/logos/philips.png"
+      },
+      [
+       "img",
+       {
+        "asset": "whoisaldo-readme-logos-philips.webp",
+        "width": 38,
+        "height": 48,
+        "alt": "Philips"
+       }
+      ]
+     ],
+     " · ",
+     [
+      "a",
+      {
+       "href": "https://github.com/philips-software"
+      },
+      [
+       "strong",
+       null,
+       "Philips"
+      ]
+     ],
+     " · SDE Co-op, System Integration · Jan to Jun 2026"
+    ],
+    [
+     "li",
+     null,
+     [
+      "a",
+      {
+       "href": "https://github.com/whoisaldo/Whoisaldo/blob/main/logos/topchoice.png"
+      },
+      [
+       "img",
+       {
+        "asset": "whoisaldo-readme-logos-topchoice.webp",
+        "width": 64,
+        "height": 48,
+        "alt": "Top Choice Realty"
+       }
+      ]
+     ],
+     " · ",
+     [
+      "a",
+      {
+       "href": "https://topchoicerealtyny.com/"
+      },
+      [
+       "strong",
+       null,
+       "Top Choice Realty"
+      ]
+     ],
+     " · Frontend Developer Intern · Apr to Aug 2024"
+    ],
+    [
+     "li",
+     null,
+     [
+      "a",
+      {
+       "href": "https://github.com/whoisaldo/Whoisaldo/blob/main/logos/northeastern.png"
+      },
+      [
+       "img",
+       {
+        "asset": "whoisaldo-readme-logos-northeastern.webp",
+        "width": 48,
+        "height": 48,
+        "alt": "Northeastern University"
+       }
+      ]
+     ],
+     " · ",
+     [
+      "a",
+      {
+       "href": "https://github.com/northeastern"
+      },
+      [
+       "strong",
+       null,
+       "Northeastern University"
+      ]
+     ],
+     " · CS and Political Science, B.S. · Class of 2027"
+    ]
+   ],
+   [
+    "p",
+    null,
+    [
+     "a",
+     {
+      "href": "https://github.com/whoisaldo?tab=repositories&sort=stargazers"
+     },
+     [
+      "img",
+      {
+       "asset": "whoisaldo-readme-panel.svg",
+       "width": 880,
+       "height": 404,
+       "alt": "My GitHub stats: contributions over the last year, public commits, active days and current streak; stargazers across my repos. Updated daily.",
+       "dark": "whoisaldo-readme-panel.svg"
+      }
+     ]
+    ]
+   ]
+  ]
+ },
+ "contributions": {
+  "heading": "5,216 contributions in the last year",
+  "start": "2025-11-09",
+  "weekStartsOn": "Sunday",
+  "counts": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   5,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   2,
+   4,
+   0,
+   0,
+   1,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   5,
+   1,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   4,
+   1,
+   0,
+   0,
+   0,
+   0,
+   0,
+   1,
+   0,
+   0,
+   0,
+   15,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   1,
+   0,
+   0,
+   7,
+   0,
+   1,
+   0,
+   0,
+   1,
+   0,
+   0,
+   1,
+   0,
+   0,
+   0,
+   2,
+   0,
+   1,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   1,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   15,
+   0,
+   5,
+   0,
+   1,
+   0,
+   2,
+   0,
+   0,
+   0,
+   0,
+   2,
+   0,
+   2,
+   1,
+   1,
+   1,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   1,
+   1,
+   0,
+   7,
+   5,
+   1,
+   0,
+   0,
+   1,
+   1,
+   3,
+   2,
+   8,
+   1,
+   11,
+   9,
+   64,
+   33,
+   11,
+   9,
+   2,
+   1,
+   2,
+   1,
+   1,
+   2,
+   1,
+   1,
+   0,
+   1,
+   0,
+   0,
+   0,
+   8,
+   0,
+   5,
+   0,
+   0,
+   0,
+   0,
+   9,
+   3,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   4,
+   1,
+   0,
+   0,
+   1,
+   0,
+   3,
+   25,
+   5,
+   0,
+   0,
+   3,
+   0,
+   3,
+   0,
+   7,
+   0,
+   1,
+   0,
+   8,
+   1,
+   0,
+   3,
+   9,
+   3,
+   4,
+   0,
+   0,
+   8,
+   1,
+   3,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   11,
+   0,
+   0,
+   1,
+   0,
+   11,
+   16,
+   11,
+   0,
+   1,
+   22,
+   1,
+   0,
+   0,
+   3,
+   0,
+   0,
+   0,
+   25,
+   37,
+   12,
+   0,
+   0,
+   0,
+   11,
+   0,
+   0,
+   3,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   5,
+   0,
+   0,
+   0,
+   2,
+   1,
+   10,
+   3,
+   0,
+   1,
+   12,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   2,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   7,
+   17,
+   0,
+   0,
+   20,
+   2,
+   19,
+   36,
+   16,
+   23,
+   17,
+   0,
+   1,
+   1,
+   2,
+   9,
+   7,
+   7,
+   2,
+   3,
+   4,
+   3,
+   0,
+   16,
+   20,
+   3,
+   6,
+   3,
+   29,
+   16,
+   20,
+   8,
+   2,
+   16,
+   44,
+   30,
+   57,
+   90,
+   13,
+   3,
+   31,
+   85,
+   36,
+   5,
+   11,
+   7,
+   1,
+   4,
+   199,
+   89,
+   7,
+   167,
+   87,
+   143,
+   401,
+   211,
+   89,
+   65,
+   133,
+   145,
+   43,
+   261,
+   111,
+   221,
+   96,
+   101,
+   3,
+   46,
+   134,
+   205,
+   60,
+   296,
+   162,
+   122,
+   37,
+   44,
+   61,
+   19,
+   6,
+   11,
+   47,
+   51
+  ],
+  "levels": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   1,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   1,
+   1,
+   0,
+   0,
+   1,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   1,
+   1,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   1,
+   1,
+   0,
+   0,
+   0,
+   0,
+   0,
+   1,
+   0,
+   0,
+   0,
+   1,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   1,
+   0,
+   0,
+   1,
+   0,
+   1,
+   0,
+   0,
+   1,
+   0,
+   0,
+   1,
+   0,
+   0,
+   0,
+   1,
+   0,
+   1,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   1,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   1,
+   0,
+   1,
+   0,
+   1,
+   0,
+   1,
+   0,
+   0,
+   0,
+   0,
+   1,
+   0,
+   1,
+   1,
+   1,
+   1,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   1,
+   1,
+   0,
+   1,
+   1,
+   1,
+   0,
+   0,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   0,
+   1,
+   0,
+   0,
+   0,
+   1,
+   0,
+   1,
+   0,
+   0,
+   0,
+   0,
+   1,
+   1,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   1,
+   1,
+   0,
+   0,
+   1,
+   0,
+   1,
+   1,
+   1,
+   0,
+   0,
+   1,
+   0,
+   1,
+   0,
+   1,
+   0,
+   1,
+   0,
+   1,
+   1,
+   0,
+   1,
+   1,
+   1,
+   1,
+   0,
+   0,
+   1,
+   1,
+   1,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   1,
+   0,
+   0,
+   1,
+   0,
+   1,
+   1,
+   1,
+   0,
+   1,
+   1,
+   1,
+   0,
+   0,
+   1,
+   0,
+   0,
+   0,
+   1,
+   1,
+   1,
+   0,
+   0,
+   0,
+   1,
+   0,
+   0,
+   1,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   1,
+   0,
+   0,
+   0,
+   1,
+   1,
+   1,
+   1,
+   0,
+   1,
+   1,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   1,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   1,
+   1,
+   0,
+   0,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   0,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   0,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   2,
+   1,
+   1,
+   1,
+   2,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   3,
+   2,
+   1,
+   3,
+   2,
+   2,
+   4,
+   3,
+   2,
+   1,
+   2,
+   2,
+   1,
+   4,
+   2,
+   3,
+   2,
+   2,
+   1,
+   1,
+   2,
+   3,
+   1,
+   4,
+   3,
+   2,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1
+  ]
+ },
+ "repository": {
+  "owner": "sidebandstudio",
+  "name": "GitHub-Reskin",
+  "visibility": "Public",
+  "defaultBranch": "main",
+  "about": "Themes for GitHub with a color picker, plus your contribution graph in any color for your profile README.",
+  "license": "MIT License",
+  "counts": {
+   "stars": 0,
+   "forks": 1,
+   "watchers": 0,
+   "releases": 0,
+   "contributors": 2
+  },
+  "files": [
+   {
+    "name": ".github",
+    "type": "dir"
+   },
+   {
+    "name": "extension",
+    "type": "dir"
+   },
+   {
+    "name": "fixtures",
+    "type": "dir"
+   },
+   {
+    "name": "scripts",
+    "type": "dir"
+   },
+   {
+    "name": "userscript",
+    "type": "dir"
+   },
+   {
+    "name": "action.yml",
+    "type": "file"
+   },
+   {
+    "name": "extension.test.mjs",
+    "type": "file"
+   },
+   {
+    "name": "index.mjs",
+    "type": "file"
+   },
+   {
+    "name": "LICENSE",
+    "type": "file"
+   },
+   {
+    "name": "README.md",
+    "type": "file"
+   },
+   {
+    "name": "test.mjs",
+    "type": "file"
+   },
+   {
+    "name": "userscript.test.mjs",
+    "type": "file"
+   }
+  ],
+  "languages": [
+   {
+    "name": "JavaScript",
+    "percentage": 92.05
+   },
+   {
+    "name": "CSS",
+    "percentage": 6.88
+   },
+   {
+    "name": "HTML",
+    "percentage": 1.07
+   }
+  ],
+  "readme": [
+   [
+    "h1",
+    null,
+    "GitHub Reskin"
+   ],
+   [
+    "p",
+    null,
+    "A browser extension that themes GitHub. Click it, pick a theme or set your own colors, and every open GitHub tab repaints. That includes the contribution graph, which normally stays green or switches to whatever GitHub picks for a holiday."
+   ],
+   [
+    "p",
+    null,
+    "The repo also has a GitHub Action that draws your contribution graph as an SVG in your colors, so visitors to your profile see them too."
+   ],
+   [
+    "h2",
+    null,
+    "Install"
+   ],
+   [
+    "p",
+    null,
+    "The extension isn't in the Chrome Web Store or on Firefox Add-ons yet. To load it from this repo in Chrome, Edge, Brave or Arc:"
+   ],
+   [
+    "ol",
+    null,
+    [
+     "li",
+     null,
+     "On the repo page, click Code, then Download ZIP, and unzip it."
+    ],
+    [
+     "li",
+     null,
+     "Open ",
+     [
+      "code",
+      null,
+      "chrome://extensions"
+     ],
+     ", turn on Developer mode, click Load unpacked and pick the ",
+     [
+      "code",
+      null,
+      "extension"
+     ],
+     " folder."
+    ],
+    [
+     "li",
+     null,
+     "Reload any GitHub or Gist tabs you already had open, then click GitHub Reskin in your browser's extensions menu to pick a theme."
+    ]
+   ],
+   [
+    "h3",
+    null,
+    "Firefox, Safari and other browsers"
+   ],
+   [
+    "p",
+    null,
+    "Firefox only keeps an unsigned extension until it restarts, and Safari can't load one at all. For those browsers, GitHub Reskin also comes as a userscript with the same themes and color card, and it stays installed."
+   ],
+   [
+    "ol",
+    null,
+    [
+     "li",
+     null,
+     "Install a userscript manager. In Firefox, use ",
+     [
+      "a",
+      {
+       "href": "https://violentmonkey.github.io"
+      },
+      "Violentmonkey"
+     ],
+     " or ",
+     [
+      "a",
+      {
+       "href": "https://www.tampermonkey.net"
+      },
+      "Tampermonkey"
+     ],
+     ". In Safari on a Mac, iPhone or iPad, use ",
+     [
+      "a",
+      {
+       "href": "https://github.com/quoid/userscripts"
+      },
+      "Userscripts"
+     ],
+     " or Tampermonkey. Safari asks you to turn the extension on in its settings and allow it on github.com."
+    ],
+    [
+     "li",
+     null,
+     "Open ",
+     [
+      "a",
+      {
+       "href": "https://raw.githubusercontent.com/sidebandstudio/GitHub-Reskin/main/userscript/github-reskin.user.js"
+      },
+      "github-reskin.user.js"
+     ],
+     " and install it from your manager's prompt. In Userscripts, the prompt is under its toolbar button."
+    ],
+    [
+     "li",
+     null,
+     "Reload any GitHub or Gist tabs you already had open."
+    ]
+   ],
+   [
+    "p",
+    null,
+    "To pick a theme, choose Theme and colors from your manager's menu. Userscripts has no menu, so open ",
+    [
+     "code",
+     null,
+     "https://github.com/#reskin"
+    ],
+    " instead. Click outside the card or press Escape to close it. Other GitHub tabs pick up your change when you switch back to them."
+   ],
+   [
+    "p",
+    null,
+    "You can also try the extension itself in Firefox 140 or newer. Open ",
+    [
+     "code",
+     null,
+     "about:debugging#/runtime/this-firefox"
+    ],
+    ", click Load Temporary Add-on and pick ",
+    [
+     "code",
+     null,
+     "extension/manifest.json"
+    ],
+    ". Firefox removes it when it restarts."
+   ],
+   [
+    "h2",
+    null,
+    "Themes and colors"
+   ],
+   [
+    "p",
+    null,
+    "Thirteen themes come with it. Cyberpunk is the default. The other dark ones are Editing Suite, Dracula, Nord, Catppuccin Mocha, Gruvbox, Tokyo Night, Rosé Pine, One Dark and Solarized Dark. The light ones are Catppuccin Latte, Rosé Pine Dawn and Solarized Light."
+   ],
+   [
+    "p",
+    null,
+    "Cyberpunk is electric yellow and cyan on a near-black blue-violet, and it changes more than colors:"
+   ],
+   [
+    "ul",
+    null,
+    [
+     "li",
+     null,
+     "Headings, the header, tabs, buttons, counters and labels use condensed and monospace system fonts. Font sizes and spacing stay as GitHub has them."
+    ],
+    [
+     "li",
+     null,
+     "Headings, the selected tab, primary buttons, focus rings, hovered links and contribution graph cells glow. Busier days glow more. Code, diffs and body text don't."
+    ],
+    [
+     "li",
+     null,
+     "Buttons, labels, boxes and menus get beveled corners instead of round ones. Firefox and Zen, and other browsers that don't draw ",
+     [
+      "code",
+      null,
+      "corner-shape"
+     ],
+     ", get square corners instead, and labels and counters that aren't links keep their cut corners through a clip path."
+    ],
+    [
+     "li",
+     null,
+     "A faint grid and scanlines sit behind the page, and the header has a neon edge. Scrollbars, selected text and the text cursor use the accent."
+    ],
+    [
+     "li",
+     null,
+     "The GitHub logo and the repo title glitch when you hover them. If your system is set to reduce motion, nothing moves."
+    ],
+    [
+     "li",
+     null,
+     "The popup takes on the same look."
+    ]
+   ],
+   [
+    "p",
+    null,
+    "The effects use whatever colors you set, so editing Cyberpunk's colors keeps the effects in your colors."
+   ],
+   [
+    "p",
+    null,
+    "Cyberpunk also swaps some of GitHub's own labels for street slang, set in ",
+    [
+     "a",
+     {
+      "href": "https://github.com/sidebandstudio/GitHub-Reskin/blob/1a67a0508e97121acea07b33eba7dc89147f9e6e/extension/slang.js"
+     },
+     [
+      "code",
+      null,
+      "extension/slang.js"
+     ]
+    ],
+    ". Profiles get a \"choom\" tag over the name, Pinned becomes Preem picks, Achievements becomes Street cred, the Code button says Jack in, Sponsor says Send eddies, Releases become Drops, and a missing page is stamped Flatlined. Names, numbers and anything people wrote stay as they are, and screen readers still hear GitHub's words."
+   ],
+   [
+    "p",
+    null,
+    "Under the themes you can change four colors: background, text, accent and the contribution graph. GitHub Reskin works out the rest, like borders, muted text and button colors. \"Reset to theme\" puts the theme's colors back, and the switch at the top turns the theme off."
+   ],
+   [
+    "p",
+    null,
+    "It adjusts the colors it works out so they stay readable:"
+   ],
+   [
+    "ul",
+    null,
+    [
+     "li",
+     null,
+     "Muted text and links move toward your text color until they reach WCAG AA contrast, 4.5:1."
+    ],
+    [
+     "li",
+     null,
+     "Primary buttons get a darker shade of your accent when GitHub's white button text wouldn't read on the accent itself. Cyberpunk instead fills them with the accent and uses black, white or your background color for the button text, whichever reads best."
+    ],
+    [
+     "li",
+     null,
+     "If your text color is hard to read on your background, the popup warns you. GitHub's main text still uses your color, but borders, muted text and links are then worked out from black or white instead."
+    ]
+   ]
+  ]
+ }
+}
