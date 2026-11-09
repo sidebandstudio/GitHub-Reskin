@@ -1,0 +1,84 @@
+{
+  "$schema": "https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json",
+  "author": "sidebandstudio",
+  "base": "dark",
+  "colors": {
+    "accent": "#b7c991",
+    "background": "#161a16",
+    "contribution": "#dfe9b8",
+    "text": "#f0eddf"
+  },
+  "contributions": {
+    "levels": [
+      "#2b3328",
+      "#738455",
+      "#97a86c",
+      "#bbcd8b",
+      "#dfe9b8"
+    ]
+  },
+  "description": "Olive field notes, pale limestone details and fine cable lines give GitHub an expedition-ready look.",
+  "effects": {
+    "drift": {
+      "count": 2,
+      "distance": 8,
+      "durationMs": 900,
+      "opacity": 0.06,
+      "shape": "wisp"
+    },
+    "orbit": {
+      "count": 1,
+      "opacity": 0.1,
+      "shape": "arc"
+    },
+    "rail": {
+      "opacity": 0.2,
+      "shape": "slash",
+      "thickness": 2
+    }
+  },
+  "flavor": {
+    "enabled": true,
+    "locale": "en",
+    "slots": {
+      "contributions.caption": "A year of expeditions, one contribution at a time.",
+      "empty.issues.caption": "No field notes in this view.",
+      "empty.pinned.caption": "A shelf for future expeditions.",
+      "error.notFound.caption": "No route here. Return to familiar ground.",
+      "profile.activity.heading": "Expedition log",
+      "profile.organizations.heading": "Field outposts",
+      "profile.pinned.heading": "Selected expeditions",
+      "profile.tag": "// field journal"
+    }
+  },
+  "fonts": {
+    "accent": "barlow-condensed"
+  },
+  "inspiredBy": "Attack on Titan",
+  "name": "Wallward Scout",
+  "overrides": {
+    "accentMuted": "#30362a",
+    "border": "#727d69",
+    "controlBorder": "#7e8875",
+    "danger": "#f28e83",
+    "focus": "#d5e3b8",
+    "hover": "#30332e",
+    "inset": "#10130f",
+    "link": "#d0dbae",
+    "mutedText": "#b1b6a5",
+    "primaryBackground": "#b7c991",
+    "primaryText": "#151a11",
+    "raised": "#272b26",
+    "selectionBackground": "#b7c991",
+    "selectionText": "#151a11",
+    "success": "#aad39a",
+    "surface": "#20261f",
+    "warning": "#e3c274"
+  },
+  "schemaVersion": 1,
+  "tags": [
+    "anime",
+    "dark"
+  ],
+  "version": "1.0.0"
+}

@@ -1,0 +1,84 @@
+{
+  "$schema": "https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json",
+  "author": "sidebandstudio",
+  "base": "dark",
+  "colors": {
+    "accent": "#ff9478",
+    "background": "#191317",
+    "contribution": "#ffd8a2",
+    "text": "#f8eee5"
+  },
+  "contributions": {
+    "levels": [
+      "#33242b",
+      "#b76c55",
+      "#d68a64",
+      "#f6af7b",
+      "#ffd8a2"
+    ]
+  },
+  "description": "Warm ink, ember-colored activity and a small botanical mark give GitHub a quiet training-journal atmosphere.",
+  "effects": {
+    "drift": {
+      "count": 2,
+      "distance": 10,
+      "durationMs": 800,
+      "opacity": 0.08,
+      "shape": "ember"
+    },
+    "rail": {
+      "opacity": 0.18,
+      "shape": "wave",
+      "thickness": 1
+    },
+    "seal": {
+      "opacity": 0.3,
+      "shape": "sprig",
+      "size": 24
+    }
+  },
+  "flavor": {
+    "enabled": true,
+    "locale": "en",
+    "slots": {
+      "contributions.caption": "A year of practice, one contribution at a time.",
+      "empty.issues.caption": "A quiet page in the journal.",
+      "empty.pinned.caption": "This journal has room for a first pick.",
+      "error.notFound.caption": "No path here. Return to the trail.",
+      "profile.activity.heading": "Practice log",
+      "profile.organizations.heading": "Training outposts",
+      "profile.pinned.heading": "Treasured journals",
+      "profile.tag": "// ember journal"
+    }
+  },
+  "fonts": {
+    "accent": "cormorant-garamond"
+  },
+  "inspiredBy": "Demon Slayer",
+  "name": "Wisteria Emberline",
+  "overrides": {
+    "accentMuted": "#3e2827",
+    "border": "#947883",
+    "controlBorder": "#957a84",
+    "danger": "#ff8ca7",
+    "focus": "#ffd3b5",
+    "hover": "#342d30",
+    "inset": "#110d10",
+    "link": "#ffb49c",
+    "mutedText": "#c6b0b9",
+    "primaryBackground": "#ff9478",
+    "primaryText": "#26120d",
+    "raised": "#2b2527",
+    "selectionBackground": "#ff9478",
+    "selectionText": "#26120d",
+    "success": "#98d7af",
+    "surface": "#2a1f27",
+    "warning": "#f4cb83"
+  },
+  "schemaVersion": 1,
+  "tags": [
+    "anime",
+    "dark"
+  ],
+  "version": "1.0.0"
+}

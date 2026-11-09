@@ -103,7 +103,10 @@ test("--scope=primer runs every themed seed in a ModeIndex and the full gate req
     assert.equal(primer.exitCode, 0);
     assert.ok(primer.testCount > 500);
     const full = await run({ command: "contrast", args: [], root, outDir: join(root, "dist") });
-    assert.equal(full.exitCode, 1, "the full gate fails until the catalog holds all 25 themes");
+    assert.equal(full.exitCode, 0, "the full gate passes with all 25 catalog themes");
+    writeFileSync(join(root, "themes/catalog.json"), JSON.stringify(catalog.filter((e) => e.group === "classics")));
+    const incomplete = await run({ command: "contrast", args: [], root, outDir: join(root, "dist") });
+    assert.equal(incomplete.exitCode, 1, "the full gate rejects a catalog missing the Anime themes");
     writeFileSync(join(root, "vendor/primer/modes.json"), JSON.stringify({ contractVersion: 1, modes: { wrong: seeds[0] }, counterparts: [], nativeCss: {} }));
     assert.equal((await run({ command: "contrast", args: ["--scope=primer"], root })).exitCode, 1);
   } finally {

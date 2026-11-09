@@ -1,0 +1,84 @@
+{
+  "$schema": "https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json",
+  "author": "sidebandstudio",
+  "base": "light",
+  "colors": {
+    "accent": "#655080",
+    "background": "#f1f0fa",
+    "contribution": "#472c5e",
+    "text": "#303647"
+  },
+  "contributions": {
+    "levels": [
+      "#e3e0e8",
+      "#8f77a9",
+      "#7b5c9b",
+      "#60437c",
+      "#472c5e"
+    ]
+  },
+  "description": "Silver-lilac paper, a small geometric rosette and petal details give GitHub a quiet travel-journal style.",
+  "effects": {
+    "drift": {
+      "count": 2,
+      "distance": 6,
+      "durationMs": 1000,
+      "opacity": 0.07,
+      "shape": "petal"
+    },
+    "paper": {
+      "opacity": 0.025,
+      "scale": 12,
+      "texture": "grain"
+    },
+    "seal": {
+      "opacity": 0.22,
+      "shape": "rosette",
+      "size": 20
+    }
+  },
+  "flavor": {
+    "enabled": true,
+    "locale": "en",
+    "slots": {
+      "contributions.caption": "A year of small discoveries, one contribution at a time.",
+      "empty.issues.caption": "A quiet stop along the road.",
+      "empty.pinned.caption": "Room for small discoveries.",
+      "error.notFound.caption": "This path ends here. There are other roads.",
+      "profile.activity.heading": "Journey log",
+      "profile.organizations.heading": "Journal waystations",
+      "profile.pinned.heading": "Collected favorites",
+      "profile.tag": "// travel journal"
+    }
+  },
+  "fonts": {
+    "accent": "alegreya"
+  },
+  "inspiredBy": "Frieren: Beyond Journey's End",
+  "name": "Longroad Petals",
+  "overrides": {
+    "accentMuted": "#dbd6e6",
+    "border": "#81796f",
+    "controlBorder": "#7d756c",
+    "danger": "#9d384b",
+    "focus": "#655080",
+    "hover": "#dadae5",
+    "inset": "#e3e0ef",
+    "link": "#495b81",
+    "mutedText": "#5f5964",
+    "primaryBackground": "#655080",
+    "primaryText": "#ffffff",
+    "raised": "#e2e1ec",
+    "selectionBackground": "#655080",
+    "selectionText": "#ffffff",
+    "success": "#306544",
+    "surface": "#fbfaff",
+    "warning": "#765614"
+  },
+  "schemaVersion": 1,
+  "tags": [
+    "anime",
+    "light"
+  ],
+  "version": "1.0.0"
+}
