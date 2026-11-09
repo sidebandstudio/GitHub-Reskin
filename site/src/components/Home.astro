@@ -21,7 +21,7 @@ const data = {
   initial: slug,
   themes: THEMES.map((t) => {
     const c = t.captures;
-    return { slug: t.slug, title: t.title, name: t.name, sub: t.anime ? t.name : "Classic", group: t.group, pageTitle: pageTitle(t), themeFor: themeFor(t), description: t.description, advancedCss: t.advancedCss, swatch: [t.doc.colors.background, t.doc.colors.accent, t.doc.colors.contribution || t.doc.colors.accent], phone: c.phone.src, desk: c.desk.src, calm: c.calm.src, sourceHash: c.sourceHash };
+    return { slug: t.slug, title: t.title, name: t.name, sub: t.anime ? t.name : "Classic", group: t.group, pageTitle: pageTitle(t), themeFor: themeFor(t), description: t.description, advancedCss: t.advancedCss, swatch: [t.doc.colors.background, t.doc.colors.accent, t.doc.colors.contribution || t.doc.colors.accent], phone: c.phone.src, desk: c.desk.src, calm: c.calm.src, lines: t.profileLines, sourceHash: c.sourceHash };
   }),
 };
 ---
@@ -135,6 +135,10 @@ const data = {
         </div>
       </div>
       <figcaption id="compare-caption"><span data-selected="name">{theme.name}</span> on the same profile. Full adds the theme's own lines and decoration; Calm keeps the colors.</figcaption>
+      <div class="lines" data-selected="lines" hidden={!theme.profileLines.length}>
+        <p class="lines-title">Lines Full adds to a profile</p>
+        <dl>{theme.profileLines.map(([label, text]) => <div><dt>{label}</dt><dd>{text}</dd></div>)}</dl>
+      </div>
     </figure>
   </div>
 </section>

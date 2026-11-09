@@ -16,7 +16,7 @@ import { THEMED_SWITCH } from "../appearance/paint.js";
 import { LIMITS } from "../appearance/registry.js";
 import { fixtureBody, serializeFixture } from "./serialize.js";
 import { FIXTURE_CSS } from "./styles.js";
-import { variableDeclarations } from "./variables.js";
+import { PREVIEW_VARIABLES, variableDeclarations } from "./variables.js";
 import { VIEWS, builder } from "./views.js";
 
 // Slots without evidence on current GitHub markup stay dormant in the preview too, so it never
@@ -28,13 +28,14 @@ export const VIEW_LABELS = Object.freeze({ profile: "GitHub profile", repo: "Git
 // The styled frame's sandbox grants nothing: no scripts, no same-origin access, no forms,
 // popups or navigation of the host.
 export const PREVIEW_SANDBOX = "";
+const PREVIEW_NAMES = Object.freeze(Object.keys(PREVIEW_VARIABLES));
 
 let runtime = null;
 
 /**
- * Supplies what differs per host: the Primer adapter module (selectMode, compileGitHub), the
- * frozen ModeIndex, the resource adapter for fonts and fixture images, and the dormant slots.
- * Call once before mountPreview.
+ * Supplies what differs per host: the Primer adapter module (selectMode, compileGitHub, and
+ * compilePreview when it has one), the frozen ModeIndex, the resource adapter for fonts and
+ * fixture images, and the dormant slots. Call once before mountPreview.
  */
 export function configurePreview({ primer, modeIndex, resources = noResources, dormantSlots = DEFAULT_DORMANT_SLOTS }) {
   if (typeof primer?.selectMode !== "function" || typeof primer?.compileGitHub !== "function") throw new TypeError("configurePreview needs the Primer adapter's selectMode and compileGitHub");
@@ -154,7 +155,11 @@ export function createFixtureRenderer(fdoc, rt = runtime) {
       root.setAttribute("data-color-mode", native.colorMode);
       root.setAttribute("data-light-theme", native.lightTheme);
       root.setAttribute("data-dark-theme", native.darkTheme);
-      const compiled = themed ? rt.primer.compileGitHub(resolved, plan, prefs) : null;
+      // C3b's preview target writes only the variables the fixture reads, for a frame whose only
+      // island is its root; an adapter without it compiles the full GitHub stylesheet.
+      const compiled = !themed ? null
+        : rt.primer.compilePreview ? rt.primer.compilePreview(resolved, plan, prefs, { variables: PREVIEW_NAMES, index: rt.modeIndex })
+        : rt.primer.compileGitHub(resolved, plan, prefs);
       // Only the selected face gets a rule, so only that one file can load.
       const face = font(state);
       const url = fontUrl === undefined ? face?.url : fontUrl;

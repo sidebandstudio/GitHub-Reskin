@@ -10,7 +10,7 @@ import { ROOT, siteDir } from "./helpers.mjs";
 import { repairTheme, resolveTheme } from "../../packages/engine/index.js";
 import { CSS_POLICY_HASH, validateTheme } from "../../packages/format/index.js";
 import * as primer from "../../packages/primer/index.js";
-import { DEFAULT_DORMANT_SLOTS } from "../../packages/preview/index.js";
+import { DEFAULT_DORMANT_SLOTS, PREVIEW_VARIABLES } from "../../packages/preview/index.js";
 import { dormantSlots } from "../../extension/content/github/slots.js";
 import { CATALOG, CSS_PROOFS } from "../../site/src/catalog.mjs";
 import { themesModuleSource } from "../../site/modules.mjs";
@@ -26,13 +26,13 @@ before(async () => {
 });
 
 // The extension's resolution of one theme in GitHub's standard mode of its base, as the content
-// script and mountPreview both do it.
+// script and mountPreview both do it, compiled for the preview frame as mountPreview does.
 function extensionResolve(theme) {
   const native = { colorMode: theme.base, lightTheme: "light", darkTheme: "dark", systemDark: theme.base === "dark" };
   const plan = primer.selectMode(native, theme.base, index);
   const repaired = repairTheme(theme, index.modes[theme.base]);
   const resolved = resolveTheme(repaired.theme, { seed: plan.seedMode ? index.modes[plan.seedMode] : null, policy: plan.policy, reducedMotion: false, forcedColors: false });
-  return { resolved, compiled: primer.compileGitHub(resolved, plan, FULL) };
+  return { resolved, compiled: primer.compilePreview(resolved, plan, FULL, { variables: Object.keys(PREVIEW_VARIABLES), index }) };
 }
 
 test("the site's theme documents are the catalog's files, byte for byte, in catalog order", async () => {

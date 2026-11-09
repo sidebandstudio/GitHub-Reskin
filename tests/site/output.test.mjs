@@ -141,6 +141,21 @@ describe("static theme states", () => {
     const entry = manifest.themes["longroad-petals"];
     assert.match(html, new RegExp(`src="${BASE}previews/${entry.calm.file}"[^>]*data-compare="calm"`));
   });
+
+  test("the Full/Calm comparison lists the lines Full adds to a profile, from the theme's own slots", () => {
+    const slots = CATALOG.find((t) => t.slug === "choom-circuit").doc.flavor.slots;
+    const lines = page("").match(/<div class="lines"[^>]*>([\s\S]*?)<\/dl>/)[1];
+    const rows = [...lines.matchAll(/<dt>(.*?)<\/dt><dd>(.*?)<\/dd>/g)].map(([, label, text]) => [label, text]);
+    assert.deepEqual(rows, [
+      ["Name", slots["profile.tag"]],
+      ["Pinned", slots["profile.pinned.heading"]],
+      ["Contribution activity", slots["profile.activity.heading"]],
+      ["Achievements", slots["profile.achievements.heading"]],
+      ["Organizations", slots["profile.organizations.heading"]],
+      ["Footer", slots["footer.signoff"]],
+    ]);
+    assert.equal(lines.includes(slots["error.notFound.caption"]), false, "the 404 caption belongs to another page");
+  });
 });
 
 describe("content and honesty", () => {
@@ -235,7 +250,7 @@ describe("production gate", () => {
     const scripts = await Promise.all(files.filter((f) => /^_assets\/.*\.js$/.test(f)).map(async (f) => [f, await read(dir, f)]));
     const engine = scripts.filter(([, code]) => code.includes("Call configurePreview before mountPreview"));
     assert.equal(engine.length, 1, "exactly one chunk carries the shared preview");
-    assert.match(engine[0][1], /compileGitHub needs a ResolvedTheme/, "the preview chunk carries C3's compiler");
+    assert.match(engine[0][1], /The preview target needs the list of Primer variables/, "the preview chunk carries C3b's preview target");
     const parser = scripts.filter(([, code]) => /Matching for a tree with var|csstree/i.test(code)).map(([f]) => f);
     assert.equal(parser.length, 1, `the CSS parser is in ${parser.join(", ")}`);
     assert.notEqual(parser[0], engine[0][0]);

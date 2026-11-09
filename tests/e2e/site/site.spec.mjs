@@ -304,6 +304,10 @@ test("the Full and Calm comparison follows the selected theme", async ({ page, s
   const entry = manifest().themes["occult-orbit"];
   await expect(page.locator('[data-compare="full"]')).toHaveAttribute("src", `/GitHub-Reskin/previews/${entry.phone.file}`);
   await expect(page.locator('[data-compare="calm"]')).toHaveAttribute("src", `/GitHub-Reskin/previews/${entry.calm.file}`);
+  const slots = JSON.parse(readFileSync(join(ROOT, "themes/anime/occult-orbit.reskin.json"), "utf8")).flavor.slots;
+  await expect(page.locator('[data-selected="lines"] dd').first()).toHaveText(slots["profile.tag"]);
+  await page.locator('[data-card="choom-circuit"] [data-theme]').click();
+  await expect(page.locator('[data-selected="lines"] dd')).toHaveText(["// choom", "Preem picks", "Gig log", "Street cred", "Crews", "// stay preem, choom"]);
 });
 
 test("Copy AI prompt says copied only after success and otherwise shows the prompt to select", async ({ page, site }) => {
@@ -386,8 +390,15 @@ test("the importer previews a sample with Advanced CSS off until chosen, and kee
   await expect(enable).not.toBeChecked();
   await enable.check();
   await expect(page.locator("[data-import-status]")).toHaveText("Advanced CSS is enabled in this preview.");
-  // The sample's rule targets .AppHeader, a GitHub element, which fails closed until C3b.
-  await expect(page.locator("[data-css-note]")).toHaveText(/styles GitHub's own elements/);
+  // The sample's rule targets .AppHeader, a GitHub element on C3b's reviewed list: the extension
+  // applies it behind admission, and the preview, which writes no admission markers, does not.
+  await expect(page.locator("[data-css-note]")).toHaveText(/also styles parts of GitHub itself.*apply on the pages Reskin has reviewed.*This preview shows only/);
+
+  // A rule for anything off the reviewed list fails the whole CSS closed everywhere.
+  const unreviewed = JSON.stringify({ ...JSON.parse(readFileSync(join(ROOT, "tests/fixtures/schema/valid/ai-rich.reskin.json"), "utf8")), css: ".markdown-body p { color: red; }" });
+  await page.getByLabel("Chatbot answer").fill(unreviewed);
+  await page.getByRole("button", { name: "Preview theme" }).click();
+  await expect(page.locator("[data-css-note]")).toHaveText(/has not reviewed, so Reskin rejects all of it/);
   await expect(page.getByRole("button", { name: "Download Midnight signal" })).toBeVisible();
 
   const answer = page.getByLabel("Chatbot answer");

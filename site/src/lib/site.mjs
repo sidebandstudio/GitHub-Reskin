@@ -31,6 +31,19 @@ const capturesOf = (slug) => {
   return { phone: image("phone"), desk: image("desk"), card: image("card"), calm: image("calm"), sourceHash: entry.sourceHash, fingerprint: entry.fingerprint };
 };
 
+// The lines Full adds to a profile page, as the flavor slots name them, each with the GitHub label
+// it sits beside. The 404 and empty-state captions belong to other pages.
+const PROFILE_LINES = [
+  ["profile.tag", "Name"],
+  ["profile.pinned.heading", "Pinned"],
+  ["contributions.caption", "Contribution graph"],
+  ["profile.activity.heading", "Contribution activity"],
+  ["profile.achievements.heading", "Achievements"],
+  ["profile.organizations.heading", "Organizations"],
+  ["footer.signoff", "Footer"],
+];
+const profileLines = (doc) => (doc.flavor?.enabled ? PROFILE_LINES.filter(([slot]) => doc.flavor.slots?.[slot]).map(([slot, label]) => [label, doc.flavor.slots[slot]]) : []);
+
 // The anime title is every theme's primary label; the theme's own name comes second. A Classic has
 // no anime, so its name is primary.
 export const THEMES = CATALOG.map((entry) => ({
@@ -42,6 +55,7 @@ export const THEMES = CATALOG.map((entry) => ({
   description: entry.doc.description || "",
   base: entry.doc.base,
   advancedCss: typeof entry.doc.css === "string" && entry.doc.css !== "",
+  profileLines: profileLines(entry.doc),
   get captures() {
     return capturesOf(entry.slug);
   },

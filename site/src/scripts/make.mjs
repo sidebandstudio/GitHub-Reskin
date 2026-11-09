@@ -99,8 +99,9 @@ async function runImport(input, kind) {
     $("[data-css-size]").textContent = `${new TextEncoder().encode(current.css).length.toLocaleString("en-US")} bytes of CSS, checked by the sanitizer. It is off in this preview until you enable it.`;
     $("[data-css-source]").textContent = current.css;
     const note = $("[data-css-note]");
-    note.hidden = await module.cssStylesOwnedOnly(current.css);
-    note.textContent = "This CSS styles GitHub's own elements. Reskin cannot apply those rules yet, so enabling it changes nothing here or in the extension.";
+    const reach = await module.cssReach(current.css);
+    note.hidden = reach === "owned";
+    note.textContent = module.CSS_NOTES[reach] ?? "";
   }
   const layers = module.rasterLayers(current);
   const bytes = layers.reduce((n, layer) => n + Math.floor((layer.image.data.length - layer.image.data.indexOf(",") - 1) * 0.75), 0);

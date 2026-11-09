@@ -28,7 +28,7 @@ A trusted controller in the host page does all the work. It resolves and compile
 Both frames grow to fit the content and stay out of the tab order. View and Before/After controls stay in the host. Paint order in the styled frame:
 
 1. GitHub's native mode CSS: the ModeIndex declaration list for the theme's standard mode, as a `:root` rule with that mode's `color-scheme` (`nativeBaseline`).
-2. `compileGitHub`, applied in After mode.
+2. The Primer compiler's preview target (`compilePreview` with the `PREVIEW_VARIABLES` names), applied in After mode; an adapter without it compiles `compileGitHub`.
 3. The selected face's `@font-face`, then `compileAppearance`.
 
 Before mode and `preferences.enabled: false` show native colors only. An invalid theme throws and the last valid preview stays; a job that fails keeps the last valid frame and sets `data-error`.

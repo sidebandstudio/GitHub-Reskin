@@ -235,6 +235,12 @@ html:not(.js) .needs-js { display: none !important; }
 .compare-label { margin-bottom: 8px; font: 650 18px/1.2 var(--font-display); }
 .compare-item img { display: block; width: 100%; height: auto; aspect-ratio: 358 / 420; object-fit: cover; object-position: top; border-radius: 12px; background: var(--surface); }
 .compare figcaption { margin-top: 12px; color: var(--text-2); font-size: 16px; }
+.lines { margin-top: 20px; }
+.lines-title { margin-bottom: 8px; font-weight: 650; }
+.lines dl { margin: 0; display: grid; gap: 6px; }
+.lines dl > div { display: grid; grid-template-columns: minmax(0, 11em) minmax(0, 1fr); gap: 12px; padding-bottom: 6px; border-bottom: 1px solid var(--sep); }
+.lines dt { color: var(--text-2); }
+.lines dd { margin: 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; overflow-wrap: anywhere; }
 
 /* Still your GitHub */
 .split { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: clamp(28px, 5vw, 64px); align-items: center; }

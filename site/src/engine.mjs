@@ -8,7 +8,7 @@ import { configurePreview, mountPreview } from "../../packages/preview/index.js"
 import * as primer from "../../packages/primer/index.js";
 import { siteResources } from "../../packages/appearance/index.js";
 import { dormantSlots } from "../../extension/content/github/slots.js";
-import { decodeShare, encodeShare, exportTheme, fileStem, parseImport, rasterLayers, registerCssProofs } from "../../packages/format/viewer.js";
+import { compileCss, decodeShare, encodeShare, exportTheme, fileStem, parseImport, rasterLayers, registerCssProofs } from "../../packages/format/viewer.js";
 import { CSS_PROOFS, DOCS } from "reskin:themes";
 
 export { mountPreview, decodeShare, encodeShare, exportTheme, fileStem, parseImport, rasterLayers, DOCS };
@@ -26,12 +26,21 @@ let authoring = null;
 export const loadAuthoring = () => (authoring ??= import("../../packages/format/authoring.js"));
 
 /**
- * Whether a theme's advanced CSS styles only Reskin's own decorations. Those rules compile in the
- * preview and the extension; a rule for GitHub's own elements fails the whole CSS closed until
- * C3b's target registry lands.
+ * What a theme's advanced CSS can reach: "owned" when it styles only Reskin's own decorations,
+ * "github" when it also styles GitHub elements on C3b's reviewed list, which the extension applies
+ * behind its admission markers and the preview never shows, and "rejected" when a rule names
+ * anything else, which fails the whole CSS closed in the preview and the extension alike.
  */
-export async function cssStylesOwnedOnly(css) {
+export async function cssReach(css) {
   const { sanitizeCss } = await loadAuthoring();
   const result = sanitizeCss(css);
-  return result.ok && result.value.rules.every((rule) => rule.selectors.every((selector) => selector.compounds.some((compound) => compound.attributes.some((a) => a.name === "data-reskin-slot"))));
+  if (!result.ok) return "rejected";
+  if (result.value.rules.every((rule) => rule.selectors.every((selector) => selector.compounds.some((compound) => compound.attributes.some((a) => a.name === "data-reskin-slot"))))) return "owned";
+  return compileCss(result.value, { registry: primer.CSS_TARGET_REGISTRY, cssAllowed: true }).ok ? "github" : "rejected";
 }
+
+// What the make and share pages say under a CSS that is not owned-only, by cssReach's answer.
+export const CSS_NOTES = Object.freeze({
+  github: "This CSS also styles parts of GitHub itself. Once you enable it in the extension, those rules apply on the pages Reskin has reviewed. This preview shows only its rules for Reskin's own lines and decorations.",
+  rejected: "This CSS styles parts of GitHub that Reskin has not reviewed, so Reskin rejects all of it. Enabling it changes nothing here or in the extension.",
+});

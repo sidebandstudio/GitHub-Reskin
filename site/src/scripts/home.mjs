@@ -101,6 +101,13 @@ function select(slug, { announce = true } = {}) {
   const calm = $('[data-compare="calm"]');
   Object.assign(full, { src: theme.phone, alt: `${theme.name} in Full` });
   Object.assign(calm, { src: theme.calm, alt: `${theme.name} in Calm` });
+  const lines = $('[data-selected="lines"]');
+  lines.hidden = !theme.lines.length;
+  lines.querySelector("dl").replaceChildren(...theme.lines.map(([label, text]) => {
+    const row = document.createElement("div");
+    row.append(Object.assign(document.createElement("dt"), { textContent: label }), Object.assign(document.createElement("dd"), { textContent: text }));
+    return row;
+  }));
   document.title = theme.pageTitle;
   history.replaceState(null, "", `${data.base}themes/${slug}/${location.hash}`);
   refresh();

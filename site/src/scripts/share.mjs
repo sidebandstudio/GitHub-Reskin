@@ -32,8 +32,9 @@ async function open() {
   if (css) {
     $("[data-css-source]").textContent = theme.css;
     const note = $("[data-css-note]");
-    note.hidden = await module.cssStylesOwnedOnly(theme.css);
-    note.textContent = "This CSS styles GitHub's own elements. Reskin cannot apply those rules yet, so enabling it changes nothing here or in the extension.";
+    const reach = await module.cssReach(theme.css);
+    note.hidden = reach === "owned";
+    note.textContent = module.CSS_NOTES[reach] ?? "";
   }
   const layers = module.rasterLayers(theme);
   $("[data-images]").hidden = !layers.length;
