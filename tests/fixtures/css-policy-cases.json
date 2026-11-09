@@ -1,0 +1,222 @@
+{
+  "revision": 4,
+  "note": "Inputs for C2b full sanitizer. Current spec validation only probes parsing and checks inventory; outcomes are implementation requirements.",
+  "cases": [
+    {
+      "id": "empty",
+      "css": "",
+      "accept": true,
+      "reason": "empty CSS is valid"
+    },
+    {
+      "id": "paired-header",
+      "css": ".AppHeader { box-shadow: 0 1px 0 var(--reskin-accent); }",
+      "accept": true,
+      "reason": "native zero-blur/zero-spread opaque crisp rule exception, offset <=1px"
+    },
+    {
+      "id": "owned-stamp",
+      "css": "[data-reskin-slot=\"error.notFound.caption\"] { transform: rotate(-6deg); font-size: 32px; }",
+      "accept": true,
+      "reason": "owned bounded geometry"
+    },
+    {
+      "id": "media",
+      "css": "@media (min-width: 768px) { .AppHeader { border-color: var(--reskin-accent); } }",
+      "accept": true,
+      "reason": "allowed nested media"
+    },
+    {
+      "id": "local-var",
+      "css": ".AppHeader { --theme-edge: var(--reskin-accent); border-color: var(--theme-edge); }",
+      "accept": true,
+      "reason": "declared scalar dependency"
+    },
+    {
+      "id": "remote-url",
+      "css": ".AppHeader { background-image: url(https://example.com/a); }",
+      "accept": false,
+      "reason": "Url node"
+    },
+    {
+      "id": "escaped-url",
+      "css": ".AppHeader { background-image: u\\72l(https://example.com/a); }",
+      "accept": false,
+      "reason": "escaped Url/function"
+    },
+    {
+      "id": "data-url",
+      "css": ".AppHeader { background-image: url(data:image/png;base64,AAAA); }",
+      "accept": false,
+      "reason": "CSS data URLs rejected too"
+    },
+    {
+      "id": "relative-url",
+      "css": ".AppHeader { background-image: url(/x); }",
+      "accept": false,
+      "reason": "relative resource"
+    },
+    {
+      "id": "fragment-url",
+      "css": "svg { fill: url(#security); }",
+      "accept": false,
+      "reason": "fragment paint server"
+    },
+    {
+      "id": "import",
+      "css": "@import \"https://example.com/a.css\";",
+      "accept": false,
+      "reason": "import"
+    },
+    {
+      "id": "escaped-import",
+      "css": "@im\\70ort \"https://example.com/a.css\";",
+      "accept": false,
+      "reason": "escaped import"
+    },
+    {
+      "id": "font-face",
+      "css": "@font-face { font-family: X; src: local(Arial); }",
+      "accept": false,
+      "reason": "all font-face rejected"
+    },
+    {
+      "id": "namespace",
+      "css": "@namespace svg \"https://example.com\";",
+      "accept": false,
+      "reason": "namespace"
+    },
+    {
+      "id": "image-set",
+      "css": ".AppHeader { background-image: image-set(\"https://example.com/a\" 1x); }",
+      "accept": false,
+      "reason": "string resource without Url"
+    },
+    {
+      "id": "indirect-url",
+      "css": ".AppHeader { --theme-x: url(https://example.com/a); background-image: var(--theme-x); }",
+      "accept": false,
+      "reason": "unused/indirect values inspected"
+    },
+    {
+      "id": "fallback-url",
+      "css": ".AppHeader { border-color: var(--theme-missing, url(https://example.com/a)); }",
+      "accept": false,
+      "reason": "fallback inspected"
+    },
+    {
+      "id": "variable-cycle",
+      "css": ".AppHeader { --theme-a: var(--theme-b); --theme-b: var(--theme-a); border-color: var(--theme-a); }",
+      "accept": false,
+      "reason": "cycle"
+    },
+    {
+      "id": "attr",
+      "css": "[data-reskin-slot=\"profile.tag\"]::before { content: attr(data-token); }",
+      "accept": false,
+      "reason": "attr/content"
+    },
+    {
+      "id": "expression",
+      "css": ".AppHeader { color: expression(alert(1)); }",
+      "accept": false,
+      "reason": "legacy expression"
+    },
+    {
+      "id": "binding",
+      "css": ".AppHeader { -moz-binding: url(x); }",
+      "accept": false,
+      "reason": "legacy binding"
+    },
+    {
+      "id": "behavior",
+      "css": ".AppHeader { behavior: url(x.htc); }",
+      "accept": false,
+      "reason": "legacy behavior"
+    },
+    {
+      "id": "security-hide",
+      "css": ".flash-error { display:none; }",
+      "accept": false,
+      "reason": "native hiding and protected UI"
+    },
+    {
+      "id": "ancestor-hide",
+      "css": ".Box { opacity:0; }",
+      "accept": false,
+      "reason": "ancestor hiding"
+    },
+    {
+      "id": "zero-text",
+      "css": ".AppHeader { font-size:0; }",
+      "accept": false,
+      "reason": "native font size"
+    },
+    {
+      "id": "spoof",
+      "css": "button::before { content:\"Verified\"; }",
+      "accept": false,
+      "reason": "native generated text"
+    },
+    {
+      "id": "position",
+      "css": "body { position:fixed; z-index:9999; }",
+      "accept": false,
+      "reason": "position and stacking"
+    },
+    {
+      "id": "transparent",
+      "css": ".flash-error { color:transparent; }",
+      "accept": false,
+      "reason": "unaudited native pair/protected"
+    },
+    {
+      "id": "focus-removal",
+      "css": "button:focus-visible { outline:none; }",
+      "accept": false,
+      "reason": "focus guard"
+    },
+    {
+      "id": "sensitive-selector",
+      "css": "input[value^=\"secret\"] { border-color:red; }",
+      "accept": false,
+      "reason": "sensitive attribute"
+    },
+    {
+      "id": "has",
+      "css": "body:has(input[value]) { color:red; }",
+      "accept": false,
+      "reason": "has and sensitive selector"
+    },
+    {
+      "id": "native-variable",
+      "css": ".AppHeader { background-image:var(--external-image); }",
+      "accept": false,
+      "reason": "unregistered native variable"
+    },
+    {
+      "id": "engine-variable",
+      "css": ".AppHeader { --reskin-text:transparent; }",
+      "accept": false,
+      "reason": "reserved variable write"
+    },
+    {
+      "id": "keyframes",
+      "css": "@keyframes glow { to { opacity:0; } }",
+      "accept": false,
+      "reason": "raw animation"
+    },
+    {
+      "id": "unknown-grammar",
+      "css": "@container style(--private: x) { .Box { color:red; } }",
+      "accept": false,
+      "reason": "unsupported grammar"
+    },
+    {
+      "id": "raw-syntax",
+      "css": ".AppHeader { color: ???; }",
+      "accept": false,
+      "reason": "parser recovery/Raw/lexer mismatch"
+    }
+  ]
+}

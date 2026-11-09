@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "name": "Embedded background admission sample",
+  "base": "light",
+  "colors": {
+    "background": "#f6f2e8",
+    "text": "#27372d",
+    "accent": "#446851"
+  },
+  "backgrounds": {
+    "page": {
+      "layers": [
+        {
+          "image": {
+            "data": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNQMHD4DwAClAGQJla1dAAAAABJRU5ErkJggg==",
+            "width": 1,
+            "height": 1,
+            "fit": "tile",
+            "opacity": 0.2
+          }
+        }
+      ]
+    },
+    "profileBanner": {
+      "layers": [
+        {
+          "image": {
+            "data": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNQMHD4DwAClAGQJla1dAAAAABJRU5ErkJggg==",
+            "width": 1,
+            "height": 1,
+            "fit": "tile",
+            "opacity": 0.2
+          }
+        }
+      ]
+    },
+    "header": {
+      "layers": [
+        {
+          "image": {
+            "data": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNQMHD4DwAClAGQJla1dAAAAABJRU5ErkJggg==",
+            "width": 1,
+            "height": 1,
+            "fit": "tile",
+            "opacity": 0.2
+          }
+        }
+      ]
+    }
+  }
+}

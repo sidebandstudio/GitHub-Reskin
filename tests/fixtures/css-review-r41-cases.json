@@ -1,0 +1,1940 @@
+{
+  "revision": "4.1",
+  "sourceReview": "../../reviews/spec/spec-r4.md",
+  "status": "implementation requirements, not executed sanitizer/browser outcomes",
+  "contract": {
+    "rejectWholeInput": true,
+    "locatedReasons": true,
+    "testAdmissionAndFinalBrowserStyles": true,
+    "engines": [
+      "Chromium",
+      "Firefox"
+    ],
+    "interceptDestinationsLocally": true,
+    "blockedRequestAttemptFails": true,
+    "runtimeAcceptMeaning": "safe effective output and all stated invariants pass; runtime rejection means forbidden continued style application, not necessarily initial parse rejection",
+    "transportAcceptMeaning": "synthetic exact predicate registration isolates serialization; production unregistered predicates reject before sink; safe equivalent escaping is acceptance, unsafe sink output rejects"
+  },
+  "groups": [
+    "Escaped quoted URL",
+    "String resource constructors",
+    "Other resource functions",
+    "All URL schemes/forms",
+    "At-rule variations",
+    "Supports/prelude resources",
+    "Valid-reference bad fallback",
+    "Unused local variable",
+    "Variable graphs",
+    "Runtime variable substitution",
+    "Attribute oracle without sink",
+    "Approved structural predicate",
+    "CSS-to-HTML termination",
+    "Fake login/permission text",
+    "Click interception",
+    "Shadow bounds",
+    "Aggregate paint cost",
+    "Protected ancestor/inheritance",
+    "Newly protected content",
+    "Mixed kinds and selector lists",
+    "Scope and special roots",
+    "Preference/font paths",
+    "Numeric/grammar stress",
+    "Recovery and resource exhaustion"
+  ],
+  "cases": [
+    {
+      "id": "reject-escaped-quoted-url",
+      "group": "Escaped quoted URL",
+      "accept": false,
+      "reason": "resource constructor or Url rejected after escape/name decoding, including nested/unused branches",
+      "css": ".AppHeader{background-image:u\\000072l(\"https://leak.invalid/x\")}"
+    },
+    {
+      "id": "reject-mixed-case-url",
+      "group": "Escaped quoted URL",
+      "accept": false,
+      "reason": "resource constructor or Url rejected after escape/name decoding, including nested/unused branches",
+      "css": ".AppHeader{background-image:URL(\"https://leak.invalid/x\")}"
+    },
+    {
+      "id": "reject-image-set-string",
+      "group": "String resource constructors",
+      "accept": false,
+      "reason": "resource constructor or Url rejected after escape/name decoding, including nested/unused branches",
+      "css": ".AppHeader{background-image:image-set(\"https://leak.invalid/x\" 1x)}"
+    },
+    {
+      "id": "reject-image-set-nested",
+      "group": "String resource constructors",
+      "accept": false,
+      "reason": "resource constructor or Url rejected after escape/name decoding, including nested/unused branches",
+      "css": ".AppHeader{border-color:var(--reskin-accent,image-set(\"https://leak.invalid/x\" 1x))}"
+    },
+    {
+      "id": "reject--webkit-image-set-string",
+      "group": "String resource constructors",
+      "accept": false,
+      "reason": "resource constructor or Url rejected after escape/name decoding, including nested/unused branches",
+      "css": ".AppHeader{background-image:-webkit-image-set(\"https://leak.invalid/x\" 1x)}"
+    },
+    {
+      "id": "reject--webkit-image-set-nested",
+      "group": "String resource constructors",
+      "accept": false,
+      "reason": "resource constructor or Url rejected after escape/name decoding, including nested/unused branches",
+      "css": ".AppHeader{border-color:var(--reskin-accent,-webkit-image-set(\"https://leak.invalid/x\" 1x))}"
+    },
+    {
+      "id": "reject-image-string",
+      "group": "String resource constructors",
+      "accept": false,
+      "reason": "resource constructor or Url rejected after escape/name decoding, including nested/unused branches",
+      "css": ".AppHeader{background-image:image(\"https://leak.invalid/x\")}"
+    },
+    {
+      "id": "reject-image-nested",
+      "group": "String resource constructors",
+      "accept": false,
+      "reason": "resource constructor or Url rejected after escape/name decoding, including nested/unused branches",
+      "css": ".AppHeader{border-color:var(--reskin-accent,image(\"https://leak.invalid/x\"))}"
+    },
+    {
+      "id": "reject-cross-fade",
+      "group": "Other resource functions",
+      "accept": false,
+      "reason": "resource constructor or Url rejected after escape/name decoding, including nested/unused branches",
+      "css": ".AppHeader{background-image:cross-fade(url(https://leak.invalid/x),red,50%)}"
+    },
+    {
+      "id": "reject-src",
+      "group": "Other resource functions",
+      "accept": false,
+      "reason": "resource constructor or Url rejected after escape/name decoding, including nested/unused branches",
+      "css": ".AppHeader{background-image:src(\"https://leak.invalid/x\")}"
+    },
+    {
+      "id": "reject-paint",
+      "group": "Other resource functions",
+      "accept": false,
+      "reason": "resource constructor or Url rejected after escape/name decoding, including nested/unused branches",
+      "css": ".AppHeader{background-image:paint(x)}"
+    },
+    {
+      "id": "reject-element",
+      "group": "Other resource functions",
+      "accept": false,
+      "reason": "resource constructor or Url rejected after escape/name decoding, including nested/unused branches",
+      "css": ".AppHeader{background-image:element(#x)}"
+    },
+    {
+      "id": "reject-moz-element",
+      "group": "Other resource functions",
+      "accept": false,
+      "reason": "resource constructor or Url rejected after escape/name decoding, including nested/unused branches",
+      "css": ".AppHeader{background-image:-moz-element(#x)}"
+    },
+    {
+      "id": "reject-url-protocol-relative",
+      "group": "All URL schemes/forms",
+      "accept": false,
+      "reason": "resource constructor or Url rejected after escape/name decoding, including nested/unused branches",
+      "css": ".AppHeader{background-image:url(\"//host/x\")}"
+    },
+    {
+      "id": "reject-url-absolute-path",
+      "group": "All URL schemes/forms",
+      "accept": false,
+      "reason": "resource constructor or Url rejected after escape/name decoding, including nested/unused branches",
+      "css": ".AppHeader{background-image:url(\"/x\")}"
+    },
+    {
+      "id": "reject-url-parent-path",
+      "group": "All URL schemes/forms",
+      "accept": false,
+      "reason": "resource constructor or Url rejected after escape/name decoding, including nested/unused branches",
+      "css": ".AppHeader{background-image:url(\"../x\")}"
+    },
+    {
+      "id": "reject-url-fragment",
+      "group": "All URL schemes/forms",
+      "accept": false,
+      "reason": "resource constructor or Url rejected after escape/name decoding, including nested/unused branches",
+      "css": ".AppHeader{background-image:url(\"#id\")}"
+    },
+    {
+      "id": "reject-url-svg-data",
+      "group": "All URL schemes/forms",
+      "accept": false,
+      "reason": "resource constructor or Url rejected after escape/name decoding, including nested/unused branches",
+      "css": ".AppHeader{background-image:url(\"data:image/svg+xml,<svg/>\")}"
+    },
+    {
+      "id": "reject-url-blob",
+      "group": "All URL schemes/forms",
+      "accept": false,
+      "reason": "resource constructor or Url rejected after escape/name decoding, including nested/unused branches",
+      "css": ".AppHeader{background-image:url(\"blob:https://leak.invalid/uuid\")}"
+    },
+    {
+      "id": "reject-url-file",
+      "group": "All URL schemes/forms",
+      "accept": false,
+      "reason": "resource constructor or Url rejected after escape/name decoding, including nested/unused branches",
+      "css": ".AppHeader{background-image:url(\"file:///tmp/x\")}"
+    },
+    {
+      "id": "reject-url-chrome-extension",
+      "group": "All URL schemes/forms",
+      "accept": false,
+      "reason": "resource constructor or Url rejected after escape/name decoding, including nested/unused branches",
+      "css": ".AppHeader{background-image:url(\"chrome-extension://test/x\")}"
+    },
+    {
+      "id": "reject-url-moz-extension",
+      "group": "All URL schemes/forms",
+      "accept": false,
+      "reason": "resource constructor or Url rejected after escape/name decoding, including nested/unused branches",
+      "css": ".AppHeader{background-image:url(\"moz-extension://test/x\")}"
+    },
+    {
+      "id": "reject-url-escaped-scheme",
+      "group": "All URL schemes/forms",
+      "accept": false,
+      "reason": "resource constructor or Url rejected after escape/name decoding, including nested/unused branches",
+      "css": ".AppHeader{background-image:url(\"h\\74tps://leak.invalid/x\")}"
+    },
+    {
+      "id": "accept-structured-raster-path",
+      "group": "All URL schemes/forms",
+      "accept": true,
+      "reason": "structured raster data is a separate schema/header/decode-admitted path, never a CSS resource",
+      "setup": {
+        "fixture": "valid/embedded-images.reskin.json",
+        "checks": [
+          "magic/MIME/dimensions",
+          "serial decode",
+          "byte/pixel admission",
+          "static conversion"
+        ]
+      }
+    },
+    {
+      "id": "reject-escaped-import",
+      "group": "At-rule variations",
+      "accept": false,
+      "reason": "forbidden decoded at-rule, inspect prelude, declarations and all conditional branches",
+      "css": "@im\\70ort \"https://leak.invalid/x\";"
+    },
+    {
+      "id": "reject-mixed-case-import",
+      "group": "At-rule variations",
+      "accept": false,
+      "reason": "forbidden decoded at-rule, inspect prelude, declarations and all conditional branches",
+      "css": "@ImPoRt \"https://leak.invalid/x\";"
+    },
+    {
+      "id": "reject-import-layer",
+      "group": "At-rule variations",
+      "accept": false,
+      "reason": "forbidden decoded at-rule, inspect prelude, declarations and all conditional branches",
+      "css": "@import url(https://leak.invalid/x) layer(x);"
+    },
+    {
+      "id": "reject-font-local",
+      "group": "At-rule variations",
+      "accept": false,
+      "reason": "forbidden decoded at-rule, inspect prelude, declarations and all conditional branches",
+      "css": "@font-face{font-family:X;src:local(Arial)}"
+    },
+    {
+      "id": "reject-font-url",
+      "group": "At-rule variations",
+      "accept": false,
+      "reason": "forbidden decoded at-rule, inspect prelude, declarations and all conditional branches",
+      "css": "@font-face{font-family:X;src:url(https://leak.invalid/x)}"
+    },
+    {
+      "id": "reject-font-src",
+      "group": "At-rule variations",
+      "accept": false,
+      "reason": "forbidden decoded at-rule, inspect prelude, declarations and all conditional branches",
+      "css": "@font-face{font-family:X;src:src(\"https://leak.invalid/x\")}"
+    },
+    {
+      "id": "reject-namespace-string",
+      "group": "At-rule variations",
+      "accept": false,
+      "reason": "forbidden decoded at-rule, inspect prelude, declarations and all conditional branches",
+      "css": "@namespace x \"https://leak.invalid/x\";"
+    },
+    {
+      "id": "reject-namespace-url",
+      "group": "At-rule variations",
+      "accept": false,
+      "reason": "forbidden decoded at-rule, inspect prelude, declarations and all conditional branches",
+      "css": "@namespace x url(https://leak.invalid/x);"
+    },
+    {
+      "id": "reject-vendor-document",
+      "group": "At-rule variations",
+      "accept": false,
+      "reason": "forbidden decoded at-rule, inspect prelude, declarations and all conditional branches",
+      "css": "@-moz-document url-prefix(\"https://leak.invalid/\"){.AppHeader{border-color:var(--reskin-accent)}}"
+    },
+    {
+      "id": "reject-vendor-keyframes",
+      "group": "At-rule variations",
+      "accept": false,
+      "reason": "forbidden decoded at-rule, inspect prelude, declarations and all conditional branches",
+      "css": "@-webkit-keyframes x{to{opacity:0}}"
+    },
+    {
+      "id": "reject-supports-url",
+      "group": "Supports/prelude resources",
+      "accept": false,
+      "reason": "resource in prelude rejected even if condition is false",
+      "css": "@supports (background-image:url(https://leak.invalid/x)){.AppHeader{border-color:var(--reskin-accent)}}"
+    },
+    {
+      "id": "reject-known-var-resource-fallback",
+      "group": "Valid-reference bad fallback",
+      "accept": false,
+      "reason": "unused fallback must still be resource-free",
+      "css": ".AppHeader{border-color:var(--reskin-accent,url(https://leak.invalid/x))}"
+    },
+    {
+      "id": "reject-unused-image-set",
+      "group": "Unused local variable",
+      "accept": false,
+      "reason": "all unused variables must pass scalar grammar/resource/dependency validation",
+      "css": ".AppHeader{--theme-unused:image-set(\"https://leak.invalid/x\" 1x);border-color:var(--reskin-accent)}"
+    },
+    {
+      "id": "reject-unused-cycle",
+      "group": "Unused local variable",
+      "accept": false,
+      "reason": "all unused variables must pass scalar grammar/resource/dependency validation",
+      "css": ".AppHeader{--theme-unused:var(--theme-unused);border-color:var(--reskin-accent)}"
+    },
+    {
+      "id": "reject-unused-string",
+      "group": "Unused local variable",
+      "accept": false,
+      "reason": "all unused variables must pass scalar grammar/resource/dependency validation",
+      "css": ".AppHeader{--theme-unused:\"https://leak.invalid/x\";border-color:var(--reskin-accent)}"
+    },
+    {
+      "id": "reject-unused-function",
+      "group": "Unused local variable",
+      "accept": false,
+      "reason": "all unused variables must pass scalar grammar/resource/dependency validation",
+      "css": ".AppHeader{--theme-unused:mystery(1);border-color:var(--reskin-accent)}"
+    },
+    {
+      "id": "accept-variable-chain-8",
+      "group": "Variable graphs",
+      "accept": true,
+      "reason": "eight theme-local dependency edges allowed, ninth rejected; exported scalar is terminal depth 0",
+      "css": ".AppHeader{--theme-v0:var(--reskin-accent);--theme-v1:var(--theme-v0);--theme-v2:var(--theme-v1);--theme-v3:var(--theme-v2);--theme-v4:var(--theme-v3);--theme-v5:var(--theme-v4);--theme-v6:var(--theme-v5);--theme-v7:var(--theme-v6);--theme-v8:var(--theme-v7);border-color:var(--theme-v8)}"
+    },
+    {
+      "id": "reject-variable-chain-9",
+      "group": "Variable graphs",
+      "accept": false,
+      "reason": "eight theme-local dependency edges allowed, ninth rejected; exported scalar is terminal depth 0",
+      "css": ".AppHeader{--theme-v0:var(--reskin-accent);--theme-v1:var(--theme-v0);--theme-v2:var(--theme-v1);--theme-v3:var(--theme-v2);--theme-v4:var(--theme-v3);--theme-v5:var(--theme-v4);--theme-v6:var(--theme-v5);--theme-v7:var(--theme-v6);--theme-v8:var(--theme-v7);--theme-v9:var(--theme-v8);border-color:var(--theme-v9)}"
+    },
+    {
+      "id": "reject-repeated-expansion-output",
+      "group": "Variable graphs",
+      "accept": false,
+      "reason": "stop before expanded canonical output exceeds 32768 UTF-8 bytes, before excessive allocation",
+      "setup": {
+        "generator": "acyclic <=8-edge scalar graph with repeated references; post-substitution output 32769 bytes",
+        "assert": "bounded work, no large intermediate allocation"
+      }
+    },
+    {
+      "id": "reject-conditional-variable",
+      "group": "Variable graphs",
+      "accept": false,
+      "reason": "theme-local declarations cannot vary by condition/state",
+      "css": "@media (hover:hover){.AppHeader{--theme-x:var(--reskin-accent)}}.AppHeader{border-color:var(--theme-x)}"
+    },
+    {
+      "id": "reject-duplicate-variable",
+      "group": "Variable graphs",
+      "accept": false,
+      "reason": "one unambiguous declaration per local name",
+      "css": ".AppHeader{--theme-x:red;--theme-x:blue;border-color:var(--theme-x)}"
+    },
+    {
+      "id": "reject-native-color-variable",
+      "group": "Variable graphs",
+      "accept": false,
+      "reason": "native --color-* lookup is not an exported audited scalar",
+      "css": ".AppHeader{border-color:var(--color-accent-fg)}"
+    },
+    {
+      "id": "reject-escaped-reserved-write",
+      "group": "Variable graphs",
+      "accept": false,
+      "reason": "decode escaped reserved name before checking writes",
+      "css": ".AppHeader{--r\\65skin-accent:red;border-color:var(--reskin-accent)}"
+    },
+    {
+      "id": "accept-static-variable-substitution",
+      "group": "Runtime variable substitution",
+      "accept": true,
+      "reason": "theme-local references are substituted before insertion and cannot acquire page CSS resources",
+      "css": ".AppHeader{--theme-edge:var(--reskin-accent);border-color:var(--theme-edge)}",
+      "setup": {
+        "pageCss": ".AppHeader{--theme-edge:url(https://leak.invalid/x)}",
+        "assert": [
+          "no --theme-edge lookup remains in generated declaration",
+          "audited edge retained",
+          "no request attempt"
+        ]
+      }
+    },
+    {
+      "id": "reject-attribute-oracle-plain",
+      "group": "Attribute oracle without sink",
+      "accept": false,
+      "reason": "sensitive predicate rejected independently of any resource sink",
+      "css": "input[value^=\"a\"]{border-color:var(--reskin-accent)}"
+    },
+    {
+      "id": "reject-attribute-oracle-is",
+      "group": "Attribute oracle without sink",
+      "accept": false,
+      "reason": "sensitive predicate rejected independently of any resource sink",
+      "css": ":is(.AppHeader,input[value^=\"a\"]){border-color:var(--reskin-accent)}"
+    },
+    {
+      "id": "reject-attribute-oracle-not",
+      "group": "Attribute oracle without sink",
+      "accept": false,
+      "reason": "sensitive predicate rejected independently of any resource sink",
+      "css": ".AppHeader:not(input[value^=\"a\"]){border-color:var(--reskin-accent)}"
+    },
+    {
+      "id": "accept-registered-testid",
+      "group": "Approved structural predicate",
+      "accept": true,
+      "reason": "exact registered structural predicate on the correct admitted kind and audited pair",
+      "css": ".AppHeader[data-testid=\"reviewed-header\"]{border-color:var(--reskin-accent)}",
+      "setup": {
+        "registry": "positive synthetic fixture registering this exact predicate/value and target kind"
+      }
+    },
+    {
+      "id": "accept-registered-current",
+      "group": "Approved structural predicate",
+      "accept": true,
+      "reason": "exact registered structural predicate on the correct admitted kind and audited pair",
+      "css": ".tabnav-tab[aria-current=\"page\"]{border-color:var(--reskin-accent)}",
+      "setup": {
+        "registry": "positive synthetic fixture registering this exact predicate/value and target kind"
+      }
+    },
+    {
+      "id": "reject-structural-prefix",
+      "group": "Approved structural predicate",
+      "accept": false,
+      "reason": "operator/name/value/use not registered for this admitted kind",
+      "css": ".AppHeader[data-testid^=\"reviewed\"]{border-color:var(--reskin-accent)}"
+    },
+    {
+      "id": "reject-structural-substring",
+      "group": "Approved structural predicate",
+      "accept": false,
+      "reason": "operator/name/value/use not registered for this admitted kind",
+      "css": ".AppHeader[data-testid*=\"header\"]{border-color:var(--reskin-accent)}"
+    },
+    {
+      "id": "reject-structural-unregistered",
+      "group": "Approved structural predicate",
+      "accept": false,
+      "reason": "operator/name/value/use not registered for this admitted kind",
+      "css": ".AppHeader[data-testid=\"credential-token\"]{border-color:var(--reskin-accent)}"
+    },
+    {
+      "id": "reject-structural-wrong-kind",
+      "group": "Approved structural predicate",
+      "accept": false,
+      "reason": "operator/name/value/use not registered for this admitted kind",
+      "css": ".Box[aria-current=\"page\"]{border-color:var(--reskin-accent)}"
+    },
+    {
+      "id": "accept-transport-img",
+      "group": "CSS-to-HTML termination",
+      "accept": true,
+      "reason": "transport-escaped equivalent CSS must create no extra DOM nodes and preserve canonical consent hash; reject whole input if serializer cannot prove safety",
+      "css": ".AppHeader:not([data-testid=\"</style><img id=breakout>\"]) {box-shadow:0 1px 0 var(--reskin-accent)}",
+      "setup": {
+        "registry": "synthetic exact negative-predicate fixture, correct admitted header subject",
+        "browser": [
+          "Chromium",
+          "Firefox"
+        ],
+        "sinks": [
+          "live style.textContent",
+          "complete preview srcdoc"
+        ],
+        "assert": [
+          "no breakout/form/input/link/meta/script element",
+          "same decoded CSS AST",
+          "same pre-transport canonical CSS consent hash",
+          "zero request attempts"
+        ]
+      },
+      "stage": "safe-transport"
+    },
+    {
+      "id": "accept-transport-mixed-case",
+      "group": "CSS-to-HTML termination",
+      "accept": true,
+      "reason": "transport-escaped equivalent CSS must create no extra DOM nodes and preserve canonical consent hash; reject whole input if serializer cannot prove safety",
+      "css": ".AppHeader:not([data-testid=\"</StYlE><img id=breakout>\"]) {box-shadow:0 1px 0 var(--reskin-accent)}",
+      "setup": {
+        "registry": "synthetic exact negative-predicate fixture, correct admitted header subject",
+        "browser": [
+          "Chromium",
+          "Firefox"
+        ],
+        "sinks": [
+          "live style.textContent",
+          "complete preview srcdoc"
+        ],
+        "assert": [
+          "no breakout/form/input/link/meta/script element",
+          "same decoded CSS AST",
+          "same pre-transport canonical CSS consent hash",
+          "zero request attempts"
+        ]
+      },
+      "stage": "safe-transport"
+    },
+    {
+      "id": "accept-transport-form",
+      "group": "CSS-to-HTML termination",
+      "accept": true,
+      "reason": "transport-escaped equivalent CSS must create no extra DOM nodes and preserve canonical consent hash; reject whole input if serializer cannot prove safety",
+      "css": ".AppHeader:not([data-testid=\"</style><form id=breakout><input name=token></form>\"]) {box-shadow:0 1px 0 var(--reskin-accent)}",
+      "setup": {
+        "registry": "synthetic exact negative-predicate fixture, correct admitted header subject",
+        "browser": [
+          "Chromium",
+          "Firefox"
+        ],
+        "sinks": [
+          "live style.textContent",
+          "complete preview srcdoc"
+        ],
+        "assert": [
+          "no breakout/form/input/link/meta/script element",
+          "same decoded CSS AST",
+          "same pre-transport canonical CSS consent hash",
+          "zero request attempts"
+        ]
+      },
+      "stage": "safe-transport"
+    },
+    {
+      "id": "accept-transport-input",
+      "group": "CSS-to-HTML termination",
+      "accept": true,
+      "reason": "transport-escaped equivalent CSS must create no extra DOM nodes and preserve canonical consent hash; reject whole input if serializer cannot prove safety",
+      "css": ".AppHeader:not([data-testid=\"</style><input id=breakout>\"]) {box-shadow:0 1px 0 var(--reskin-accent)}",
+      "setup": {
+        "registry": "synthetic exact negative-predicate fixture, correct admitted header subject",
+        "browser": [
+          "Chromium",
+          "Firefox"
+        ],
+        "sinks": [
+          "live style.textContent",
+          "complete preview srcdoc"
+        ],
+        "assert": [
+          "no breakout/form/input/link/meta/script element",
+          "same decoded CSS AST",
+          "same pre-transport canonical CSS consent hash",
+          "zero request attempts"
+        ]
+      },
+      "stage": "safe-transport"
+    },
+    {
+      "id": "accept-transport-link",
+      "group": "CSS-to-HTML termination",
+      "accept": true,
+      "reason": "transport-escaped equivalent CSS must create no extra DOM nodes and preserve canonical consent hash; reject whole input if serializer cannot prove safety",
+      "css": ".AppHeader:not([data-testid=\"</style><link id=breakout rel=stylesheet href=https://leak.invalid/x>\"]) {box-shadow:0 1px 0 var(--reskin-accent)}",
+      "setup": {
+        "registry": "synthetic exact negative-predicate fixture, correct admitted header subject",
+        "browser": [
+          "Chromium",
+          "Firefox"
+        ],
+        "sinks": [
+          "live style.textContent",
+          "complete preview srcdoc"
+        ],
+        "assert": [
+          "no breakout/form/input/link/meta/script element",
+          "same decoded CSS AST",
+          "same pre-transport canonical CSS consent hash",
+          "zero request attempts"
+        ]
+      },
+      "stage": "safe-transport"
+    },
+    {
+      "id": "accept-transport-meta",
+      "group": "CSS-to-HTML termination",
+      "accept": true,
+      "reason": "transport-escaped equivalent CSS must create no extra DOM nodes and preserve canonical consent hash; reject whole input if serializer cannot prove safety",
+      "css": ".AppHeader:not([data-testid=\"</style><meta id=breakout http-equiv=refresh content=0>\"]) {box-shadow:0 1px 0 var(--reskin-accent)}",
+      "setup": {
+        "registry": "synthetic exact negative-predicate fixture, correct admitted header subject",
+        "browser": [
+          "Chromium",
+          "Firefox"
+        ],
+        "sinks": [
+          "live style.textContent",
+          "complete preview srcdoc"
+        ],
+        "assert": [
+          "no breakout/form/input/link/meta/script element",
+          "same decoded CSS AST",
+          "same pre-transport canonical CSS consent hash",
+          "zero request attempts"
+        ]
+      },
+      "stage": "safe-transport"
+    },
+    {
+      "id": "accept-transport-script",
+      "group": "CSS-to-HTML termination",
+      "accept": true,
+      "reason": "transport-escaped equivalent CSS must create no extra DOM nodes and preserve canonical consent hash; reject whole input if serializer cannot prove safety",
+      "css": ".AppHeader:not([data-testid=\"</style><script id=breakout src=https://leak.invalid/x></script>\"]) {box-shadow:0 1px 0 var(--reskin-accent)}",
+      "setup": {
+        "registry": "synthetic exact negative-predicate fixture, correct admitted header subject",
+        "browser": [
+          "Chromium",
+          "Firefox"
+        ],
+        "sinks": [
+          "live style.textContent",
+          "complete preview srcdoc"
+        ],
+        "assert": [
+          "no breakout/form/input/link/meta/script element",
+          "same decoded CSS AST",
+          "same pre-transport canonical CSS consent hash",
+          "zero request attempts"
+        ]
+      },
+      "stage": "safe-transport"
+    },
+    {
+      "id": "reject-unsafe-serialization",
+      "group": "CSS-to-HTML termination",
+      "accept": false,
+      "reason": "reject remaining unsafe HTML delimiter or failed AST equivalence before insertion",
+      "setup": {
+        "inject": "serializer output retaining literal mixed-case closing style delimiter",
+        "assert": "no frame/live HTML insertion"
+      }
+    },
+    {
+      "id": "accept-escaped-fixture-name",
+      "group": "CSS-to-HTML termination",
+      "accept": true,
+      "reason": "fixture text is independently escaped; never concatenated into HTML",
+      "setup": {
+        "boundaryProbe": "name = </style><form id=breakout><input></form>",
+        "assert": [
+          "normal importer rejects markup text",
+          "serializer defense-in-depth probe creates text only and no elements"
+        ]
+      },
+      "stage": "text-transport-defense"
+    },
+    {
+      "id": "accept-escaped-fixture-flavor",
+      "group": "CSS-to-HTML termination",
+      "accept": true,
+      "reason": "fixture text is independently escaped; never concatenated into HTML",
+      "setup": {
+        "boundaryProbe": "flavor = </style><form id=breakout><input></form>",
+        "assert": [
+          "normal importer rejects markup text",
+          "serializer defense-in-depth probe creates text only and no elements"
+        ]
+      },
+      "stage": "text-transport-defense"
+    },
+    {
+      "id": "reject-generated-owned-login",
+      "group": "Fake login/permission text",
+      "accept": false,
+      "reason": "nonempty/generated/native text or attr/counter rejected after decoding",
+      "css": "[data-reskin-slot=\"profile.tag\"]::before{content:\"Sign in again\"}"
+    },
+    {
+      "id": "reject-generated-native-button",
+      "group": "Fake login/permission text",
+      "accept": false,
+      "reason": "nonempty/generated/native text or attr/counter rejected after decoding",
+      "css": "button::after{content:\"Allow permissions\"}"
+    },
+    {
+      "id": "reject-generated-counter",
+      "group": "Fake login/permission text",
+      "accept": false,
+      "reason": "nonempty/generated/native text or attr/counter rejected after decoding",
+      "css": "[data-reskin-slot=\"profile.tag\"]::before{content:counter(x)}"
+    },
+    {
+      "id": "reject-generated-attr",
+      "group": "Fake login/permission text",
+      "accept": false,
+      "reason": "nonempty/generated/native text or attr/counter rejected after decoding",
+      "css": "[data-reskin-slot=\"profile.tag\"]::before{content:attr(data-token)}"
+    },
+    {
+      "id": "reject-generated-escaped-content",
+      "group": "Fake login/permission text",
+      "accept": false,
+      "reason": "nonempty/generated/native text or attr/counter rejected after decoding",
+      "css": "[data-reskin-slot=\"profile.tag\"]::before{c\\6fntent:\"Sign in again\"}"
+    },
+    {
+      "id": "reject-generated-escaped-function",
+      "group": "Fake login/permission text",
+      "accept": false,
+      "reason": "nonempty/generated/native text or attr/counter rejected after decoding",
+      "css": "[data-reskin-slot=\"profile.tag\"]::before{content:a\\74tr(data-token)}"
+    },
+    {
+      "id": "accept-owned-empty-content",
+      "group": "Fake login/permission text",
+      "accept": true,
+      "reason": "empty content only on exact host-owned decoration, still pointer-inert",
+      "css": "[data-reskin-slot=\"profile.tag\"]::before{content:\"\"}",
+      "setup": {
+        "ownedSlot": "profile.tag",
+        "assert": "not a source of arbitrary captions/accessibility names"
+      }
+    },
+    {
+      "id": "reject-click-interception-plain",
+      "group": "Click interception",
+      "accept": false,
+      "reason": "pointer events/fixed positioning/stack promotion rejected in every branch",
+      "css": "[data-reskin-slot=\"profile.tag\"]{pointer-events:auto;position:fixed;z-index:2147483647}"
+    },
+    {
+      "id": "reject-click-interception-state",
+      "group": "Click interception",
+      "accept": false,
+      "reason": "pointer events/fixed positioning/stack promotion rejected in every branch",
+      "css": "[data-reskin-slot=\"profile.tag\"]:hover{pointer-events:auto;position:fixed;z-index:2147483647}"
+    },
+    {
+      "id": "reject-click-interception-media",
+      "group": "Click interception",
+      "accept": false,
+      "reason": "pointer events/fixed positioning/stack promotion rejected in every branch",
+      "css": "@media (min-width:1px){[data-reskin-slot=\"profile.tag\"]{pointer-events:auto;position:fixed;z-index:2147483647}}"
+    },
+    {
+      "id": "accept-owned-hit-through",
+      "group": "Click interception",
+      "accept": true,
+      "reason": "final container hit tests pass through to native controls",
+      "css": "[data-reskin-slot=\"profile.tag\"]{transform:rotate(-6deg)}",
+      "setup": {
+        "assert": [
+          "elementFromPoint finds real target",
+          "same target bounds/name/focus",
+          "decoration pointer-events:none"
+        ]
+      }
+    },
+    {
+      "id": "accept-shadow-crisp-opaque",
+      "group": "Shadow bounds",
+      "accept": true,
+      "reason": "native crisp rule exception, zero blur/spread and <=1px offset",
+      "css": ".AppHeader{box-shadow:0 1px 0 var(--reskin-accent)}",
+      "setup": {
+        "kind": "header-chrome",
+        "bounds": "reviewed small header fixture"
+      }
+    },
+    {
+      "id": "accept-shadow-blur-alpha-eight",
+      "group": "Shadow bounds",
+      "accept": true,
+      "reason": "reviewed small chrome blur at opacity boundary",
+      "css": ".AppHeader{box-shadow:0 1px 4px rgb(255 255 0 / .8)}",
+      "setup": {
+        "kind": "header-chrome",
+        "bounds": "reviewed small header fixture"
+      }
+    },
+    {
+      "id": "reject-shadow-blur-alpha-over",
+      "group": "Shadow bounds",
+      "accept": false,
+      "reason": "native blurred opacity >0.8",
+      "css": ".AppHeader{box-shadow:0 1px 4px rgb(255 255 0 / .8001)}",
+      "setup": {
+        "kind": "header-chrome",
+        "bounds": "reviewed small header fixture"
+      }
+    },
+    {
+      "id": "reject-shadow-opaque-blur-over",
+      "group": "Shadow bounds",
+      "accept": false,
+      "reason": "opaque exception requires zero blur",
+      "css": ".AppHeader{box-shadow:0 1px .01px var(--reskin-accent)}",
+      "setup": {
+        "kind": "header-chrome",
+        "bounds": "reviewed small header fixture"
+      }
+    },
+    {
+      "id": "reject-shadow-opaque-offset-over",
+      "group": "Shadow bounds",
+      "accept": false,
+      "reason": "opaque crisp offset exceeds 1px",
+      "css": ".AppHeader{box-shadow:0 1.01px 0 var(--reskin-accent)}",
+      "setup": {
+        "kind": "header-chrome",
+        "bounds": "reviewed small header fixture"
+      }
+    },
+    {
+      "id": "reject-shadow-spread-positive",
+      "group": "Shadow bounds",
+      "accept": false,
+      "reason": "complete-list spread maximum 4px",
+      "css": ".AppHeader{box-shadow:0 0 0 99999px rgb(0 0 0 / .8)}",
+      "setup": {
+        "kind": "header-chrome",
+        "bounds": "reviewed small header fixture"
+      }
+    },
+    {
+      "id": "reject-shadow-spread-negative",
+      "group": "Shadow bounds",
+      "accept": false,
+      "reason": "complete-list spread minimum -8px",
+      "css": ".AppHeader{box-shadow:0 0 0 -99999px rgb(0 0 0 / .8)}",
+      "setup": {
+        "kind": "header-chrome",
+        "bounds": "reviewed small header fixture"
+      }
+    },
+    {
+      "id": "reject-shadow-five-entries",
+      "group": "Shadow bounds",
+      "accept": false,
+      "reason": "at most four entries per complete list",
+      "css": ".AppHeader{box-shadow:0 1px 0 var(--reskin-accent),0 1px 0 var(--reskin-accent),0 1px 0 var(--reskin-accent),0 1px 0 var(--reskin-accent),0 1px 0 var(--reskin-accent)}",
+      "setup": {
+        "kind": "header-chrome",
+        "bounds": "reviewed small header fixture"
+      }
+    },
+    {
+      "id": "reject-shadow-blur-sum",
+      "group": "Shadow bounds",
+      "accept": false,
+      "reason": "sum of blur radii >48px",
+      "css": ".AppHeader{box-shadow:0 0 24px rgb(0 0 0 / .8),0 0 24px rgb(0 0 0 / .8),0 0 24px rgb(0 0 0 / .8)}",
+      "setup": {
+        "kind": "header-chrome",
+        "bounds": "reviewed small header fixture"
+      }
+    },
+    {
+      "id": "reject-shadow-opaque-inset",
+      "group": "Shadow bounds",
+      "accept": false,
+      "reason": "opaque crisp exception does not authorize inset fills",
+      "css": ".AppHeader{box-shadow:inset 0 1px 0 var(--reskin-accent)}",
+      "setup": {
+        "kind": "header-chrome",
+        "bounds": "reviewed small header fixture"
+      }
+    },
+    {
+      "id": "reject-shadow-protected",
+      "group": "Shadow bounds",
+      "accept": false,
+      "reason": "protected targets never receive imported shadow, including crisp exception",
+      "css": ".flash-error{box-shadow:0 1px 0 var(--reskin-accent)}"
+    },
+    {
+      "id": "reject-diff-row-blur",
+      "group": "Aggregate paint cost",
+      "accept": false,
+      "reason": "native reading/diff rows cannot receive blurred shadow even if individually bounded",
+      "css": ".diff-row{box-shadow:0 0 4px rgb(0 0 0 / .8)}"
+    },
+    {
+      "id": "accept-gradient-layers-4",
+      "group": "Aggregate paint cost",
+      "accept": true,
+      "reason": "at most four total structured/CSS background layers",
+      "css": ".AppHeader{background-image:linear-gradient(red,blue),linear-gradient(red,blue),linear-gradient(red,blue),linear-gradient(red,blue)}",
+      "setup": {
+        "kind": "blank page-backing",
+        "combinedStructuredLayers": 0
+      }
+    },
+    {
+      "id": "reject-gradient-layers-5",
+      "group": "Aggregate paint cost",
+      "accept": false,
+      "reason": "at most four total structured/CSS background layers",
+      "css": ".AppHeader{background-image:linear-gradient(red,blue),linear-gradient(red,blue),linear-gradient(red,blue),linear-gradient(red,blue),linear-gradient(red,blue)}",
+      "setup": {
+        "kind": "blank page-backing",
+        "combinedStructuredLayers": 0
+      }
+    },
+    {
+      "id": "accept-gradient-stops-8",
+      "group": "Aggregate paint cost",
+      "accept": true,
+      "reason": "at most eight color-stop entries per gradient",
+      "css": ".AppHeader{background-image:linear-gradient(red 0%,red 10%,red 20%,red 30%,red 40%,red 50%,red 60%,red 70%)}",
+      "setup": {
+        "kind": "blank page-backing"
+      }
+    },
+    {
+      "id": "reject-gradient-stops-9",
+      "group": "Aggregate paint cost",
+      "accept": false,
+      "reason": "at most eight color-stop entries per gradient",
+      "css": ".AppHeader{background-image:linear-gradient(red 0%,red 10%,red 20%,red 30%,red 40%,red 50%,red 60%,red 70%,red 80%)}",
+      "setup": {
+        "kind": "blank page-backing"
+      }
+    },
+    {
+      "id": "accept-gradient-double-position",
+      "group": "Aggregate paint cost",
+      "accept": true,
+      "reason": "one color-stop entry can carry two positions; Dandadan remains at five entries",
+      "css": ".AppHeader{background-image:radial-gradient(ellipse at 90% 30%,transparent 0 24%,#f578b938 24.3% 24.8%,transparent 25.1% 33%,#d7f86a26 33.3% 33.7%,transparent 34%)}",
+      "setup": {
+        "kind": "blank page-backing"
+      }
+    },
+    {
+      "id": "accept-css-gradients-replace-structured-layer",
+      "group": "Aggregate paint cost",
+      "accept": true,
+      "reason": "an admitted advanced background-image rule on the same target replaces the structured list; four CSS gradients leave exactly four painted layers in CSS order",
+      "css": ".AppHeader{background-image:linear-gradient(90deg,#fcee0a14,transparent),linear-gradient(90deg,#fcee0a14,transparent),linear-gradient(90deg,#fcee0a14,transparent),linear-gradient(90deg,#fcee0a14,transparent)}",
+      "setup": {
+        "kind": "header target with one structured backgrounds.header layer",
+        "structuredLayers": 1,
+        "cssGradientLayers": 4,
+        "assert": [
+          "effective painted layers on the header target === 4",
+          "CSS layer order preserved",
+          "the structured layer is not painted"
+        ]
+      }
+    },
+    {
+      "id": "reject-effective-layers-over-four",
+      "group": "Aggregate paint cost",
+      "accept": false,
+      "reason": "the effective background list on one target exceeds the four-layer ceiling",
+      "css": ".AppHeader{background-image:linear-gradient(90deg,#fcee0a14,transparent),linear-gradient(90deg,#fcee0a14,transparent),linear-gradient(90deg,#fcee0a14,transparent),linear-gradient(90deg,#fcee0a14,transparent),linear-gradient(90deg,#fcee0a14,transparent)}",
+      "setup": {
+        "kind": "blank page-backing"
+      }
+    },
+    {
+      "id": "reject-effective-layers-over-four-conditional",
+      "group": "Aggregate paint cost",
+      "accept": false,
+      "reason": "a conditional (media) variant whose effective list exceeds four layers is rejected even when the base rule is within bounds",
+      "css": ".AppHeader{background-image:linear-gradient(90deg,#fcee0a14,transparent)}@media (min-width:768px){.AppHeader{background-image:linear-gradient(90deg,#fcee0a14,transparent),linear-gradient(90deg,#fcee0a14,transparent),linear-gradient(90deg,#fcee0a14,transparent),linear-gradient(90deg,#fcee0a14,transparent),linear-gradient(90deg,#fcee0a14,transparent)}}",
+      "setup": {
+        "kind": "blank page-backing"
+      }
+    },
+    {
+      "id": "reject-protected-inherited-color",
+      "group": "Protected ancestor/inheritance",
+      "accept": false,
+      "reason": "inheritable declarations cannot reach a protected/unclassified descendant",
+      "css": ".Box{color:var(--reskin-text)}",
+      "setup": {
+        "dom": "previously admitted .Box with nested protected alert",
+        "assert": [
+          "native colors/fonts/focus",
+          "same bounds/hit target",
+          "no inherited bypass"
+        ]
+      }
+    },
+    {
+      "id": "reject-protected-inherited-font",
+      "group": "Protected ancestor/inheritance",
+      "accept": false,
+      "reason": "inheritable declarations cannot reach a protected/unclassified descendant",
+      "css": ".Box{font-family:var(--reskin-font-heading)}",
+      "setup": {
+        "dom": "previously admitted .Box with nested protected alert",
+        "assert": [
+          "native colors/fonts/focus",
+          "same bounds/hit target",
+          "no inherited bypass"
+        ]
+      }
+    },
+    {
+      "id": "reject-protected-inherited-custom",
+      "group": "Protected ancestor/inheritance",
+      "accept": false,
+      "reason": "inheritable declarations cannot reach a protected/unclassified descendant",
+      "css": ".Box{--theme-ink:var(--reskin-text)}",
+      "setup": {
+        "dom": "previously admitted .Box with nested protected alert",
+        "assert": [
+          "native colors/fonts/focus",
+          "same bounds/hit target",
+          "no inherited bypass"
+        ]
+      }
+    },
+    {
+      "id": "reject-stale-admission-insert-warning",
+      "group": "Newly protected content",
+      "accept": false,
+      "reason": "reject continued native styling: invalidate subject/ancestor admission or suspend document native CSS before next styled render, without route event",
+      "css": ".AppHeader{box-shadow:0 1px 0 var(--reskin-accent)}",
+      "setup": {
+        "initial": "reviewed registry/admitted chrome, active CSS",
+        "mutation": "insert warning after native CSS activation",
+        "assert": [
+          "immediate observer/event invalidation",
+          "no rAF/idle delay before revocation",
+          "structured appearance/safe owned decorations retained on fallback",
+          "native computed style/bounds/hit targets intact"
+        ]
+      },
+      "stage": "runtime-transition"
+    },
+    {
+      "id": "reject-stale-admission-open-dialog",
+      "group": "Newly protected content",
+      "accept": false,
+      "reason": "reject continued native styling: invalidate subject/ancestor admission or suspend document native CSS before next styled render, without route event",
+      "css": ".AppHeader{box-shadow:0 1px 0 var(--reskin-accent)}",
+      "setup": {
+        "initial": "reviewed registry/admitted chrome, active CSS",
+        "mutation": "open pre-existing closed dialog",
+        "assert": [
+          "immediate observer/event invalidation",
+          "no rAF/idle delay before revocation",
+          "structured appearance/safe owned decorations retained on fallback",
+          "native computed style/bounds/hit targets intact"
+        ]
+      },
+      "stage": "runtime-transition"
+    },
+    {
+      "id": "reject-stale-admission-role-change",
+      "group": "Newly protected content",
+      "accept": false,
+      "reason": "reject continued native styling: invalidate subject/ancestor admission or suspend document native CSS before next styled render, without route event",
+      "css": ".AppHeader{box-shadow:0 1px 0 var(--reskin-accent)}",
+      "setup": {
+        "initial": "reviewed registry/admitted chrome, active CSS",
+        "mutation": "mutate admitted node role into security lookalike",
+        "assert": [
+          "immediate observer/event invalidation",
+          "no rAF/idle delay before revocation",
+          "structured appearance/safe owned decorations retained on fallback",
+          "native computed style/bounds/hit targets intact"
+        ]
+      },
+      "stage": "runtime-transition"
+    },
+    {
+      "id": "reject-stale-admission-class-change",
+      "group": "Newly protected content",
+      "accept": false,
+      "reason": "reject continued native styling: invalidate subject/ancestor admission or suspend document native CSS before next styled render, without route event",
+      "css": ".AppHeader{box-shadow:0 1px 0 var(--reskin-accent)}",
+      "setup": {
+        "initial": "reviewed registry/admitted chrome, active CSS",
+        "mutation": "mutate admitted node class into security lookalike",
+        "assert": [
+          "immediate observer/event invalidation",
+          "no rAF/idle delay before revocation",
+          "structured appearance/safe owned decorations retained on fallback",
+          "native computed style/bounds/hit targets intact"
+        ]
+      },
+      "stage": "runtime-transition"
+    },
+    {
+      "id": "reject-stale-admission-visibility-change",
+      "group": "Newly protected content",
+      "accept": false,
+      "reason": "reject continued native styling: invalidate subject/ancestor admission or suspend document native CSS before next styled render, without route event",
+      "css": ".AppHeader{box-shadow:0 1px 0 var(--reskin-accent)}",
+      "setup": {
+        "initial": "reviewed registry/admitted chrome, active CSS",
+        "mutation": "make pre-existing hidden warning visible",
+        "assert": [
+          "immediate observer/event invalidation",
+          "no rAF/idle delay before revocation",
+          "structured appearance/safe owned decorations retained on fallback",
+          "native computed style/bounds/hit targets intact"
+        ]
+      },
+      "stage": "runtime-transition"
+    },
+    {
+      "id": "reject-stale-admission-comment-check",
+      "group": "Newly protected content",
+      "accept": false,
+      "reason": "reject continued native styling: invalidate subject/ancestor admission or suspend document native CSS before next styled render, without route event",
+      "css": ".AppHeader{box-shadow:0 1px 0 var(--reskin-accent)}",
+      "setup": {
+        "initial": "reviewed registry/admitted chrome, active CSS",
+        "mutation": "load verification/check node within comment",
+        "assert": [
+          "immediate observer/event invalidation",
+          "no rAF/idle delay before revocation",
+          "structured appearance/safe owned decorations retained on fallback",
+          "native computed style/bounds/hit targets intact"
+        ]
+      },
+      "stage": "runtime-transition"
+    },
+    {
+      "id": "reject-stale-admission-diff-check",
+      "group": "Newly protected content",
+      "accept": false,
+      "reason": "reject continued native styling: invalidate subject/ancestor admission or suspend document native CSS before next styled render, without route event",
+      "css": ".AppHeader{box-shadow:0 1px 0 var(--reskin-accent)}",
+      "setup": {
+        "initial": "reviewed registry/admitted chrome, active CSS",
+        "mutation": "load verification/check node within diff",
+        "assert": [
+          "immediate observer/event invalidation",
+          "no rAF/idle delay before revocation",
+          "structured appearance/safe owned decorations retained on fallback",
+          "native computed style/bounds/hit targets intact"
+        ]
+      },
+      "stage": "runtime-transition"
+    },
+    {
+      "id": "reject-stale-admission-admitted-ancestor",
+      "group": "Newly protected content",
+      "accept": false,
+      "reason": "reject continued native styling: invalidate subject/ancestor admission or suspend document native CSS before next styled render, without route event",
+      "css": ".AppHeader{box-shadow:0 1px 0 var(--reskin-accent)}",
+      "setup": {
+        "initial": "reviewed registry/admitted chrome, active CSS",
+        "mutation": "insert protected child inside admitted ancestor",
+        "assert": [
+          "immediate observer/event invalidation",
+          "no rAF/idle delay before revocation",
+          "structured appearance/safe owned decorations retained on fallback",
+          "native computed style/bounds/hit targets intact"
+        ]
+      },
+      "stage": "runtime-transition"
+    },
+    {
+      "id": "reject-stale-admission-future-markup",
+      "group": "Newly protected content",
+      "accept": false,
+      "reason": "reject continued native styling: invalidate subject/ancestor admission or suspend document native CSS before next styled render, without route event",
+      "css": ".AppHeader{box-shadow:0 1px 0 var(--reskin-accent)}",
+      "setup": {
+        "initial": "reviewed registry/admitted chrome, active CSS",
+        "mutation": "insert future-looking unregistered markup",
+        "assert": [
+          "immediate observer/event invalidation",
+          "no rAF/idle delay before revocation",
+          "structured appearance/safe owned decorations retained on fallback",
+          "native computed style/bounds/hit targets intact"
+        ]
+      },
+      "stage": "runtime-transition"
+    },
+    {
+      "id": "reject-mixed-kinds-list",
+      "group": "Mixed kinds and selector lists",
+      "accept": false,
+      "reason": "whole input rejected when no common kind/property policy covers all possible subjects; never validate first/current match alone",
+      "css": ".AppHeader,.markdown-body,.flash-error{text-shadow:0 0 4px rgb(255 255 0 / .5)}",
+      "setup": {
+        "dom": "reviewed chrome plus authored/protected matches"
+      }
+    },
+    {
+      "id": "reject-mixed-kinds-is",
+      "group": "Mixed kinds and selector lists",
+      "accept": false,
+      "reason": "whole input rejected when no common kind/property policy covers all possible subjects; never validate first/current match alone",
+      "css": ":is(.AppHeader,.markdown-body,.flash-error){text-shadow:0 0 4px rgb(255 255 0 / .5)}",
+      "setup": {
+        "dom": "reviewed chrome plus authored/protected matches"
+      }
+    },
+    {
+      "id": "reject-mixed-kinds-not",
+      "group": "Mixed kinds and selector lists",
+      "accept": false,
+      "reason": "whole input rejected when no common kind/property policy covers all possible subjects; never validate first/current match alone",
+      "css": ".Box:not(.AppHeader,.markdown-body){text-shadow:0 0 4px rgb(255 255 0 / .5)}",
+      "setup": {
+        "dom": "reviewed chrome plus authored/protected matches"
+      }
+    },
+    {
+      "id": "accept-mixed-safe-intersection",
+      "group": "Mixed kinds and selector lists",
+      "accept": true,
+      "reason": "a mixed-kind rule may use the stricter common admitted decorative boundary policy",
+      "css": ":is(.AppHeader,.tabnav-tab){border-color:var(--reskin-accent)}",
+      "setup": {
+        "registry": "both signatures registered, common decorative-boundary policy, no authored/protected admission"
+      }
+    },
+    {
+      "id": "accept-mapped-html",
+      "group": "Scope and special roots",
+      "accept": true,
+      "reason": "special root maps only to admitted blank backing; subject/native/protected exclusions hold",
+      "css": "html{background-image:linear-gradient(red,blue)}",
+      "setup": {
+        "assert": [
+          "requires backing subject marker",
+          "never themes shell/outside identical class",
+          "nested native islands remain native"
+        ]
+      }
+    },
+    {
+      "id": "accept-mapped-body",
+      "group": "Scope and special roots",
+      "accept": true,
+      "reason": "special root maps only to admitted blank backing; subject/native/protected exclusions hold",
+      "css": "body{background-image:linear-gradient(red,blue)}",
+      "setup": {
+        "assert": [
+          "requires backing subject marker",
+          "never themes shell/outside identical class",
+          "nested native islands remain native"
+        ]
+      }
+    },
+    {
+      "id": "accept-mapped-root",
+      "group": "Scope and special roots",
+      "accept": true,
+      "reason": "special root maps only to admitted blank backing; subject/native/protected exclusions hold",
+      "css": ":root{background-image:linear-gradient(red,blue)}",
+      "setup": {
+        "assert": [
+          "requires backing subject marker",
+          "never themes shell/outside identical class",
+          "nested native islands remain native"
+        ]
+      }
+    },
+    {
+      "id": "reject-scope-escape-native-island",
+      "group": "Scope and special roots",
+      "accept": false,
+      "reason": "no imported declaration can reach native/protected/outside subjects",
+      "css": ".AppHeader{box-shadow:0 1px 0 var(--reskin-accent)}",
+      "setup": {
+        "dom": "nested high-contrast or unknown native island",
+        "assert": "root mapping plus subject exclusions, not only left-edge prefix"
+      },
+      "stage": "generated-style-application"
+    },
+    {
+      "id": "reject-scope-escape-protected-root",
+      "group": "Scope and special roots",
+      "accept": false,
+      "reason": "no imported declaration can reach native/protected/outside subjects",
+      "css": ".AppHeader{box-shadow:0 1px 0 var(--reskin-accent)}",
+      "setup": {
+        "dom": "protected scope root",
+        "assert": "root mapping plus subject exclusions, not only left-edge prefix"
+      },
+      "stage": "generated-style-application"
+    },
+    {
+      "id": "reject-scope-escape-outside",
+      "group": "Scope and special roots",
+      "accept": false,
+      "reason": "no imported declaration can reach native/protected/outside subjects",
+      "css": ".AppHeader{box-shadow:0 1px 0 var(--reskin-accent)}",
+      "setup": {
+        "dom": "identical classes outside iframe or admitted root",
+        "assert": "root mapping plus subject exclusions, not only left-edge prefix"
+      },
+      "stage": "generated-style-application"
+    },
+    {
+      "id": "reject-css-font-request",
+      "group": "Preference/font paths",
+      "accept": false,
+      "reason": "CSS font family must be selected manifest-backed exported variable or native fallback, never outside font request",
+      "css": ".AppHeader{font-family:\"Remote Font\"}"
+    },
+    {
+      "id": "accept-preference-full-with-consent",
+      "group": "Preference/font paths",
+      "accept": true,
+      "reason": "effective preference/native restrictions suppress CSS effects/strings/fonts and cannot be recreated by nested states or navigation",
+      "css": ".AppHeader{font-family:var(--reskin-font-heading)}[data-reskin-slot=\"profile.tag\"]{text-shadow:0 0 4px rgb(255 255 0 / .5)}",
+      "setup": {
+        "state": "Full with consent",
+        "assert": [
+          "Full+consent only eligible CSS",
+          "Calm/Effects off omit CSS",
+          "Text off removes slot, CSS cannot recreate string",
+          "Fonts off omits CSS font requests",
+          "native/forced policy omits themes",
+          "no outside requests"
+        ]
+      },
+      "stage": "effective-output"
+    },
+    {
+      "id": "accept-preference-calm",
+      "group": "Preference/font paths",
+      "accept": true,
+      "reason": "effective preference/native restrictions suppress CSS effects/strings/fonts and cannot be recreated by nested states or navigation",
+      "css": ".AppHeader{font-family:var(--reskin-font-heading)}[data-reskin-slot=\"profile.tag\"]{text-shadow:0 0 4px rgb(255 255 0 / .5)}",
+      "setup": {
+        "state": "Calm",
+        "assert": [
+          "Full+consent only eligible CSS",
+          "Calm/Effects off omit CSS",
+          "Text off removes slot, CSS cannot recreate string",
+          "Fonts off omits CSS font requests",
+          "native/forced policy omits themes",
+          "no outside requests"
+        ]
+      },
+      "stage": "effective-output"
+    },
+    {
+      "id": "accept-preference-effects-off",
+      "group": "Preference/font paths",
+      "accept": true,
+      "reason": "effective preference/native restrictions suppress CSS effects/strings/fonts and cannot be recreated by nested states or navigation",
+      "css": ".AppHeader{font-family:var(--reskin-font-heading)}[data-reskin-slot=\"profile.tag\"]{text-shadow:0 0 4px rgb(255 255 0 / .5)}",
+      "setup": {
+        "state": "Effects off",
+        "assert": [
+          "Full+consent only eligible CSS",
+          "Calm/Effects off omit CSS",
+          "Text off removes slot, CSS cannot recreate string",
+          "Fonts off omits CSS font requests",
+          "native/forced policy omits themes",
+          "no outside requests"
+        ]
+      },
+      "stage": "effective-output"
+    },
+    {
+      "id": "accept-preference-text-off",
+      "group": "Preference/font paths",
+      "accept": true,
+      "reason": "effective preference/native restrictions suppress CSS effects/strings/fonts and cannot be recreated by nested states or navigation",
+      "css": ".AppHeader{font-family:var(--reskin-font-heading)}[data-reskin-slot=\"profile.tag\"]{text-shadow:0 0 4px rgb(255 255 0 / .5)}",
+      "setup": {
+        "state": "Text off",
+        "assert": [
+          "Full+consent only eligible CSS",
+          "Calm/Effects off omit CSS",
+          "Text off removes slot, CSS cannot recreate string",
+          "Fonts off omits CSS font requests",
+          "native/forced policy omits themes",
+          "no outside requests"
+        ]
+      },
+      "stage": "effective-output"
+    },
+    {
+      "id": "accept-preference-fonts-off",
+      "group": "Preference/font paths",
+      "accept": true,
+      "reason": "effective preference/native restrictions suppress CSS effects/strings/fonts and cannot be recreated by nested states or navigation",
+      "css": ".AppHeader{font-family:var(--reskin-font-heading)}[data-reskin-slot=\"profile.tag\"]{text-shadow:0 0 4px rgb(255 255 0 / .5)}",
+      "setup": {
+        "state": "Fonts off",
+        "assert": [
+          "Full+consent only eligible CSS",
+          "Calm/Effects off omit CSS",
+          "Text off removes slot, CSS cannot recreate string",
+          "Fonts off omits CSS font requests",
+          "native/forced policy omits themes",
+          "no outside requests"
+        ]
+      },
+      "stage": "effective-output"
+    },
+    {
+      "id": "accept-preference-forced-colors",
+      "group": "Preference/font paths",
+      "accept": true,
+      "reason": "effective preference/native restrictions suppress CSS effects/strings/fonts and cannot be recreated by nested states or navigation",
+      "css": ".AppHeader{font-family:var(--reskin-font-heading)}[data-reskin-slot=\"profile.tag\"]{text-shadow:0 0 4px rgb(255 255 0 / .5)}",
+      "setup": {
+        "state": "forced colors",
+        "assert": [
+          "Full+consent only eligible CSS",
+          "Calm/Effects off omit CSS",
+          "Text off removes slot, CSS cannot recreate string",
+          "Fonts off omits CSS font requests",
+          "native/forced policy omits themes",
+          "no outside requests"
+        ]
+      },
+      "stage": "effective-output"
+    },
+    {
+      "id": "accept-preference-nested-native-mode",
+      "group": "Preference/font paths",
+      "accept": true,
+      "reason": "effective preference/native restrictions suppress CSS effects/strings/fonts and cannot be recreated by nested states or navigation",
+      "css": ".AppHeader{font-family:var(--reskin-font-heading)}[data-reskin-slot=\"profile.tag\"]{text-shadow:0 0 4px rgb(255 255 0 / .5)}",
+      "setup": {
+        "state": "nested native mode",
+        "assert": [
+          "Full+consent only eligible CSS",
+          "Calm/Effects off omit CSS",
+          "Text off removes slot, CSS cannot recreate string",
+          "Fonts off omits CSS font requests",
+          "native/forced policy omits themes",
+          "no outside requests"
+        ]
+      },
+      "stage": "effective-output"
+    },
+    {
+      "id": "accept-preference-navigation",
+      "group": "Preference/font paths",
+      "accept": true,
+      "reason": "effective preference/native restrictions suppress CSS effects/strings/fonts and cannot be recreated by nested states or navigation",
+      "css": ".AppHeader{font-family:var(--reskin-font-heading)}[data-reskin-slot=\"profile.tag\"]{text-shadow:0 0 4px rgb(255 255 0 / .5)}",
+      "setup": {
+        "state": "navigation",
+        "assert": [
+          "Full+consent only eligible CSS",
+          "Calm/Effects off omit CSS",
+          "Text off removes slot, CSS cannot recreate string",
+          "Fonts off omits CSS font requests",
+          "native/forced policy omits themes",
+          "no outside requests"
+        ]
+      },
+      "stage": "effective-output"
+    },
+    {
+      "id": "accept-preference-media/state-condition",
+      "group": "Preference/font paths",
+      "accept": true,
+      "reason": "effective preference/native restrictions suppress CSS effects/strings/fonts and cannot be recreated by nested states or navigation",
+      "css": ".AppHeader{font-family:var(--reskin-font-heading)}[data-reskin-slot=\"profile.tag\"]{text-shadow:0 0 4px rgb(255 255 0 / .5)}",
+      "setup": {
+        "state": "media/state condition",
+        "assert": [
+          "Full+consent only eligible CSS",
+          "Calm/Effects off omit CSS",
+          "Text off removes slot, CSS cannot recreate string",
+          "Fonts off omits CSS font requests",
+          "native/forced policy omits themes",
+          "no outside requests"
+        ]
+      },
+      "stage": "effective-output"
+    },
+    {
+      "id": "reject-grammar-deep-functions",
+      "group": "Numeric/grammar stress",
+      "accept": false,
+      "reason": "unsupported/deep/nonfinite/control grammar rejected within bounded task, previous committed theme/settings usable",
+      "css": ".AppHeader{border-width:calc(calc(calc(calc(calc(calc(calc(calc(calc(calc(calc(calc(1px))))))))))))}"
+    },
+    {
+      "id": "reject-grammar-deep-lists",
+      "group": "Numeric/grammar stress",
+      "accept": false,
+      "reason": "unsupported/deep/nonfinite/control grammar rejected within bounded task, previous committed theme/settings usable",
+      "css": ":is(:is(:is(:is(:is(:is(:is(:is(:is(:is(:is(:is(.AppHeader)))))))))))){border-color:var(--reskin-accent)}"
+    },
+    {
+      "id": "reject-grammar-nonfinite",
+      "group": "Numeric/grammar stress",
+      "accept": false,
+      "reason": "unsupported/deep/nonfinite/control grammar rejected within bounded task, previous committed theme/settings usable",
+      "css": ".AppHeader{border-width:calc(1px / 0)}"
+    },
+    {
+      "id": "reject-grammar-unsupported-unit",
+      "group": "Numeric/grammar stress",
+      "accept": false,
+      "reason": "unsupported/deep/nonfinite/control grammar rejected within bounded task, previous committed theme/settings usable",
+      "css": ".AppHeader{border-width:1qu}"
+    },
+    {
+      "id": "reject-grammar-unsupported-property",
+      "group": "Numeric/grammar stress",
+      "accept": false,
+      "reason": "unsupported/deep/nonfinite/control grammar rejected within bounded task, previous committed theme/settings usable",
+      "css": ".AppHeader{zoom:999}"
+    },
+    {
+      "id": "reject-grammar-control",
+      "group": "Numeric/grammar stress",
+      "accept": false,
+      "reason": "unsupported/deep/nonfinite/control grammar rejected within bounded task, previous committed theme/settings usable",
+      "css": ".AppHeader{border-color:red}\u0001"
+    },
+    {
+      "id": "reject-grammar-bidi",
+      "group": "Numeric/grammar stress",
+      "accept": false,
+      "reason": "unsupported/deep/nonfinite/control grammar rejected within bounded task, previous committed theme/settings usable",
+      "css": ".AppHeader{border-color:red}‮"
+    },
+    {
+      "id": "accept-rules-exact",
+      "group": "Numeric/grammar stress",
+      "accept": true,
+      "reason": "chosen exact boundary admitted if otherwise valid; +1 rejected/canceled before excess allocation",
+      "setup": {
+        "generator": "otherwise valid AST/output with all independent limits below cap",
+        "measure": "rules",
+        "value": 256,
+        "assert": [
+          "located whole-input reason on reject",
+          "bounded task",
+          "previous committed theme and external controls usable"
+        ]
+      },
+      "stage": "generated-budget"
+    },
+    {
+      "id": "reject-rules-plus-one",
+      "group": "Numeric/grammar stress",
+      "accept": false,
+      "reason": "chosen exact boundary admitted if otherwise valid; +1 rejected/canceled before excess allocation",
+      "setup": {
+        "generator": "otherwise valid AST/output with all independent limits below cap",
+        "measure": "rules",
+        "value": 257,
+        "assert": [
+          "located whole-input reason on reject",
+          "bounded task",
+          "previous committed theme and external controls usable"
+        ]
+      },
+      "stage": "generated-budget"
+    },
+    {
+      "id": "accept-selectors-exact",
+      "group": "Numeric/grammar stress",
+      "accept": true,
+      "reason": "chosen exact boundary admitted if otherwise valid; +1 rejected/canceled before excess allocation",
+      "setup": {
+        "generator": "otherwise valid AST/output with all independent limits below cap",
+        "measure": "selectors",
+        "value": 512,
+        "assert": [
+          "located whole-input reason on reject",
+          "bounded task",
+          "previous committed theme and external controls usable"
+        ]
+      },
+      "stage": "generated-budget"
+    },
+    {
+      "id": "reject-selectors-plus-one",
+      "group": "Numeric/grammar stress",
+      "accept": false,
+      "reason": "chosen exact boundary admitted if otherwise valid; +1 rejected/canceled before excess allocation",
+      "setup": {
+        "generator": "otherwise valid AST/output with all independent limits below cap",
+        "measure": "selectors",
+        "value": 513,
+        "assert": [
+          "located whole-input reason on reject",
+          "bounded task",
+          "previous committed theme and external controls usable"
+        ]
+      },
+      "stage": "generated-budget"
+    },
+    {
+      "id": "accept-declarations-exact",
+      "group": "Numeric/grammar stress",
+      "accept": true,
+      "reason": "chosen exact boundary admitted if otherwise valid; +1 rejected/canceled before excess allocation",
+      "setup": {
+        "generator": "otherwise valid AST/output with all independent limits below cap",
+        "measure": "declarations",
+        "value": 2048,
+        "assert": [
+          "located whole-input reason on reject",
+          "bounded task",
+          "previous committed theme and external controls usable"
+        ]
+      },
+      "stage": "generated-budget"
+    },
+    {
+      "id": "reject-declarations-plus-one",
+      "group": "Numeric/grammar stress",
+      "accept": false,
+      "reason": "chosen exact boundary admitted if otherwise valid; +1 rejected/canceled before excess allocation",
+      "setup": {
+        "generator": "otherwise valid AST/output with all independent limits below cap",
+        "measure": "declarations",
+        "value": 2049,
+        "assert": [
+          "located whole-input reason on reject",
+          "bounded task",
+          "previous committed theme and external controls usable"
+        ]
+      },
+      "stage": "generated-budget"
+    },
+    {
+      "id": "accept-ast-nodes-exact",
+      "group": "Numeric/grammar stress",
+      "accept": true,
+      "reason": "chosen exact boundary admitted if otherwise valid; +1 rejected/canceled before excess allocation",
+      "setup": {
+        "generator": "otherwise valid AST/output with all independent limits below cap",
+        "measure": "ast-nodes",
+        "value": 20000,
+        "assert": [
+          "located whole-input reason on reject",
+          "bounded task",
+          "previous committed theme and external controls usable"
+        ]
+      },
+      "stage": "generated-budget"
+    },
+    {
+      "id": "reject-ast-nodes-plus-one",
+      "group": "Numeric/grammar stress",
+      "accept": false,
+      "reason": "chosen exact boundary admitted if otherwise valid; +1 rejected/canceled before excess allocation",
+      "setup": {
+        "generator": "otherwise valid AST/output with all independent limits below cap",
+        "measure": "ast-nodes",
+        "value": 20001,
+        "assert": [
+          "located whole-input reason on reject",
+          "bounded task",
+          "previous committed theme and external controls usable"
+        ]
+      },
+      "stage": "generated-budget"
+    },
+    {
+      "id": "accept-selector-components-exact",
+      "group": "Numeric/grammar stress",
+      "accept": true,
+      "reason": "chosen exact boundary admitted if otherwise valid; +1 rejected/canceled before excess allocation",
+      "setup": {
+        "generator": "otherwise valid AST/output with all independent limits below cap",
+        "measure": "selector-components",
+        "value": 32,
+        "assert": [
+          "located whole-input reason on reject",
+          "bounded task",
+          "previous committed theme and external controls usable"
+        ]
+      },
+      "stage": "generated-budget"
+    },
+    {
+      "id": "reject-selector-components-plus-one",
+      "group": "Numeric/grammar stress",
+      "accept": false,
+      "reason": "chosen exact boundary admitted if otherwise valid; +1 rejected/canceled before excess allocation",
+      "setup": {
+        "generator": "otherwise valid AST/output with all independent limits below cap",
+        "measure": "selector-components",
+        "value": 33,
+        "assert": [
+          "located whole-input reason on reject",
+          "bounded task",
+          "previous committed theme and external controls usable"
+        ]
+      },
+      "stage": "generated-budget"
+    },
+    {
+      "id": "accept-nesting-exact",
+      "group": "Numeric/grammar stress",
+      "accept": true,
+      "reason": "chosen exact boundary admitted if otherwise valid; +1 rejected/canceled before excess allocation",
+      "setup": {
+        "generator": "otherwise valid AST/output with all independent limits below cap",
+        "measure": "nesting",
+        "value": 8,
+        "assert": [
+          "located whole-input reason on reject",
+          "bounded task",
+          "previous committed theme and external controls usable"
+        ]
+      },
+      "stage": "generated-budget"
+    },
+    {
+      "id": "reject-nesting-plus-one",
+      "group": "Numeric/grammar stress",
+      "accept": false,
+      "reason": "chosen exact boundary admitted if otherwise valid; +1 rejected/canceled before excess allocation",
+      "setup": {
+        "generator": "otherwise valid AST/output with all independent limits below cap",
+        "measure": "nesting",
+        "value": 9,
+        "assert": [
+          "located whole-input reason on reject",
+          "bounded task",
+          "previous committed theme and external controls usable"
+        ]
+      },
+      "stage": "generated-budget"
+    },
+    {
+      "id": "accept-expanded-utf8-output-exact",
+      "group": "Numeric/grammar stress",
+      "accept": true,
+      "reason": "chosen exact boundary admitted if otherwise valid; +1 rejected/canceled before excess allocation",
+      "setup": {
+        "generator": "otherwise valid AST/output with all independent limits below cap",
+        "measure": "expanded-utf8-output",
+        "value": 32768,
+        "assert": [
+          "located whole-input reason on reject",
+          "bounded task",
+          "previous committed theme and external controls usable"
+        ]
+      },
+      "stage": "generated-budget"
+    },
+    {
+      "id": "reject-expanded-utf8-output-plus-one",
+      "group": "Numeric/grammar stress",
+      "accept": false,
+      "reason": "chosen exact boundary admitted if otherwise valid; +1 rejected/canceled before excess allocation",
+      "setup": {
+        "generator": "otherwise valid AST/output with all independent limits below cap",
+        "measure": "expanded-utf8-output",
+        "value": 32769,
+        "assert": [
+          "located whole-input reason on reject",
+          "bounded task",
+          "previous committed theme and external controls usable"
+        ]
+      },
+      "stage": "generated-budget"
+    },
+    {
+      "id": "accept-aggregate-pixels-6291456",
+      "group": "Recovery and resource exhaustion",
+      "accept": true,
+      "reason": "aggregate decoded-pixel budget counts repeated occurrences across all targets before serial decode",
+      "setup": {
+        "pixels": 6291456,
+        "perImagePixelsMax": 2097152,
+        "encodedBytesTotalMax": 262144,
+        "largeDiffLines": 10000,
+        "assert": [
+          "exact cap admission only if all other checks pass",
+          "+1 rejected before decode",
+          "24 MiB is one-copy RGBA, not peak memory"
+        ]
+      }
+    },
+    {
+      "id": "reject-aggregate-pixels-6291457",
+      "group": "Recovery and resource exhaustion",
+      "accept": false,
+      "reason": "aggregate decoded-pixel budget counts repeated occurrences across all targets before serial decode",
+      "setup": {
+        "pixels": 6291457,
+        "perImagePixelsMax": 2097152,
+        "encodedBytesTotalMax": 262144,
+        "largeDiffLines": 10000,
+        "assert": [
+          "exact cap admission only if all other checks pass",
+          "+1 rejected before decode",
+          "24 MiB is one-copy RGBA, not peak memory"
+        ]
+      }
+    },
+    {
+      "id": "accept-resource-recovery-canceled-imports",
+      "group": "Recovery and resource exhaustion",
+      "accept": true,
+      "reason": "no increasing retained bitmap/frame/listener count, local Off/Calm/recovery works without executing rejected imported CSS",
+      "setup": {
+        "workload": "50 repeated imports with obsolete decode cancellation",
+        "browsers": [
+          "Chromium",
+          "Firefox"
+        ],
+        "assert": [
+          "serial decoding",
+          "release replaced frame/canvas/bitmap references",
+          "no eager collection decode",
+          "peak memory and extension frame/task cost reported",
+          "normal and 4x slowdown traces",
+          "external controls usable"
+        ]
+      }
+    },
+    {
+      "id": "accept-resource-recovery-replaced-frames",
+      "group": "Recovery and resource exhaustion",
+      "accept": true,
+      "reason": "no increasing retained bitmap/frame/listener count, local Off/Calm/recovery works without executing rejected imported CSS",
+      "setup": {
+        "workload": "50 complete srcdoc updates at 100ms intervals with maximum admitted wallpaper and large diff",
+        "browsers": [
+          "Chromium",
+          "Firefox"
+        ],
+        "assert": [
+          "serial decoding",
+          "release replaced frame/canvas/bitmap references",
+          "no eager collection decode",
+          "peak memory and extension frame/task cost reported",
+          "normal and 4x slowdown traces",
+          "external controls usable"
+        ]
+      }
+    },
+    {
+      "id": "accept-resource-recovery-disable-restart",
+      "group": "Recovery and resource exhaustion",
+      "accept": true,
+      "reason": "no increasing retained bitmap/frame/listener count, local Off/Calm/recovery works without executing rejected imported CSS",
+      "setup": {
+        "workload": "reject theme, disable, restart and recover last committed choice",
+        "browsers": [
+          "Chromium",
+          "Firefox"
+        ],
+        "assert": [
+          "serial decoding",
+          "release replaced frame/canvas/bitmap references",
+          "no eager collection decode",
+          "peak memory and extension frame/task cost reported",
+          "normal and 4x slowdown traces",
+          "external controls usable"
+        ]
+      }
+    },
+    {
+      "id": "accept-gradient-css-composed",
+      "group": "Aggregate paint cost",
+      "accept": true,
+      "reason": "gradientCss and raster motif compose in the same <=4-layer list without CSS resource permission",
+      "setup": {
+        "layers": [
+          "structured static raster",
+          "three separately admitted gradientCss values"
+        ],
+        "assert": "canonical generated effective list preserves order and paints all four"
+      },
+      "stage": "structured-gradient-admission"
+    },
+    {
+      "id": "reject-gradient-css-resource",
+      "group": "Aggregate paint cost",
+      "accept": false,
+      "reason": "resource functions rejected in the structured value path too",
+      "setup": {
+        "gradientCss": {
+          "value": "image-set(\"https://leak.invalid/x\" 1x)"
+        }
+      },
+      "stage": "structured-gradient-admission"
+    },
+    {
+      "id": "reject-gradient-css-declaration",
+      "group": "Aggregate paint cost",
+      "accept": false,
+      "reason": "gradientCss permits exactly one value, no declarations/selectors/markup",
+      "setup": {
+        "gradientCss": {
+          "value": "linear-gradient(red,blue);color:transparent"
+        }
+      },
+      "stage": "structured-gradient-admission"
+    },
+    {
+      "id": "accept-gradient-css-source-exact",
+      "group": "Aggregate paint cost",
+      "accept": true,
+      "reason": "single-value source cap is 4096 UTF-8 bytes if otherwise valid",
+      "setup": {
+        "generator": "linear-gradient(red,blue) padded with ordinary spaces to 4096 bytes"
+      },
+      "stage": "structured-gradient-admission"
+    },
+    {
+      "id": "reject-gradient-css-source-over",
+      "group": "Aggregate paint cost",
+      "accept": false,
+      "reason": "single-value source cap exceeded before parsing",
+      "setup": {
+        "generator": "linear-gradient(red,blue) padded with ordinary spaces to 4097 bytes"
+      },
+      "stage": "structured-gradient-admission"
+    },
+    {
+      "id": "reject-gradient-css-aggregate-over",
+      "group": "Aggregate paint cost",
+      "accept": false,
+      "reason": "all css/gradientCss source and expanded output share 32768 UTF-8 bytes",
+      "setup": {
+        "sourceBytes": 32769,
+        "assert": "reject before excessive allocation"
+      },
+      "stage": "structured-gradient-admission"
+    }
+  ]
+}

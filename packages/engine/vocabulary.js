@@ -1,9 +1,10 @@
-// The frozen ColorSet keys from ARCHITECTURE.md, in declaration order. Families, policies, syntax
-// roles and the pair-matrix version come from packages/contracts.
-// TODO(C1): packages/contracts declares the token, semantic and ANSI key sets as types only
+// The frozen ColorSet keys from ARCHITECTURE.md, in declaration order, and the Revision 4
+// appearance color paths that extend resolved output without changing ModeSeed. Families,
+// policies, syntax and ANSI roles and the pair-matrix version come from packages/contracts.
+// TODO(C1): packages/contracts declares the token and semantic key sets as types only
 // (theme-engine.d.ts). Move these runtime lists there; until then they are defined here and checked
 // against the synthetic seeds in tests/engine.
-import { SYNTAX_ROLES } from "../contracts/index.js";
+import { ANSI_ROLES, EXTENDED_SYNTAX_ROLES, SYNTAX_ROLES } from "../contracts/index.js";
 
 export const TOKEN_KEYS = Object.freeze([
   "canvas", "surface", "inset", "raised", "hover", "active",
@@ -23,10 +24,7 @@ export const TOKEN_KEYS = Object.freeze([
 ]);
 export const SEMANTIC_ROLES = Object.freeze(["success", "danger", "warning", "done", "sponsor"]);
 export const SEMANTIC_FIELDS = Object.freeze(["text", "mutedBackground", "emphasisBackground", "onEmphasis", "border"]);
-export const ANSI_ROLES = Object.freeze([
-  "black", "red", "green", "yellow", "blue", "magenta", "cyan", "white",
-  "brightBlack", "brightRed", "brightGreen", "brightYellow", "brightBlue", "brightMagenta", "brightCyan", "brightWhite",
-]);
+export { ANSI_ROLES };
 export const GRAPH_LEVELS = 5;
 export const ACCESSIBILITY_NOTICE = "GitHub accessibility colors are active";
 
@@ -38,3 +36,18 @@ export const COLOR_PATHS = Object.freeze([
   ...ANSI_ROLES.map((role) => `/ansi/${role}`),
   ...[0, 1, 2, 3, 4].map((level) => `/graph/${level}`),
 ]);
+
+/** The paired appearance colors, in AppearanceColors order. */
+export const APPEARANCE_COLOR_PATHS = Object.freeze([
+  ...EXTENDED_SYNTAX_ROLES.map((role) => `/appearance/colors/syntax/${role}`),
+  "/appearance/colors/page/background",
+  "/appearance/colors/header/background",
+  "/appearance/colors/header/text",
+  "/appearance/colors/scrollbar/thumb",
+  "/appearance/colors/scrollbar/track",
+  ...["labels", "topics"].flatMap((pill) => ["background", "text", "border"].map((field) => `/appearance/colors/${pill}/${field}`)),
+  "/appearance/colors/graph/cellBoundary",
+]);
+
+/** Every path a pair record or render repair may name. */
+export const PAIR_PATHS = Object.freeze([...COLOR_PATHS, ...APPEARANCE_COLOR_PATHS]);

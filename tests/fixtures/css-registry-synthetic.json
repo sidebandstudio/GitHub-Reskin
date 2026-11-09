@@ -1,0 +1,273 @@
+{
+  "note": "Synthetic registryVersion 1 fixture for check:css and tests only. It exercises the compiler's contract with exact signatures; it is not C3's reviewed GitHub registry and never ships.",
+  "registry": {
+    "registryVersion": 1,
+    "kinds": {
+      "page-backing": {
+        "properties": [
+          "background-color",
+          "background-image",
+          "background-size",
+          "background-position",
+          "background-repeat",
+          "border-color"
+        ],
+        "colors": {},
+        "literalColors": [
+          "background-color",
+          "background-image",
+          "border-color"
+        ],
+        "blur": false,
+        "textShadow": false,
+        "inheritable": false,
+        "maxTargets": 1
+      },
+      "header-chrome": {
+        "properties": [
+          "color",
+          "background-color",
+          "background-image",
+          "border-color",
+          "border-bottom-color",
+          "border-width",
+          "border-style",
+          "border-radius",
+          "box-shadow",
+          "font-family",
+          "font-weight",
+          "letter-spacing",
+          "text-transform"
+        ],
+        "colors": {
+          "color": [
+            "--reskin-header-text"
+          ],
+          "background-color": [
+            "--reskin-header-background"
+          ]
+        },
+        "literalColors": [
+          "border-color",
+          "border-bottom-color",
+          "background-image"
+        ],
+        "blur": true,
+        "textShadow": false,
+        "inheritable": true,
+        "maxTargets": 4
+      },
+      "control-chrome": {
+        "properties": [
+          "color",
+          "border-color",
+          "border-bottom-color",
+          "border-width",
+          "border-style",
+          "border-radius",
+          "box-shadow",
+          "font-family",
+          "font-weight",
+          "letter-spacing",
+          "text-transform"
+        ],
+        "colors": {
+          "color": [
+            "--reskin-text",
+            "--reskin-link"
+          ]
+        },
+        "literalColors": [
+          "border-color",
+          "border-bottom-color"
+        ],
+        "blur": true,
+        "textShadow": false,
+        "inheritable": true,
+        "maxTargets": 64
+      },
+      "heading-chrome": {
+        "properties": [
+          "color",
+          "text-shadow",
+          "font-family",
+          "font-weight",
+          "letter-spacing",
+          "text-transform"
+        ],
+        "colors": {
+          "color": [
+            "--reskin-text",
+            "--reskin-accent"
+          ]
+        },
+        "literalColors": [],
+        "blur": false,
+        "textShadow": true,
+        "inheritable": true,
+        "maxTargets": 16
+      },
+      "graph-cell": {
+        "properties": [
+          "background-color",
+          "fill",
+          "border-radius",
+          "box-shadow",
+          "stroke"
+        ],
+        "colors": {
+          "background-color": [
+            "--reskin-graph-0",
+            "--reskin-graph-1",
+            "--reskin-graph-2",
+            "--reskin-graph-3",
+            "--reskin-graph-4"
+          ],
+          "fill": [
+            "--reskin-graph-0",
+            "--reskin-graph-1",
+            "--reskin-graph-2",
+            "--reskin-graph-3",
+            "--reskin-graph-4"
+          ]
+        },
+        "literalColors": [
+          "stroke"
+        ],
+        "blur": true,
+        "textShadow": false,
+        "inheritable": false,
+        "maxTargets": 400
+      },
+      "reading-pair": {
+        "properties": [
+          "color",
+          "background-color"
+        ],
+        "colors": {
+          "color": [
+            "--reskin-text"
+          ],
+          "background-color": [
+            "--reskin-surface"
+          ]
+        },
+        "literalColors": [],
+        "blur": false,
+        "textShadow": false,
+        "inheritable": false,
+        "maxTargets": 200
+      }
+    },
+    "subjects": [
+      {
+        "kind": "header-chrome",
+        "classes": [
+          "AppHeader"
+        ],
+        "predicates": [
+          {
+            "name": "data-testid",
+            "value": "reviewed-header"
+          }
+        ],
+        "routes": [
+          "/:user",
+          "/:owner/:repo"
+        ]
+      },
+      {
+        "kind": "header-chrome",
+        "classes": [
+          "Header"
+        ],
+        "routes": [
+          "/:user",
+          "/:owner/:repo"
+        ]
+      },
+      {
+        "kind": "header-chrome",
+        "classes": [
+          "HeaderMktg"
+        ],
+        "routes": [
+          "/"
+        ]
+      },
+      {
+        "kind": "control-chrome",
+        "classes": [
+          "tabnav-tab"
+        ],
+        "predicates": [
+          {
+            "name": "aria-current",
+            "value": "page"
+          }
+        ],
+        "routes": [
+          "/:user"
+        ]
+      },
+      {
+        "kind": "heading-chrome",
+        "element": "h2",
+        "classes": [
+          "f4"
+        ],
+        "routes": [
+          "/:user"
+        ]
+      },
+      {
+        "kind": "graph-cell",
+        "classes": [
+          "ContributionCalendar-day"
+        ],
+        "routes": [
+          "/:user"
+        ]
+      },
+      {
+        "kind": "reading-pair",
+        "classes": [
+          "diff-row"
+        ],
+        "routes": [
+          "/:owner/:repo/pull/:number/files"
+        ]
+      }
+    ],
+    "rootKind": "page-backing",
+    "invalidation": {
+      "attributes": [
+        "class",
+        "role",
+        "style",
+        "hidden",
+        "open",
+        "inert",
+        "aria-hidden",
+        "aria-modal",
+        "popover",
+        "data-state"
+      ],
+      "events": [
+        "turbo:before-render",
+        "turbo:before-cache",
+        "popstate",
+        "pagehide",
+        "pageshow",
+        "beforetoggle",
+        "toggle",
+        "click",
+        "keydown",
+        "focusin"
+      ]
+    },
+    "fixtures": {
+      "tests/fixtures/css-review-r41-cases.json": "bbcb8fd66efda6cba9abb014bba47d959b96ef57c05e621ef4799af92d3cabb7"
+    }
+  }
+}

@@ -19,8 +19,20 @@ export const THEME_FORMAT_VERSION = 1;
 export const SETTINGS_VERSION = 2;
 export const RENDERER_VERSION = 1;
 export const ENGINE_VERSION = 1;
-// PairMatrix.version of packages/engine/pairs.json, recorded in the boot record.
-export const PAIR_MATRIX_VERSION = 1;
+// PairMatrix.version of packages/engine/pairs.json, recorded in the boot record. Version 2 keeps
+// every version 1 record first and unchanged, then adds the Revision 4 appearance pairs.
+export const PAIR_MATRIX_VERSION = 2;
+// The Revision 4 expansion of the resolved appearance record and the advanced CSS sanitizer
+// policy. Both enter the boot record and compiler fingerprints; a snapshot without them is stale.
+export const EXPANSION_VERSION = 1;
+export const SANITIZER_VERSION = 1;
+// The finite native CSS target registry version C3 supplies. Advanced CSS on native GitHub nodes
+// compiles only against a registry of this version; without one it fails closed.
+export const CSS_REGISTRY_VERSION = 1;
+// Which part of the Revision 4 expansion this build admits. 1 is the Choom subset: structured
+// paints, shape, type, the full code/graph/details palettes and restricted advanced CSS. Raster
+// conversion, the added font files, CSS conveniences and the full editing controls arrive in 2.
+export const EXPANSION_INCREMENT = 1;
 
 // The first-run theme, Choom Circuit. Always chosen by ID, never by catalog order.
 export const DEFAULT_THEME_ID = "anime.cyberpunk-edgerunners";
@@ -82,11 +94,63 @@ export const OVERRIDE_COLOR_ROLES = freeze([
   "warning",
   "done",
 ]);
+// The seven core syntax roles every ModeSeed carries. Seed contractVersion 1 keeps exactly these.
 export const SYNTAX_ROLES = freeze(["comment", "keyword", "string", "function", "number", "variable", "type"]);
+// The fifteen added syntax and markup roles. They live in the resolved appearance record, not in
+// ModeSeed, and default from resolved core roles when a theme omits them.
+export const EXTENDED_SYNTAX_ROLES = freeze([
+  "operator",
+  "punctuation",
+  "constant",
+  "tag",
+  "attribute",
+  "regex",
+  "escape",
+  "invalid",
+  "inserted",
+  "deleted",
+  "markupHeading",
+  "markupEmphasis",
+  "markupLink",
+  "markupQuote",
+  "markupList",
+]);
+// All 22 roles a theme's code.syntax or overrides.syntax may name, in schema order.
+export const THEME_SYNTAX_ROLES = freeze([...SYNTAX_ROLES, ...EXTENDED_SYNTAX_ROLES]);
+export const ANSI_ROLES = freeze([
+  "black",
+  "red",
+  "green",
+  "yellow",
+  "blue",
+  "magenta",
+  "cyan",
+  "white",
+  "brightBlack",
+  "brightRed",
+  "brightGreen",
+  "brightYellow",
+  "brightBlue",
+  "brightMagenta",
+  "brightCyan",
+  "brightWhite",
+]);
+export const DIFF_ROLES = freeze([
+  "addedBackground",
+  "addedText",
+  "removedBackground",
+  "removedText",
+  "wordAddedBackground",
+  "wordAddedText",
+  "wordRemovedBackground",
+  "wordRemovedText",
+]);
 // Every color role the theme format names, with syntax as one group. A schema registry only.
 export const COLOR_ROLES = freeze([...CORE_COLOR_ROLES, ...OVERRIDE_COLOR_ROLES, "syntax"]);
 
-// "system" uses the platform font and ships no file.
+// The font families this build ships files for. "system" uses the platform font and ships no
+// file. C5 supplies assets/fonts/<id>/ for every other entry. Revision 4 names more families in
+// the schema; their files are deferred, see FONT_INVENTORY.
 export const FONT_IDS = freeze([
   "system",
   "rajdhani",
@@ -98,6 +162,32 @@ export const FONT_IDS = freeze([
   "bungee",
   "space-grotesk",
 ]);
+// Every heading and body font ID the schema accepts, in schema order. fonts.accent takes the
+// heading list.
+export const HEADING_FONT_IDS = freeze([
+  ...FONT_IDS,
+  "bebas-neue",
+  "cinzel",
+  "orbitron",
+  "oxanium",
+  "ibm-plex-sans",
+  "source-sans-3",
+  "nunito-sans",
+  "atkinson-hyperlegible",
+  "roboto-condensed",
+  "barlow",
+]);
+export const BODY_FONT_IDS = freeze(["system", "ibm-plex-sans", "source-sans-3", "nunito-sans", "atkinson-hyperlegible", "barlow"]);
+// The font inventory of this increment. `bundled` families have files (FONT_IDS); `nativeStack`
+// families resolve to their reviewed native stack with no file, which is how Choom keeps the
+// owner's condensed display faces; `deferred` families have no file yet, so a request for one
+// resolves to the native font and is reported. The full expansion bundles all eighteen.
+export const FONT_INVENTORY = freeze({
+  increment: 1,
+  bundled: FONT_IDS.filter((id) => id !== "system"),
+  nativeStack: ["roboto-condensed"],
+  deferred: ["bebas-neue", "cinzel", "orbitron", "oxanium", "ibm-plex-sans", "source-sans-3", "nunito-sans", "atkinson-hyperlegible", "barlow"],
+});
 export const EFFECT_IDS = freeze(["glow", "grid", "scanlines", "paper", "rail", "rules", "orbit", "seal", "drift", "echo"]);
 export const EFFECT_TARGETS = freeze(["owned-badge", "owned-margin-strip", "owned-caption-edge"]);
 // Append-only. A new slot is a schema change.
@@ -114,6 +204,9 @@ export const FLAVOR_SLOT_IDS = freeze([
 
 export const PREFERENCE_KEYS = freeze(["extras", "text", "motion", "fonts", "effects"]);
 export const DEFAULT_PREFERENCES = freeze({ extras: true, text: true, motion: true, fonts: true, effects: true });
+// The primary Full / Calm switch. Full is the new-install default; the old extras:false means Calm.
+export const APPEARANCE_MODES = freeze(["full", "calm"]);
+export const DEFAULT_APPEARANCE_MODE = "full";
 export const COMMIT_ACTION_TYPES = freeze([
   "selectTheme",
   "setEnabled",
@@ -135,7 +228,19 @@ export const EDITOR_ACTION_TYPES = freeze([
   "undo",
   "reset",
   "loadImport",
+  "setBackground",
+  "setImage",
+  "setShape",
+  "setTypography",
+  "setCode",
+  "setDetails",
+  "setGraphStyle",
+  "setGraphLevels",
+  "setCss",
 ]);
+// Editor actions this increment does not accept yet: image upload and the Advanced CSS editor.
+// Imported images and CSS still arrive through loadImport.
+export const DEFERRED_EDITOR_ACTION_TYPES = freeze(["setImage", "setCss"]);
 export const INTERNAL_PAGES = freeze(["onboarding", "settings"]);
 export const PREVIEW_VIEWS = freeze(["profile", "repo", "diff", "empty", "404"]);
 export const MODE_POLICIES = freeze(["themed", "native-high-contrast", "native-unknown"]);
@@ -169,6 +274,14 @@ export const ISSUE_CODES = freeze({
   markup: "markup",
   controlText: "control-text",
   resourceString: "resource-string",
+  // Revision 4 semantic admission: embedded rasters, gradient stops and advanced CSS.
+  imageData: "image-data",
+  imageLimit: "image-limit",
+  gradientOrder: "gradient-order",
+  css: "css",
+  cssUnavailable: "css-unavailable",
+  cssRegistry: "css-registry",
+  deferred: "deferred-capability",
   // Semantic repair.
   contrastRepaired: "contrast-repaired",
   graphRepaired: "graph-repaired",
@@ -180,16 +293,30 @@ export const ISSUE_CODES = freeze({
   capacity: "capacity",
 });
 
-// Input and runtime limits. Byte limits count UTF-8 bytes.
+// Input and runtime limits. Byte limits count UTF-8 bytes. Revision 4 raised the input bounds so a
+// theme can carry embedded rasters and advanced CSS; THEME-EXPANSION.md has the full table.
 export const LIMITS = freeze({
-  fileUtf8Bytes: 65536,
-  pastedUtf8Bytes: 131072,
-  compressedBytes: 16384,
-  expandedBytes: 65536,
+  fileUtf8Bytes: 524288,
+  pastedUtf8Bytes: 786432,
+  compressedBytes: 393216,
+  expandedBytes: 524288,
   maxDepth: 12,
   maxCustomThemes: 50,
-  maxCustomSourceBytes: 1048576,
-  maxDraftBytes: 131072,
+  maxCustomSourceBytes: 4194304,
+  maxDraftBytes: 1310720,
+  maxStorageBytes: 8388608,
+  maxShareLinkCharacters: 8192,
+  // Advanced CSS: the css field plus every gradientCss value, as source and as expanded output.
+  cssUtf8Bytes: 32768,
+  gradientCssUtf8Bytes: 4096,
+  gradientCssSizeCharacters: 64,
+  // Embedded rasters, after base64 decoding. Document totals count repeated occurrences.
+  perImageDecodedBytes: 131072,
+  documentImageDecodedBytes: 262144,
+  imageMaxDimension: 2048,
+  imageMaxPixels: 2097152,
+  documentImageDecodedPixels: 6291456,
+  maxBackgroundLayers: 4,
   maxEffectsPerTheme: 3,
   maxOwnedNodesPerDocument: 24,
   maxAnimatedNodes: 6,
@@ -198,10 +325,11 @@ export const LIMITS = freeze({
   maxAnimatedElementPx: 96,
   maxAnimationTotalMs: 1200,
   maxEchoMs: 200,
-  fontFamilies: 8,
-  fontWeightsPerFamily: 1,
-  fontTotalWoff2Bytes: 245760,
-  fontMaxPerFamilyBytes: 30720,
+  fontFamilies: 18,
+  fontWeightsPerFamily: 4,
+  fontTotalWoff2Bytes: 786432,
+  fontMaxPerFamilyBytes: 65536,
+  fontMaxPerFileBytes: 32768,
   startupGateMs: 120,
   maxInitialRootQueries: 6,
   maxContainerObservers: 2,
@@ -213,12 +341,16 @@ export const LIMITS = freeze({
 
 // Release gates from ARCHITECTURE.md. check:budgets measures against these; it never raises them.
 export const BUDGETS = freeze({
-  runtimeZipBytes: 1572864,
-  unpackedRuntimeBytes: 3145728,
-  contentEngineGzipBytes: 102400,
-  contentEngineRawBytes: 256000,
+  runtimeZipBytes: 2621440,
+  unpackedRuntimeBytes: 5242880,
+  // The content engine and bootstrap including the CSS sanitizer, without mode data or fonts.
+  contentEngineGzipBytes: 163840,
+  contentEngineRawBytes: 524288,
+  // css-tree 3.1.0's parse/walk/generate/lexer, measured as an isolated chunk.
+  cssParserGzipBytes: 61440,
+  cssParserRawBytes: 225280,
   modeDataRawBytes: 819200,
-  userscriptBytes: 2097152,
+  userscriptBytes: 3670016,
   siteInitialJsGzipBytes: 66560,
   siteInitialTransferBytes: 512000,
   siteFilmBytes: 12582912,
@@ -238,3 +370,50 @@ export const SUPPORTED_ORIGINS = freeze(["https://github.com", "https://gist.git
 
 // A normalized color: lowercase, six digits, with the hash. Import normalization produces this form.
 export const HEX_COLOR = /^#[0-9a-f]{6}$/;
+
+// Advanced CSS target kinds of the finite native registry (ARCHITECTURE.md, "Finite native CSS
+// registry and lifetime"). C3 supplies the registry; these names are its vocabulary.
+export const CSS_TARGET_KINDS = freeze(["page-backing", "header-chrome", "control-chrome", "heading-chrome", "graph-cell", "graph-decoration", "reading-pair"]);
+// Host-issued attributes that admit or exclude imported CSS. Themes can neither write nor match them.
+export const CSS_MARKERS = freeze({
+  scope: "data-reskin-css",
+  nativeGate: "data-reskin-css-native",
+  kind: "data-reskin-css-kind",
+  native: "data-reskin-native",
+  protected: "data-reskin-protected",
+  owned: "data-reskin-owned",
+  slot: "data-reskin-slot",
+});
+// The audited scalar variables advanced CSS may read, and the kind of value each holds. The
+// compiler sets them from repaired output; no variable exposes page content, attributes or URLs.
+const kebab = (role) => role.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
+export const CSS_VARIABLES = freeze(
+  Object.fromEntries([
+    ...[
+      "canvas",
+      "surface",
+      "inset",
+      "raised",
+      "text",
+      "muted-text",
+      "link",
+      "border",
+      "control-border",
+      "accent",
+      "primary-background",
+      "primary-text",
+      "header-background",
+      "header-text",
+      "selection-background",
+      "selection-text",
+      "code-background",
+      "code-text",
+      ...["added", "removed", "word-added", "word-removed"].flatMap((d) => [`diff-${d}-background`, `diff-${d}-text`]),
+      ...THEME_SYNTAX_ROLES.map((role) => `syntax-${kebab(role)}`),
+      ...[0, 1, 2, 3, 4].map((level) => `graph-${level}`),
+    ].map((name) => [`--reskin-${name}`, "color"]),
+    ["--reskin-font-heading", "font"],
+    ["--reskin-font-body", "font"],
+    ["--reskin-radius", "length"],
+  ]),
+);

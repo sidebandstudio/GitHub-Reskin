@@ -3,12 +3,14 @@
 // that this module assigns to EngineModule under strict settings.
 import type {
   AnsiRole,
+  AppearanceColorPath,
   Base,
   ColorPath,
   Hex,
   Issue,
   ModeSeed,
   PairMatrix,
+  PairPath,
   PairResult,
   Repair,
   ResolveContext,
@@ -51,6 +53,15 @@ export declare function sha256(bytes: Uint8Array): string;
 export declare const ACCESSIBILITY_NOTICE: "GitHub accessibility colors are active";
 export declare const ANSI_ROLES: readonly AnsiRole[];
 export declare const COLOR_PATHS: readonly ColorPath[];
+/** The paired appearance colors pair-matrix version 2 adds, in AppearanceColors order. */
+export declare const APPEARANCE_COLOR_PATHS: readonly AppearanceColorPath[];
+/** COLOR_PATHS then APPEARANCE_COLOR_PATHS: every path a pair record may name. */
+export declare const PAIR_PATHS: readonly PairPath[];
+/**
+ * The audited --reskin-* variables from repaired output, for compilers. Pass the CSS family names
+ * of loaded bundled faces to put them first in the font variables.
+ */
+export declare function cssVariables(resolved: ThemedResolved, faces?: { headingFamily?: string; bodyFamily?: string }): Record<string, string>;
 export declare const SEMANTIC_FIELDS: readonly (keyof SemanticColors)[];
 export declare const SEMANTIC_ROLES: readonly SemanticRole[];
 export declare const TOKEN_KEYS: readonly (keyof UiTokens)[];

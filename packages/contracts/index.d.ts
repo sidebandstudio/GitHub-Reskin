@@ -4,8 +4,13 @@
 // The theme format is in theme-v1.d.ts and the frozen engine types in theme-engine.d.ts; this
 // file re-exports both, so `import type { ... } from "packages/contracts/index.js"` reaches all.
 import type {
+  AnsiRole,
+  AppearanceMode,
   Base,
+  BodyFontId,
+  DiffRole,
   EffectivePreferences,
+  ExtendedSyntaxRole,
   Family,
   FlavorSlotId,
   FontId,
@@ -21,8 +26,9 @@ import type {
   Repair,
   ResolvedTheme,
   SyntaxRole,
+  ThemeSyntaxRole,
 } from "./theme-engine.js";
-import type { EffectId, ThemeV1 } from "./theme-v1.js";
+import type { EffectId, ThemeBackground, ThemeContributions, ThemeRaster, ThemeShape, ThemeV1 } from "./theme-v1.js";
 
 // ---------------------------------------------------------------------------------------------
 // Constants (values in index.js)
@@ -31,7 +37,11 @@ export declare const THEME_FORMAT_VERSION: 1;
 export declare const SETTINGS_VERSION: 2;
 export declare const RENDERER_VERSION: 1;
 export declare const ENGINE_VERSION: 1;
-export declare const PAIR_MATRIX_VERSION: 1;
+export declare const PAIR_MATRIX_VERSION: 2;
+export declare const EXPANSION_VERSION: 1;
+export declare const SANITIZER_VERSION: 1;
+export declare const CSS_REGISTRY_VERSION: 1;
+export declare const EXPANSION_INCREMENT: 1;
 export declare const DEFAULT_THEME_ID: "anime.cyberpunk-edgerunners";
 export declare const LEGACY_CLASSIC_THEME_IDS: readonly LegacyClassicThemeId[];
 export declare const LEGACY_THEME_ALIASES: Readonly<{ cyberpunk: "anime.cyberpunk-edgerunners" }>;
@@ -52,16 +62,26 @@ export declare const BASES: readonly Base[];
 export declare const CORE_COLOR_ROLES: readonly CoreColorRole[];
 export declare const OVERRIDE_COLOR_ROLES: readonly OverrideColorRole[];
 export declare const SYNTAX_ROLES: readonly SyntaxRole[];
+export declare const EXTENDED_SYNTAX_ROLES: readonly ExtendedSyntaxRole[];
+export declare const THEME_SYNTAX_ROLES: readonly ThemeSyntaxRole[];
+export declare const ANSI_ROLES: readonly AnsiRole[];
+export declare const DIFF_ROLES: readonly DiffRole[];
 export declare const COLOR_ROLES: readonly ColorRole[];
 export declare const FONT_IDS: readonly FontId[];
+export declare const HEADING_FONT_IDS: readonly FontId[];
+export declare const BODY_FONT_IDS: readonly BodyFontId[];
+export declare const FONT_INVENTORY: Readonly<{ increment: 1; bundled: readonly FontId[]; nativeStack: readonly FontId[]; deferred: readonly FontId[] }>;
 export declare const EFFECT_IDS: readonly EffectId[];
 export declare const EFFECT_TARGETS: readonly EffectTarget[];
 export declare const FLAVOR_SLOT_IDS: readonly FlavorSlotId[];
 export declare const PREFERENCE_KEYS: readonly PreferenceKey[];
-export declare const DEFAULT_PREFERENCES: Readonly<Preferences>;
+export declare const DEFAULT_PREFERENCES: Readonly<Record<PreferenceKey, boolean>>;
+export declare const APPEARANCE_MODES: readonly AppearanceMode[];
+export declare const DEFAULT_APPEARANCE_MODE: "full";
 export declare const COMMIT_ACTION_TYPES: readonly CommitAction["type"][];
 export declare const SETTINGS_REQUEST_TYPES: readonly SettingsRequest["type"][];
 export declare const EDITOR_ACTION_TYPES: readonly EditorAction["type"][];
+export declare const DEFERRED_EDITOR_ACTION_TYPES: readonly EditorAction["type"][];
 export declare const INTERNAL_PAGES: readonly InternalPage[];
 export declare const PREVIEW_VIEWS: readonly PreviewView[];
 export declare const MODE_POLICIES: readonly ModePolicy[];
@@ -76,23 +96,54 @@ export declare const SHARED_BUILD_SCOPES: readonly SharedScope[];
 export declare const GECKO_ID: "github-reskin@sideband.studio";
 export declare const SUPPORTED_ORIGINS: readonly ["https://github.com", "https://gist.github.com"];
 export declare const HEX_COLOR: RegExp;
+export declare const CSS_TARGET_KINDS: readonly CssTargetKind[];
+export declare const CSS_MARKERS: Readonly<{
+  scope: "data-reskin-css";
+  nativeGate: "data-reskin-css-native";
+  kind: "data-reskin-css-kind";
+  native: "data-reskin-native";
+  protected: "data-reskin-protected";
+  owned: "data-reskin-owned";
+  slot: "data-reskin-slot";
+}>;
+export declare const CSS_VARIABLES: Readonly<Record<`--reskin-${string}`, "color" | "font" | "length">>;
 
 // ---------------------------------------------------------------------------------------------
 // Theme format and frozen engine types. Each is defined once, in theme-v1.d.ts or
 // theme-engine.d.ts, and re-exported here.
 
-export type { ThemeV1, EffectId, EffectRequests } from "./theme-v1.js";
+export type {
+  ThemeV1,
+  EffectId,
+  EffectRequests,
+  ThemeBackground,
+  ThemeContributions,
+  ThemeGradient,
+  ThemePaintLayer,
+  ThemePattern,
+  ThemePill,
+  ThemeRaster,
+  ThemeShape,
+} from "./theme-v1.js";
 export type {
   AnsiRole,
+  AppearanceColorPath,
+  AppearanceColors,
+  AppearanceMode,
+  AppearanceNote,
   Base,
+  BodyFontId,
   ColorPath,
   ColorSet,
   DeepReadonly,
+  DiffRole,
   EffectivePreferences,
+  ExtendedSyntaxRole,
   EngineModule,
   Family,
   FlavorSlotId,
   FontId,
+  GradientPosition,
   GraphRamp,
   Hex,
   ModeId,
@@ -102,6 +153,7 @@ export type {
   NativeResolved,
   OverrideColorKey,
   PairMatrix,
+  PairPath,
   PairRecord,
   PairResult,
   Policy,
@@ -110,8 +162,12 @@ export type {
   PreviewView,
   Repair,
   ResolveContext,
+  ResolvedAppearance,
   ResolvedEffects,
   ResolvedFlavor,
+  ResolvedFontRole,
+  ResolvedPaint,
+  ResolvedPaintLayer,
   ResolvedTheme,
   SeedOrigin,
   SemanticColors,
@@ -119,6 +175,7 @@ export type {
   SourceColorPath,
   SyntaxRole,
   ThemedResolved,
+  ThemeSyntaxRole,
   UiTokens,
 } from "./theme-engine.js";
 
@@ -149,7 +206,8 @@ export type OverrideColorRole = OverrideColorKey;
 export type ColorRole = CoreColorRole | OverrideColorRole | "syntax";
 export type EffectTarget = "owned-badge" | "owned-margin-strip" | "owned-caption-edge";
 export type PreferenceKey = "extras" | "text" | "motion" | "fonts" | "effects";
-export type Preferences = Record<PreferenceKey, boolean>;
+/** `appearance` is the Full / Calm switch; C4 writes it together with the compatible extras flag. */
+export type Preferences = Record<PreferenceKey, boolean> & { appearance?: AppearanceMode };
 export type InternalPage = "onboarding" | "settings";
 export type BrowserTarget = "chrome" | "firefox";
 export type BuildTarget = BrowserTarget | "userscript" | "shared" | "site";
@@ -294,6 +352,117 @@ export interface PreviewModule {
 }
 
 // ---------------------------------------------------------------------------------------------
+// Advanced CSS. The format package sanitizes theme CSS into canonical text plus a JSON rule IR;
+// compiling that IR against C3's finite registry needs no parser. THEME-EXPANSION.md is the policy.
+
+export type CssTargetKind = "page-backing" | "header-chrome" | "control-chrome" | "heading-chrome" | "graph-cell" | "graph-decoration" | "reading-pair";
+export type CssPredicateName = "data-testid" | "data-component" | "data-reskin-slot" | "aria-current";
+
+/** What one native target kind may receive. Rules matching several kinds get the intersection. */
+export interface CssKindPolicy {
+  /** Properties a subject of this kind may receive, from the native allowlist. */
+  properties: string[];
+  /** For each color property, the audited `--reskin-*` variables it may use. */
+  colors: Partial<Record<string, string[]>>;
+  /** Color properties that may also take literal colors and gradients: decorative boundaries or verified blank backing. */
+  literalColors: string[];
+  /** Blurred box-shadow, for reviewed small chrome and graph targets only. */
+  blur: boolean;
+  textShadow: boolean;
+  /** Each subject is a leaf, or its whole descendant set shares this policy, so inheritable properties may apply. */
+  inheritable: boolean;
+  /** The most subjects of this kind one document may admit. */
+  maxTargets: number;
+}
+/** One exact native subject. A compound matches only with exactly these classes, id and element. */
+export interface CssSubjectSignature {
+  kind: CssTargetKind;
+  element?: string;
+  classes: string[];
+  id?: string;
+  /** Exact predicates this subject may carry, including inside :not(). Name and value both match exactly. */
+  predicates?: { name: CssPredicateName; value: string }[];
+  /** Reviewed route patterns where C3 issues this kind's marker. */
+  routes: string[];
+}
+/**
+ * The registry C3 supplies (registryVersion 1). Imported metadata never extends it. Without a
+ * valid registry the compiler rejects every native-node rule and compiles owned decorations only.
+ */
+export interface CssTargetRegistry {
+  registryVersion: 1;
+  kinds: Partial<Record<CssTargetKind, CssKindPolicy>>;
+  subjects: CssSubjectSignature[];
+  /** html, body and :root map to this kind's marked subject, never to the whole document. */
+  rootKind: "page-backing" | null;
+  /** C3's lifetime evidence: the attributes and events that revoke admission before the next styled render. */
+  invalidation: { attributes: string[]; events: string[] };
+  /** Repository-relative fixture path to SHA-256, the reviewed structural evidence. */
+  fixtures: Record<string, string>;
+}
+
+export interface CssIrCompound {
+  element: string | null;
+  id: string | null;
+  classes: string[];
+  attributes: { name: CssPredicateName; value: string }[];
+  pseudoClasses: { name: string; selectors?: CssIrSelector[] }[];
+  pseudoElement: "before" | "after" | null;
+}
+export interface CssIrSelector {
+  compounds: CssIrCompound[];
+  /** combinators[i] joins compounds[i] and compounds[i + 1]. */
+  combinators: (" " | ">")[];
+}
+export interface CssIrDeclaration {
+  property: string;
+  /** Canonical value with theme-local variables substituted; only `--reskin-*` lookups remain. */
+  value: string;
+  variables: string[];
+  /** A literal color or gradient appears, rather than only audited variables. */
+  literalColor: boolean;
+  /** A blurred shadow entry appears. */
+  blur: boolean;
+  /** Background layers, for background-image and the list properties. */
+  layers: number;
+}
+export interface CssIrRule {
+  /** Canonical @media preludes, outermost first. */
+  media: string[];
+  selectors: CssIrSelector[];
+  declarations: CssIrDeclaration[];
+}
+/** The admitted form of a css string: canonical text, its hashes and the IR the compiler reads. */
+export interface SanitizedCss {
+  /** Canonical sanitized CSS. Exports and consent use exactly this text. */
+  css: string;
+  /** SHA-256 of `css`, the consent key with sanitizerVersion. */
+  hash: string;
+  bytes: number;
+  sanitizerVersion: 1;
+  policyHash: string;
+  rules: CssIrRule[];
+  /** Normalization notes, such as a removed !important. */
+  notes: Issue[];
+}
+export type CssAdmission = { ok: true; value: SanitizedCss } | { ok: false; issues: Issue[] };
+/** An admitted gradientCss layer value: one gradient and an optional bounded size. */
+export type GradientCssAdmission = { ok: true; value: string; size: string | null } | { ok: false; issues: Issue[] };
+/** Advanced CSS acceptance for one local theme, keyed by the canonical hash and policy version. */
+export interface CssConsent {
+  hash: string;
+  sanitizerVersion: 1;
+}
+export interface CompiledCss {
+  /** Scoped CSS for a style node's textContent, or "" when nothing applies. */
+  css: string;
+  /** Rules that style native GitHub nodes, which need the native scope gate and a subject marker. */
+  nativeRules: number;
+  ownedRules: number;
+}
+export type CssCompileResult = ({ ok: true } & CompiledCss) | { ok: false; issues: Issue[] };
+
+// ---------------------------------------------------------------------------------------------
 // Settings
 
 export interface CustomTheme {
@@ -309,6 +478,8 @@ export interface SettingsV2 {
   selectedThemeId: ThemeId;
   preferences: Preferences;
   customThemes: CustomTheme[];
+  /** Advanced CSS acceptance per imported local theme. Never part of exported theme data. */
+  cssConsent?: Partial<Record<LocalThemeId, CssConsent>>;
   onboardingCompleted: boolean;
   migration: { from?: "1.1.0"; notices: string[] };
 }
@@ -330,7 +501,9 @@ export interface SettingsV2 {
  *    - catalogHash equals the current catalog hash;
  *    - selectedSourceHash equals the current selected source's canonical hash, and the
  *      snapshot's sourceHash equals selectedSourceHash;
- *    - rendererVersion, engineVersion and pairMatrixVersion equal the running ones;
+ *    - rendererVersion, engineVersion, pairMatrixVersion, expansionVersion and
+ *      sanitizerVersion equal the running ones, and the CSS consent for the selected source still
+ *      names its canonical sanitized CSS hash;
  *    - effectivePreferences equal the current effective preferences;
  *    - the snapshot's policy, base, seedId and seedHash equal the current mode plan's and its
  *      immutable seed's identity;
@@ -343,7 +516,9 @@ export interface BootRecord {
   settingsRevision: number;
   rendererVersion: 1;
   engineVersion: 1;
-  pairMatrixVersion: 1;
+  pairMatrixVersion: 2;
+  expansionVersion: 1;
+  sanitizerVersion: 1;
   catalogHash: string;
   selectedSourceHash: string;
   validatedTokenSnapshot: ResolvedTheme;
@@ -452,7 +627,8 @@ export interface UiHost {
 export type EditorAction =
   | { type: "setColor"; role: "background" | "text" | "accent"; value: Hex }
   | { type: "setBase"; base: Base }
-  | { type: "setFont"; font: FontId }
+  /** Without a role this sets the heading font, as the single accent font did. */
+  | { type: "setFont"; font: FontId; role?: "heading" | "body" }
   /** Enabling a present effect keeps its parameters; a newly added one gets the schema defaults. */
   | { type: "toggleEffect"; effect: EffectId; enabled: boolean }
   | { type: "setFlavorEnabled"; enabled: boolean }
@@ -460,7 +636,19 @@ export type EditorAction =
   | { type: "undo" }
   | { type: "reset" }
   /** A validated import. */
-  | { type: "loadImport"; theme: ThemeV1 };
+  | { type: "loadImport"; theme: ThemeV1 }
+  /** Revision 4 groups. Each replaces one closed schema fragment, or removes it with null. */
+  | { type: "setBackground"; target: "page" | "profileBanner" | "header"; background: ThemeBackground | null }
+  /** Deferred: local image upload and conversion arrive in increment 2. */
+  | { type: "setImage"; target: "page" | "profileBanner" | "header"; layer: number; image: ThemeRaster | null }
+  | { type: "setShape"; shape: ThemeShape | null }
+  | { type: "setTypography"; typography: NonNullable<ThemeV1["typography"]> | null }
+  | { type: "setCode"; code: NonNullable<ThemeV1["code"]> | null }
+  | { type: "setDetails"; details: NonNullable<ThemeV1["details"]> | null }
+  | { type: "setGraphStyle"; style: Omit<ThemeContributions, "levels"> }
+  | { type: "setGraphLevels"; levels: ThemeContributions["levels"] | null }
+  /** Deferred: the Advanced CSS editor arrives in increment 2. */
+  | { type: "setCss"; css: string | null };
 
 export interface EditorState {
   document: ThemeV1;
@@ -501,6 +689,17 @@ export interface Limits {
   maxCustomThemes: number;
   maxCustomSourceBytes: number;
   maxDraftBytes: number;
+  maxStorageBytes: number;
+  maxShareLinkCharacters: number;
+  cssUtf8Bytes: number;
+  gradientCssUtf8Bytes: number;
+  gradientCssSizeCharacters: number;
+  perImageDecodedBytes: number;
+  documentImageDecodedBytes: number;
+  imageMaxDimension: number;
+  imageMaxPixels: number;
+  documentImageDecodedPixels: number;
+  maxBackgroundLayers: number;
   maxEffectsPerTheme: number;
   maxOwnedNodesPerDocument: number;
   maxAnimatedNodes: number;
@@ -513,6 +712,7 @@ export interface Limits {
   fontWeightsPerFamily: number;
   fontTotalWoff2Bytes: number;
   fontMaxPerFamilyBytes: number;
+  fontMaxPerFileBytes: number;
   startupGateMs: number;
   maxInitialRootQueries: number;
   maxContainerObservers: number;
@@ -527,6 +727,8 @@ export interface Budgets {
   unpackedRuntimeBytes: number;
   contentEngineGzipBytes: number;
   contentEngineRawBytes: number;
+  cssParserGzipBytes: number;
+  cssParserRawBytes: number;
   modeDataRawBytes: number;
   userscriptBytes: number;
   siteInitialJsGzipBytes: number;

@@ -51,6 +51,7 @@ export const ROUTES = Object.freeze({
   repro: [{ owner: "C1", module: "scripts/verify-repro.mjs" }],
   schema: [{ owner: "C2", module: FORMAT }],
   prompt: [{ owner: "C2", module: FORMAT }],
+  css: [{ owner: "C2", module: FORMAT }],
   themes: [{ owner: "C2", module: FORMAT }],
   "classic-themes": [{ owner: "C2", module: FORMAT }],
   // Every scope, including none: C2 orchestrates contrast and loads C3's data for --scope=primer.

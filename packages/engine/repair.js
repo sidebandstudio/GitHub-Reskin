@@ -1,21 +1,35 @@
 // repairTheme: portable source repair against a same-base standard seed. Only fields the source
 // already has can change, following the source-role mapping in ARCHITECTURE.md, plus an invalid
 // supplied contribution ramp. Repair repeats until a fixed point, so repairing again is a no-op.
-import { SYNTAX_ROLES } from "../contracts/index.js";
-import { validateTheme } from "../format/index.js";
+// Where a newer field and its older equivalent are both supplied, only the winning request is
+// repaired; the other is kept exactly as written.
+import { ANSI_ROLES, DIFF_ROLES, SYNTAX_ROLES, THEME_SYNTAX_ROLES } from "../contracts/index.js";
+import { validateTheme } from "../format/viewer.js";
 import { assertBasePolarity, assertTheme, deepFreeze, deriveColors } from "./resolve.js";
 import { assertSeed } from "./seed.js";
 
-// Portable field -> resolved ColorPath it persists from.
+const syntaxPath = (role) => (SYNTAX_ROLES.includes(role) ? `/syntax/${role}` : `/appearance/colors/syntax/${role}`);
+const diffToken = (role) => `/tokens/diff${role[0].toUpperCase()}${role.slice(1)}`;
+
+// Portable field -> resolved path it persists from. The first entry of a group of equivalents
+// that the source has wins.
 const SOURCE_MAP = [
   ["/colors/text", "/tokens/text"],
-  ...["surface", "inset", "raised", "hover", "mutedText", "link", "border", "controlBorder", "accentMuted", "primaryBackground", "primaryText", "selectionBackground", "selectionText"].map((k) => [
-    `/overrides/${k}`,
-    `/tokens/${k}`,
-  ]),
+  ...["surface", "inset", "raised", "hover", "mutedText", "link", "border", "controlBorder", "accentMuted", "primaryBackground", "primaryText"].map((k) => [`/overrides/${k}`, `/tokens/${k}`]),
+  [["/details/selection/background", "/overrides/selectionBackground"], "/tokens/selectionBackground"],
+  [["/details/selection/text", "/overrides/selectionText"], "/tokens/selectionText"],
   ["/overrides/focus", "/tokens/focusOuter"],
   ...["success", "danger", "warning", "done"].map((k) => [`/overrides/${k}`, `/semantics/${k}/text`]),
-  ...SYNTAX_ROLES.map((k) => [`/overrides/syntax/${k}`, `/syntax/${k}`]),
+  ...THEME_SYNTAX_ROLES.map((k) => [[`/code/syntax/${k}`, `/overrides/syntax/${k}`], syntaxPath(k)]),
+  ["/code/background", "/tokens/codeBackground"],
+  ["/code/text", "/tokens/codeText"],
+  ...DIFF_ROLES.map((k) => [`/code/diff/${k}`, diffToken(k)]),
+  ...ANSI_ROLES.map((k) => [`/code/ansi/${k}`, `/ansi/${k}`]),
+  ["/details/headerText", "/appearance/colors/header/text"],
+  ["/details/scrollbar/thumb", "/appearance/colors/scrollbar/thumb"],
+  ["/details/scrollbar/track", "/appearance/colors/scrollbar/track"],
+  ...["labels", "topics"].flatMap((pill) => ["background", "text", "border"].map((k) => [`/details/${pill}/${k}`, `/appearance/colors/${pill}/${k}`])),
+  ["/contributions/cellBoundary", "/appearance/colors/graph/cellBoundary"],
 ];
 const MAX_ROUNDS = 12;
 
@@ -42,9 +56,10 @@ function round(theme, seed) {
   const { colors, graph } = deriveColors(theme, seed);
   const renderRepairs = colors.repairs();
   const changes = [];
-  for (const [source, resolved] of SOURCE_MAP) {
+  for (const [sources, resolved] of SOURCE_MAP) {
+    const source = [sources].flat().find((path) => read(theme, path) !== undefined);
+    if (!source) continue;
     const before = read(theme, source);
-    if (before === undefined) continue;
     const after = colors.get(resolved);
     if (before.toLowerCase() !== after) changes.push({ path: source, before, after, reason: reasonFor(renderRepairs, resolved) });
   }

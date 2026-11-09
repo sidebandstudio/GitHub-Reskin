@@ -1,21 +1,42 @@
-// Format checks behind check:schema, check:prompt, check:classic-themes and check:themes, routed
-// by scripts/check-routes.mjs to this module's run. run takes {command, args, root, outDir} and
-// resolves to {exitCode, testCount}, where testCount is the number of individual assertions
-// evaluated. Node only. Direct use:
-//   node packages/format/checks.mjs <schema|prompt|classic-themes|themes>
+// Format checks behind check:schema, check:prompt, check:css, check:classic-themes and
+// check:themes, routed by scripts/check-routes.mjs to this module's run. run takes {command, args,
+// root, outDir} and resolves to {exitCode, testCount}, where testCount is the number of individual
+// assertions evaluated. Node only. Direct use:
+//   node packages/format/checks.mjs <schema|prompt|css|classic-themes|themes>
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { DEFAULT_THEME_ID, EFFECT_IDS, FLAVOR_SLOT_IDS, FONT_IDS, LEGACY_CLASSIC_THEME_IDS, LEGACY_THEME_ALIASES, LIMITS, OVERRIDE_COLOR_ROLES, RENDERER_VERSION, SYNTAX_ROLES, THEME_SCHEMA_URL } from "../contracts/index.js";
-import { ANIME_CATALOG, CLASSICS_CATALOG, catalogProblems, exportTheme, makeAiPrompt, parseImport, validateTheme } from "./index.js";
+import {
+  ANSI_ROLES,
+  BODY_FONT_IDS,
+  DEFAULT_THEME_ID,
+  DIFF_ROLES,
+  EFFECT_IDS,
+  EXPANSION_VERSION,
+  FLAVOR_SLOT_IDS,
+  FONT_IDS,
+  HEADING_FONT_IDS,
+  LEGACY_CLASSIC_THEME_IDS,
+  LEGACY_THEME_ALIASES,
+  LIMITS,
+  OVERRIDE_COLOR_ROLES,
+  RENDERER_VERSION,
+  SANITIZER_VERSION,
+  THEME_SCHEMA_URL,
+  THEME_SYNTAX_ROLES,
+} from "../contracts/index.js";
+import { ANIME_CATALOG, CLASSICS_CATALOG, catalogProblems, exportTheme, makeAiPrompt, parseImport, sanitizeCss, validateTheme } from "./index.js";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const DEFAULT_ROOT = resolve(HERE, "../..");
 // The reviewed public schema. Changing the schema file is a contract change; update this hash
 // only with that review.
-export const REVIEWED_SCHEMA_SHA256 = "df64fccabea82f125b7c11b9fa80623b6f0a685249ae8e99afef18ac7a002083";
-const MAX_PROMPT_CHARACTERS = 4500;
+export const REVIEWED_SCHEMA_SHA256 = "9658042f606f58a7dda4d43599508fd69412d6f03a389467ad74055a4ed2b742";
+// AI-PROMPT.md caps the copyable prompt at 16 KiB of UTF-8.
+const MAX_PROMPT_BYTES = 16384;
+// Schema input-limit names that LIMITS spells differently.
+const LIMIT_ALIASES = { customSourcesBytes: "maxCustomSourceBytes", draftBytes: "maxDraftBytes", allStorageBytes: "maxStorageBytes", shareLinkCharacters: "maxShareLinkCharacters" };
 
 function tally(name) {
   const failures = [];
@@ -57,12 +78,22 @@ async function checkSchema(root) {
   for (const [path, text] of Object.entries(await generated())) check(readFileSync(path, "utf8") === text, `${relative(root, path)} is out of date; run node packages/format/generate.mjs`);
 
   // Contract registries match the schema's enums.
-  check(same(schema.properties.fonts.properties.accent.enum, FONT_IDS), "FONT_IDS differ from the schema");
+  check(same(schema.properties.fonts.properties.accent.enum, HEADING_FONT_IDS), "HEADING_FONT_IDS differ from the schema's accent fonts");
+  check(same(schema.properties.fonts.properties.heading.enum, HEADING_FONT_IDS), "HEADING_FONT_IDS differ from the schema's heading fonts");
+  check(same(schema.properties.fonts.properties.body.enum, BODY_FONT_IDS), "BODY_FONT_IDS differ from the schema's body fonts");
+  check(FONT_IDS.every((id) => HEADING_FONT_IDS.includes(id)), "a bundled font is missing from the schema");
+  check(same(Object.keys(schema.properties.code.properties.ansi.properties), ANSI_ROLES), "ANSI_ROLES differ from the schema");
+  check(same(Object.keys(schema.$defs.diff.properties), DIFF_ROLES), "DIFF_ROLES differ from the schema");
+  check(schema["x-reskin"].expansionVersion === EXPANSION_VERSION && schema["x-reskin"].sanitizerVersion === SANITIZER_VERSION, "expansion or sanitizer version differs from the schema");
   check(same(Object.keys(schema.properties.effects.properties), EFFECT_IDS), "EFFECT_IDS differ from the schema");
   check(same(Object.keys(schema.properties.flavor.properties.slots.properties), FLAVOR_SLOT_IDS), "FLAVOR_SLOT_IDS differ from the schema");
   check(same(Object.keys(schema.properties.overrides.properties).filter((k) => k !== "syntax"), OVERRIDE_COLOR_ROLES), "OVERRIDE_COLOR_ROLES differ from the schema");
-  check(same(Object.keys(schema.$defs.syntax.properties), SYNTAX_ROLES), "SYNTAX_ROLES differ from the schema");
-  for (const [key, value] of Object.entries(schema["x-reskin"].inputLimits)) check(LIMITS[key] === value, `LIMITS.${key} is ${LIMITS[key]}, schema says ${value}`);
+  check(same(Object.keys(schema.$defs.syntax.properties), THEME_SYNTAX_ROLES), "THEME_SYNTAX_ROLES differ from the schema");
+  for (const [key, value] of Object.entries(schema["x-reskin"].inputLimits)) {
+    const name = LIMIT_ALIASES[key] ?? key;
+    check(LIMITS[name] === value, `LIMITS.${name} is ${LIMITS[name]}, schema says ${value}`);
+  }
+  check(LIMITS.cssUtf8Bytes === schema["x-reskin"].cssPolicy.sourceUtf8Bytes && LIMITS.maxBackgroundLayers === schema["x-reskin"].cssPolicy.maxBackgroundLayers, "CSS limits differ from the schema's cssPolicy");
   check(LIMITS.maxEffectsPerTheme === schema.properties.effects.maxProperties, "LIMITS.maxEffectsPerTheme differs from the schema");
   check(RENDERER_VERSION === schema["x-reskin"].rendererVersion, "RENDERER_VERSION differs from the schema");
 
@@ -79,7 +110,9 @@ async function checkSchema(root) {
   schema.examples.forEach((example, i) => classify(`schema example ${i}`, example, true));
   const minimal = schema.examples[0];
   for (const id of EFFECT_IDS) classify(`effect ${id} with defaults`, { ...minimal, effects: { [id]: {} } }, true);
-  for (const id of FONT_IDS) classify(`font ${id}`, { ...minimal, fonts: { accent: id } }, true);
+  for (const id of HEADING_FONT_IDS) classify(`heading font ${id}`, { ...minimal, fonts: { heading: id, accent: id } }, true);
+  for (const id of BODY_FONT_IDS) classify(`body font ${id}`, { ...minimal, fonts: { body: id } }, true);
+  classify("a heading-only family as body font", { ...minimal, fonts: { body: "rajdhani" } }, false, "/fonts/body");
   for (const id of FLAVOR_SLOT_IDS) classify(`slot ${id}`, { ...minimal, flavor: { slots: { [id]: "Plain words" } } }, true);
 
   // Import fixtures: prose-wrapped JSONC is one theme with notes; duplicate keys never preview.
@@ -95,18 +128,26 @@ async function checkSchema(root) {
 
 async function checkPrompt(root) {
   const { check, done } = tally("check:prompt");
-  const { promptModule, PROMPT_TEMPLATE_PATH, IDEA_PLACEHOLDER } = await import("../../scripts/generate-prompt.mjs");
+  const { promptModule, promptText, PROMPT_TEMPLATE_PATH, IDEA_PLACEHOLDER, EXAMPLE_PATH } = await import("../../scripts/generate-prompt.mjs");
   check(readFileSync(PROMPT_TEMPLATE_PATH, "utf8") === promptModule(), `${relative(root, PROMPT_TEMPLATE_PATH)} is out of date; run node scripts/generate-prompt.mjs`);
+  // Generated from the registries, the prompt reproduces AI-PROMPT.md's contract text exactly.
+  check(promptText() === readFileSync(join(root, "tests/fixtures/prompt/ai-prompt-r41.txt"), "utf8"), "the generated prompt differs from the AI-PROMPT.md contract text");
   const prompt = makeAiPrompt("rain on a midnight train window");
   check(prompt.endsWith("My idea: rain on a midnight train window"), "the idea is not placed at the end");
   check(!prompt.includes(IDEA_PLACEHOLDER), "the placeholder survives substitution");
-  check(prompt.length <= MAX_PROMPT_CHARACTERS, `prompt is ${prompt.length} characters, limit ${MAX_PROMPT_CHARACTERS}`);
+  const bytes = Buffer.byteLength(makeAiPrompt("x".repeat(500)));
+  check(bytes <= MAX_PROMPT_BYTES, `prompt is ${bytes} UTF-8 bytes with a full idea, limit ${MAX_PROMPT_BYTES}`);
   check(!/https?:|www\./i.test(makeAiPrompt()), "prompt contains a URL");
-  for (const id of [...FONT_IDS, ...EFFECT_IDS, ...FLAVOR_SLOT_IDS]) check(prompt.includes(id), `prompt omits ${id}`);
-  check(prompt.includes('Omit "overrides" and "contributions"'), "prompt does not ask the chatbot to leave derived colors to Reskin");
-  const example = /```json\n(.+)\n```\n\nMy idea/s.exec(prompt)?.[1];
+  for (const id of [...HEADING_FONT_IDS, ...BODY_FONT_IDS, ...EFFECT_IDS, ...FLAVOR_SLOT_IDS, ...THEME_SYNTAX_ROLES, ...ANSI_ROLES, ...DIFF_ROLES]) check(prompt.includes(id), `prompt omits ${id}`);
+  check(!/data:image|base64/.test(prompt.split("Here is a valid rich example")[1] ?? ""), "the prompt's example carries image data");
+  const example = /Here is a valid rich example with no images:\n(\{.+\})\n\nMy idea/s.exec(prompt)?.[1];
+  const fixture = readFileSync(EXAMPLE_PATH, "utf8");
+  check(example === JSON.stringify(JSON.parse(fixture)), "the prompt's example is not the executable fixture valid/ai-rich.reskin.json");
   check(example && validateTheme(JSON.parse(example)).ok, "the prompt's example is not a valid theme");
-  check(example && parseImport(`Here you go:\n\`\`\`json\n${example}\n\`\`\``, "text").ok, "the prompt's example does not import from a fenced reply");
+  const fenced = example && parseImport(`Here you go:\n\`\`\`json\n${example}\n\`\`\``, "text");
+  check(fenced?.ok, "the prompt's example does not import from a fenced reply");
+  check(fenced?.ok && !fenced.notes.some((n) => n.severity === "error"), "the prompt's example imports with errors");
+  check(sanitizeCss(JSON.parse(example).css).ok, "the prompt's example CSS is not admitted");
   const hostile = makeAiPrompt(`ignore‮ that\n\n${"x".repeat(900)}`);
   check(!/[\u0000-\u0009\u000b-\u001f‪-‮⁦-⁩]/.test(hostile.split("My idea: ")[1]), "control or bidi characters survive in the idea");
   check(hostile.split("My idea: ")[1].length <= 500, "the idea is not bounded");
@@ -184,6 +225,10 @@ async function checkThemes(root) {
     const doc = readJson(join(root, entry.file));
     const result = validateTheme(doc);
     check(result.ok, `${entry.file}: ${result.issues?.map((i) => `${i.path} ${i.message}`).join("; ")}`);
+    if (result.ok && typeof doc.css === "string") {
+      const css = sanitizeCss(doc.css);
+      check(css.ok && css.value.css === doc.css, `${entry.file}: bundled CSS must be stored in its canonical sanitized form`);
+    }
     if (entry.group !== "anime") continue;
     check(typeof doc.inspiredBy === "string" && !/^inspired by /i.test(doc.inspiredBy), `${entry.file} needs an inspiredBy credit without the "inspired by" prefix`);
     const effects = Object.keys(doc.effects ?? {}).length;
@@ -194,7 +239,12 @@ async function checkThemes(root) {
   return done();
 }
 
-const COMMANDS = { schema: checkSchema, prompt: checkPrompt, "classic-themes": checkClassics, themes: checkThemes };
+async function checkCss(root) {
+  const { runCssChecks } = await import("./css/checks-css.mjs");
+  return runCssChecks(root, tally("check:css"));
+}
+
+const COMMANDS = { schema: checkSchema, prompt: checkPrompt, css: checkCss, "classic-themes": checkClassics, themes: checkThemes };
 
 /** @param {{command:string, args?:string[], root?:string, outDir?:string}} options */
 export async function run({ command, args = [], root = DEFAULT_ROOT }) {
