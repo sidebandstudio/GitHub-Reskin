@@ -115,8 +115,10 @@ test("a bundled heading font is loaded from the packaged path in Full and Calm w
   const { plan, seed } = renderer.plan(renderer.readPage(null, null), document.base);
   const resolved = renderer.resolve(document, { seed, policy: "themed", reducedMotion: false, forcedColors: false });
   assert.notEqual(resolved.font, "system");
-  // One face per reviewed weight; the browser fetches only the weights its text uses.
-  const faces = FONT_BY_ID[resolved.font].weights.map((weight) => `${resolved.font} ${weight}`);
+  // One face per reviewed weight of the heading and body families; the browser fetches only the
+  // weights its text uses.
+  const faces = [document.fonts.heading, document.fonts.body].flatMap((id) => FONT_BY_ID[id].weights.map((weight) => `${id} ${weight}`));
+  assert.equal(resolved.font, document.fonts.heading);
   fontUrls.length = 0;
   assert.match(renderer.compile(resolved, plan, prefs()).css, /@font-face/);
   assert.deepEqual(fontUrls, faces);

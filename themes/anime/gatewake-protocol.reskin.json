@@ -1,35 +1,162 @@
 {
   "$schema": "https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json",
   "author": "sidebandstudio",
+  "backgrounds": {
+    "header": {
+      "color": "#071b31",
+      "layers": [
+        {
+          "gradientCss": {
+            "size": "auto",
+            "value": "linear-gradient(0deg,#71e0ff 2px,transparent 2px)"
+          }
+        },
+        {
+          "gradientCss": {
+            "size": "auto",
+            "value": "linear-gradient(90deg,color-mix(in srgb,#bda4ff 14%,transparent),transparent 22% 78%,color-mix(in srgb,#bda4ff 14%,transparent))"
+          }
+        }
+      ]
+    },
+    "page": {
+      "color": "#04101e",
+      "layers": [
+        {
+          "gradientCss": {
+            "size": "80px 80px",
+            "value": "linear-gradient(90deg,color-mix(in srgb,#71e0ff 3%,transparent) 1px,transparent 1px)"
+          }
+        },
+        {
+          "gradientCss": {
+            "size": "auto",
+            "value": "linear-gradient(90deg,transparent 2%,color-mix(in srgb,#71e0ff 21%,transparent) 2% 2.25%,transparent 2.25% 97.75%,color-mix(in srgb,#71e0ff 21%,transparent) 97.75% 98%,transparent 98%)"
+          }
+        },
+        {
+          "gradientCss": {
+            "size": "100% 100vh",
+            "value": "radial-gradient(ellipse at 50%0,color-mix(in srgb,#254d8b 28%,transparent),transparent 58%)"
+          }
+        },
+        {
+          "gradientCss": {
+            "size": "auto",
+            "value": "linear-gradient(90deg,color-mix(in srgb,#2b1d66 56%,transparent),transparent 18% 82%,color-mix(in srgb,#2b1d66 56%,transparent))"
+          }
+        }
+      ]
+    }
+  },
   "base": "dark",
+  "code": {
+    "ansi": {
+      "black": "#b4c6d7",
+      "blue": "#b5d8ff",
+      "brightBlack": "#b2c9de",
+      "brightBlue": "#d6e9ff",
+      "brightCyan": "#b6f0ff",
+      "brightGreen": "#c4f5eb",
+      "brightMagenta": "#d6c1ff",
+      "brightRed": "#ffd5df",
+      "brightWhite": "#ffffff",
+      "brightYellow": "#ffe8c4",
+      "cyan": "#76e2ff",
+      "green": "#9debdc",
+      "magenta": "#cbbaff",
+      "red": "#ffb3bb",
+      "white": "#d3e5f2",
+      "yellow": "#ffd79c"
+    },
+    "background": "#030a13",
+    "diff": {
+      "addedBackground": "#123529",
+      "addedText": "#c9ffe0",
+      "removedBackground": "#401c2b",
+      "removedText": "#ffd5df",
+      "wordAddedBackground": "#255b42",
+      "wordAddedText": "#c9ffe0",
+      "wordRemovedBackground": "#6b3044",
+      "wordRemovedText": "#ffd5df"
+    },
+    "syntax": {
+      "attribute": "#edc5fb",
+      "comment": "#b4c6d7",
+      "constant": "#b5d8ff",
+      "function": "#76e2ff",
+      "keyword": "#cbbaff",
+      "number": "#ffd79c",
+      "punctuation": "#d3e5f2",
+      "string": "#9debdc",
+      "tag": "#91e4f4",
+      "type": "#d6c1ff"
+    },
+    "text": "#edf7ff"
+  },
   "colors": {
-    "accent": "#65d7ff",
-    "background": "#071523",
-    "contribution": "#65d7ff",
-    "text": "#e9f4ff"
+    "accent": "#71e0ff",
+    "background": "#04101e",
+    "contribution": "#9cecff",
+    "text": "#edf7ff"
   },
   "contributions": {
+    "cellBoundary": "#88aecb",
+    "cellRadius": 2,
+    "cellStyle": "glow",
+    "glow": {
+      "color": "#71e0ff",
+      "levels": [
+        4
+      ],
+      "opacity": 0.4,
+      "radius": 4
+    },
     "levels": [
-      "#162e43",
-      "#2e7494",
-      "#2981a8",
-      "#329dc7",
-      "#65d7ff"
+      "#17334b",
+      "#236b94",
+      "#348fb6",
+      "#57bddf",
+      "#9cecff"
     ]
   },
-  "description": "Deep navy, icy cyan and crisp gate-like brackets frame GitHub as a clean progress dashboard.",
+  "css": ".AppHeader,.Header,.HeaderMktg,.GlobalNav{box-shadow:0 2px 18px -4px color-mix(in srgb,var(--reskin-accent) 50%,transparent)}.UnderlineNav-item[aria-current=\"page\"],.tabnav-tab[aria-current=\"page\"],a[aria-current=\"page\"]{border-bottom-color:var(--reskin-accent);border-radius:0;font-family:var(--reskin-font-heading);font-weight:700;letter-spacing:.05em;text-transform:uppercase;box-shadow:0 8px 10px -8px color-mix(in srgb,var(--reskin-accent) 80%,transparent)}.btn-primary{border-radius:2px;font-family:var(--reskin-font-heading);font-weight:700;letter-spacing:.05em;text-transform:uppercase;box-shadow:0 0 14px color-mix(in srgb,var(--reskin-accent) 45%,transparent)}h2.h4.mb-2,h2[data-component=\"Heading\"]{font-family:var(--reskin-font-heading);font-weight:700;letter-spacing:.05em;text-transform:uppercase}a[data-testid=\"repo-name-link\"]{font-family:var(--reskin-font-heading);font-weight:700;letter-spacing:.03em}[data-reskin-slot=\"profile.tag\"]{width:fit-content;margin:0 0 8px;padding:3px 8px 2px;font-family:var(--reskin-font-heading);font-weight:700;font-size:12px;line-height:1.45;letter-spacing:.2em;text-transform:uppercase;color:var(--reskin-accent);background-color:var(--reskin-inset);border:1px solid var(--reskin-accent);box-shadow:0 0 12px color-mix(in srgb,var(--reskin-accent) 35%,transparent),inset 0 0 8px color-mix(in srgb,var(--reskin-accent) 15%,transparent)}[data-reskin-slot=\"profile.pinned.heading\"],[data-reskin-slot=\"profile.activity.heading\"],[data-reskin-slot=\"profile.organizations.heading\"],[data-reskin-slot=\"profile.achievements.heading\"]{font-family:var(--reskin-font-heading);font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:0 0 0 10px;box-shadow:inset 2px 0 0 var(--reskin-accent)}[data-reskin-slot=\"error.notFound.caption\"]{position:absolute;right:5%;bottom:10%;max-width:360px;padding:8px 20px;font-family:var(--reskin-font-heading);font-weight:700;font-size:32px;line-height:1.1;letter-spacing:.06em;text-transform:uppercase;color:var(--reskin-accent);background-color:color-mix(in srgb,var(--reskin-inset) 92%,transparent);border:2px solid var(--reskin-accent);transform:rotate(-2deg);box-shadow:0 0 20px color-mix(in srgb,var(--reskin-accent) 50%,transparent),inset 0 0 14px color-mix(in srgb,var(--reskin-accent) 20%,transparent)}@media (max-width:1099px){[data-reskin-slot=\"error.notFound.caption\"]{font-size:28px}}@media (max-width:799px){[data-reskin-slot=\"error.notFound.caption\"]{font-size:23px}}@media (max-width:599px){[data-reskin-slot=\"error.notFound.caption\"]{font-size:18px}}",
+  "description": "Blue-black gate architecture with icy cyan edges, violet depth in the gutters, tall squared headings and a lit cyan threshold for the contribution graph.",
+  "details": {
+    "headerText": "#edf7ff",
+    "labels": {
+      "fill": "tinted",
+      "style": "sharp"
+    },
+    "scrollbar": {
+      "thumb": "#88aecb",
+      "track": "#030a13",
+      "width": "auto"
+    },
+    "selection": {
+      "background": "#71e0ff",
+      "text": "#061421"
+    },
+    "topics": {
+      "background": "#17374e",
+      "border": "#88aecb",
+      "fill": "tinted",
+      "style": "sharp",
+      "text": "#9ee7ff"
+    }
+  },
   "effects": {
     "glow": {
-      "strength": 0.18
+      "strength": 0.3
     },
     "grid": {
-      "opacity": 0.02,
-      "size": 24
+      "opacity": 0.05,
+      "size": 80
     },
-    "seal": {
-      "opacity": 0.4,
-      "shape": "brackets",
-      "size": 32
+    "rail": {
+      "opacity": 0.3,
+      "shape": "route",
+      "thickness": 2
     }
   },
   "flavor": {
@@ -40,6 +167,8 @@
       "empty.issues.caption": "No records in this view.",
       "empty.pinned.caption": "Room for a first expedition.",
       "error.notFound.caption": "This gate has no destination.",
+      "footer.signoff": "// the next gate awaits",
+      "profile.achievements.heading": "Rank records",
       "profile.activity.heading": "Progress log",
       "profile.organizations.heading": "Guild outposts",
       "profile.pinned.heading": "Selected gates",
@@ -47,33 +176,68 @@
     }
   },
   "fonts": {
-    "accent": "rajdhani"
+    "body": "ibm-plex-sans",
+    "heading": "rajdhani"
   },
   "inspiredBy": "Solo Leveling",
   "name": "Gatewake Protocol",
   "overrides": {
-    "accentMuted": "#163446",
-    "border": "#31516b",
-    "controlBorder": "#9fb8ce",
-    "danger": "#ff92a5",
-    "focus": "#9fb8ce",
-    "hover": "#22303d",
-    "inset": "#040d17",
-    "link": "#82dcff",
-    "mutedText": "#9fb8ce",
-    "primaryBackground": "#17668a",
-    "primaryText": "#ffffff",
-    "raised": "#192735",
-    "selectionBackground": "#17668a",
-    "selectionText": "#ffffff",
-    "success": "#6ad6bc",
-    "surface": "#0f2438",
-    "warning": "#f3cc78"
+    "accentEmphasis": "#1d6a92",
+    "accentMuted": "#17374e",
+    "border": "#4d677d",
+    "controlBorder": "#88aecb",
+    "danger": "#ffb3bb",
+    "focus": "#71e0ff",
+    "hover": "#1b3c56",
+    "inset": "#030a13",
+    "link": "#9ee7ff",
+    "mutedText": "#b2c9de",
+    "primaryBackground": "#71e0ff",
+    "primaryText": "#061421",
+    "raised": "#132e49",
+    "success": "#a4edc2",
+    "surface": "#0b2036",
+    "warning": "#ffe0a0"
   },
   "schemaVersion": 1,
+  "shape": {
+    "avatar": {
+      "frame": {
+        "color": "#71e0ff",
+        "style": "neon",
+        "width": 2
+      },
+      "shape": "rounded"
+    },
+    "borders": {
+      "color": "#4d677d",
+      "style": "solid",
+      "width": 1
+    },
+    "buttons": {
+      "radius": 2,
+      "style": "filled"
+    },
+    "corners": {
+      "radius": 2,
+      "style": "rounded"
+    },
+    "shadows": {
+      "blur": 18,
+      "color": "#1f9cff",
+      "offset": 0,
+      "opacity": 0.3,
+      "style": "neon"
+    }
+  },
   "tags": [
     "anime",
-    "dark"
+    "dark",
+    "blue"
   ],
-  "version": "1.0.0"
+  "typography": {
+    "headingLetterSpacing": 0.05,
+    "uppercaseHeadings": false
+  },
+  "version": "2.0.0"
 }
