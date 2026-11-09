@@ -121,8 +121,11 @@ test("normalization covers documented equivalents and notes each change", () => 
 });
 
 test("normalization never guesses: unknown fields stay, a v1 version needs a v1 shape, base is not inferred", () => {
-  const unknown = parseImport(MINIMAL.replace('"name":"Moss"', '"name":"Moss","css":"body{}"'), "text");
-  assert.equal(unknown.issues[0].path, "/css");
+  const unknown = parseImport(MINIMAL.replace('"name":"Moss"', '"name":"Moss","script":"body{}"'), "text");
+  assert.equal(unknown.issues[0].path, "/script");
+  // css is a supported field now, admitted by the sanitizer rather than passed through.
+  const hiding = parseImport(MINIMAL.replace('"name":"Moss"', '"name":"Moss","css":"body{display:none}"'), "text");
+  assert.deepEqual(hiding.issues.map((i) => [i.code, i.path]), [[ISSUE_CODES.css, "/css"]]);
   assert.equal(normalizeTheme({ name: "x", base: "dark", colors: { background: "#000000", text: "#ffffff", accent: "#ffffff" }, extra: 1 }).theme.schemaVersion, undefined);
   const noBase = parseImport('{"schemaVersion":1,"name":"x","colors":{"background":"#000000","text":"#ffffff","accent":"#ffffff"}}', "text");
   assert.deepEqual(noBase.issues.map((i) => [i.code, i.path]), [[ISSUE_CODES.missingField, "/base"]]);

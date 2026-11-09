@@ -17,4 +17,10 @@ export const NOTE_CODES = Object.freeze({
   defaultVersion: "default-schema-version",
   // A UTF-8 byte order mark was removed.
   bom: "bom",
+  // Admitted advanced CSS or a gradientCss value was rewritten in canonical form.
+  css: "css-canonical",
+  // Author !important was removed from advanced CSS.
+  important: "css-important",
+  // The theme asks for something this version renders another way, such as a deferred font.
+  deferred: "deferred-capability",
 });

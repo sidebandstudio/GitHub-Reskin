@@ -2,7 +2,7 @@
 // A template type cannot prove a string is a color, so every leaf is checked once per object.
 import { MODE_FAMILIES, MODE_POLICIES, PAIR_MATRIX_VERSION, SYNTAX_ROLES } from "../contracts/index.js";
 import { isHex } from "./color.js";
-import { ANSI_ROLES, COLOR_PATHS, SEMANTIC_FIELDS, SEMANTIC_ROLES, TOKEN_KEYS } from "./vocabulary.js";
+import { ANSI_ROLES, COLOR_PATHS, PAIR_PATHS, SEMANTIC_FIELDS, SEMANTIC_ROLES, TOKEN_KEYS } from "./vocabulary.js";
 
 const checked = new WeakSet();
 const isObject = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
@@ -71,7 +71,7 @@ export function assertContext(context) {
 /** Problems with a pair matrix: version, IDs, paths and background sets. Empty means valid. */
 export function pairMatrixProblems(matrix) {
   const problems = [];
-  if (!isObject(matrix) || matrix.version !== PAIR_MATRIX_VERSION || !Array.isArray(matrix.records)) return ["pair matrix must be {version:1, records:[...]}"];
+  if (!isObject(matrix) || matrix.version !== PAIR_MATRIX_VERSION || !Array.isArray(matrix.records)) return [`pair matrix must be {version:${PAIR_MATRIX_VERSION}, records:[...]}`];
   const ids = new Set();
   for (const [index, record] of matrix.records.entries()) {
     const at = `record ${record?.id ?? index}`;
@@ -81,9 +81,9 @@ export function pairMatrixProblems(matrix) {
     }
     if (ids.has(record.id)) problems.push(`${at} is a duplicate id`);
     ids.add(record.id);
-    if (!COLOR_PATHS.includes(record.foreground)) problems.push(`${at} foreground ${record.foreground} is not a ColorPath`);
+    if (!PAIR_PATHS.includes(record.foreground)) problems.push(`${at} foreground ${record.foreground} is not a ColorPath or appearance color`);
     if (!Array.isArray(record.backgrounds) || !record.backgrounds.length) problems.push(`${at} needs at least one background`);
-    else for (const bg of record.backgrounds) if (!COLOR_PATHS.includes(bg)) problems.push(`${at} background ${bg} is not a ColorPath`);
+    else for (const bg of record.backgrounds) if (!PAIR_PATHS.includes(bg)) problems.push(`${at} background ${bg} is not a ColorPath or appearance color`);
     if (record.minimum !== 3 && record.minimum !== 4.5) problems.push(`${at} minimum must be 3 or 4.5`);
     if (!["text", "boundary", "focus"].includes(record.purpose)) problems.push(`${at} purpose must be text, boundary or focus`);
   }

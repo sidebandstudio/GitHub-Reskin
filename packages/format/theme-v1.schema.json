@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json",
   "title": "GitHub Reskin theme v1",
-  "description": "Portable data-only theme. Validate after documented import normalization. Schema validation does not replace contrast, graph, or resource-limit checks. No remote schema is fetched. Portable exports contain source colors and representable overrides only. Derived states and accessibility-mode corrections are recomputed by renderer 1.",
+  "description": "Portable theme v1, expanded before release in specification Revision 4. Every previous valid v1 document remains valid. Optional structured appearance data and advanced CSS require semantic byte/image checks and AST sanitization after schema validation. No remote resources or runtime schema fetch. See THEME-EXPANSION.md.",
   "type": "object",
   "additionalProperties": false,
   "properties": {
@@ -161,10 +161,57 @@
             "cormorant-garamond",
             "josefin-sans",
             "bungee",
-            "space-grotesk"
+            "space-grotesk",
+            "bebas-neue",
+            "cinzel",
+            "orbitron",
+            "oxanium",
+            "ibm-plex-sans",
+            "source-sans-3",
+            "nunito-sans",
+            "atkinson-hyperlegible",
+            "roboto-condensed",
+            "barlow"
           ],
           "default": "system",
-          "description": "Bundled Latin WOFF2 for extension-owned headings/tags and allowlisted noninteractive headings only. Body, controls, user content and code keep native families. system uses no file."
+          "description": "Bundled heading family. heading takes precedence over legacy accent."
+        },
+        "heading": {
+          "enum": [
+            "system",
+            "rajdhani",
+            "barlow-condensed",
+            "fraunces",
+            "alegreya",
+            "cormorant-garamond",
+            "josefin-sans",
+            "bungee",
+            "space-grotesk",
+            "bebas-neue",
+            "cinzel",
+            "orbitron",
+            "oxanium",
+            "ibm-plex-sans",
+            "source-sans-3",
+            "nunito-sans",
+            "atkinson-hyperlegible",
+            "roboto-condensed",
+            "barlow"
+          ],
+          "default": "system",
+          "description": "Bundled heading family. heading takes precedence over legacy accent."
+        },
+        "body": {
+          "enum": [
+            "system",
+            "ibm-plex-sans",
+            "source-sans-3",
+            "nunito-sans",
+            "atkinson-hyperlegible",
+            "barlow"
+          ],
+          "default": "system",
+          "description": "Bundled readable body family for GitHub UI and rendered prose. Code, diff and source editors keep native fonts."
         }
       },
       "minProperties": 1
@@ -259,7 +306,7 @@
               "minLength": 1,
               "maxLength": 120,
               "pattern": "^[^<>\\u0000-\\u001F\\u007F-\\u009F\\u202A-\\u202E\\u2066-\\u2069]*$(?![\\s\\S])",
-              "description": "Insert an aria-hidden paragraph after the verified GitHub-owned 404 illustration container containing img[data-static-error-asset=\"404-illustration\"] in .application-main. Keep the real explanation and recovery links. No auth, permission or rate-limit errors."
+              "description": "Insert an aria-hidden paragraph after the verified GitHub-owned 404 illustration container containing img[data-static-error-asset=\"404-illustration\"] in .application-main. Keep the real explanation and recovery links. No auth, permission or rate-limit errors. Revision 4 may style this owned caption in a host-provided verified blank illustration-corner frame, with flow fallback when unsafe; never cover the original message or links."
             },
             "empty.pinned.caption": {
               "type": "string",
@@ -316,11 +363,72 @@
           ],
           "items": false,
           "description": "Exactly five distinct normalized colors, 0 through 4. Semantic checks enforce luminance/contrast order and visible cells; native counts, legend, date labels and tooltips remain unchanged."
+        },
+        "cellStyle": {
+          "enum": [
+            "square",
+            "round",
+            "glow",
+            "diamond"
+          ],
+          "default": "square"
+        },
+        "glow": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "radius": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 9,
+              "default": 6
+            },
+            "opacity": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 0.85,
+              "default": 0.6
+            },
+            "levels": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 4,
+              "uniqueItems": true,
+              "items": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 4
+              },
+              "default": [
+                1,
+                2,
+                3,
+                4
+              ],
+              "description": "Active levels receiving static glow; Solo Leveling requests only level 4."
+            },
+            "color": {
+              "$ref": "#/$defs/hexColor",
+              "description": "Optional static decorative glow color, otherwise each repaired level fill. Never replaces fill/boundary."
+            }
+          },
+          "minProperties": 1
+        },
+        "cellRadius": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2,
+          "description": "Optional native cell radius in px; square/glow only. Round/diamond use their fixed geometry. No cell size or hit-target changes."
+        },
+        "cellBoundary": {
+          "$ref": "#/$defs/hexColor",
+          "description": "Independent audited 3:1 cell/legend perimeter. Source request can be repaired."
         }
       },
       "required": [
         "levels"
-      ]
+      ],
+      "description": "Five source levels plus optional cell shape/radius/boundary/glow. Diamond draws an inscribed 45-degree visual inside the unchanged native target; Calm uses square. No theme can move data centers, resize cells/gaps or change hit targets. Full art mapping is in THEME-EXPANSION.md."
     },
     "inspiredBy": {
       "type": "string",
@@ -328,6 +436,247 @@
       "maxLength": 80,
       "pattern": "^[^<>\\u0000-\\u001F\\u007F-\\u009F\\u202A-\\u202E\\u2066-\\u2069]*$(?![\\s\\S])",
       "description": "Optional descriptive credit, displayed as inspired by <value>. Unverified metadata, never an affiliation or resource instruction."
+    },
+    "backgrounds": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "page": {
+          "$ref": "#/$defs/background"
+        },
+        "profileBanner": {
+          "$ref": "#/$defs/background"
+        },
+        "header": {
+          "$ref": "#/$defs/background"
+        }
+      },
+      "minProperties": 1
+    },
+    "shape": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "corners": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "style": {
+              "enum": [
+                "sharp",
+                "rounded",
+                "bevel",
+                "pill"
+              ]
+            },
+            "radius": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 999,
+              "default": 8
+            }
+          },
+          "minProperties": 1
+        },
+        "borders": {
+          "$ref": "#/$defs/border"
+        },
+        "shadows": {
+          "$ref": "#/$defs/shadow"
+        },
+        "buttons": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "style": {
+              "enum": [
+                "filled",
+                "outline",
+                "soft",
+                "bevel"
+              ]
+            },
+            "radius": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 999,
+              "default": 8
+            }
+          },
+          "minProperties": 1
+        },
+        "avatar": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "shape": {
+              "enum": [
+                "circle",
+                "square",
+                "rounded",
+                "bevel",
+                "arch"
+              ]
+            },
+            "frame": {
+              "$ref": "#/$defs/avatarFrame"
+            }
+          },
+          "minProperties": 1
+        }
+      },
+      "minProperties": 1
+    },
+    "typography": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "uppercaseHeadings": {
+          "type": "boolean",
+          "default": false
+        },
+        "headingLetterSpacing": {
+          "type": "number",
+          "minimum": -0.02,
+          "maximum": 0.2,
+          "default": 0.02
+        },
+        "bodyLetterSpacing": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 0.08,
+          "default": 0
+        }
+      },
+      "minProperties": 1,
+      "description": "Letter spacing in em. Only verified GitHub chrome headings/body; never rewrite authored text or shrink native controls."
+    },
+    "code": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "background": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "text": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "syntax": {
+          "$ref": "#/$defs/syntax"
+        },
+        "ansi": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "black": {
+              "$ref": "#/$defs/hexColor"
+            },
+            "red": {
+              "$ref": "#/$defs/hexColor"
+            },
+            "green": {
+              "$ref": "#/$defs/hexColor"
+            },
+            "yellow": {
+              "$ref": "#/$defs/hexColor"
+            },
+            "blue": {
+              "$ref": "#/$defs/hexColor"
+            },
+            "magenta": {
+              "$ref": "#/$defs/hexColor"
+            },
+            "cyan": {
+              "$ref": "#/$defs/hexColor"
+            },
+            "white": {
+              "$ref": "#/$defs/hexColor"
+            },
+            "brightBlack": {
+              "$ref": "#/$defs/hexColor"
+            },
+            "brightRed": {
+              "$ref": "#/$defs/hexColor"
+            },
+            "brightGreen": {
+              "$ref": "#/$defs/hexColor"
+            },
+            "brightYellow": {
+              "$ref": "#/$defs/hexColor"
+            },
+            "brightBlue": {
+              "$ref": "#/$defs/hexColor"
+            },
+            "brightMagenta": {
+              "$ref": "#/$defs/hexColor"
+            },
+            "brightCyan": {
+              "$ref": "#/$defs/hexColor"
+            },
+            "brightWhite": {
+              "$ref": "#/$defs/hexColor"
+            }
+          },
+          "minProperties": 1
+        },
+        "diff": {
+          "$ref": "#/$defs/diff"
+        }
+      },
+      "minProperties": 1
+    },
+    "details": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "headerText": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "selection": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "background": {
+              "$ref": "#/$defs/hexColor"
+            },
+            "text": {
+              "$ref": "#/$defs/hexColor"
+            }
+          },
+          "minProperties": 1
+        },
+        "scrollbar": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "thumb": {
+              "$ref": "#/$defs/hexColor"
+            },
+            "track": {
+              "$ref": "#/$defs/hexColor"
+            },
+            "width": {
+              "enum": [
+                "auto",
+                "thin"
+              ]
+            }
+          },
+          "minProperties": 1
+        },
+        "labels": {
+          "$ref": "#/$defs/pill"
+        },
+        "topics": {
+          "$ref": "#/$defs/pill"
+        }
+      },
+      "minProperties": 1
+    },
+    "css": {
+      "type": "string",
+      "maxLength": 32768,
+      "description": "Advanced CSS source, <=32768 UTF-8 bytes in addition to this character ceiling. Never insert directly. Mandatory bundled css-tree AST sanitizer, scoping, protected UI, consent and composition rules in THEME-EXPANSION.md. Built-ins use exactly the same sanitizer. Require host-issued target-kind subject admission, bounded complete shadow/gradient lists, live textContent insertion and safe scriptless srcdoc serialization. See revision 4.1 fixtures."
     }
   },
   "required": [
@@ -366,10 +715,55 @@
         },
         "type": {
           "$ref": "#/$defs/hexColor"
+        },
+        "operator": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "punctuation": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "constant": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "tag": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "attribute": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "regex": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "escape": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "invalid": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "inserted": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "deleted": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "markupHeading": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "markupEmphasis": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "markupLink": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "markupQuote": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "markupList": {
+          "$ref": "#/$defs/hexColor"
         }
       },
       "minProperties": 1,
-      "description": "Imported syntax-role requests are supported and repaired. V1 has no manual syntax editor."
+      "description": "Twenty-two syntax/markup roles. All optional; missing extended roles use documented core-role fallbacks. code.syntax takes precedence over overrides.syntax per role."
     },
     "effect-glow": {
       "type": "object",
@@ -644,6 +1038,396 @@
       "description": "Two colored geometry copies behind a Reskin badge shift and settle once on explicit selection. Never copy text, an avatar, or a control. Resolved color sources: tokens.accent, tokens.primaryBackground.",
       "x-cost": "low: two transform/opacity elements",
       "x-reduced-motion": "Static offset rails, no animation."
+    },
+    "gradientStop": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "color": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "position": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        }
+      },
+      "required": [
+        "color",
+        "position"
+      ]
+    },
+    "gradient": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "enum": [
+            "linear",
+            "radial"
+          ]
+        },
+        "angle": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 360,
+          "default": 180
+        },
+        "position": {
+          "enum": [
+            "center",
+            "top",
+            "bottom",
+            "left",
+            "right",
+            "top-left",
+            "top-right",
+            "bottom-left",
+            "bottom-right"
+          ]
+        },
+        "stops": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 8,
+          "items": {
+            "$ref": "#/$defs/gradientStop"
+          }
+        },
+        "opacity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 1
+        }
+      },
+      "required": [
+        "type",
+        "stops"
+      ]
+    },
+    "pattern": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "grid",
+            "scanlines",
+            "dots",
+            "diagonal",
+            "grain"
+          ]
+        },
+        "color": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "opacity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 0.2,
+          "default": 0.05
+        },
+        "size": {
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 128,
+          "default": 48
+        }
+      },
+      "required": [
+        "kind",
+        "color"
+      ]
+    },
+    "raster": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "data": {
+          "type": "string",
+          "minLength": 26,
+          "maxLength": 174787,
+          "pattern": "^data:image/(?:png|jpeg|webp|gif);base64,(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$(?![\\s\\S])"
+        },
+        "width": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2048
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2048
+        },
+        "fit": {
+          "enum": [
+            "cover",
+            "contain",
+            "tile",
+            "stretch"
+          ]
+        },
+        "position": {
+          "enum": [
+            "center",
+            "top",
+            "bottom",
+            "left",
+            "right"
+          ]
+        },
+        "opacity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 1
+        }
+      },
+      "description": "Raster data URLs only. Semantic decoder checks magic/MIME, actual dimensions <=2048 per side and <=2097152 pixels, 131072 decoded bytes per image, 262144 total across all occurrences. SVG is rejected. Animated input is flattened locally to its first frame; metadata is stripped before saving. Aggregate decoded pixels across repeated occurrences <=6291456 before serial decoding. Cancel obsolete jobs and release replaced image/frame/canvas references; never decode the saved collection eagerly.",
+      "required": [
+        "data",
+        "width",
+        "height"
+      ]
+    },
+    "paintLayer": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "gradient": {
+              "$ref": "#/$defs/gradient"
+            }
+          },
+          "required": [
+            "gradient"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "pattern": {
+              "$ref": "#/$defs/pattern"
+            }
+          },
+          "required": [
+            "pattern"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "image": {
+              "$ref": "#/$defs/raster"
+            }
+          },
+          "required": [
+            "image"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "gradientCss": {
+              "$ref": "#/$defs/gradientCss"
+            }
+          },
+          "required": [
+            "gradientCss"
+          ]
+        }
+      ]
+    },
+    "background": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "color": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "layers": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 4,
+          "items": {
+            "$ref": "#/$defs/paintLayer"
+          }
+        }
+      },
+      "minProperties": 1,
+      "description": "Layers use CSS background order, first nearest viewer; all gradient/pattern/image/gradientCss layers share the four-layer cap. Opaque reading backings remain mandatory. gradientCss is one AST-admitted gradient value, never free-form rules or a resource exemption."
+    },
+    "border": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "width": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 4,
+          "default": 1
+        },
+        "style": {
+          "enum": [
+            "solid",
+            "dashed",
+            "double"
+          ]
+        },
+        "color": {
+          "$ref": "#/$defs/hexColor"
+        }
+      },
+      "minProperties": 1
+    },
+    "shadow": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "style": {
+          "enum": [
+            "none",
+            "soft",
+            "hard",
+            "neon"
+          ]
+        },
+        "color": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "opacity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 0.8,
+          "default": 0.35
+        },
+        "blur": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 24,
+          "default": 12
+        },
+        "offset": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 8,
+          "default": 0
+        }
+      },
+      "minProperties": 1
+    },
+    "avatarFrame": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "style": {
+          "enum": [
+            "none",
+            "solid",
+            "double",
+            "neon"
+          ]
+        },
+        "width": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 4,
+          "default": 1
+        },
+        "color": {
+          "$ref": "#/$defs/hexColor"
+        }
+      },
+      "minProperties": 1
+    },
+    "diff": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "addedBackground": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "addedText": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "removedBackground": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "removedText": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "wordAddedBackground": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "wordAddedText": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "wordRemovedBackground": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "wordRemovedText": {
+          "$ref": "#/$defs/hexColor"
+        }
+      },
+      "minProperties": 1
+    },
+    "pill": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "style": {
+          "enum": [
+            "sharp",
+            "rounded",
+            "bevel",
+            "pill"
+          ]
+        },
+        "fill": {
+          "enum": [
+            "solid",
+            "tinted",
+            "outline"
+          ]
+        },
+        "background": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "text": {
+          "$ref": "#/$defs/hexColor"
+        },
+        "border": {
+          "$ref": "#/$defs/hexColor"
+        }
+      },
+      "minProperties": 1
+    },
+    "gradientCss": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "value": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096,
+          "description": "Exactly one bounded linear/radial/repeating gradient value, parsed as a value with the full resource/function/stop/budget policy, never a declaration or selector. No strings, URLs, theme-local variables, hints or Raw nodes. Native target is fixed by structured background, not supplied here. Also <=4096 UTF-8 bytes, enforced semantically before parsing."
+        },
+        "size": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "description": "One background-size value, no comma. auto or at most two finite nonnegative px/%/vw/vh dimensions. <=4096px resolved per axis, <=200%/vw/vh; viewport changes invalidate admission if the bound no longer holds."
+        }
+      },
+      "required": [
+        "value"
+      ],
+      "description": "Exact art-board gradient layer within the ordinary four-layer ceiling. Uses mandatory bundled AST admission and safe CSS-only sinks; this does not permit arbitrary rules or resources. Count its UTF-8 bytes with css and all gradientCss values under the existing 32768-byte per-document source/expanded CSS cap."
     }
   },
   "$comment": "Normative render/import contracts are in ARCHITECTURE.md. x-reskin is documentation metadata, not an additional validation vocabulary. All refs in this document are local.",
@@ -665,7 +1449,7 @@
       "inspiredBy": "Cyberpunk: Edgerunners",
       "author": "sidebandstudio",
       "version": "1.0.0",
-      "description": "Acid lime, cold signal blue and a quiet afterimage. Original geometry.",
+      "description": "Port of the owner's Cyberpunk 1.1.0: midnight, neon yellow, cyan graph, grid, bevels and static glow.",
       "tags": [
         "anime",
         "neon",
@@ -673,40 +1457,31 @@
       ],
       "base": "dark",
       "colors": {
-        "background": "#091312",
-        "text": "#f0f7ed",
-        "accent": "#d5ff35",
-        "contribution": "#d5ff35"
+        "background": "#0a0a17",
+        "text": "#e4f3ff",
+        "accent": "#fcee0a",
+        "contribution": "#00f0ff"
       },
       "overrides": {
-        "surface": "#142622",
-        "inset": "#060d0c",
-        "mutedText": "#aac2b7",
-        "link": "#7de9f5",
-        "controlBorder": "#6b8179",
-        "primaryBackground": "#d5ff35",
-        "primaryText": "#10170a",
-        "syntax": {
-          "comment": "#aac2b7"
-        }
+        "surface": "#11112a",
+        "inset": "#070710",
+        "mutedText": "#9a9ccc",
+        "border": "#2d2a52",
+        "primaryBackground": "#fcee0a",
+        "primaryText": "#0a0a17"
       },
       "fonts": {
-        "accent": "rajdhani"
+        "heading": "rajdhani",
+        "body": "system"
       },
       "effects": {
+        "glow": {
+          "strength": 0.35
+        },
         "rail": {
           "shape": "notch",
-          "opacity": 0.18,
+          "opacity": 0.3,
           "thickness": 2
-        },
-        "scanlines": {
-          "opacity": 0.015,
-          "spacing": 6
-        },
-        "echo": {
-          "offset": 3,
-          "durationMs": 160,
-          "opacity": 0.12
         }
       },
       "flavor": {
@@ -714,20 +1489,153 @@
         "locale": "en",
         "slots": {
           "profile.pinned.heading": "Preem picks",
-          "profile.tag": "//choom",
-          "error.notFound.caption": "This route went dark. Try a familiar path.",
+          "profile.tag": "// CHOOM",
+          "error.notFound.caption": "FLATLINED",
           "contributions.caption": "A year of gigs, one contribution at a time."
         }
       },
       "contributions": {
         "levels": [
-          "#24372f",
-          "#4e8c60",
-          "#78b94d",
-          "#a9dc3b",
-          "#d5ff35"
-        ]
-      }
+          "#11112a",
+          "#007885",
+          "#009dab",
+          "#00c5d4",
+          "#00f0ff"
+        ],
+        "cellStyle": "glow",
+        "glow": {
+          "radius": 9,
+          "opacity": 0.85
+        }
+      },
+      "backgrounds": {
+        "page": {
+          "layers": [
+            {
+              "gradient": {
+                "type": "radial",
+                "position": "top",
+                "stops": [
+                  {
+                    "color": "#00f0ff",
+                    "position": 0
+                  },
+                  {
+                    "color": "#0a0a17",
+                    "position": 70
+                  }
+                ],
+                "opacity": 0.1
+              }
+            },
+            {
+              "pattern": {
+                "kind": "grid",
+                "color": "#00f0ff",
+                "opacity": 0.05,
+                "size": 48
+              }
+            },
+            {
+              "pattern": {
+                "kind": "scanlines",
+                "color": "#e4f3ff",
+                "opacity": 0.02,
+                "size": 3
+              }
+            }
+          ]
+        },
+        "header": {
+          "color": "#070710"
+        }
+      },
+      "shape": {
+        "corners": {
+          "style": "bevel",
+          "radius": 12
+        },
+        "buttons": {
+          "style": "bevel",
+          "radius": 8
+        },
+        "shadows": {
+          "style": "neon",
+          "color": "#fcee0a",
+          "opacity": 0.55,
+          "blur": 14
+        },
+        "avatar": {
+          "shape": "circle",
+          "frame": {
+            "style": "solid",
+            "width": 2,
+            "color": "#2d2a52"
+          }
+        }
+      },
+      "typography": {
+        "uppercaseHeadings": false,
+        "headingLetterSpacing": 0.02
+      },
+      "details": {
+        "selection": {
+          "background": "#fcee0a",
+          "text": "#0a0a17"
+        },
+        "scrollbar": {
+          "thumb": "#b4aa18",
+          "track": "#070710",
+          "width": "auto"
+        },
+        "topics": {
+          "style": "bevel",
+          "fill": "tinted"
+        },
+        "labels": {
+          "style": "bevel",
+          "fill": "outline"
+        }
+      },
+      "code": {
+        "background": "#0a0a17",
+        "text": "#e4f3ff",
+        "syntax": {
+          "comment": "#9a9ccc",
+          "keyword": "#fcee0a",
+          "string": "#75e9d5",
+          "function": "#00f0ff",
+          "number": "#ffb86c",
+          "variable": "#e4f3ff",
+          "type": "#c4a7ff",
+          "operator": "#fcee0a",
+          "punctuation": "#bcc0dc",
+          "constant": "#ffb86c",
+          "tag": "#fcee0a",
+          "attribute": "#00f0ff",
+          "regex": "#75e9d5",
+          "escape": "#ffb86c",
+          "invalid": "#ff9aa5",
+          "inserted": "#9ee4b0",
+          "deleted": "#ff9aa5",
+          "markupHeading": "#fcee0a",
+          "markupEmphasis": "#e4f3ff",
+          "markupLink": "#00f0ff",
+          "markupQuote": "#bcc0dc",
+          "markupList": "#fcee0a"
+        },
+        "diff": {
+          "addedBackground": "#102a27",
+          "addedText": "#9ee4b0",
+          "removedBackground": "#321820",
+          "removedText": "#ff9aa5",
+          "wordAddedBackground": "#174039",
+          "wordAddedText": "#bff5ce",
+          "wordRemovedBackground": "#51232f",
+          "wordRemovedText": "#ffb7bf"
+        }
+      },
+      "css": ".AppHeader, .Header, .HeaderMktg { box-shadow: 0 1px 0 var(--reskin-accent), 0 4px 24px -6px color-mix(in srgb, var(--reskin-accent) 55%, transparent); }\n[data-reskin-slot=\"profile.tag\"] { border: 1px solid var(--reskin-accent); box-shadow: 0 0 10px color-mix(in srgb, var(--reskin-accent) 35%, transparent); letter-spacing: .2em; text-transform: uppercase; }\n[data-reskin-slot=\"error.notFound.caption\"] { position: absolute; right: 6%; bottom: 10%; border: 2px solid var(--reskin-accent); background-color: var(--reskin-canvas); padding: 4px 16px; transform: rotate(-6deg); font-size: 32px; letter-spacing: .14em; text-transform: uppercase; box-shadow: 0 0 18px color-mix(in srgb, var(--reskin-accent) 55%, transparent); }"
     }
   ],
   "x-reskin": {
@@ -736,7 +1644,10 @@
     "effectTargets": [
       "owned-badge",
       "owned-margin-strip",
-      "owned-caption-edge"
+      "owned-caption-edge",
+      "verified-chrome",
+      "background-wallpaper",
+      "contribution-cells-static"
     ],
     "effectGlobalLimits": {
       "maxOwnedNodesPerDocument": 24,
@@ -745,7 +1656,8 @@
       "maxPatchHeightPx": 96,
       "maxAnimatedElementPx": 96,
       "maxAnimationTotalMs": 1200,
-      "loops": false
+      "loops": false,
+      "wallpaperLayersPerTarget": 4
     },
     "effects": {
       "glow": {
@@ -834,12 +1746,18 @@
       }
     },
     "fontBudget": {
-      "families": 8,
-      "weightsPerFamily": 1,
-      "totalWoff2Bytes": 245760,
-      "maxPerFamilyBytes": 30720,
+      "families": 18,
+      "weightsPerFamily": "reviewed manifest only; art-used display 600/700, readable 400/700 plus board-used 500/600, bounded variable subsets permitted",
+      "totalWoff2Bytes": 786432,
+      "maxPerFamilyBytes": 65536,
       "subset": "Latin U+0020-007E, U+00A0-00FF, U+0152-0153, U+0178, U+2010-2027, U+2030, U+2039-203A, U+20AC",
-      "delivery": "packaged WOFF2; fonts are never fetched from a web font service; native fallback for missing glyphs or blocked fonts"
+      "delivery": "packaged WOFF2; selected heading/body only; no remote fonts; native missing-glyph/CSP fallback",
+      "maxPerFileBytes": 32768,
+      "roles": [
+        "heading",
+        "body"
+      ],
+      "code": "native monospace, no theme override"
     },
     "fonts": [
       {
@@ -850,7 +1768,14 @@
         "license": "OFL-1.1",
         "sourceDirectory": "https://github.com/google/fonts/tree/main/ofl/rajdhani",
         "licenseUrl": "https://raw.githubusercontent.com/google/fonts/main/ofl/rajdhani/OFL.txt",
-        "maxBytes": 30720
+        "maxBytes": 65536,
+        "roles": [
+          "heading"
+        ],
+        "weights": [
+          600,
+          700
+        ]
       },
       {
         "id": "barlow-condensed",
@@ -860,7 +1785,14 @@
         "license": "OFL-1.1",
         "sourceDirectory": "https://github.com/google/fonts/tree/main/ofl/barlowcondensed",
         "licenseUrl": "https://raw.githubusercontent.com/google/fonts/main/ofl/barlowcondensed/OFL.txt",
-        "maxBytes": 30720
+        "maxBytes": 65536,
+        "roles": [
+          "heading"
+        ],
+        "weights": [
+          600,
+          700
+        ]
       },
       {
         "id": "fraunces",
@@ -870,7 +1802,14 @@
         "license": "OFL-1.1",
         "sourceDirectory": "https://github.com/google/fonts/tree/main/ofl/fraunces",
         "licenseUrl": "https://raw.githubusercontent.com/google/fonts/main/ofl/fraunces/OFL.txt",
-        "maxBytes": 30720
+        "maxBytes": 65536,
+        "roles": [
+          "heading"
+        ],
+        "weights": [
+          600,
+          700
+        ]
       },
       {
         "id": "alegreya",
@@ -880,7 +1819,14 @@
         "license": "OFL-1.1",
         "sourceDirectory": "https://github.com/google/fonts/tree/main/ofl/alegreya",
         "licenseUrl": "https://raw.githubusercontent.com/google/fonts/main/ofl/alegreya/OFL.txt",
-        "maxBytes": 30720
+        "maxBytes": 65536,
+        "roles": [
+          "heading"
+        ],
+        "weights": [
+          600,
+          700
+        ]
       },
       {
         "id": "cormorant-garamond",
@@ -890,7 +1836,14 @@
         "license": "OFL-1.1",
         "sourceDirectory": "https://github.com/google/fonts/tree/main/ofl/cormorantgaramond",
         "licenseUrl": "https://raw.githubusercontent.com/google/fonts/main/ofl/cormorantgaramond/OFL.txt",
-        "maxBytes": 30720
+        "maxBytes": 65536,
+        "roles": [
+          "heading"
+        ],
+        "weights": [
+          600,
+          700
+        ]
       },
       {
         "id": "josefin-sans",
@@ -900,7 +1853,14 @@
         "license": "OFL-1.1",
         "sourceDirectory": "https://github.com/google/fonts/tree/main/ofl/josefinsans",
         "licenseUrl": "https://raw.githubusercontent.com/google/fonts/main/ofl/josefinsans/OFL.txt",
-        "maxBytes": 30720
+        "maxBytes": 65536,
+        "roles": [
+          "heading"
+        ],
+        "weights": [
+          600,
+          700
+        ]
       },
       {
         "id": "bungee",
@@ -910,7 +1870,10 @@
         "license": "OFL-1.1",
         "sourceDirectory": "https://github.com/google/fonts/tree/main/ofl/bungee",
         "licenseUrl": "https://raw.githubusercontent.com/google/fonts/main/ofl/bungee/OFL.txt",
-        "maxBytes": 30720
+        "maxBytes": 32768,
+        "roles": [
+          "heading"
+        ]
       },
       {
         "id": "space-grotesk",
@@ -920,7 +1883,186 @@
         "license": "OFL-1.1",
         "sourceDirectory": "https://github.com/google/fonts/tree/main/ofl/spacegrotesk",
         "licenseUrl": "https://raw.githubusercontent.com/google/fonts/main/ofl/spacegrotesk/OFL.txt",
-        "maxBytes": 30720
+        "maxBytes": 32768,
+        "roles": [
+          "heading"
+        ]
+      },
+      {
+        "id": "bebas-neue",
+        "family": "Bebas Neue",
+        "weight": 400,
+        "weights": [
+          400
+        ],
+        "minimumAccentPx": 18,
+        "license": "OFL-1.1",
+        "sourceDirectory": "https://github.com/google/fonts/tree/main/ofl/bebasneue",
+        "licenseUrl": "https://raw.githubusercontent.com/google/fonts/main/ofl/bebasneue/OFL.txt",
+        "maxBytes": 32768,
+        "roles": [
+          "heading"
+        ]
+      },
+      {
+        "id": "cinzel",
+        "family": "Cinzel",
+        "weight": 600,
+        "weights": [
+          600
+        ],
+        "minimumAccentPx": 18,
+        "license": "OFL-1.1",
+        "sourceDirectory": "https://github.com/google/fonts/tree/main/ofl/cinzel",
+        "licenseUrl": "https://raw.githubusercontent.com/google/fonts/main/ofl/cinzel/OFL.txt",
+        "maxBytes": 32768,
+        "roles": [
+          "heading"
+        ]
+      },
+      {
+        "id": "orbitron",
+        "family": "Orbitron",
+        "weight": 600,
+        "weights": [
+          600
+        ],
+        "minimumAccentPx": 18,
+        "license": "OFL-1.1",
+        "sourceDirectory": "https://github.com/google/fonts/tree/main/ofl/orbitron",
+        "licenseUrl": "https://raw.githubusercontent.com/google/fonts/main/ofl/orbitron/OFL.txt",
+        "maxBytes": 32768,
+        "roles": [
+          "heading"
+        ]
+      },
+      {
+        "id": "oxanium",
+        "family": "Oxanium",
+        "weight": 600,
+        "weights": [
+          600
+        ],
+        "minimumAccentPx": 18,
+        "license": "OFL-1.1",
+        "sourceDirectory": "https://github.com/google/fonts/tree/main/ofl/oxanium",
+        "licenseUrl": "https://raw.githubusercontent.com/google/fonts/main/ofl/oxanium/OFL.txt",
+        "maxBytes": 32768,
+        "roles": [
+          "heading"
+        ]
+      },
+      {
+        "id": "ibm-plex-sans",
+        "family": "IBM Plex Sans",
+        "weight": 400,
+        "weights": [
+          400,
+          500,
+          600,
+          700
+        ],
+        "minimumAccentPx": 16,
+        "license": "OFL-1.1",
+        "sourceDirectory": "https://github.com/google/fonts/tree/main/ofl/ibmplexsans",
+        "licenseUrl": "https://raw.githubusercontent.com/google/fonts/main/ofl/ibmplexsans/OFL.txt",
+        "maxBytes": 65536,
+        "roles": [
+          "heading",
+          "body"
+        ]
+      },
+      {
+        "id": "source-sans-3",
+        "family": "Source Sans 3",
+        "weight": 400,
+        "weights": [
+          400,
+          600,
+          700
+        ],
+        "minimumAccentPx": 16,
+        "license": "OFL-1.1",
+        "sourceDirectory": "https://github.com/google/fonts/tree/main/ofl/sourcesans3",
+        "licenseUrl": "https://raw.githubusercontent.com/google/fonts/main/ofl/sourcesans3/OFL.txt",
+        "maxBytes": 65536,
+        "roles": [
+          "heading",
+          "body"
+        ]
+      },
+      {
+        "id": "nunito-sans",
+        "family": "Nunito Sans",
+        "weight": 400,
+        "weights": [
+          400,
+          700
+        ],
+        "minimumAccentPx": 16,
+        "license": "OFL-1.1",
+        "sourceDirectory": "https://github.com/google/fonts/tree/main/ofl/nunitosans",
+        "licenseUrl": "https://raw.githubusercontent.com/google/fonts/main/ofl/nunitosans/OFL.txt",
+        "maxBytes": 65536,
+        "roles": [
+          "heading",
+          "body"
+        ]
+      },
+      {
+        "id": "atkinson-hyperlegible",
+        "family": "Atkinson Hyperlegible",
+        "weight": 400,
+        "weights": [
+          400,
+          700
+        ],
+        "minimumAccentPx": 16,
+        "license": "OFL-1.1",
+        "sourceDirectory": "https://github.com/google/fonts/tree/main/ofl/atkinsonhyperlegible",
+        "licenseUrl": "https://raw.githubusercontent.com/google/fonts/main/ofl/atkinsonhyperlegible/OFL.txt",
+        "maxBytes": 65536,
+        "roles": [
+          "heading",
+          "body"
+        ]
+      },
+      {
+        "id": "roboto-condensed",
+        "family": "Roboto Condensed",
+        "weight": 600,
+        "weights": [
+          600,
+          700
+        ],
+        "minimumAccentPx": 18,
+        "license": "OFL-1.1",
+        "sourceDirectory": "https://github.com/google/fonts/tree/main/ofl/robotocondensed",
+        "licenseUrl": "https://raw.githubusercontent.com/google/fonts/main/ofl/robotocondensed/OFL.txt",
+        "maxBytes": 65536,
+        "roles": [
+          "heading"
+        ]
+      },
+      {
+        "id": "barlow",
+        "family": "Barlow",
+        "weight": 400,
+        "weights": [
+          400,
+          500,
+          600,
+          700
+        ],
+        "minimumAccentPx": 16,
+        "license": "OFL-1.1",
+        "sourceDirectory": "https://github.com/google/fonts/tree/main/ofl/barlow",
+        "licenseUrl": "https://raw.githubusercontent.com/google/fonts/main/ofl/barlow/OFL.txt",
+        "maxBytes": 65536,
+        "roles": [
+          "heading",
+          "body"
+        ]
       }
     ],
     "slotContract": {
@@ -936,44 +2078,82 @@
       "profile.activity.heading": "Append a decorative span after #js-contribution-activity > h2 in a verified profile main, only when its static text is Contribution activity and it has no interactive descendants.",
       "profile.organizations.heading": "Append a decorative span after a plain h2 within .h-card whose next element contains a known follows/organization link. Require canonical Organizations and no interactive descendants. An h2 containing an anchor is ineligible.",
       "profile.tag": "Insert a separate aria-hidden span immediately before .h-card .vcard-names on a verified profile page. Do not append to or replace a name, avatar, biography or earned badge. It describes the selected view, not the profile owner.",
-      "error.notFound.caption": "Insert an aria-hidden paragraph after the verified GitHub-owned 404 illustration container containing img[data-static-error-asset=\"404-illustration\"] in .application-main. Keep the real explanation and recovery links. No auth, permission or rate-limit errors.",
+      "error.notFound.caption": "Insert an aria-hidden paragraph after the verified GitHub-owned 404 illustration container containing img[data-static-error-asset=\"404-illustration\"] in .application-main. Keep the real explanation and recovery links. No auth, permission or rate-limit errors. Revision 4 may style this owned caption in a host-provided verified blank illustration-corner frame, with flow fallback when unsafe; never cover the original message or links.",
       "empty.pinned.caption": "Append an aria-hidden paragraph to the GitHub-owned .blankslate inside a verified .js-pinned-items-reorder-container only when the pinned list is empty and the canonical GitHub empty heading matches the captured English fixture. No generic .blankslate matcher.",
       "empty.issues.caption": "Append an aria-hidden paragraph to the verified issue-list empty panel in repository issues index, with native No results or No issues heading plus adjacent native filtering/creation instructions. Require route and validated issue-list container, exact recorded semantic signature, and no issue rows. Never replace the explanation or action. Selector must be captured under the release gate.",
       "contributions.caption": "Insert one aria-hidden paragraph after .js-calendar-graph on a verified profile, outside table/svg, legend and native count/date heading. Require ContributionCalendar day data-level cells and intact native summary. Never relabel Less/More or cells."
     },
     "inputLimits": {
-      "fileUtf8Bytes": 65536,
-      "pastedUtf8Bytes": 131072,
-      "compressedBytes": 16384,
-      "expandedBytes": 65536,
+      "fileUtf8Bytes": 524288,
+      "pastedUtf8Bytes": 786432,
+      "compressedBytes": 393216,
+      "expandedBytes": 524288,
       "maxDepth": 12,
-      "maxCustomThemes": 50
+      "maxCustomThemes": 50,
+      "cssUtf8Bytes": 32768,
+      "perImageDecodedBytes": 131072,
+      "documentImageDecodedBytes": 262144,
+      "imageMaxDimension": 2048,
+      "imageMaxPixels": 2097152,
+      "customSourcesBytes": 4194304,
+      "draftBytes": 1310720,
+      "allStorageBytes": 8388608,
+      "shareLinkCharacters": 8192,
+      "documentImageDecodedPixels": 6291456
     },
     "forbidden": [
-      "raw CSS",
-      "selectors",
-      "resource URLs except exact $schema hint",
-      "HTML",
-      "JavaScript",
+      "remote resources outside exact $schema hint",
+      "SVG image data",
+      "HTML/JavaScript/WASM",
       "remote fonts",
-      "remote code",
+      "unsanitized CSS",
       "runtime outbound requests",
       "control-label swaps",
-      "user-content edits"
+      "authored-content text/markup edits",
+      "security UI suppression or spoofing"
     ],
     "exportPolicy": {
       "sourceRoleMapping": "ARCHITECTURE.md#source-colors-and-repaired-exports",
       "portableRepairSeed": "same-base standard ModeSeed, independent of display mode",
-      "persist": "existing colors/overrides fields and a repaired supplied contributions.levels ramp only",
+      "persist": "Existing source colors plus representable Revision 4 color fields, validated embedded rasters, and canonical sanitized CSS. Never export resolved modes, security markers, consent, or derived fields.",
       "renderOnly": [
-        "omitted default roles",
+        "omitted defaults",
         "primary hover/pressed states",
-        "code/diff backgrounds",
-        "component pairs",
-        "accessibility-mode corrections"
+        "accessibility-mode corrections",
+        "custom CSS suppression/consent",
+        "protected UI restoration"
       ],
       "repeatExport": "canonical JSON and RS1 stable under renderer 1 and the same frozen standard seed"
     },
-    "effectColorPolicy": "Use resolved roles after repair and apply the effect opacity or glow strength. No independent color, geometry, path, rotation or tick-count input. Reviewed public theme JSON controls effect choices. flavor.enabled gates text only; preferences and native policy gate decoration."
+    "effectColorPolicy": "Use resolved roles after repair and apply the effect opacity or glow strength. No independent color, geometry, path, rotation or tick-count input. Reviewed public theme JSON controls effect choices. flavor.enabled gates text only; preferences and native policy gate decoration. The legacy ten templates keep their defaults; structured backgrounds, graph glow and sanitized CSS add full transformation under the expansion contract.",
+    "expansionVersion": 1,
+    "sanitizerVersion": 1,
+    "cssPolicy": {
+      "parser": "css-tree@3.1.0",
+      "sourceUtf8Bytes": 32768,
+      "maxRules": 256,
+      "maxSelectors": 512,
+      "maxDeclarations": 2048,
+      "maxAstNodes": 20000,
+      "maxNesting": 8,
+      "spec": "THEME-EXPANSION.md#advanced-css-policy",
+      "builtinBypass": false,
+      "maxBackgroundLayers": 4,
+      "maxGradientColorStops": 8,
+      "maxPositionsPerColorStop": 2,
+      "maxShadowEntries": 4,
+      "maxShadowBlurPx": 24,
+      "maxShadowBlurSumPx": 48,
+      "maxShadowOffsetPx": 8,
+      "minShadowSpreadPx": -8,
+      "maxShadowSpreadPx": 4,
+      "nativeShadowMaxOpacity": 0.8,
+      "opaqueCrispRuleMaxOffsetPx": 1,
+      "subjectAdmissionRequired": true,
+      "liveSink": "style.textContent or CSS-only API",
+      "previewTransport": "complete safely serialized scriptless opaque-origin srcdoc replacement",
+      "variableMaxDependencyEdges": 8,
+      "maxFunctionNesting": 8
+    }
   }
 }
