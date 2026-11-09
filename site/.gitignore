@@ -1,2 +1,4 @@
 # Astro generated types, recreated by every build.
 .astro/
+# Preview captures, recreated by site/build.mjs when their inputs change.
+.cache/

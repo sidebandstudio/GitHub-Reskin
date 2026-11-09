@@ -1,26 +1,30 @@
 ---
-// Make a theme: the Copy AI prompt workflow and a local sample importer. It previews an answer and
-// offers its file; it never applies anything to an installed extension.
+// Make a theme: the Copy AI prompt workflow and a local importer. It reads a pasted answer or a
+// theme file with the format's parseImport, previews it with the shared preview and offers its
+// file and preview link; it never applies anything to an installed extension. Advanced CSS starts
+// off and needs the visitor's explicit choice, as in the extension.
 import Base from "../../layouts/Base.astro";
 import Icon from "../../components/Icon.astro";
-import Preview from "../../components/Preview.astro";
-import { AI_PROMPT, SAMPLE_ANSWER } from "../../engine.mjs";
+import { AI_PROMPT, SAMPLE_ANSWER } from "../../catalog.mjs";
 import { DEFAULT_SLUG, themeBySlug } from "../../lib/site.mjs";
+import { LIMITS } from "../../../../packages/contracts/index.js";
 
 const initial = themeBySlug(DEFAULT_SLUG);
+const shot = initial.captures.phone;
+const kib = (bytes: number) => `${bytes / 1024} KiB`;
+const WARNING = "Advanced CSS changes GitHub's appearance and can break layout or reduce readability. Reskin blocks outside resources and unsupported rules, but cannot guarantee every GitHub page. Review the preview and CSS before enabling it. Calm turns it off.";
 ---
 <Base title="Make a theme · GitHub Reskin" description="Copy the GitHub Reskin AI prompt into any chatbot, describe a theme, and preview its answer here." path="make/">
   <div class="wrap page">
     <h1>Make a theme from an idea.</h1>
-    <p class="lede">Copy the prompt into any chatbot, describe a mood, then paste its answer here to preview it. Nothing is uploaded; the answer is read in this page.</p>
+    <p class="lede">Copy the prompt into any chatbot, describe a mood, then paste its answer here to preview it and download the theme file. Nothing is uploaded; the answer is read in this page.</p>
 
     <div class="make">
       <div>
-        <h2 class="sr-only">Copy the prompt</h2>
         <ol class="steps">
-          <li><div><b>Copy the prompt</b><p>It describes the theme format and its limits.</p></div></li>
+          <li><div><b>Copy the prompt</b><p>It describes the theme format: colors, backgrounds, fonts, code colors and optional CSS.</p></div></li>
           <li><div><b>Describe your theme</b><p>Paste it into ChatGPT, Gemini, Claude, Copilot or another chatbot, and add your idea.</p></div></li>
-          <li><div><b>Paste its answer here</b><p>Chatbot answers sometimes need fixes. The preview shows what was found.</p></div></li>
+          <li><div><b>Paste its answer below</b><p>Chatbot answers sometimes need fixes. The preview shows what was found before you download anything.</p></div></li>
         </ol>
         <div class="prompt-actions">
           <button class="btn btn-primary needs-js" type="button" data-copy-prompt><Icon name="copy" /> Copy AI prompt</button>
@@ -34,32 +38,70 @@ const initial = themeBySlug(DEFAULT_SLUG);
           </div>
         </details>
 
-        <h2 class="sr-only" id="sample">Preview an answer</h2>
-        <div class="field" style="margin-top: 32px">
-          <label for="answer">Chatbot answer</label>
-          <textarea id="answer" spellcheck="false" aria-describedby="answer-help" placeholder="Paste the chatbot's full answer here."></textarea>
-          <p id="answer-help" class="hero-compat">Comments and code fences are okay. Up to 128 KB.</p>
+        <h2 class="make-h2" id="answer">Preview an answer</h2>
+        <div class="field">
+          <label for="answer-text">Chatbot answer</label>
+          <textarea id="answer-text" spellcheck="false" aria-describedby="answer-help answer-error" placeholder="Paste the chatbot's full answer here."></textarea>
+          <p id="answer-help" class="field-help">Comments, code fences and the chatbot's own words around the theme are okay. Up to {LIMITS.pastedUtf8Bytes / 1024} KiB pasted, or a {LIMITS.fileUtf8Bytes / 1024} KiB .reskin.json file.</p>
+          <p id="answer-error" class="field-error" data-import-error hidden></p>
         </div>
-        <div class="prompt-actions needs-js">
+        <div class="prompt-actions needs-js" id="sample">
           <button class="btn btn-primary" type="button" data-preview-answer>Preview theme</button>
           <button class="btn" type="button" data-sample>Use a sample answer</button>
+          <label class="btn file-btn"><input type="file" accept=".json,application/json" data-file class="sr-only" /><span>Choose a theme file</span></label>
         </div>
-        <p class="import-result" role="status" aria-live="polite" data-import-status></p>
         <ul class="issues" data-import-issues hidden></ul>
         <div class="prompt-actions" data-candidates hidden></div>
-        <div class="prompt-actions">
-          <button class="btn" type="button" data-download hidden><Icon name="arrow" /> Download .reskin.json</button>
-        </div>
-        <noscript><p class="hero-compat">Previewing an answer needs JavaScript.</p></noscript>
+        <noscript><p class="field-help">Previewing an answer needs JavaScript.</p></noscript>
+
+        <details class="limits faq-list">
+          <summary>Image and CSS limits</summary>
+          <div>
+            <p>Themes can carry PNG, JPEG, WebP or GIF images for the page, profile banner or header: at most {kib(LIMITS.perImageDecodedBytes)} each, {kib(LIMITS.documentImageDecodedBytes)} for all images in a theme, {LIMITS.imageMaxDimension} pixels on a side and {LIMITS.documentImageDecodedPixels.toLocaleString("en-US")} pixels in all. SVG and image links are not accepted.</p>
+            <p>Advanced CSS is at most {kib(LIMITS.cssUtf8Bytes)}. Rules that load outside resources or target protected GitHub controls are rejected.</p>
+          </div>
+        </details>
       </div>
-      <div>
-        <Preview id="make-preview" theme={initial.doc} label="Interactive preview of the pasted theme" />
-        <p class="selected-credit" style="margin-top: 12px" data-make-name>Showing {initial.name} until you preview an answer.</p>
-        <p class="hero-compat">To use a theme, import it in GitHub Reskin's settings. A theme previewed here is not sent to the extension.</p>
+
+      <div class="make-side">
+        <div class="make-summary" data-summary>
+          <p class="make-name" data-make-name>Showing {initial.title}: {initial.name}</p>
+          <p class="make-state" role="status" aria-live="polite" data-import-status>Paste an answer to preview your own theme.</p>
+          <ul class="make-notes" data-notes hidden></ul>
+          <div class="css-review" data-css-review hidden>
+            <p class="badge">Advanced CSS</p>
+            <p class="css-warning">{WARNING}</p>
+            <p class="field-help" data-css-size></p>
+            <details class="faq-list">
+              <summary>View the CSS</summary>
+              <div><pre class="css-source" data-css-source></pre></div>
+            </details>
+            <label class="check"><input type="checkbox" data-css-enable /><span>Enable advanced CSS in this preview</span></label>
+            <p class="field-help" data-css-note hidden>The site's preview does not draw advanced CSS yet, so it still shows the theme without it. The extension applies it after the same choice.</p>
+          </div>
+          <p class="make-images field-help" data-images hidden></p>
+        </div>
+        <div class="window window-make" data-window>
+          <picture class="window-shot" data-shot>
+            <img src={shot.src} width={shot.width} height={shot.height} alt={`${initial.name} on the whoisaldo GitHub profile`} decoding="async" />
+          </picture>
+          <div class="window-live" data-live></div>
+          <p class="window-pending" data-pending hidden><span class="spinner" aria-hidden="true"></span> Loading the preview</p>
+        </div>
+        <div class="prompt-actions" data-exports hidden>
+          <button class="btn" type="button" data-download><Icon name="arrow" /> <span data-download-label>Download theme</span></button>
+          <button class="btn" type="button" data-copy-share><Icon name="copy" /> Copy preview link</button>
+        </div>
+        <p class="copy-status" role="status" aria-live="polite" data-export-status></p>
+        <div class="field" data-share-fallback hidden>
+          <label for="share-text">Preview link</label>
+          <input id="share-text" type="text" readonly data-share-text spellcheck="false" />
+        </div>
+        <p class="field-help">To use a theme, import its file in GitHub Reskin's settings. A theme previewed here is not sent to the extension.</p>
       </div>
     </div>
   </div>
-  <script type="application/json" id="make-data" set:html={JSON.stringify({ sample: SAMPLE_ANSWER }).replace(/</g, "\\u003c")} />
+  <script type="application/json" id="make-data" set:html={JSON.stringify({ sample: SAMPLE_ANSWER, maxLink: LIMITS.maxShareLinkCharacters }).replace(/</g, "\\u003c")} />
   <script>
     import "../../scripts/make.mjs";
   </script>

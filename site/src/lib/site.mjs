@@ -1,5 +1,8 @@
-// Site-wide data derived at build time: release configuration, base-aware paths and the catalog
-// as pages use it. Pure, so tests can import it.
+// Site-wide data derived at build time: release configuration, base-aware paths, the catalog as
+// pages use it (anime title first) and the preview captures. Pure, so tests can import it.
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import release from "../../../release.config.json" with { type: "json" };
 import { CATALOG } from "../catalog.mjs";
 
@@ -16,20 +19,41 @@ export const href = (path = "") => `${BASE}${path.replace(/^\/+/, "")}`;
 export const canonical = (path = "") => `${ORIGIN}${href(path)}`;
 export const themePath = (slug) => `themes/${slug}/`;
 
+// site/build.mjs writes the captures before Astro renders; a missing manifest means the build
+// skipped that step.
+// Astro bundles this file for prerendering, so site/build.mjs passes the repository root.
+const MANIFEST = join(process.env.RESKIN_ROOT || fileURLToPath(new URL("../../../", import.meta.url)), "site/.cache/previews/manifest.json");
+export const CAPTURES = existsSync(MANIFEST) ? JSON.parse(readFileSync(MANIFEST, "utf8")) : null;
+const capturesOf = (slug) => {
+  const entry = CAPTURES?.themes?.[slug];
+  if (!entry) throw new Error(`No preview capture for ${slug}. Build the site with npm run build:site.`);
+  const image = (kind) => ({ src: href(`previews/${entry[kind].file}`), width: entry[kind].width, height: entry[kind].height });
+  return { phone: image("phone"), desk: image("desk"), card: image("card"), calm: image("calm"), sourceHash: entry.sourceHash, fingerprint: entry.fingerprint };
+};
+
+// The anime title is every theme's primary label; the theme's own name comes second. A Classic has
+// no anime, so its name is primary.
 export const THEMES = CATALOG.map((entry) => ({
   ...entry,
   name: entry.doc.name,
-  inspiredBy: entry.doc.inspiredBy || null,
+  anime: entry.doc.inspiredBy || null,
+  title: entry.doc.inspiredBy || entry.doc.name,
+  subtitle: entry.doc.inspiredBy ? entry.doc.name : "Classic theme",
   description: entry.doc.description || "",
+  base: entry.doc.base,
+  advancedCss: typeof entry.doc.css === "string" && entry.doc.css !== "",
+  get captures() {
+    return capturesOf(entry.slug);
+  },
 }));
 export const ANIME = THEMES.filter((theme) => theme.group === "anime");
 export const CLASSICS = THEMES.filter((theme) => theme.group === "classics");
 export const themeBySlug = (slug) => THEMES.find((theme) => theme.slug === slug);
 
-/** The line under a theme name: its inspiration, or that it is a Classic. */
-export const creditLine = (theme) => (theme.inspiredBy ? `Inspired by ${theme.inspiredBy}` : "Classic palette");
+/** "Cyberpunk: Edgerunners theme for GitHub", or the Classic's name. */
+export const themeFor = (theme) => (theme.anime ? `${theme.anime} theme for GitHub` : `${theme.name}, a Classic theme for GitHub`);
 /** The document title of a theme page. */
-export const pageTitle = (theme) => (theme.inspiredBy ? `${theme.name}, inspired by ${theme.inspiredBy} · GitHub Reskin` : `${theme.name}, a Classic theme · GitHub Reskin`);
+export const pageTitle = (theme) => (theme.anime ? `${theme.anime} theme for GitHub: ${theme.name} · GitHub Reskin` : `${theme.name}, a Classic theme for GitHub · GitHub Reskin`);
 
 // Store states by browser. A null listing is shown as coming soon, never as a link.
 export const BROWSERS = [

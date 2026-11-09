@@ -1,41 +1,29 @@
 ---
-// A gallery card: the same small repository crop in each theme, its name, credit and actions.
-// Preview updates the hero in place; View in preview is an ordinary link that also works without JS.
+// A gallery card: the shared preview's capture of this theme on the same pinned repository and
+// contribution graph, the anime title first, then the theme's name. Preview updates the hero in
+// place; View in preview is an ordinary link to the theme page that also works without JavaScript.
+// The card's geometry never depends on the selection, so nothing moves under the pointer.
 import Icon from "./Icon.astro";
-import { declarations, resolvePreview } from "../engine.mjs";
-import { creditLine, href, themePath } from "../lib/site.mjs";
-import { profile } from "../lib/fixture.mjs";
+import { href, themePath } from "../lib/site.mjs";
 
 interface Props { theme: any; selected: boolean }
 const { theme, selected } = Astro.props;
-const { vars, flavor } = resolvePreview(theme.doc);
-const pin = profile.pinnedRepositories[0];
-const days = profile.contributions.days.slice(-36);
+const shot = theme.captures.card;
 ---
 <li class:list={["card", { "is-selected": selected }]} data-card={theme.slug}>
-  <div class="mini" style={declarations(vars)} aria-hidden="true">
-    <div class="mini-card">
-      <p class="mini-name">{pin.name}</p>
-      <p class="mini-desc">{pin.language} · Public</p>
-      <span class="mini-btn">Code</span>
-    </div>
-    <p class="mini-graph">{days.map((day: any) => <i data-l={day.level}></i>)}</p>
-    {flavor["profile.tag"] && <span class="mini-tag">{flavor["profile.tag"]}</span>}
+  <div class="card-shot">
+    <img src={shot.src} width={shot.width} height={shot.height} alt={`${theme.name} on the whoisaldo profile's pinned repository and contribution graph`} loading="lazy" decoding="async" />
   </div>
   <div class="card-body">
-    <h3>{theme.name}</h3>
-    <p class="card-credit">{creditLine(theme)}</p>
+    <h3 class="card-title">{theme.title}</h3>
+    <p class="card-name">{theme.anime ? theme.name : "Classic theme"}</p>
     {theme.description && <p class="card-desc">{theme.description}</p>}
+    {theme.advancedCss && <p class="badge">Advanced CSS · Bundled and reviewed</p>}
     <div class="card-actions">
-      <button class="btn btn-small needs-js" type="button" data-theme={theme.slug} aria-pressed={selected ? "true" : "false"}>
-        <span class="when-off">Preview</span><span class="when-on"><Icon name="check" /> Previewing</span><span class="sr-only"> {theme.name}</span>
+      <button class="btn btn-small card-preview needs-js" type="button" data-theme={theme.slug} aria-pressed={selected ? "true" : "false"}>
+        <span class="when-off">Preview</span><span class="when-on"><Icon name="check" /> Previewing</span><span class="sr-only"> {theme.title}</span>
       </button>
-      <a href={`${href(themePath(theme.slug))}#preview`} data-jump={theme.slug}>View in preview</a>
+      <a href={`${href(themePath(theme.slug))}#preview`} data-jump={theme.slug}>View in preview<span class="sr-only">: {theme.title}</span></a>
     </div>
   </div>
 </li>
-<style>
-  .when-on { display: none; align-items: center; gap: 6px; }
-  [aria-pressed="true"] .when-on { display: inline-flex; }
-  [aria-pressed="true"] .when-off { display: none; }
-</style>

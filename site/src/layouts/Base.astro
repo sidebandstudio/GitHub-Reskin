@@ -1,10 +1,12 @@
 ---
 import "../styles/site.css";
-import "../styles/preview.css";
 import { SUPPORT, canonical, href } from "../lib/site.mjs";
 
-interface Props { title: string; description: string; path?: string; mobileKeep?: boolean }
-const { title, description, path = "", mobileKeep = false } = Astro.props;
+// themePage: the page has a selected theme and its keep sheet. On touch devices the header action
+// keeps that theme for desktop there, and elsewhere leads back to the theme preview; with a mouse
+// it is Install. The same media decision drives every hero and install action.
+interface Props { title: string; description: string; path?: string; themePage?: boolean }
+const { title, description, path = "", themePage = false } = Astro.props;
 const url = canonical(path);
 ---
 <!doctype html>
@@ -44,10 +46,10 @@ const url = canonical(path);
           </ul>
         </nav>
         <div class="nav-action">
-          <a class="btn btn-small btn-primary nav-install" href={`${href()}#install`}>Install</a>
-          {mobileKeep
-            ? <button class="btn btn-small btn-primary nav-keep needs-js" type="button" data-open-keep>Keep for desktop</button>
-            : <a class="btn btn-small btn-primary nav-keep" href={`${href()}#install`}>Install</a>}
+          <a class="btn btn-small btn-primary for-desk" href={`${href()}#install`}>Install</a>
+          {themePage
+            ? <a class="btn btn-small btn-primary for-touch" href="#keep" data-open-keep>Keep for desktop</a>
+            : <a class="btn btn-small btn-primary for-touch" href={`${href()}#preview`}>Try the themes</a>}
         </div>
       </div>
     </header>

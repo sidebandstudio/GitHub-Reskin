@@ -19,7 +19,7 @@ const test = base.extend({
   ],
 });
 
-const ROUTES = ["", "themes/longroad-petals/", "themes/solarized-dark/", "make/", "share/", "install/", "privacy/", "credits/", "changelog/"];
+const ROUTES = ["", "themes/longroad-petals/", "themes/solarized-dark/", "make/", "share/", "install/", "privacy/", "credits/", "changelog/", "404.html"];
 
 for (const [label, viewport] of [["phone", { width: 390, height: 844 }], ["desktop", { width: 1440, height: 900 }]]) {
   test(`every route has no serious or critical axe findings on ${label} @a11y`, async ({ page, site }) => {
@@ -33,29 +33,50 @@ for (const [label, viewport] of [["phone", { width: 390, height: 844 }], ["deskt
   });
 }
 
-test("every theme preview, view and the Before state pass axe @a11y", async ({ page, site }) => {
+test("every theme's controls and labels, each view and the Before state pass axe with the live preview @a11y", async ({ page, site }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(site);
+  await page.locator("[data-window]").dispatchEvent("pointerenter");
+  await expect(page.locator('[data-window][data-preview="live"]')).toHaveCount(1, { timeout: 20000 });
   const found = [];
-  const slugs = await page.locator(".chip[data-theme]").evaluateAll((nodes) => nodes.map((n) => n.dataset.theme));
-  await page.locator("#classics summary").click();
-  const classics = await page.locator("#classics [data-theme]").evaluateAll((nodes) => nodes.map((n) => n.dataset.theme));
-  for (const slug of [...slugs, ...classics]) {
-    await page.locator(`[data-theme="${slug}"]`).first().click();
-    for (const view of ["profile", "repo", "diff"]) {
-      await page.locator(`input[name="view"][value="${view}"]`).check({ force: true });
-      for (const v of blocking(await axeViolations(page, { include: "#hero-preview" }))) found.push(`${slug} ${view} ${v.id}: ${v.targets.slice(0, 2).join(", ")}`);
-    }
+  await page.locator(".picker-side .picker-classics > summary").click();
+  const slugs = await page.locator(".picker-side [data-select]").evaluateAll((nodes) => nodes.map((n) => n.dataset.select));
+  expect(slugs).toHaveLength(25);
+  for (const slug of slugs) {
+    await page.locator(`.picker-side [data-select="${slug}"]`).click();
+    for (const v of blocking(await axeViolations(page, { include: "#preview" }))) found.push(`${slug} ${v.id}: ${v.targets.slice(0, 2).join(", ")}`);
+  }
+  for (const view of ["repo", "diff"]) {
+    await page.locator(`input[name="view"][value="${view}"]`).check({ force: true });
+    for (const v of blocking(await axeViolations(page, { include: "#preview" }))) found.push(`${view} ${v.id}`);
   }
   await page.locator('input[name="before"][value="before"]').check({ force: true });
-  for (const v of blocking(await axeViolations(page, { include: "#hero-preview" }))) found.push(`before ${v.id}`);
+  await page.locator('input[name="appearance"][value="calm"]').check({ force: true });
+  for (const v of blocking(await axeViolations(page, { include: "#preview" }))) found.push(`before ${v.id}`);
+  // The styled frame is inert and out of the tab order; its title names what it shows.
+  const frame = page.locator("[data-live] iframe:not([aria-hidden])");
+  await expect(frame).toHaveAttribute("tabindex", "-1");
+  await expect(frame).toHaveAttribute("title", /Interactive preview: GitHub/);
   expect(found).toEqual([]);
+});
+
+test("the importer's error is tied to the field and its CSS choice is labeled @a11y", async ({ page, site }) => {
+  await page.goto(`${site}make/`);
+  await page.getByRole("button", { name: "Use a sample answer" }).click();
+  await expect(page.getByLabel("Enable advanced CSS in this preview")).toBeVisible();
+  await page.getByLabel("Chatbot answer").fill("{ nope");
+  await page.getByRole("button", { name: "Preview theme" }).click();
+  await expect(page.getByLabel("Chatbot answer")).toHaveAttribute("aria-invalid", "true");
+  const described = await page.getByLabel("Chatbot answer").getAttribute("aria-describedby");
+  expect(described.split(" ")).toContain("answer-error");
+  expect(blocking(await axeViolations(page))).toEqual([]);
 });
 
 test("the keep sheet is an accessible modal dialog @a11y", async ({ browser, site }) => {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
   const page = await context.newPage();
   await page.goto(site);
-  await page.locator(".selected-actions [data-open-keep]").click();
+  await page.locator(".hero-keep [data-open-keep]").click();
   const sheet = page.getByRole("dialog", { name: "Keep this theme for desktop" });
   await expect(sheet).toBeVisible();
   expect(blocking(await axeViolations(page, { include: "#keep-sheet" }))).toEqual([]);
@@ -70,26 +91,42 @@ test("keyboard users reach and operate every hero control with a visible focus r
   await page.goto(site);
   await page.keyboard.press("Tab");
   await expect(page.getByRole("link", { name: "Skip to content" })).toBeFocused();
-  const chip = page.locator('.chip[data-theme="occult-orbit"]');
-  await chip.focus();
-  const ring = await chip.evaluate((node) => getComputedStyle(node).outlineStyle);
+  const option = page.locator('.picker-side [data-select="occult-orbit"]');
+  await option.focus();
+  const ring = await option.evaluate((node) => getComputedStyle(node).outlineStyle);
   expect(ring).not.toBe("none");
-  await page.keyboard.press("Space");
-  await expect(chip).toHaveAttribute("aria-pressed", "true");
-  const code = page.locator('input[name="view"][value="profile"]');
-  await code.focus();
+  await page.keyboard.press("Enter");
+  await expect(option).toHaveAttribute("aria-current", "true");
+  const profile = page.locator('input[name="view"][value="profile"]');
+  await profile.focus();
   await page.keyboard.press("ArrowRight");
   await expect(page.locator('input[name="view"][value="repo"]')).toBeChecked();
-  await expect(page.locator('#hero-preview [data-pv-view="repo"]')).toBeVisible();
-  for (const name of ["Profile", "Code", "Diff", "Before", "After"]) await expect(page.getByRole("radio", { name, exact: true })).toBeAttached();
-  await expect(page.getByRole("switch", { name: "Flavor extras" })).toBeChecked();
+  await expect(page.locator("[data-live] [data-reskin-preview]")).toHaveAttribute("data-view", "repo", { timeout: 20000 });
+  for (const name of ["Profile", "Code", "Diff", "Before", "After", "Full", "Calm"]) await expect(page.getByRole("radio", { name, exact: true })).toBeAttached();
+});
+
+test("the phone chooser is a disclosure that Escape closes, returning focus @a11y", async ({ browser, site }) => {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  const page = await context.newPage();
+  await page.goto(site);
+  const summary = page.locator("[data-picker] > summary");
+  await summary.focus();
+  await page.keyboard.press("Enter");
+  await expect(page.locator("[data-picker]")).toHaveAttribute("open", "");
+  expect(blocking(await axeViolations(page, { include: "[data-picker]" }))).toEqual([]);
+  await page.locator('.drop-panel [data-select="dandadan"], .drop-panel [data-select="occult-orbit"]').first().focus();
+  await page.keyboard.press("Escape");
+  await expect(page.locator("[data-picker]")).not.toHaveAttribute("open", "");
+  await expect(summary).toBeFocused();
+  await context.close();
 });
 
 test("touch targets for theme choices and actions are at least 44px @a11y", async ({ browser, site }) => {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
   const page = await context.newPage();
   await page.goto(site);
-  const small = await page.locator(".chip, .btn, .seg label, .card-actions a, .faq-list summary").evaluateAll((nodes) =>
+  await page.locator("[data-picker] > summary").click();
+  const small = await page.locator(".pick, [data-picker] > summary, .btn, .seg label, .card-actions a, .faq-list summary, .classics > summary").evaluateAll((nodes) =>
     nodes.filter((n) => n.offsetParent !== null).map((n) => [n.textContent.trim().slice(0, 30), n.getBoundingClientRect().height]).filter(([, h]) => h < 44),
   );
   expect(small).toEqual([]);

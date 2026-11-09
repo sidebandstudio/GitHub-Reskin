@@ -1,5 +1,6 @@
-// The built Pages site: routes, base-path links and assets, static no-JS theme states, honest store
-// states, legal copy, the offline preview fixture, no external requests, and the adapter gate.
+// The built Pages site: routes, base-path links and assets, static no-JS theme states with the anime
+// title first, honest store states, legal copy, the shared preview's files, no external requests,
+// the initial script budget's shape, and the production gate.
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
@@ -11,9 +12,9 @@ import { BASE, ROOT, links, listFiles, read, siteDir } from "./helpers.mjs";
 const release = JSON.parse(await readFile(join(ROOT, "release.config.json"), "utf8"));
 const CANONICAL = `${release.site.origin}${BASE}`;
 const ROUTES = ["", "make/", "share/", "install/", "privacy/", "credits/", "changelog/", ...CATALOG.map((t) => `themes/${t.slug}/`)];
+const manifest = JSON.parse(await readFile(join(ROOT, "site/.cache/previews/manifest.json"), "utf8").catch(() => "{}"));
 const DISCLAIMER = "GitHub Reskin is an independent project by Sideband Studio. Not affiliated with or endorsed by GitHub. Series names identify inspiration; all trademarks belong to their owners.";
-const ADAPTER_MARK = "reskin-dev-adapter";
-const DEV_CATALOG_MARK = 'data-catalog-source="site/dev"';
+const DEV_MARKS = ["reskin-dev-adapter", "site/dev", 'data-catalog-source="site/dev"'];
 const STORE_HOSTS = /chromewebstore\.google\.com|chrome\.google\.com\/webstore|addons\.mozilla\.org|microsoftedge\.microsoft\.com/;
 
 let dir;
@@ -33,6 +34,14 @@ const textOf = (html) => html.replace(/<script[\s\S]*?<\/script>/g, "").replace(
 describe("routes and paths", () => {
   test("every static route exists with a nonempty page", () => {
     for (const route of ROUTES) assert.ok(page(route)?.includes("<h1"), `${BASE}${route} is missing or has no h1`);
+  });
+
+  test("a branded, base-aware 404 page offers a way back to the themes", () => {
+    const html = pages.get("404.html");
+    assert.ok(html, "404.html is missing");
+    assert.match(textOf(html), /This theme link isn't here\./);
+    assert.ok(html.includes(`href="${BASE}#preview"`), "no Try the themes link");
+    for (const theme of CATALOG.filter((t) => t.group === "anime")) assert.ok(html.includes(`href="${BASE}themes/${theme.slug}/#preview"`), theme.slug);
   });
 
   test("the catalog has thirteen Anime themes in frozen order, then twelve Classics", () => {
@@ -60,6 +69,7 @@ describe("routes and paths", () => {
           continue;
         }
         const [path, hash] = link.slice(BASE.length).split("#");
+        if (file === "404.html" && !path && !hash) continue;
         const target = path === "" || path.endsWith("/") ? `${path}index.html` : path;
         if (!files.includes(target)) problems.push(`${file}: ${link} does not resolve`);
         else if (hash && pages.has(target) && !pages.get(target).includes(`id="${hash}"`)) problems.push(`${file}: ${link} has no #${hash}`);
@@ -79,31 +89,57 @@ describe("routes and paths", () => {
 });
 
 describe("static theme states", () => {
-  test("the home page pre-renders Choom Circuit", () => {
+  test("the home page leads with the owner's Cyberpunk port as the shared preview captured it", () => {
     const html = page("");
-    const choom = CATALOG.find((t) => t.slug === "choom-circuit").doc;
-    assert.match(html, /id="hero-preview"[^>]*data-state="themed"/);
-    assert.ok(html.includes(`--pv-canvas:${choom.colors.background}`));
-    assert.match(html, /data-selected="name">Choom Circuit</);
-    assert.ok(textOf(html).includes("Inspired by Cyberpunk: Edgerunners"));
+    const choom = manifest.themes["choom-circuit"];
+    assert.ok(html.includes(`src="${BASE}previews/${choom.phone.file}"`) && html.includes(`srcset="${BASE}previews/${choom.desk.file}"`));
+    assert.ok(html.includes(`data-source-hash="${choom.sourceHash}"`));
+    assert.match(html, /data-selected="title">Cyberpunk: Edgerunners</);
+    assert.match(html, /aria-current="true"[^>]*>|data-select="choom-circuit" aria-current="true"/);
   });
 
-  test("each theme page pre-renders its own theme, name, credit and selected state without JavaScript", () => {
+  test("each theme page pre-renders its capture, says which anime it is from first, and marks its selection without JavaScript", () => {
     for (const theme of CATALOG) {
       const html = page(`themes/${theme.slug}/`);
-      const hero = html.slice(html.indexOf('id="hero-preview"') - 200, html.indexOf('id="hero-preview"') + 4000);
-      assert.ok(hero.includes(`--pv-canvas:${theme.doc.colors.background}`), `${theme.slug} hero is not pre-rendered in its colors`);
-      assert.ok(html.includes(`data-selected="name">${theme.doc.name}<`), `${theme.slug} name`);
-      if (theme.doc.inspiredBy) assert.ok(textOf(html).includes(`Inspired by ${theme.doc.inspiredBy}`), `${theme.slug} credit`);
-      assert.match(html, new RegExp(`data-theme="${theme.slug}" aria-pressed="true"`), `${theme.slug} selected state`);
-      assert.ok(html.includes("Switching themes needs JavaScript"), `${theme.slug} no-JS note`);
+      const entry = manifest.themes[theme.slug];
+      assert.ok(html.includes(`src="${BASE}previews/${entry.phone.file}"`), `${theme.slug} first paint`);
+      assert.ok(html.includes(`data-source-hash="${entry.sourceHash}"`), `${theme.slug} hash`);
+      const primary = theme.doc.inspiredBy || theme.doc.name;
+      assert.ok(html.includes(`data-selected="title">${primary.replace(/'/g, "&#39;")}<`), `${theme.slug} primary label`);
+      if (theme.doc.inspiredBy) {
+        assert.ok(textOf(html).includes(`${theme.doc.inspiredBy} theme for GitHub`), `${theme.slug} "<anime> theme for GitHub"`);
+        assert.match(html, new RegExp(`<h1[^>]*>${theme.doc.inspiredBy.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/'/g, "&#39;")} theme for GitHub</h1>`), `${theme.slug} h1`);
+      }
+      assert.ok(html.includes(`data-select="${theme.slug}" aria-current="true"`), `${theme.slug} selected option`);
+      assert.match(html, new RegExp(`data-theme="${theme.slug}" aria-pressed="true"`), `${theme.slug} selected card`);
+      assert.ok(html.includes("Switching themes in place needs JavaScript"), `${theme.slug} no-JS note`);
     }
   });
 
-  test("flavor lines render as hidden-from-assistive-technology decoration", () => {
+  test("anime titles are the primary label on every chooser option and card", () => {
     const html = page("");
-    assert.match(html, /data-slot="profile.tag" aria-hidden="true"[^>]*>\/\/ choom view</);
-    assert.match(html, /data-slot="profile.pinned.heading" aria-hidden="true"[^>]*>Signal picks</);
+    for (const theme of CATALOG.filter((t) => t.group === "anime")) {
+      const title = theme.doc.inspiredBy.replace(/'/g, "&#39;");
+      assert.ok(html.includes(`<span class="pick-title">${title}</span><span class="pick-sub">${theme.doc.name}</span>`), `${theme.slug} chooser`);
+      assert.ok(html.includes(`<h3 class="card-title">${title}</h3>`), `${theme.slug} card`);
+    }
+    assert.match(textOf(html), /13 anime\. Pick yours\./);
+    assert.match(textOf(html), /13 anime themes/);
+  });
+
+  test("Advanced CSS is badged on bundled themes that carry it", () => {
+    const html = page("");
+    const withCss = CATALOG.filter((t) => typeof t.doc.css === "string" && t.doc.css);
+    assert.ok(withCss.length >= 1);
+    const card = (slug) => html.slice(html.indexOf(`data-card="${slug}"`), html.indexOf("</li>", html.indexOf(`data-card="${slug}"`)));
+    for (const theme of CATALOG) assert.equal(card(theme.slug).includes("Advanced CSS · Bundled and reviewed"), withCss.includes(theme), theme.slug);
+  });
+
+  test("every capture in the manifest ships, and the Full/Calm comparison uses the selected theme's pair", () => {
+    for (const entry of Object.values(manifest.themes)) for (const kind of ["phone", "desk", "card", "calm"]) assert.ok(files.includes(`previews/${entry[kind].file}`), entry[kind].file);
+    const html = page("themes/longroad-petals/");
+    const entry = manifest.themes["longroad-petals"];
+    assert.match(html, new RegExp(`src="${BASE}previews/${entry.calm.file}"[^>]*data-compare="calm"`));
   });
 });
 
@@ -134,7 +170,7 @@ describe("content and honesty", () => {
     const credits = textOf(page("credits/"));
     assert.ok(credits.includes("SIL Open Font License"));
     assert.ok(credits.includes("captured offline on November 8, 2026"));
-    for (const theme of CATALOG.filter((t) => t.group === "anime")) assert.ok(page("credits/").includes(`<b>${theme.doc.name}</b>, inspired by ${theme.doc.inspiredBy}`), theme.slug);
+    for (const theme of CATALOG.filter((t) => t.group === "anime")) assert.ok(page("credits/").includes(`<b>${theme.doc.inspiredBy.replace(/'/g, "&#39;")}</b>: ${theme.doc.name}`), theme.slug);
     assert.ok(files.includes("licenses/manrope-OFL.txt") && files.includes("licenses/LICENSE-GitHub-Reskin.txt"));
   });
 
@@ -147,12 +183,12 @@ describe("content and honesty", () => {
 });
 
 describe("offline preview and requests", () => {
-  test("the preview uses the local whoisaldo fixture and keeps its links inert", () => {
-    const html = page("");
-    assert.ok(html.includes(`src="${BASE}site-fixture/assets/avatar-whoisaldo.webp"`));
-    assert.ok(textOf(html).includes("Ali Younes") && textOf(html).includes("5,216 contributions in the last year"));
-    assert.match(html, /data-href="https:\/\/aliyounes\.dev"/);
-    for (const link of links(html)) assert.ok(!/aliyounes\.dev|linkedin\.com|github\.com\/(sidebandstudio\/(EternalMonitor|gpubridge)|pingdotgg)/.test(link), `live preview link ${link}`);
+  test("the live preview's packaged fonts and fixture images ship at the paths the site resource adapter resolves", () => {
+    for (const font of ["rajdhani", "barlow-condensed", "bungee", "fraunces", "alegreya", "cormorant-garamond", "josefin-sans", "space-grotesk"]) {
+      assert.ok(files.includes(`assets/fonts/${font}/${font}.woff2`) && files.includes(`assets/fonts/${font}/OFL.txt`), font);
+    }
+    assert.ok(files.includes("packages/preview/fixture/assets/avatar-whoisaldo.webp"));
+    assert.ok(files.includes("licenses/OFL-Chakra-Petch.txt") && files.includes("licenses/OFL-JetBrains-Mono.txt"));
   });
 
   test("no external scripts, styles, fonts, images or frames", () => {
@@ -164,31 +200,56 @@ describe("offline preview and requests", () => {
   });
 
   test("scripts and styles make no network or tracking calls", async () => {
-    for (const file of files.filter((f) => /\.(js|css)$/.test(f))) {
+    for (const file of files.filter((f) => /^_assets\/.*\.(js|css)$/.test(f))) {
       const code = await read(dir, file);
-      if (file.endsWith(".js")) assert.ok(!/\bfetch\(|XMLHttpRequest|sendBeacon|WebSocket|EventSource|importScripts/.test(code), `${file} can make requests`);
-      assert.ok(!/https?:\/\//.test(code.replace(/http:\/\/www\.w3\.org\/2000\/svg/g, "")), `${file} references a URL`);
-      assert.ok(!/gtag|google-analytics|googletagmanager|plausible|umami|segment\.io|hotjar/i.test(code), `${file} has a tracker`);
+      // The shared preview reads its own packaged font and image files (credentials omitted) to
+      // embed them in the scriptless frame; that is the only fetch, and e2e proves it stays local.
+      const preview = code.includes("Call configurePreview before mountPreview");
+      if (file.endsWith(".js")) {
+        assert.ok(!/XMLHttpRequest|sendBeacon|WebSocket|EventSource|importScripts/.test(code), `${file} can make requests`);
+        if (!preview) assert.ok(!/\bfetch\(/.test(code), `${file} can fetch`);
+        else assert.equal(code.match(/\bfetch\(/g)?.length, 1, `${file} fetches outside the packaged-file reader`);
+      }
+      // The preview chunk holds the fixture's inert data-href links and the parser chunk css-tree's
+      // own strings; neither requests them. Page scripts and styles name no URL at all.
+      const parser = /Matching for a tree with var/.test(code);
+      if (!preview && !parser) assert.ok(!/https?:\/\//.test(code.replace(/http:\/\/www\.w3\.org\/2000\/svg/g, "")), `${file} references a URL`);
+      assert.ok(!/\bgtag\b|google-analytics|googletagmanager|plausible|umami|segment\.io|hotjar/i.test(code), `${file} has a tracker`);
     }
   });
 });
 
-describe("temporary adapter gate", () => {
-  const offenders = () => [...pages].filter(([, html]) => html.includes(ADAPTER_MARK) || html.includes(DEV_CATALOG_MARK)).map(([file]) => file);
+describe("production gate", () => {
+  // Without --production these still run: phase 2 has no development adapter left to allow.
+  test("no development adapter, stand-in theme or development catalog is in the output", async () => {
+    const offenders = [];
+    for (const file of files.filter((f) => /\.(html|js)$/.test(f))) {
+      const text = file.endsWith(".html") ? pages.get(file) : await read(dir, file);
+      for (const mark of DEV_MARKS) if (text.includes(mark)) offenders.push(`${file}: ${mark}`);
+    }
+    assert.deepEqual(offenders, []);
+    assert.ok(page("").includes('data-catalog-source="themes/catalog.json"'));
+  });
 
-  if (process.env.RESKIN_SITE_PRODUCTION === "1") {
-    test("production output contains no site/dev adapter or development catalog", async () => {
-      const scripts = [];
-      for (const file of files.filter((f) => f.endsWith(".js"))) if ((await read(dir, file)).includes(ADAPTER_MARK)) scripts.push(file);
-      assert.deepEqual([...offenders(), ...scripts], [], "site/dev is still in the build; phase 2 must swap in C5's preview, C2's importer and the real catalog");
-    });
-  } else {
-    test("development output carries the markers the production gate rejects", async () => {
-      assert.ok(offenders().includes("index.html"), "the adapter marker is missing, so --production could not detect the adapter");
-      let marked = false;
-      for (const file of files.filter((f) => f.endsWith(".js"))) marked ||= (await read(dir, file)).includes(ADAPTER_MARK);
-      assert.ok(marked, "the client bundle lost the adapter marker");
-      assert.ok(existsSync(join(ROOT, "site/dev/README.md")));
-    });
-  }
+  test("the live preview is C5's mountPreview with C3's Primer adapter, and the parser ships only in the authoring chunk", async () => {
+    const scripts = await Promise.all(files.filter((f) => /^_assets\/.*\.js$/.test(f)).map(async (f) => [f, await read(dir, f)]));
+    const engine = scripts.filter(([, code]) => code.includes("Call configurePreview before mountPreview"));
+    assert.equal(engine.length, 1, "exactly one chunk carries the shared preview");
+    assert.match(engine[0][1], /compileGitHub needs a ResolvedTheme/, "the preview chunk carries C3's compiler");
+    const parser = scripts.filter(([, code]) => /Matching for a tree with var|csstree/i.test(code)).map(([f]) => f);
+    assert.equal(parser.length, 1, `the CSS parser is in ${parser.join(", ")}`);
+    assert.notEqual(parser[0], engine[0][0]);
+  });
+
+  test("pages load only the small page script at first; the preview and parser chunks are imported on demand", () => {
+    for (const route of ["", "themes/choom-circuit/", "make/", "share/"]) {
+      const html = page(route);
+      const initial = [...html.matchAll(/<script[^>]+src="([^"]+)"/g)].map((m) => m[1]);
+      for (const src of initial) {
+        const name = src.split("/").pop();
+        assert.ok(!/^(engine|authoring)\./.test(name), `${route} loads ${name} at first`);
+      }
+      assert.ok(!/rel="modulepreload"[^>]*(engine|authoring)\./.test(html), `${route} preloads the engine`);
+    }
+  });
 });
