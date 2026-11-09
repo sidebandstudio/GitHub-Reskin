@@ -29,6 +29,18 @@
       <div class="border-top" data-color-mode="light"><h2 id="h-bare" class="h4 mb-2">Bare island</h2></div>
       <div class="user-profile-bio"><h2 id="h-authored" class="h4 mb-2">Authored copy</h2></div>
       <details><summary id="menu">More</summary><details-dialog role="dialog"><h2 id="h-dialog" class="h4 mb-2">In a dialog</h2></details-dialog></details>
+      <!-- Protected flows on an otherwise reviewed route, one per required category: a reviewed
+           heading signature and a primary button inside each. -->
+      <form action="/session"><h2 id="h-login" class="h4 mb-2">Sign in</h2><button id="p-login" class="btn btn-primary" type="submit">Sign in</button></form>
+      <div class="border-top"><h2 id="h-signup" class="h4 mb-2"><a href="/signup?source=profile" class="Link--primary">Sign up</a></h2><a id="p-signup" class="btn btn-primary" href="/join?source=profile">Join</a></div>
+      <form action="/logout" method="post"><h2 id="h-logout" class="h4 mb-2">Sign out</h2><button id="p-logout" class="btn btn-primary" type="submit">Sign out</button></form>
+      <form action="/settings/tokens" method="post"><h2 id="h-tokens" class="h4 mb-2">Tokens</h2><button id="p-tokens" class="btn btn-primary" type="submit">Generate token</button></form>
+      <form action="/account/billing/upgrade" method="post"><h2 id="h-billing" class="h4 mb-2">Billing</h2><button id="p-billing" class="btn btn-primary" type="submit">Upgrade</button></form>
+      <form action="/orgs/octo/invitations" method="post"><h2 id="h-invite" class="h4 mb-2">Invitation</h2><button id="p-invite" class="btn btn-primary" type="submit">Accept</button></form>
+      <form action="/octo/repo/transfer" method="post"><h2 id="h-transfer" class="h4 mb-2">Transfer</h2><button id="p-transfer" class="btn btn-primary" type="submit">Transfer</button></form>
+      <div class="flash"><h2 id="h-warning" class="h4 mb-2">Security advisory</h2><a id="p-advisory" class="btn btn-primary" href="/octo/repo/security/advisories">Review</a></div>
+      <div class="border-top"><h2 id="h-verified" class="h4 mb-2">Signed <span class="signed-commit-badge">Verified</span></h2></div>
+      <section aria-label="Security advisory"><a id="p-section" class="btn btn-primary" href="/octo/repo/security">Review advisory</a></section>
     </div>
     <div class="Layout-main">
       <div class="js-pinned-items-reorder-container"><h2 id="h-pinned" class="f4 mb-2 text-normal">Pinned <span class="ml-2" role="status" aria-live="polite"></span></h2></div>

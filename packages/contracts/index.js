@@ -84,6 +84,7 @@ export const OVERRIDE_COLOR_ROLES = freeze([
   "border",
   "controlBorder",
   "accentMuted",
+  "accentEmphasis",
   "primaryBackground",
   "primaryText",
   "focus",
@@ -200,6 +201,8 @@ export const FLAVOR_SLOT_IDS = freeze([
   "empty.pinned.caption",
   "empty.issues.caption",
   "contributions.caption",
+  "footer.signoff",
+  "profile.achievements.heading",
 ]);
 
 export const PREFERENCE_KEYS = freeze(["extras", "text", "motion", "fonts", "effects"]);
@@ -400,6 +403,8 @@ export const CSS_VARIABLES = freeze(
       "border",
       "control-border",
       "accent",
+      "accent-emphasis",
+      "accent-emphasis-text",
       "primary-background",
       "primary-text",
       "header-background",

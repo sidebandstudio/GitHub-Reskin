@@ -10,6 +10,17 @@ export const ROUTES = Object.freeze(["profile", "repository", "pull-files", "com
 // 2026-11-08). The signed-in dashboard shares dashboard#index but has no marketing main.
 const MARKETING = ["dashboard/index", "site_landing_pages/show", "site_pricing/index"];
 
+// Authentication routes stay entirely native: no theme, appearance or flavor. Sign-in with its
+// passkey, OAuth authorization and device verification, sign-out, sign-up, the session pages with
+// their two-factor, sudo and verified-device steps, password reset and two-factor setup
+// (github.com, 2026-11-09). The path alone decides, so the route holds from document_start.
+const AUTHENTICATION = /^\/(?:login|logout|signup|join|session|sessions|password_reset|settings\/two_factor_authentication)(?:\/|$)/i;
+
+/** Whether the document is on an authentication route. */
+export function authenticationRoute(document) {
+  return AUTHENTICATION.test(document.location?.pathname ?? "");
+}
+
 /** Every element classifyRoute reads, as one selector list. */
 export const ROUTE_SIGNALS = [ROUTE_META.controller, ROUTE_META.action, NOT_FOUND_ILLUSTRATION, PROFILE_CARD, SOURCE_CODE, MARKETING_MAIN].join(",");
 

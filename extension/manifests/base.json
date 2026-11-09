@@ -1,29 +1,61 @@
 {
   "manifest_version": 3,
   "name": "GitHub Reskin",
-  "description": "Themes for GitHub, including the contribution graph. Pick a theme or your own colors.",
+  "description": "Anime-inspired and classic themes for GitHub, including the contribution graph. Changes only your own browser view.",
   "icons": {
-    "16": "icons/icon-16.png",
-    "32": "icons/icon-32.png",
-    "48": "icons/icon-48.png",
-    "128": "icons/icon-128.png"
+    "16": "pages/icons/icon-16.png",
+    "32": "pages/icons/icon-32.png",
+    "48": "pages/icons/icon-48.png",
+    "128": "pages/icons/icon-128.png"
   },
-  "permissions": ["storage"],
+  "permissions": [
+    "storage"
+  ],
   "content_scripts": [
     {
-      "matches": ["https://github.com/*", "https://gist.github.com/*"],
+      "matches": [
+        "https://github.com/*",
+        "https://gist.github.com/*"
+      ],
       "run_at": "document_start",
-      "js": ["github-modes.js", "themes.js", "slang.js", "content.js"]
+      "css": [
+        "content/lifecycle/boot.css"
+      ],
+      "js": [
+        "content.js"
+      ]
     }
   ],
   "action": {
     "default_title": "GitHub Reskin",
-    "default_popup": "popup.html",
+    "default_popup": "pages/popup.html",
     "default_icon": {
-      "16": "icons/icon-16.png",
-      "32": "icons/icon-32.png",
-      "48": "icons/icon-48.png",
-      "128": "icons/icon-128.png"
+      "16": "pages/icons/icon-16.png",
+      "32": "pages/icons/icon-32.png",
+      "48": "pages/icons/icon-48.png",
+      "128": "pages/icons/icon-128.png"
     }
-  }
+  },
+  "options_ui": {
+    "page": "pages/settings.html",
+    "open_in_tab": true
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "assets/fonts/alegreya/alegreya.woff2",
+        "assets/fonts/barlow-condensed/barlow-condensed.woff2",
+        "assets/fonts/bungee/bungee.woff2",
+        "assets/fonts/cormorant-garamond/cormorant-garamond.woff2",
+        "assets/fonts/fraunces/fraunces.woff2",
+        "assets/fonts/josefin-sans/josefin-sans.woff2",
+        "assets/fonts/rajdhani/rajdhani.woff2",
+        "assets/fonts/space-grotesk/space-grotesk.woff2"
+      ],
+      "matches": [
+        "https://github.com/*",
+        "https://gist.github.com/*"
+      ]
+    }
+  ]
 }

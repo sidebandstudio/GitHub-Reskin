@@ -79,6 +79,25 @@ export function nativeResolved(policy, base = "dark") {
   };
 }
 
+/**
+ * A stylesheet as an engine without container style queries applies it: every style-query block
+ * removed, the blocks nested inside it included, and the selector fallback's condition as Gecko
+ * before Firefox 151 evaluates it, without position-anchor.
+ */
+export function stripStyleQueries(text) {
+  let css = text.replaceAll("@supports selector(:-moz-focusring) and (not (position-anchor: normal)){", "@supports selector(:-moz-focusring){");
+  for (let i = css.indexOf("@container style("); i >= 0; i = css.indexOf("@container style(")) {
+    let depth = 0;
+    let j = css.indexOf("{", i);
+    for (; j < css.length; j++) {
+      if (css[j] === "{") depth++;
+      else if (css[j] === "}" && --depth === 0) break;
+    }
+    css = css.slice(0, i) + css.slice(j + 2);
+  }
+  return css;
+}
+
 /** The content adapter bundled as an IIFE that sets globalThis.ReskinGitHub, for browser pages. */
 export async function adapterBundle() {
   const result = await build({ entryPoints: [join(ROOT, "extension/content/github/index.js")], bundle: true, format: "iife", globalName: "ReskinGitHub", write: false, platform: "browser", logLevel: "silent" });

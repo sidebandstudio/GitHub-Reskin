@@ -1,6 +1,7 @@
 <!doctype html>
-<!-- Modeled on the logged-out profile markup recorded in slot-evidence.json on 2026-11-08, with a
-     fictional user. The README, name and bio hold hostile copies of GitHub's own heading words. -->
+<!-- Modeled on the logged-out profile markup recorded in slot-evidence.json on 2026-11-08, and
+     on 2026-11-09 for the Achievements heading and the footer, with a fictional user. The README,
+     name and bio hold hostile copies of GitHub's own heading words. -->
 <html lang="en" data-color-mode="auto" data-light-theme="light" data-dark-theme="dark">
 <head>
   <title>octo-sample (Pinned) · GitHub</title>
@@ -20,7 +21,8 @@
           </div>
         </div>
         <div class="p-note user-profile-bio"><div>Organizations</div><h2>Organizations</h2></div>
-        <div class="border-top"><h2 class="h4 mb-2"><a href="/octo-sample?tab=achievements" class="Link--primary">Achievements</a></h2></div>
+        <div class="border-top color-border-muted tmp-pt-3 tmp-mt-3 d-none d-md-block"><h2 class="h4 mb-2"><a href="/octo-sample?tab=achievements" class="Link--primary mb-2">Achievements</a></h2><div class="d-flex flex-wrap"><a href="/octo-sample?achievement=pull-shark&amp;tab=achievements" class="position-relative"><img alt="Achievement: Pull Shark" width="64" class="achievement-badge-sidebar"></a></div></div>
+        <div class="border-top color-border-muted tmp-pt-3 tmp-mt-3 d-md-none d-block"><h2 class="h4 mb-2"><a href="/octo-sample?tab=achievements" class="Link--primary mb-2">Achievements</a></h2><div class="d-flex flex-wrap"><a href="/octo-sample?achievement=pull-shark&amp;tab=achievements" class="position-relative"><img alt="Achievement: Pull Shark" width="64" class="achievement-badge-sidebar"></a></div></div>
         <div class="border-top"><h2 class="h4 mb-2">Highlights</h2></div>
         <div class="border-top">
           <h2 class="mb-2 h4">Organizations</h2>
@@ -64,5 +66,24 @@
   </div>
 </div></div>
 </main></div>
+<footer class="footer f6 color-fg-muted color-border-subtle tmp-pt-7 tmp-pb-6 p-responsive" role="contentinfo">
+  <h2 class="sr-only">Footer</h2>
+  <div class="d-flex flex-justify-center flex-items-center flex-column-reverse flex-lg-row flex-wrap flex-lg-nowrap">
+    <div class="d-flex flex-items-center flex-shrink-0 mx-2">
+      <a aria-label="GitHub Homepage" class="footer-octicon mr-2" href="https://github.com"><svg aria-hidden="true" class="octicon octicon-mark-github" height="24" width="24" viewBox="0 0 24 24"></svg></a>
+      <span>
+        &copy; 2026 GitHub,&nbsp;Inc.
+      </span>
+    </div>
+    <nav aria-label="Footer">
+      <h3 class="sr-only" id="sr-footer-heading">Footer navigation</h3>
+      <ul class="list-style-none d-flex flex-justify-center flex-wrap mb-2 mb-lg-0" aria-labelledby="sr-footer-heading">
+        <li class="mx-2"><a href="https://docs.github.com/site-policy/github-terms/github-terms-of-service" class="Link--secondary Link">Terms</a></li>
+        <li class="mx-2"><a href="https://docs.github.com/" class="Link--secondary Link">Docs</a></li>
+        <li class="mx-2"><cookie-consent-link><button type="button" class="Link--secondary underline-on-hover border-0 p-0 color-bg-transparent">Manage cookies</button></cookie-consent-link></li>
+      </ul>
+    </nav>
+  </div>
+</footer>
 </body>
 </html>

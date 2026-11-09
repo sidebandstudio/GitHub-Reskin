@@ -23,5 +23,16 @@ export function readNativeMode(document, view) {
 export const forcedColorsActive = (view) => Boolean(view.matchMedia("(forced-colors: active)").matches);
 export const reducedMotion = (view) => Boolean(view.matchMedia("(prefers-reduced-motion: reduce)").matches);
 
+// From this many elements a page is large: there, themed selection alone, which restyles every
+// element's highlight, costs more than the rest of the Primer stylesheet.
+export const LARGE_PAGE_ELEMENTS = 10000;
+
+/**
+ * The Primer compiler's options for this document, read when the host compiles: a large page keeps
+ * the browser's own selection colors.
+ * @param {Document} document
+ */
+export const compileOptions = (document) => ({ selection: document.getElementsByTagName("*").length < LARGE_PAGE_ELEMENTS });
+
 /** The root attributes a lifecycle observer watches to recompute the mode plan. */
 export const MODE_ATTRIBUTES = Object.freeze(["data-color-mode", "data-light-theme", "data-dark-theme"]);

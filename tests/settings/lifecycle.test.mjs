@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { LEGACY_PAGE_CACHE_KEY, LIMITS, STORAGE_KEYS } from "../../packages/contracts/index.js";
 import { createRepository } from "../../packages/settings/index.js";
+import { authenticationRoute } from "../../extension/content/github/routes.js";
 import { startContent } from "../../extension/content/lifecycle/index.js";
 import { catalog, context, deferred, fakePage, memoryStorage, testRenderer } from "./helpers.mjs";
 
@@ -86,6 +87,45 @@ test("policy comes first: high contrast, unknown modes and forced colors ignore 
     assert.equal(renderer.calls.compile, 0);
     content.destroy();
   }
+});
+
+test("authentication routes stay native before anything compiles, and a navigation into or out of one renders again before the new page paints", async () => {
+  const { storage } = await stored();
+  const nativeRoute = (document) => (authenticationRoute(document) ? "authentication" : null);
+  const at = (pathname) => {
+    const started = start(storage, {}, { nativeRoute });
+    started.page.document.location = { hostname: "github.com", pathname };
+    return started;
+  };
+  const auth = ["/login", "/login/oauth/authorize", "/login/device", "/logout", "/signup", "/join", "/session", "/sessions/two-factor", "/sessions/sudo", "/sessions/verified-device", "/password_reset", "/settings/two_factor_authentication/setup/intro"];
+  for (const pathname of auth) {
+    const { page, renderer, events, content } = at(pathname);
+    assert.equal(await content.ready, "native", pathname);
+    assert.equal(page.style(), null);
+    assert.equal(renderer.calls.compile, 0);
+    assert.ok(events.some((e) => e.type === "native" && e.reason === "authentication"));
+    content.destroy();
+  }
+  for (const pathname of ["/octo-sample", "/loginx", "/octo/sessions", "/settings/profile"]) {
+    const { content } = at(pathname);
+    assert.equal(await content.ready, "ready", pathname);
+    content.destroy();
+  }
+  const { page, content } = at("/octo-sample");
+  await content.ready;
+  page.document.readyState = "interactive";
+  const visit = async (pathname, event) => {
+    page.document.location = { hostname: "github.com", pathname };
+    if (event === "popstate") page.fire("view", "popstate");
+    else page.fire("document", event);
+    await page.frame();
+    return [phase(page), Boolean(page.style())];
+  };
+  assert.deepEqual(await visit("/login", "turbo:render"), ["native", false]);
+  assert.deepEqual(await visit("/octo-sample", "turbo:load"), ["ready", true]);
+  assert.deepEqual(await visit("/signup", "popstate"), ["native", false]);
+  assert.deepEqual(await visit("/octo-sample", "pjax:end"), ["ready", true]);
+  content.destroy();
 });
 
 test("a snapshot mismatch re-resolves the source against the current page", async () => {
@@ -233,8 +273,8 @@ test("Turbo navigation drops owned nodes before caching and places them after re
   assert.equal(renderer.calls.destroyed, 3);
 });
 
-test("optional decoration stops for the rest of a navigation once it exceeds 10 ms", async () => {
-  const { storage, repository } = await stored();
+test("optional decoration stops for the rest of a navigation once it exceeds 10 ms, keeping what it placed", async () => {
+  const { storage } = await stored();
   const { page, renderer, events, content } = start(storage, {}, { decorateCost: LIMITS.maxNavigationMs + 5 });
   await content.ready;
   page.document.readyState = "interactive";
@@ -242,10 +282,15 @@ test("optional decoration stops for the rest of a navigation once it exceeds 10 
   await page.frame();
   assert.equal(renderer.calls.decorate, 1);
   assert.ok(events.some((e) => e.type === "budget"));
-  await repository.commit({ type: "selectTheme", id: "nord" }, 0);
+  // GitHub's own changes on the same document: the colors follow, the decoration stays as placed.
+  page.setMedia("(prefers-reduced-motion: reduce)", true);
+  await page.settle();
   await page.frame();
+  await page.frame();
+  page.fire("document", "turbo:load");
   await page.frame();
   assert.equal(renderer.calls.decorate, 1, "no more optional work this navigation");
+  assert.equal(renderer.calls.destroyed, 0, "a spent budget never removes what is placed");
   assert.ok(page.style(), "colors still apply");
   page.fire("document", "turbo:visit");
   page.fire("document", "turbo:load");
@@ -254,8 +299,33 @@ test("optional decoration stops for the rest of a navigation once it exceeds 10 
   content.destroy();
 });
 
+test("forced colors take a spent page native, and turning them off places the decoration again", async () => {
+  const { storage } = await stored();
+  const { page, renderer, content } = start(storage, {}, { decorateCost: LIMITS.maxNavigationMs + 5 });
+  await content.ready;
+  page.document.readyState = "interactive";
+  page.fire("document", "DOMContentLoaded");
+  await page.frame();
+  assert.equal(renderer.calls.decorate, 1, "the first pass spends the budget");
+  page.setMedia("(forced-colors: active)", true);
+  await page.settle();
+  await page.frame();
+  assert.equal(phase(page), "native");
+  assert.equal(page.style(), null, "no stylesheet under forced colors");
+  assert.equal(renderer.calls.destroyed, 1, "the decoration leaves with it");
+  page.setMedia("(forced-colors: active)", false);
+  await page.settle();
+  await page.frame();
+  await page.frame();
+  assert.equal(phase(page), "ready");
+  assert.ok(page.style());
+  assert.equal(renderer.calls.decorate, 2, "the themed page after native gets a pass of its own");
+  assert.equal(content.status().decorated, true);
+  content.destroy();
+});
+
 test("the decoration budget adds up every pass of a navigation, not just the latest one", async () => {
-  const { storage, repository } = await stored();
+  const { storage } = await stored();
   const { page, renderer, events, content } = start(storage, {}, { decorateCost: 6 });
   await content.ready;
   page.document.readyState = "interactive";
@@ -263,14 +333,50 @@ test("the decoration budget adds up every pass of a navigation, not just the lat
   await page.frame();
   assert.equal(renderer.calls.decorate, 1);
   assert.equal(events.some((e) => e.type === "budget"), false, "6 ms is under the budget");
-  // Preference updates on the same document: each pass is under 10 ms, their total is not.
-  for (const [revision, value] of [[0, false], [1, true], [2, false]]) {
-    await repository.commit({ type: "setPreference", key: "appearance", value: value ? "full" : "calm" }, revision);
+  // Media changes on the same document: each pass is under 10 ms, their total is not.
+  for (const reduce of [true, false, true]) {
+    page.setMedia("(prefers-reduced-motion: reduce)", reduce);
+    await page.settle();
     await page.frame();
     await page.frame();
   }
   assert.equal(renderer.calls.decorate, 2, "the second pass reaches 12 ms and ends optional work");
   assert.deepEqual(events.filter((e) => e.type === "budget"), [{ type: "budget", spent: 12 }]);
+  content.destroy();
+});
+
+test("a theme or preference change the user makes gets a fresh decoration pass with its own budget", async () => {
+  const { storage, repository } = await stored();
+  const { page, renderer, events, content } = start(storage, {}, { decorateCost: LIMITS.maxNavigationMs + 5 });
+  await content.ready;
+  page.document.readyState = "interactive";
+  page.fire("document", "DOMContentLoaded");
+  await page.frame();
+  assert.equal(renderer.calls.decorate, 1);
+  assert.equal(events.filter((e) => e.type === "budget").length, 1, "the page load spent its budget");
+  // Calm, then Full, Text off and on, and a theme change: each one decorates within two frames,
+  // without a reload or a navigation.
+  const changes = [
+    { type: "setPreference", key: "appearance", value: "calm" },
+    { type: "setPreference", key: "appearance", value: "full" },
+    { type: "setPreference", key: "text", value: false },
+    { type: "setPreference", key: "text", value: true },
+    { type: "selectTheme", id: "nord" },
+  ];
+  for (const [revision, action] of changes.entries()) {
+    await repository.commit(action, revision);
+    await page.frame();
+    await page.frame();
+    assert.equal(renderer.calls.decorate, revision + 2, JSON.stringify(action));
+    assert.equal(renderer.calls.destroyed, revision + 1, "the previous decoration leaves first");
+  }
+  assert.equal(events.filter((e) => e.type === "budget").length, changes.length + 1, "each change spent only its own budget");
+  // GitHub's own changes keep the budget the last change opened.
+  page.setMedia("(prefers-reduced-motion: reduce)", true);
+  await page.settle();
+  await page.frame();
+  await page.frame();
+  assert.equal(renderer.calls.decorate, changes.length + 1);
   content.destroy();
 });
 

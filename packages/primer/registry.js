@@ -145,11 +145,18 @@ export const HOST_SUBJECTS = freeze([
     evidence: "owner-1.1.0",
   },
   {
+    // Dormant. A primary button is the main action of whatever surrounds it: sign-in, sign-up,
+    // review, billing, invitation or transfer as often as anything else, so no class or route
+    // makes one safe. The one captured on a reviewed route (pull request files, 2026-11-08) opened
+    // the review submission, and on 2026-11-09 the only one left on the captured pages was a
+    // sign-up link in a warning. Until a primary button is captured at a structure that is
+    // neither, theme CSS may name .btn-primary but the host admits none.
     id: "button.primary",
     key: { className: "btn-primary" },
     kind: "control-chrome",
     select: ":is(a,button,summary).btn.btn-primary",
-    routes: ROUTE_CLASSES,
+    routes: ["pull-files"],
+    dormant: "no reviewed primary-button structure outside account, review and form flows",
     signature: { classes: ["btn-primary"] },
     descendants: "span,svg,path,strong",
     maxDescendants: 8,
@@ -249,18 +256,21 @@ export const HOST_SUBJECTS = freeze([
 
 /**
  * Protected UI the host marks data-reskin-protected: account, authentication, permission,
- * billing, verification, merge and warning UI on otherwise reviewed routes. Admission refuses any
- * subject inside or around one. Not a universal detector; routes outside ROUTE_CLASSES get no
- * native admission at all.
+ * billing, verification, merge and warning UI on otherwise reviewed routes. Every form is one: a
+ * form's action is the account's own, no action list can tell which are safe, and no form
+ * structure has been reviewed. Admission refuses any subject inside or around one; structured
+ * component rules and themed islands skip it and everything in it, and it keeps its nearest
+ * island's native colors. Not a universal detector: admission rests on the positive signatures
+ * above, and routes outside ROUTE_CLASSES get no native admission at all.
  */
 export const PROTECTED = [
-  'form[action$="/session"]',
-  'form[action*="/login"]',
-  'form[action*="/sessions/"]',
+  "form",
   'a[href^="/login"]',
   'a[href^="/signup"]',
+  'a[href^="/join"]',
   'a[href*="//github.com/login"]',
   'a[href*="//github.com/signup"]',
+  'a[href*="//github.com/join"]',
   '[data-testid="repo-visibility-label"]',
   ".signed-commit-badge",
   '[data-testid="commit-signature"]',
@@ -316,16 +326,21 @@ export const ACTIVATORS = [
 /** Authored content: no admitted subject sits inside it. */
 export const AUTHORED = [".markdown-body", ".comment-body", ".js-comment-body", ".blob-wrapper", ".react-code-lines", ".diff-table", "[data-testid='diff-view']", ".user-profile-bio", "pre", "code", "textarea", "[contenteditable]"].join(",");
 
-/** The attributes and events whose change revokes admission before the next styled render. */
+/**
+ * The attributes and events whose change revokes admission before the next styled render: every
+ * attribute a subject signature, the protected, blocking, authored and live-region lists, a
+ * layer's shown state or the route meta reads (tests/primer/registry.test.mjs checks the
+ * inventory), and the state attributes beside them.
+ */
 export const INVALIDATION = freeze({
-  attributes: ["class", "id", "role", "style", "hidden", "open", "inert", "aria-hidden", "aria-modal", "aria-current", "aria-expanded", "popover", "data-state", "data-testid", "data-component", "data-color-mode", "data-light-theme", "data-dark-theme", "itemprop", "href", "action"],
+  attributes: ["class", "id", "role", "style", "hidden", "open", "inert", "aria-hidden", "aria-modal", "aria-current", "aria-expanded", "aria-label", "aria-live", "contenteditable", "popover", "data-state", "data-testid", "data-component", "data-tab-item", "data-color-mode", "data-light-theme", "data-dark-theme", "data-static-error-asset", "itemprop", "itemtype", "href", "partial-name", "name", "content"],
   events: ["turbo:before-render", "turbo:before-cache", "turbo:render", "turbo:load", "pjax:beforeReplace", "popstate", "pagehide", "pageshow", "beforetoggle", "toggle", "click", "keydown", "focusin", "change:prefers-color-scheme", "change:forced-colors"],
 });
 
 // Reviewed structural evidence, path to SHA-256. tests/primer/registry.test.mjs checks them.
 const FIXTURES = {
   "tests/primer/registry-evidence.json": "d7bac46cac4dee655f4e0f87ba8e28cf65f3f19b6afefdd69b3b52011f85e76a",
-  "tests/primer/fixtures/registry.html": "cf05c975c698aa302c0b69a808b7dc14e3f399e1d514c76decaa03bc471e883d",
+  "tests/primer/fixtures/registry.html": "1ac2ca3b621bd7d93c83eff1a9f6d0496c2aa4e9768776170a42867dd9f1909c",
 };
 
 /** registryVersion 1, the CssTargetRegistry C2b's compileCss consumes. */

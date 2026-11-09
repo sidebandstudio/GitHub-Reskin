@@ -56,12 +56,39 @@ c3Test("C3's append anchors keep their decoration and GitHub's words, and remova
 });
 
 c3Test("with Text on, toggling Effects never moves the activity overview after C3's caption anchor", async ({ page }) => {
+  // Copy comes first in the 24-node budget: copy in all seven profile slots leaves no room for the
+  // caption's edge, so this theme gives the footer sign-off and the Achievements heading none.
+  const slots = Object.fromEntries(Object.entries(THEME.flavor.slots).filter(([slot]) => !["footer.signoff", "profile.achievements.heading"].includes(slot)));
+  const theme = { ...THEME, flavor: { ...THEME.flavor, slots } };
   await page.setViewportSize({ width: 1440, height: 900 });
   await open(page);
-  await page.evaluate(([t, p]) => window.reskinGithub.apply(t, { ...p, effects: false, fonts: false }), [THEME, PREFS]);
+  await page.evaluate(([t, p]) => window.reskinGithub.apply(t, { ...p, effects: false, fonts: false }), [theme, PREFS]);
   const textOnly = await nativeBoxes(page);
-  await page.evaluate(([t, p]) => window.reskinGithub.apply(t, { ...p, fonts: false }), [THEME, PREFS]);
+  await page.evaluate(([t, p]) => window.reskinGithub.apply(t, { ...p, fonts: false }), [theme, PREFS]);
   expect(await page.evaluate(() => document.querySelectorAll('[data-reskin-owned="contributions.caption"] .rs-box--edge').length)).toBe(1);
   expect(await nativeBoxes(page)).toEqual(textOnly);
   expect(textOnly.some(([, id]) => id === "user-activity-overview")).toBe(true);
+});
+
+c3Test("the Achievements heading and the footer sign-off take their decoration after GitHub's own nodes, never inside them", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await open(page);
+  const native = await page.evaluate(() => ({ heading: document.querySelector(".d-md-block > h2").outerHTML, copyright: document.querySelector("footer .flex-shrink-0 > span").outerHTML }));
+  const applied = await page.evaluate(([t, p]) => window.reskinGithub.apply(t, p), [THEME, { ...PREFS, fonts: false }]);
+  expect(applied.anchors).toEqual(expect.arrayContaining([{ slot: "profile.achievements.heading", insert: "after" }, { slot: "footer.signoff", insert: "after" }]));
+  expect(applied.slots).toEqual(expect.arrayContaining(["profile.achievements.heading", "footer.signoff"]));
+  const placed = await page.evaluate(() => {
+    const at = (slot) => document.querySelector(`[data-reskin-owned="${slot}"]:not([data-reskin-slot])`);
+    const heading = at("profile.achievements.heading");
+    const signoff = at("footer.signoff");
+    return {
+      heading: { after: heading?.previousElementSibling?.matches(".d-md-block > h2"), copy: heading?.querySelector(".rs-copy")?.textContent, box: Boolean(heading?.querySelector(".rs-box--strip")), hidden: heading?.getAttribute("aria-hidden") },
+      signoff: { tag: signoff?.tagName, after: signoff?.previousElementSibling?.matches("footer .flex-shrink-0 > span"), copy: signoff?.querySelector(".rs-copy")?.textContent, hidden: signoff?.getAttribute("aria-hidden") },
+      heading_html: document.querySelector(".d-md-block > h2").outerHTML,
+      copyright_html: document.querySelector("footer .flex-shrink-0 > span").outerHTML,
+    };
+  });
+  expect(placed.heading).toEqual({ after: true, copy: "Cred sentinel copy", box: true, hidden: "true" });
+  expect(placed.signoff).toEqual({ tag: "P", after: true, copy: "Signoff sentinel line.", hidden: "true" });
+  expect([placed.heading_html, placed.copyright_html]).toEqual([native.heading, native.copyright]);
 });

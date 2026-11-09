@@ -11,7 +11,8 @@
 // inserted or changed dialog, alert, popover, protected node or island, or more records than one
 // pass allows, removes the native gate for the whole document. Route, cache and history events
 // strip every admission first. Activating a control that can open a layer, and any toggle,
-// removes the gate before the activation lands; it returns only once no layer is open.
+// removes the gate before the activation lands; it returns only once no layer is open. While
+// forced colors are active nothing is classified or admitted, by any path.
 import { CSS_MARKERS } from "../../../packages/contracts/index.js";
 import { ACTIVATORS, AUTHORED, BLOCKING, CSS_TARGET_REGISTRY, HOST_SUBJECTS, INVALIDATION, PROTECTED } from "../../../packages/primer/registry.js";
 import { classifyRouteLazily } from "./routes.js";
@@ -28,6 +29,9 @@ const MARKERS = new Set([M.scope, M.nativeGate, M.kind, M.native, M.protected]);
 // subjects around it, which the next pass checks again.
 const WIDE = `${BLOCKING},[data-color-mode]`;
 const WATCHED = `${WIDE},${PROTECTED}`;
+// What no admitted subject may hold, since its descendants inherit what it is given: layers,
+// islands, protected UI, authored or editable content and live regions.
+const UNSAFE_DESCENDANT = `${WATCHED},${AUTHORED},${LIVE_REGIONS}`;
 // Attributes whose change anywhere can open a layer or change an island's mode.
 const DOCUMENT_ATTRIBUTES = new Set(["open", "aria-modal", "popover", "role", "data-color-mode", "data-light-theme", "data-dark-theme", "inert"]);
 const ROUTE_EVENTS = ["turbo:before-render", "turbo:before-cache", "pjax:beforeReplace", "popstate", "pagehide"];
@@ -57,7 +61,7 @@ const shown = (el) => (el.localName === "dialog" ? el.open : el.hasAttribute("po
 function candidatesFor(document, route) {
   const out = new Map();
   for (const def of HOST_SUBJECTS) {
-    if (!def.routes.includes(route)) continue;
+    if (def.dormant || !def.routes.includes(route)) continue;
     const { className, tag, within, withinId } = def.key;
     let pool = [];
     if (className) pool = document.getElementsByClassName(className);
@@ -154,7 +158,7 @@ export function startAdmission(document, { modes, cssAllowed = true, clock, onEv
       if (all.length > def.maxDescendants) return "too many descendants";
       for (const child of all) {
         if (child.matches(PROTECTED)) mark(child, M.protected, "");
-        if (!def.descendants || !child.matches(def.descendants) || child.matches(WATCHED)) return "unreviewed descendant";
+        if (!def.descendants || !child.matches(def.descendants) || child.matches(UNSAFE_DESCENDANT)) return "unreviewed descendant";
       }
     }
     return null;
@@ -180,8 +184,20 @@ export function startAdmission(document, { modes, cssAllowed = true, clock, onEv
   }
   const layerOpen = () => [...document.querySelectorAll(BLOCKING)].some(shown);
 
+  // Forced colors prohibit advanced CSS for as long as they are active: every pass, whatever
+  // requested it, removes every marker the scope included and admits nothing.
+  const forcedOff = () => {
+    stripAll("forced colors");
+    unmark(root, M.scope);
+  };
+
   // One bounded pass. Returns true when the pending work has finished.
   function pass() {
+    if (forced?.matches) {
+      forcedOff();
+      pending = null;
+      return true;
+    }
     const start = time.now();
     const work = pending === "layers" && !ready ? "full" : pending;
     if (work === "layers") {
@@ -316,7 +332,7 @@ export function startAdmission(document, { modes, cssAllowed = true, clock, onEv
   };
   const onToggle = (event) => request("layers", event.type);
   const onScheme = () => request("full", "color scheme");
-  const onForced = () => (forced?.matches ? stripAll("forced colors") : request("full", "forced colors"));
+  const onForced = () => (forced?.matches ? forcedOff() : request("full", "forced colors"));
 
   observer.observe(root, { subtree: true, childList: true, attributes: true, attributeFilter: INVALIDATION.attributes });
   for (const type of ROUTE_EVENTS) view.addEventListener(type, onRoute, true);
@@ -325,14 +341,14 @@ export function startAdmission(document, { modes, cssAllowed = true, clock, onEv
   for (const type of TOGGLE_EVENTS) view.addEventListener(type, onToggle, true);
   dark?.addEventListener?.("change", onScheme);
   forced?.addEventListener?.("change", onForced);
-  if (forced?.matches) stripAll("forced colors");
+  if (forced?.matches) forcedOff();
   else request("full", "start");
 
   return {
     /** Why an element is not admitted now, "admitted", or "not a candidate". For diagnostics. */
     explain(el) {
       if (admitted.has(el)) return "admitted";
-      const def = HOST_SUBJECTS.find((s) => s.routes.includes(route) && el.matches(s.select));
+      const def = HOST_SUBJECTS.find((s) => !s.dormant && s.routes.includes(route) && el.matches(s.select));
       return def ? (rejection(el, def) ?? (KINDS[def.kind] && (counts.get(def.kind) ?? 0) >= KINDS[def.kind].maxTargets ? "kind limit" : "pending")) : "not a candidate";
     },
     state: () => ({ route, reason, gate: root.getAttribute(M.nativeGate) === "active", scope: root.getAttribute(M.scope) === "active", admitted: admitted.size, kinds: Object.fromEntries([...counts].filter(([, n]) => n > 0)), pending }),

@@ -12,7 +12,8 @@ const [darkSeed, lightSeed, colorblindSeed, tritanopiaSeed] = ["standard-dark", 
 const themed = (s, extra = {}) => ({ seed: s, policy: "themed", reducedMotion: false, forcedColors: false, ...extra });
 // The previous rich example, kept as a compatibility input: its core resolution must not change.
 const rich = json(`${TESTS}fixtures/schema/valid/legacy-rich-v1.reskin.json`);
-const AUDITS = PAIR_MATRIX.records.reduce((n, r) => n + r.backgrounds.length, 0);
+// Checks for a source without supplied-only overrides.
+const AUDITS = PAIR_MATRIX.records.filter((r) => !r.supplied).reduce((n, r) => n + r.backgrounds.length, 0);
 const minimal = json(`${TESTS}fixtures/schema/valid/minimal-light.reskin.json`);
 
 const THEMED_KEYS = ["tokens", "semantics", "syntax", "ansi", "graph", "rendererVersion", "expansionVersion", "sanitizerVersion", "sourceHash", "seedId", "seedHash", "base", "policy", "font", "effects", "flavor", "motionAllowed", "appearance", "repairs", "pairAudit"];

@@ -90,19 +90,21 @@ async function checkSlotContracts(root) {
   const { FLAVOR_SLOT_IDS } = await import("../contracts/index.js");
   const { SLOTS, CANDIDATE_SLOTS } = await import("../../extension/content/github/selectors.js");
   const evidence = JSON.parse(readFileSync(join(root, "tests/primer/slot-evidence.json"), "utf8"));
-  a.expect(JSON.stringify(SLOTS.map((s) => s.slot).sort()) === JSON.stringify([...FLAVOR_SLOT_IDS].sort()), "the adapter defines exactly the eight frozen slot IDs");
-  a.expect(JSON.stringify(Object.keys(evidence.slots).sort()) === JSON.stringify([...FLAVOR_SLOT_IDS].sort()), "slot-evidence.json covers exactly the eight slot IDs");
+  a.expect(JSON.stringify(SLOTS.map((s) => s.slot).sort()) === JSON.stringify([...FLAVOR_SLOT_IDS].sort()), "the adapter defines exactly the frozen slot IDs");
+  a.expect(JSON.stringify(Object.keys(evidence.slots).sort()) === JSON.stringify([...FLAVOR_SLOT_IDS].sort()), "slot-evidence.json covers exactly the frozen slot IDs");
   for (const def of SLOTS) {
     const e = evidence.slots[def.slot];
     a.expect(e?.status === def.status, `${def.slot}: adapter status ${def.status}, evidence ${e?.status}`);
     a.expect(["append", "after", "before"].includes(def.insert), `${def.slot}: insert ${def.insert}`);
-    a.expect(/^main\b/.test(def.scope), `${def.slot}: scope starts inside <main>`);
+    // A footer slot starts in GitHub's contentinfo footer, every other slot inside <main>.
+    const region = def.region === "footer" ? "footer" : "main";
+    a.expect(def.region === "footer" ? /^body footer\.footer\[role='contentinfo'\] /.test(def.scope) : /^main\b/.test(def.scope), `${def.slot}: scope starts inside <${region}>`);
     a.expect(!/\*=|\^=|\$=|~=/.test(def.scope), `${def.slot}: no substring attribute matching`);
     if (def.status === "enabled") {
       a.expect(/^\d{4}-\d{2}-\d{2}$/.test(e?.date ?? ""), `${def.slot}: evidence date`);
       a.expect(/^https:\/\/github\.com\//.test(e?.url ?? ""), `${def.slot}: evidence route URL`);
       a.expect(e?.route === def.route, `${def.slot}: evidence route class`);
-      a.expect(typeof e?.host === "string" && e.host.startsWith("main"), `${def.slot}: evidence DOM path`);
+      a.expect(typeof e?.host === "string" && e.host.startsWith(region), `${def.slot}: evidence DOM path`);
       a.expect(Boolean(e?.screenshot) && existsSync(join(root, e.screenshot)), `${def.slot}: evidence screenshot`);
     } else {
       a.expect(typeof e?.reason === "string" && e.reason.length > 20 && typeof def.dormant === "string", `${def.slot}: dormant reason`);

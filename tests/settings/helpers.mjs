@@ -323,10 +323,11 @@ export function fakePage({ colorMode = "dark", darkTheme = "dark", lightTheme = 
 }
 
 /** A renderer over the real engine and the synthetic seeds, counting its calls. */
-export function testRenderer({ decorateCost = 0, clock } = {}) {
+export function testRenderer({ decorateCost = 0, clock, nativeRoute } = {}) {
   const calls = { resolve: 0, compile: 0, decorate: 0, destroyed: 0 };
   return {
     calls,
+    nativeRoute,
     modeAttributes: ["data-color-mode", "data-light-theme", "data-dark-theme"],
     readPage(document, view) {
       const root = document.documentElement;

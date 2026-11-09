@@ -1,13 +1,14 @@
 import assert from "node:assert/strict";
-import { readFile, readdir } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { existsSync } from "node:fs";
+import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import test from "node:test";
 import { ACCEPTED_FIREFOX_WARNINGS } from "../../scripts/check.mjs";
-import { ROOT, extensionFiles, extensionManifest, loadEntry, loadReleaseConfig, manifestPaths, manifestProblems, noticeProblems } from "../../scripts/build.mjs";
+import { ROOT, entrySourcePaths, extensionFiles, extensionManifest, loadEntry, loadReleaseConfig, manifestPaths, manifestProblems, noticeProblems } from "../../scripts/build.mjs";
 
 const config = await loadReleaseConfig();
 const entry = await loadEntry(config);
-const legacy = JSON.parse(await readFile(join(ROOT, "extension/manifest.json"), "utf8"));
 
 test("Chrome gets the common manifest without Gecko keys, and no new permissions", async () => {
   const chrome = await extensionManifest("chrome", config);
@@ -27,31 +28,34 @@ test("Firefox keeps the studio Gecko ID, minimum 140, no data collection and no 
   assert.deepEqual(manifestProblems(firefox, "firefox", config), []);
 });
 
-// The 1.1.0 manifest stays installable from extension/ until C6 moves the entry, so the
-// generated manifests must not drift from it.
-test("the generated manifests match the 1.1.0 manifest users load unpacked", async () => {
-  assert.deepEqual(await extensionManifest("firefox", config), legacy);
-  const { browser_specific_settings, ...chromeLegacy } = legacy;
-  assert.deepEqual(await extensionManifest("chrome", config), chromeLegacy);
-  assert.equal(config.version, legacy.version);
+// The runtime entry: C4's background per browser, boot.css before the content script, the pages
+// and fonts readable only by the two GitHub origins.
+test("the generated manifests name the reskin-2 runtime, its background per browser and its pages", async () => {
+  assert.equal(config.extension.entry, "reskin-2");
+  const chrome = await extensionManifest("chrome", config);
+  const firefox = await extensionManifest("firefox", config);
+  assert.deepEqual(chrome.background, { service_worker: "background.js" });
+  assert.deepEqual(firefox.background, { scripts: ["background.js"] });
+  for (const manifest of [chrome, firefox]) {
+    assert.deepEqual(manifest.content_scripts, [{ matches: config.extension.hostMatches, run_at: "document_start", css: ["content/lifecycle/boot.css"], js: ["content.js"] }]);
+    assert.equal(manifest.action.default_popup, "pages/popup.html");
+    assert.equal(manifest.options_ui.page, "pages/settings.html");
+    assert.deepEqual(manifest.web_accessible_resources.map((r) => r.matches), [config.extension.hostMatches]);
+    assert.ok(manifest.web_accessible_resources[0].resources.every((path) => /^assets\/fonts\/[a-z-]+\/[a-z-]+\.woff2$/.test(path)));
+    for (const path of manifestPaths(manifest)) assert.ok(entry.files.includes(path), path);
+  }
+  const { browser_specific_settings, background, ...chromeRest } = firefox;
+  const { background: chromeBackground, ...chromeOnly } = chrome;
+  assert.deepEqual(chromeOnly, chromeRest);
 });
 
-test("the legacy entry lists exactly the runtime files in extension/, and the manifest's files are among them", async () => {
-  const files = [];
-  const walk = async (dir) => {
-    for (const item of await readdir(join(ROOT, "extension", dir), { withFileTypes: true })) {
-      const path = dir ? `${dir}/${item.name}` : item.name;
-      if (item.isDirectory()) await walk(path);
-      else files.push(path);
-    }
-  };
-  await walk("");
-  const runtime = files.filter((path) => path !== "manifest.json" && !path.startsWith("manifests/") && !path.startsWith("content/") && !path.startsWith("background/")).sort();
-  assert.equal(config.extension.entry, "legacy-1.1.0");
-  assert.deepEqual(entry.files, runtime);
-  for (const browser of ["chrome", "firefox"]) {
-    for (const path of manifestPaths(await extensionManifest(browser, config))) assert.ok(entry.files.includes(path), path);
-  }
+test("the entry's generated files come from its builder, and every other file from extension/", async () => {
+  assert.equal(entry.builder, "packages/ui/bundle.mjs");
+  for (const path of entry.generated) assert.ok(entry.files.includes(path), path);
+  for (const path of entrySourcePaths(entry).filter((p) => p !== entry.builder)) assert.ok(existsSync(join(ROOT, path)), path);
+  await assert.rejects(extensionFiles("chrome", { config, entry: { ...entry, generated: [...entry.generated, "pages/extra.js"] } }), /must be entry files: pages\/extra\.js/);
+  await assert.rejects(extensionFiles("chrome", { config, entry: { ...entry, files: [...entry.files, "pages/extra.js"], generated: [...entry.generated, "pages/extra.js"] } }), /does not generate pages\/extra\.js/);
+  await assert.rejects(extensionFiles("chrome", { config, entry: { ...entry, builder: undefined } }), /needs a builder/);
 });
 
 test("manifest checks catch new permissions, hosts, Gecko keys in Chrome and the wrong Gecko ID", async () => {
@@ -79,25 +83,27 @@ test("a test fixture build adds only local matches, and production never names l
   await assert.rejects(extensionFiles("chrome", { config, entry, testFixture: { matches: ["https://example.com/*"] } }), /must be http:\/\/127\.0\.0\.1/);
 });
 
-test("the frozen mode snapshot cannot change under the build", async () => {
-  const changed = { ...entry, frozen: { "github-modes.js": "0".repeat(64) } };
-  await assert.rejects(extensionFiles("firefox", { config, entry: changed }), /github-modes\.js is frozen/);
+test("a frozen input cannot change under the build, and entry files stay inside and complete", async () => {
+  const changed = { ...entry, frozen: { "content/lifecycle/boot.css": "0".repeat(64) }, notices: [...entry.notices, { file: "LICENSE", license: "MIT", covers: ["content/lifecycle/boot.css"], upstream: "test" }] };
+  await assert.rejects(extensionFiles("firefox", { config, entry: changed }), /boot\.css is frozen/);
   await assert.rejects(extensionFiles("firefox", { config, entry: { ...entry, files: [...entry.files, "../package.json"] } }), /must stay inside/);
-  const missing = { ...entry, files: entry.files.filter((path) => path !== "popup.html") };
-  await assert.rejects(extensionFiles("chrome", { config, entry: missing }), /names files the entry lacks: popup\.html/);
+  const missing = { ...entry, files: entry.files.filter((path) => path !== "pages/popup.html") };
+  await assert.rejects(extensionFiles("chrome", { config, entry: missing }), /names files the entry lacks: pages\/popup\.html/);
 });
 
-test("the frozen Primer-derived snapshot ships with the upstream Primer notice", async () => {
+test("the bundles embedding Primer-derived mode data ship with the upstream Primer notice", async () => {
   assert.deepEqual(noticeProblems(entry), []);
-  assert.deepEqual(entry.notices.map((n) => [n.file, n.license, n.covers]), [["licenses/primer-primitives.txt", "MIT", ["github-modes.js"]]]);
+  assert.deepEqual(entry.notices[0], { file: "licenses/primer-primitives.txt", license: "MIT", covers: ["background.js", "content.js", "pages/pages.js"], upstream: "https://github.com/primer/primitives" });
+  for (const notice of entry.notices.slice(1)) assert.equal(notice.license, "OFL-1.1", notice.file);
   const notice = await readFile(join(ROOT, "licenses/primer-primitives.txt"), "utf8");
   assert.match(notice, /Copyright \(c\) 2018 GitHub Inc\./);
   assert.match(notice, /The above copyright notice and this permission notice shall be included/);
   const { files } = await extensionFiles("firefox", { config, entry });
   assert.equal(files["licenses/primer-primitives.txt"].toString(), notice);
 
-  const uncovered = { ...entry, notices: [] };
-  assert.match(noticeProblems(uncovered).join("\n"), /frozen extension\/github-modes\.js has no upstream license notice/);
+  const bootCss = createHash("sha256").update(await readFile(join(ROOT, "extension/content/lifecycle/boot.css"))).digest("hex");
+  const uncovered = { ...entry, frozen: { "content/lifecycle/boot.css": bootCss }, notices: [] };
+  assert.match(noticeProblems(uncovered).join("\n"), /frozen extension\/content\/lifecycle\/boot\.css has no upstream license notice/);
   await assert.rejects(extensionFiles("chrome", { config, entry: uncovered }), /no upstream license notice/);
   const wrong = { ...entry, notices: [{ ...entry.notices[0], covers: ["gone.js"] }] };
   assert.match(noticeProblems(wrong).join("\n"), /covers gone\.js, which the entry lacks/);

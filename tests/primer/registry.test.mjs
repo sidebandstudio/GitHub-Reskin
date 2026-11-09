@@ -8,7 +8,9 @@ import { join } from "node:path";
 import test from "node:test";
 import { CSS_MARKERS, CSS_VARIABLES } from "../../packages/contracts/index.js";
 import { compileCss, registryProblems, sanitizeCss } from "../../packages/format/index.js";
-import { ACTIVATORS, BLOCKING, CSS_TARGET_REGISTRY, HOST_SUBJECTS, INVALIDATION, PROTECTED, ROUTE_CLASSES } from "../../packages/primer/registry.js";
+import { ROUTE_SIGNALS } from "../../extension/content/github/routes.js";
+import { LIVE_REGIONS } from "../../extension/content/github/selectors.js";
+import { ACTIVATORS, AUTHORED, BLOCKING, CSS_TARGET_REGISTRY, HOST_SUBJECTS, INVALIDATION, PROTECTED, ROUTE_CLASSES } from "../../packages/primer/registry.js";
 import { PREFS, readJson, readText, ROOT } from "./helpers.mjs";
 
 const FULL = { ...PREFS, appearance: "full" };
@@ -67,9 +69,46 @@ test("every host signature is exact, reviewed per route and inside the registry'
   }
   // Auth, settings, security and billing routes are not route classes at all.
   for (const r of ROUTE_CLASSES) assert.doesNotMatch(r, /login|session|settings|security|billing|auth/);
-  for (const selector of ["dialog", '[role="alertdialog"]', '[role="alert"]', "[popover]", ".flash", '[data-component="Banner"]', 'form[action$="/session"]', ".signed-commit-badge", ".merge-pr"]) assert.ok(PROTECTED.includes(selector), selector);
+  for (const selector of ["dialog", '[role="alertdialog"]', '[role="alert"]', "[popover]", ".flash", '[data-component="Banner"]', ".signed-commit-badge", ".merge-pr"]) assert.ok(PROTECTED.includes(selector), selector);
   for (const selector of ["dialog", '[aria-modal="true"]', ".flash-error", ".flash-warn"]) assert.ok(BLOCKING.includes(selector), selector);
   assert.ok(ACTIVATORS.includes("[aria-haspopup]") && ACTIVATORS.includes("summary"));
+});
+
+test("every attribute a signature, safety list, layer state or route signal reads is observed", () => {
+  // Attribute names in selector text, and the ones the shown-layer test reads by state.
+  const names = (text) => [...text.matchAll(/\[([a-z][a-z-]*)/g)].map((m) => m[1]);
+  const read = new Set([
+    ...HOST_SUBJECTS.flatMap((s) => names(s.select)),
+    ...[PROTECTED, BLOCKING, AUTHORED, LIVE_REGIONS, ROUTE_SIGNALS].flatMap(names),
+    "hidden", "open", "popover",
+  ]);
+  // Predicates in the compiled signatures, and the attributes that drive classes and ids.
+  for (const s of HOST_SUBJECTS) for (const p of s.signature.predicates ?? []) read.add(p.name);
+  read.add("class");
+  read.add("id");
+  const missing = [...read].filter((name) => !INVALIDATION.attributes.includes(name));
+  assert.deepEqual(missing, []);
+  for (const name of ["contenteditable", "aria-live", "aria-label", "data-tab-item"]) assert.ok(INVALIDATION.attributes.includes(name), name);
+});
+
+test("the primary-button subject is dormant: theme CSS may name it, the host admits none", () => {
+  const primary = HOST_SUBJECTS.find((s) => s.id === "button.primary");
+  assert.match(primary.dormant, /no reviewed primary-button structure/);
+  assert.deepEqual(primary.routes, ["pull-files"]);
+  assert.ok(CSS_TARGET_REGISTRY.subjects.some((s) => s.classes.includes("btn-primary")));
+  // No other subject is dormant, and none of them is a form control.
+  for (const s of HOST_SUBJECTS.filter((d) => d !== primary)) {
+    assert.equal(s.dormant, undefined, s.id);
+    assert.doesNotMatch(s.select, /\bbutton\b|\bform\b|input|btn/, s.id);
+  }
+  assert.ok(PROTECTED.includes('a[href^="/join"]'));
+});
+
+test("every form is protected UI, whatever its action: no action list can tell a safe one", () => {
+  const list = PROTECTED.split(",");
+  assert.equal(list[0], "form");
+  // No narrower form test remains to suggest some forms are reviewed.
+  assert.deepEqual(list.filter((s) => /^form\b/.test(s)), ["form"]);
 });
 
 test("the registry evidence records live admissions only on reviewed routes and none on sign-in", () => {

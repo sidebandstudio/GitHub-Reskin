@@ -32,6 +32,8 @@ export function cssVariables(resolved, faces = {}) {
     "--reskin-border": t.border,
     "--reskin-control-border": t.controlBorder,
     "--reskin-accent": t.accent,
+    "--reskin-accent-emphasis": t.accentEmphasis,
+    "--reskin-accent-emphasis-text": t.emphasisText,
     "--reskin-primary-background": t.primaryBackground,
     "--reskin-primary-text": t.primaryText,
     "--reskin-header-background": a.colors.header.background,
