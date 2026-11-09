@@ -6,6 +6,7 @@ import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { FONT_IDS, FONT_INVENTORY } from "../contracts/index.js";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 export const SCHEMA_PATH = join(HERE, "theme-v1.schema.json");
@@ -71,7 +72,7 @@ export async function generateValidator() {
   const { schema, sha256 } = readSchema();
   const { default: standaloneCode } = await import("ajv/dist/standalone/index.js");
   // Messages are written by validate.js, so Ajv's English messages are left out.
-  const ajv = await createAjv({ messages: false, code: { source: true, esm: true } });
+  const ajv = await createAjv({ messages: false, inlineRefs: false, code: { source: true, esm: true } });
   let code = standaloneCode(ajv, ajv.compile(stripAnnotations(schema)));
   const requires = {
     'require("ajv/dist/runtime/ucs2length").default': "ucs2length",
@@ -90,6 +91,41 @@ ${minified}`;
 
 const round = (value) => JSON.stringify(value, null, 2);
 
+// Native fallbacks by face shape. A compiler puts its own @font-face family for a bundled face
+// first, so a blocked or missing face keeps a similar width and tone. Code never takes a theme font.
+const STACKS = {
+  condensed: '"Arial Narrow", system-ui, sans-serif',
+  serif: 'Georgia, "Times New Roman", serif',
+  sans: 'system-ui, -apple-system, "Segoe UI", sans-serif',
+  display: 'Impact, "Arial Black", system-ui, sans-serif',
+};
+const SHAPES = {
+  rajdhani: "condensed",
+  "barlow-condensed": "condensed",
+  "roboto-condensed": "condensed",
+  "bebas-neue": "condensed",
+  oxanium: "condensed",
+  orbitron: "display",
+  bungee: "display",
+  fraunces: "serif",
+  alegreya: "serif",
+  "cormorant-garamond": "serif",
+  cinzel: "serif",
+};
+// The owner's original Cyberpunk display stack. Choom keeps it first; this increment ships no
+// Roboto Condensed file, so the stack is all native faces.
+const NATIVE_STACKS = { "roboto-condensed": 'Bahnschrift, "DIN Alternate", "Roboto Condensed", "Arial Narrow", ui-monospace, monospace' };
+function fontRoles(schema) {
+  // "system" keeps GitHub's own font, so it has no list at all.
+  const roles = [{ id: "system", family: null, roles: ["heading", "body"], weights: [], source: "system", fallback: null }];
+  for (const font of schema["x-reskin"].fonts) {
+    const source = FONT_INVENTORY.bundled.includes(font.id) ? "bundled" : FONT_INVENTORY.nativeStack.includes(font.id) ? "native-stack" : "deferred";
+    const fallback = NATIVE_STACKS[font.id] ?? STACKS[SHAPES[font.id] ?? "sans"];
+    roles.push({ id: font.id, family: font.family, roles: font.roles, weights: font.weights ?? [font.weight], source, fallback });
+  }
+  return roles;
+}
+
 export function generateRegistry() {
   const { schema, sha256 } = readSchema();
   const x = schema["x-reskin"];
@@ -101,12 +137,29 @@ export function generateRegistry() {
     }
     effects[id] = params;
   }
+  // FONTS stays the bundled inventory, the families with files; FONT_ROLES covers every ID.
   const fonts = [{ id: "system", family: null, weight: null, minimumAccentPx: null }].concat(
-    x.fonts.map(({ id, family, weight, minimumAccentPx }) => ({ id, family, weight, minimumAccentPx })),
+    x.fonts.filter(({ id }) => FONT_IDS.includes(id)).map(({ id, family, weight, minimumAccentPx }) => ({ id, family, weight, minimumAccentPx })),
   );
   const slots = Object.fromEntries(Object.entries(schema.properties.flavor.properties.slots.properties).map(([id, def]) => [id, { maxLength: def.maxLength }]));
   const text = Object.fromEntries(["name", "author", "description", "inspiredBy"].map((key) => [key, { maxLength: schema.properties[key].maxLength }]));
   text.tags = { maxItems: schema.properties.tags.maxItems, maxLength: schema.properties.tags.items.maxLength };
+  // Defaults the resolver fills for an omitted member of a supplied group.
+  const d = schema.$defs;
+  const p = schema.properties;
+  const defaults = {
+    gradient: { angle: d.gradient.properties.angle.default, position: "center", opacity: d.gradient.properties.opacity.default },
+    pattern: { opacity: d.pattern.properties.opacity.default, size: d.pattern.properties.size.default },
+    raster: { fit: "cover", position: "center", opacity: d.raster.properties.opacity.default },
+    corners: { radius: p.shape.properties.corners.properties.radius.default },
+    buttons: { radius: p.shape.properties.buttons.properties.radius.default },
+    borders: { width: d.border.properties.width.default, style: "solid" },
+    shadows: { style: "soft", opacity: d.shadow.properties.opacity.default, blur: d.shadow.properties.blur.default, offset: d.shadow.properties.offset.default },
+    avatarFrame: { style: "solid", width: d.avatarFrame.properties.width.default },
+    typography: Object.fromEntries(Object.entries(p.typography.properties).map(([k, v]) => [k, v.default])),
+    graph: { cellStyle: p.contributions.properties.cellStyle.default },
+    glow: Object.fromEntries(Object.entries(p.contributions.properties.glow.properties).filter(([k]) => k !== "color").map(([k, v]) => [k, v.default])),
+  };
   return `// Generated by packages/format/generate.mjs from theme-v1.schema.json. Do not edit.
 // Values the runtime needs from the schema without loading it.
 
@@ -116,12 +169,22 @@ export const SCHEMA_ID = ${JSON.stringify(schema.$id)};
 // Effect parameters in schema order, with bounds and the engine default for an omitted value.
 export const EFFECT_PARAMETERS = ${round(effects)};
 
-// "system" ships no file and has no family.
+// The bundled families, the ones with files. "system" ships no file and has no family.
 export const FONTS = ${round(fonts)};
+
+// Every heading and body font ID with its roles, reviewed weights, this increment's source
+// (bundled, native-stack, deferred or system) and the native font-family list behind the face.
+export const FONT_ROLES = ${round(fontRoles(schema))};
 
 export const FLAVOR_SLOTS = ${round(slots)};
 
 export const TEXT_LIMITS = ${round(text)};
+
+// Schema defaults for omitted members of supplied Revision 4 groups.
+export const APPEARANCE_DEFAULTS = ${round(defaults)};
+
+// The advanced CSS policy bounds (x-reskin.cssPolicy).
+export const CSS_POLICY = ${round(x.cssPolicy)};
 
 // The minimal embedded example, used by the AI prompt.
 export const MINIMAL_EXAMPLE = ${JSON.stringify(schema.examples[0])};

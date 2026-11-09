@@ -48,18 +48,25 @@ test("malformed seeds are rejected with specific problems", () => {
   assert.match(problems, /family/);
 });
 
-test("the engine's pair matrix is the frozen copy: 67 records, 287 checks, valid paths", () => {
-  assert.deepEqual(PAIR_MATRIX, json(`${TESTS}fixtures/contracts/pairs.json`));
+test("pair matrix version 2 keeps the frozen version 1 records first and unchanged, then adds the appearance pairs", () => {
+  const v1 = json(`${TESTS}fixtures/contracts/pairs.json`);
+  assert.equal(PAIR_MATRIX.version, 2);
+  assert.deepEqual(PAIR_MATRIX.records.slice(0, v1.records.length), v1.records);
   assert.deepEqual(pairMatrixProblems(PAIR_MATRIX), []);
-  assert.equal(PAIR_MATRIX.records.length, 67);
-  assert.equal(PAIR_MATRIX.records.reduce((n, r) => n + r.backgrounds.length, 0), 287);
+  assert.equal(v1.records.length, 67);
+  assert.equal(v1.records.reduce((n, r) => n + r.backgrounds.length, 0), 287);
+  assert.equal(PAIR_MATRIX.records.length, 92);
+  assert.equal(PAIR_MATRIX.records.reduce((n, r) => n + r.backgrounds.length, 0), 387);
+  // Every added record names an appearance color; none moves a version 1 background.
+  for (const record of PAIR_MATRIX.records.slice(v1.records.length)) assert.ok(record.foreground.startsWith("/appearance/") || record.backgrounds.every((b) => b.startsWith("/appearance/")), record.id);
 });
 
 test("broken pair matrices fail validation", () => {
   const records = PAIR_MATRIX.records;
-  assert.match(pairMatrixProblems({ version: 1, records: [records[0], records[0]] }).join(), /duplicate/);
-  assert.match(pairMatrixProblems({ version: 1, records: [{ ...records[0], foreground: "/tokens/nope" }] }).join(), /not a ColorPath/);
-  assert.match(pairMatrixProblems({ version: 1, records: [{ ...records[0], backgrounds: [] }] }).join(), /at least one background/);
-  assert.match(pairMatrixProblems({ version: 1, records: [{ ...records[0], minimum: 7 }] }).join(), /minimum/);
-  assert.match(pairMatrixProblems({ version: 2, records }).join(), /version/);
+  assert.match(pairMatrixProblems({ version: 2, records: [records[0], records[0]] }).join(), /duplicate/);
+  assert.match(pairMatrixProblems({ version: 2, records: [{ ...records[0], foreground: "/tokens/nope" }] }).join(), /not a ColorPath/);
+  assert.match(pairMatrixProblems({ version: 2, records: [{ ...records[0], foreground: "/appearance/colors/nope" }] }).join(), /not a ColorPath/);
+  assert.match(pairMatrixProblems({ version: 2, records: [{ ...records[0], backgrounds: [] }] }).join(), /at least one background/);
+  assert.match(pairMatrixProblems({ version: 2, records: [{ ...records[0], minimum: 7 }] }).join(), /minimum/);
+  assert.match(pairMatrixProblems({ version: 1, records }).join(), /version/);
 });

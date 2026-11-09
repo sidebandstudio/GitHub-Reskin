@@ -2,19 +2,24 @@
 
 The shared vocabulary for GitHub Reskin modules.
 
-- `index.js` holds the runtime values: format, settings, renderer, engine and pair-matrix
-  versions, `DEFAULT_THEME_ID`, legacy IDs and storage keys, the font, effect, slot, color-role,
-  preference and action registries, issue codes, `LIMITS`, release `BUDGETS`, build targets and
-  shared build scopes.
-- `theme-v1.d.ts` mirrors the public theme schema: `ThemeV1` and `EffectRequests`.
+- `index.js` holds the runtime values: format, settings, renderer, engine, pair-matrix (2),
+  expansion, sanitizer and CSS registry versions and the expansion increment, `DEFAULT_THEME_ID`,
+  legacy IDs and storage keys, the font registries (bundled `FONT_IDS`, the schema's
+  `HEADING_FONT_IDS` and `BODY_FONT_IDS`, the per-increment `FONT_INVENTORY`), effect, slot,
+  color-role (core and extended syntax, ANSI, diff), preference, appearance-mode and action
+  registries (with the deferred editor actions), the CSS target kinds, host markers and audited
+  variables, issue codes, `LIMITS`, release `BUDGETS`, build targets and shared build scopes.
+- `theme-v1.d.ts` mirrors the public theme schema: `ThemeV1`, its Revision 4 groups and
+  `EffectRequests`.
 - `theme-engine.d.ts` is the frozen renderer 1 block from ARCHITECTURE.md: `ModeSeed`,
-  `ColorSet`, `ModeIndex`, `ResolveContext`, `ThemedResolved` and `NativeResolved`, pair and
-  repair records, `PreviewOptions` and `PreviewHandle`. The engine functions appear as the
+  `ColorSet`, `ModeIndex`, `ResolveContext`, `ThemedResolved` and `NativeResolved` with the
+  Revision 4 `ResolvedAppearance`, pair (matrix version 2) and repair records, `PreviewOptions` and `PreviewHandle`. The engine functions appear as the
   `EngineModule` interface because this package does not export them; `packages/engine` does.
 - `index.d.ts` declares the runtime values, re-exports every type from the two files above, and
   declares the module interfaces: import results, `PrimerModule`, `PreviewModule`, `SettingsV2`,
-  `BootRecord`, `SettingsRequest`, `UiHost`, `EditorAction`, `ReleaseConfig`, `BuildOptions`,
-  and `CheckRunner`/`CheckModule`, the `run` export every check route calls, in
+  `BootRecord`, `SettingsRequest`, `UiHost`, `EditorAction`, the advanced CSS types
+  (`CssTargetRegistry`, the input C3 supplies, `SanitizedCss`, `CssConsent`, `CssCompileResult`),
+  `ReleaseConfig`, `BuildOptions`, and `CheckRunner`/`CheckModule`, the `run` export every check route calls, in
   [scripts/README.md](../../scripts/README.md).
 
 Import types from `index.js` only, for example

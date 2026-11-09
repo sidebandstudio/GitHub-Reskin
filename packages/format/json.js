@@ -216,14 +216,17 @@ export function parseJson(text, { maxDepth }) {
  * Inside a span it honors double-quoted strings and comments, so braces there never count. Prose
  * outside spans is ignored. A span left open at the end is reported as truncated, and the scan
  * restarts after its opening brace a bounded number of times so a stray prose brace cannot hide
- * the real theme.
+ * the real theme. Restarts also stop once the rescanned text passes `maxWork` characters, so a
+ * maximum-size paste of unclosed braces stays within one long task.
  * @returns {{spans:{start:number,end:number}[], truncated:boolean}}
  */
-export function findObjectSpans(text, { maxRestarts = 16 } = {}) {
+export function findObjectSpans(text, { maxRestarts = 16, maxWork = 8 * 1024 * 1024 } = {}) {
   const spans = [];
   let truncated = false;
   let from = 0;
-  for (let restarts = 0; from < text.length && restarts <= maxRestarts; restarts++) {
+  let work = 0;
+  for (let restarts = 0; from < text.length && restarts <= maxRestarts && work <= maxWork; restarts++) {
+    work += text.length - from;
     const open = scan(text, from, spans);
     if (open < 0) break;
     truncated = true;
@@ -232,30 +235,38 @@ export function findObjectSpans(text, { maxRestarts = 16 } = {}) {
   return { spans, truncated };
 }
 
-// Scans from `from`, pushing closed spans. Returns the start of an unclosed span, or -1.
+// Scans from `from`, pushing closed spans. Returns the start of an unclosed span, or -1. Char
+// codes rather than one-character strings: a maximum paste can be rescanned up to 17 times.
+const OPEN = 0x7b;
+const CLOSE = 0x7d;
+const QUOTE = 0x22;
+const SLASH = 0x2f;
+const STAR = 0x2a;
+const BACKSLASH = 0x5c;
 function scan(text, from, spans) {
   let depth = 0;
   let start = -1;
-  for (let i = from; i < text.length; i++) {
-    const c = text[i];
+  const length = text.length;
+  for (let i = from; i < length; i++) {
+    const c = text.charCodeAt(i);
     if (depth === 0) {
-      if (c === "{") {
+      if (c === OPEN) {
         depth = 1;
         start = i;
       }
       continue;
     }
-    if (c === '"') {
-      for (i++; i < text.length && text[i] !== '"'; i++) if (text[i] === "\\") i++;
-      if (i >= text.length) return start;
-    } else if (c === "/" && text[i + 1] === "/") {
+    if (c === QUOTE) {
+      for (i++; i < length && text.charCodeAt(i) !== QUOTE; i++) if (text.charCodeAt(i) === BACKSLASH) i++;
+      if (i >= length) return start;
+    } else if (c === SLASH && text.charCodeAt(i + 1) === SLASH) {
       i = lineEnd(text, i);
-    } else if (c === "/" && text[i + 1] === "*") {
+    } else if (c === SLASH && text.charCodeAt(i + 1) === STAR) {
       const end = text.indexOf("*/", i + 2);
       if (end < 0) return start;
       i = end + 1;
-    } else if (c === "{") depth++;
-    else if (c === "}" && --depth === 0) spans.push({ start, end: i + 1 });
+    } else if (c === OPEN) depth++;
+    else if (c === CLOSE && --depth === 0) spans.push({ start, end: i + 1 });
   }
   return depth > 0 ? start : -1;
 }

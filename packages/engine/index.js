@@ -1,10 +1,8 @@
-// GitHub Reskin color engine, renderer 1. Resolves portable source against one immutable GitHub
-// mode seed into readable tokens, repairs portable source and audits the frozen pair matrix.
-// Pure and deterministic: no DOM, storage, network, randomness or browser globals.
-export { resolveTheme, auditPairs, basePolarityIssue, sourceHash, PAIR_MATRIX } from "./resolve.js";
-export { repairTheme } from "./repair.js";
-export { contrast, luminance, mix, oklab, bestInk, fit } from "./color.js";
-export { graphProblems, rampDirection, deriveRamp } from "./graph.js";
-export { seedProblems, pairMatrixProblems } from "./seed.js";
-export { sha256 } from "./sha256.js";
-export { ACCESSIBILITY_NOTICE, ANSI_ROLES, COLOR_PATHS, SEMANTIC_FIELDS, SEMANTIC_ROLES, TOKEN_KEYS } from "./vocabulary.js";
+// GitHub Reskin color engine, renderer 1, with the Revision 4 appearance record. Resolves portable
+// source against one immutable GitHub mode seed into readable tokens, repairs portable source and
+// audits pair-matrix version 2. Pure and deterministic: no DOM, storage, network, randomness or
+// browser globals. This full entry also installs the CSS sanitizer, so themes with advanced CSS
+// resolve; viewer.js is the same engine without it.
+import "../format/authoring.js";
+
+export * from "./viewer.js";

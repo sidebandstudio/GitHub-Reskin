@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { EFFECT_IDS, FONT_IDS, FLAVOR_SLOT_IDS, ISSUE_CODES } from "../../packages/contracts/index.js";
+import { BODY_FONT_IDS, EFFECT_IDS, FLAVOR_SLOT_IDS, HEADING_FONT_IDS, ISSUE_CODES } from "../../packages/contracts/index.js";
 import { REVIEWED_SCHEMA_SHA256, fixturePath } from "../../packages/format/checks.mjs";
 import { createAjv, generated, SCHEMA_PATH } from "../../packages/format/generate.mjs";
 import { SCHEMA_SHA256, validateTheme } from "../../packages/format/index.js";
@@ -34,25 +34,45 @@ test("valid, repair and round-trip fixtures validate", () => {
 
 test("every invalid fixture is rejected at its documented path", () => {
   const expectedCodes = {
-    "/css": ISSUE_CODES.unknownField,
-    "/schemaVersion": ISSUE_CODES.unsupportedVersion,
-    "/fonts/accent": ISSUE_CODES.invalidValue,
-    "/flavor/slots/repo.code": ISSUE_CODES.unknownField,
-    "/effects/drift/count": ISSUE_CODES.outOfBounds,
-    "/effects/echo/selector": ISSUE_CODES.unknownField,
-    "/effects": ISSUE_CODES.outOfBounds,
-    "/colors/background": ISSUE_CODES.invalidValue,
-    "/name": ISSUE_CODES.markup,
-    "/colors/text": ISSUE_CODES.invalidValue,
-    "/contributions/levels": ISSUE_CODES.outOfBounds,
-    "/overrides/primaryHoverBackground": ISSUE_CODES.unknownField,
+    "invalid/unknown-field.json": ISSUE_CODES.unknownField,
+    "invalid/unsupported-version.json": ISSUE_CODES.unsupportedVersion,
+    "invalid/remote-font.json": ISSUE_CODES.invalidValue,
+    "invalid/unsafe-slot.json": ISSUE_CODES.unknownField,
+    "invalid/unbounded-motion.json": ISSUE_CODES.outOfBounds,
+    "invalid/effect-code.json": ISSUE_CODES.unknownField,
+    "invalid/four-effects.json": ISSUE_CODES.outOfBounds,
+    "invalid/hex-expression.json": ISSUE_CODES.invalidValue,
+    "invalid/markup-name.json": ISSUE_CODES.markup,
+    "invalid/alpha-color.json": ISSUE_CODES.invalidValue,
+    "invalid/four-graph-levels.json": ISSUE_CODES.outOfBounds,
+    "invalid/derived-state.json": ISSUE_CODES.unknownField,
+    "invalid/remote-image.json": ISSUE_CODES.imageData,
+    "invalid/svg-image.json": ISSUE_CODES.imageData,
+    "invalid/oversize-dimensions.json": ISSUE_CODES.outOfBounds,
+    "invalid/unknown-background.json": ISSUE_CODES.resourceString,
+    "invalid/unbounded-shadow.json": ISSUE_CODES.outOfBounds,
+    "invalid/unknown-shape.json": ISSUE_CODES.invalidValue,
+    "invalid/unbundled-body-font.json": ISSUE_CODES.invalidValue,
+    "invalid/unbounded-tracking.json": ISSUE_CODES.outOfBounds,
+    "invalid/unknown-syntax-role.json": ISSUE_CODES.unknownField,
+    "invalid/unknown-diff-role.json": ISSUE_CODES.unknownField,
+    "invalid/unknown-graph-style.json": ISSUE_CODES.invalidValue,
+    "invalid/unbounded-graph-glow.json": ISSUE_CODES.outOfBounds,
+    "invalid/unknown-details.json": ISSUE_CODES.resourceString,
+    "invalid/graph-radius-over.json": ISSUE_CODES.outOfBounds,
+    "invalid/graph-glow-level-zero.json": ISSUE_CODES.outOfBounds,
+    "invalid/graph-glow-level-duplicate.json": ISSUE_CODES.invalidValue,
+    "invalid/graph-unknown-art-key.json": ISSUE_CODES.unknownField,
+    "invalid/gradient-css-value-over.json": ISSUE_CODES.outOfBounds,
+    "invalid/gradient-css-unknown.json": ISSUE_CODES.resourceString,
   };
+  assert.deepEqual(Object.keys(expectedCodes).sort(), manifest.invalid.map((i) => i.file).sort());
   for (const { file, path } of manifest.invalid) {
     const result = validateTheme(json(fixturePath(ROOT, file)));
     assert.equal(result.ok, false, file);
     const issue = result.issues.find((i) => i.path === path);
     assert.ok(issue, `${file} has no issue at ${path}: ${JSON.stringify(result.issues)}`);
-    assert.equal(issue.code, expectedCodes[path], file);
+    assert.equal(issue.code, expectedCodes[file], file);
     assert.equal(issue.severity, "error");
     assert.ok(issue.message.length > 10 && !/must NOT|additionalProperties/.test(issue.message), `${file} message reads like the validator: ${issue.message}`);
   }
@@ -117,7 +137,8 @@ test("links and resource strings are rejected anywhere except the exact $schema 
 
 test("every effect with defaults, every font ID and every flavor slot validates", () => {
   for (const id of EFFECT_IDS) assert.ok(validateTheme({ ...minimal, effects: { [id]: {} } }).ok, id);
-  for (const id of FONT_IDS) assert.ok(validateTheme({ ...minimal, fonts: { accent: id } }).ok, id);
+  for (const id of HEADING_FONT_IDS) assert.ok(validateTheme({ ...minimal, fonts: { accent: id, heading: id } }).ok, id);
+  for (const id of BODY_FONT_IDS) assert.ok(validateTheme({ ...minimal, fonts: { body: id } }).ok, id);
   for (const id of FLAVOR_SLOT_IDS) assert.ok(validateTheme({ ...minimal, flavor: { enabled: true, locale: "en", slots: { [id]: "Plain words" } } }).ok, id);
 });
 

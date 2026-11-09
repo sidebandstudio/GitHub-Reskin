@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "records": [
     {
       "id": "text",
@@ -823,6 +823,306 @@
       ],
       "minimum": 3,
       "purpose": "focus"
+    },
+    {
+      "id": "syntax.operator",
+      "foreground": "/appearance/colors/syntax/operator",
+      "backgrounds": [
+        "/tokens/codeBackground",
+        "/tokens/neutralBackground",
+        "/tokens/diffAddedBackground",
+        "/tokens/diffRemovedBackground",
+        "/tokens/diffWordAddedBackground",
+        "/tokens/diffWordRemovedBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "syntax.punctuation",
+      "foreground": "/appearance/colors/syntax/punctuation",
+      "backgrounds": [
+        "/tokens/codeBackground",
+        "/tokens/neutralBackground",
+        "/tokens/diffAddedBackground",
+        "/tokens/diffRemovedBackground",
+        "/tokens/diffWordAddedBackground",
+        "/tokens/diffWordRemovedBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "syntax.constant",
+      "foreground": "/appearance/colors/syntax/constant",
+      "backgrounds": [
+        "/tokens/codeBackground",
+        "/tokens/neutralBackground",
+        "/tokens/diffAddedBackground",
+        "/tokens/diffRemovedBackground",
+        "/tokens/diffWordAddedBackground",
+        "/tokens/diffWordRemovedBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "syntax.tag",
+      "foreground": "/appearance/colors/syntax/tag",
+      "backgrounds": [
+        "/tokens/codeBackground",
+        "/tokens/neutralBackground",
+        "/tokens/diffAddedBackground",
+        "/tokens/diffRemovedBackground",
+        "/tokens/diffWordAddedBackground",
+        "/tokens/diffWordRemovedBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "syntax.attribute",
+      "foreground": "/appearance/colors/syntax/attribute",
+      "backgrounds": [
+        "/tokens/codeBackground",
+        "/tokens/neutralBackground",
+        "/tokens/diffAddedBackground",
+        "/tokens/diffRemovedBackground",
+        "/tokens/diffWordAddedBackground",
+        "/tokens/diffWordRemovedBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "syntax.regex",
+      "foreground": "/appearance/colors/syntax/regex",
+      "backgrounds": [
+        "/tokens/codeBackground",
+        "/tokens/neutralBackground",
+        "/tokens/diffAddedBackground",
+        "/tokens/diffRemovedBackground",
+        "/tokens/diffWordAddedBackground",
+        "/tokens/diffWordRemovedBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "syntax.escape",
+      "foreground": "/appearance/colors/syntax/escape",
+      "backgrounds": [
+        "/tokens/codeBackground",
+        "/tokens/neutralBackground",
+        "/tokens/diffAddedBackground",
+        "/tokens/diffRemovedBackground",
+        "/tokens/diffWordAddedBackground",
+        "/tokens/diffWordRemovedBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "syntax.invalid",
+      "foreground": "/appearance/colors/syntax/invalid",
+      "backgrounds": [
+        "/tokens/codeBackground",
+        "/tokens/neutralBackground",
+        "/tokens/diffAddedBackground",
+        "/tokens/diffRemovedBackground",
+        "/tokens/diffWordAddedBackground",
+        "/tokens/diffWordRemovedBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "syntax.inserted",
+      "foreground": "/appearance/colors/syntax/inserted",
+      "backgrounds": [
+        "/tokens/codeBackground",
+        "/tokens/neutralBackground",
+        "/tokens/diffAddedBackground",
+        "/tokens/diffRemovedBackground",
+        "/tokens/diffWordAddedBackground",
+        "/tokens/diffWordRemovedBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "syntax.deleted",
+      "foreground": "/appearance/colors/syntax/deleted",
+      "backgrounds": [
+        "/tokens/codeBackground",
+        "/tokens/neutralBackground",
+        "/tokens/diffAddedBackground",
+        "/tokens/diffRemovedBackground",
+        "/tokens/diffWordAddedBackground",
+        "/tokens/diffWordRemovedBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "syntax.markupHeading",
+      "foreground": "/appearance/colors/syntax/markupHeading",
+      "backgrounds": [
+        "/tokens/codeBackground",
+        "/tokens/neutralBackground",
+        "/tokens/diffAddedBackground",
+        "/tokens/diffRemovedBackground",
+        "/tokens/diffWordAddedBackground",
+        "/tokens/diffWordRemovedBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "syntax.markupEmphasis",
+      "foreground": "/appearance/colors/syntax/markupEmphasis",
+      "backgrounds": [
+        "/tokens/codeBackground",
+        "/tokens/neutralBackground",
+        "/tokens/diffAddedBackground",
+        "/tokens/diffRemovedBackground",
+        "/tokens/diffWordAddedBackground",
+        "/tokens/diffWordRemovedBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "syntax.markupLink",
+      "foreground": "/appearance/colors/syntax/markupLink",
+      "backgrounds": [
+        "/tokens/codeBackground",
+        "/tokens/neutralBackground",
+        "/tokens/diffAddedBackground",
+        "/tokens/diffRemovedBackground",
+        "/tokens/diffWordAddedBackground",
+        "/tokens/diffWordRemovedBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "syntax.markupQuote",
+      "foreground": "/appearance/colors/syntax/markupQuote",
+      "backgrounds": [
+        "/tokens/codeBackground",
+        "/tokens/neutralBackground",
+        "/tokens/diffAddedBackground",
+        "/tokens/diffRemovedBackground",
+        "/tokens/diffWordAddedBackground",
+        "/tokens/diffWordRemovedBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "syntax.markupList",
+      "foreground": "/appearance/colors/syntax/markupList",
+      "backgrounds": [
+        "/tokens/codeBackground",
+        "/tokens/neutralBackground",
+        "/tokens/diffAddedBackground",
+        "/tokens/diffRemovedBackground",
+        "/tokens/diffWordAddedBackground",
+        "/tokens/diffWordRemovedBackground"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "appearance.page.text",
+      "foreground": "/tokens/text",
+      "backgrounds": [
+        "/appearance/colors/page/background"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "appearance.page.mutedText",
+      "foreground": "/tokens/mutedText",
+      "backgrounds": [
+        "/appearance/colors/page/background"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "appearance.page.link",
+      "foreground": "/tokens/link",
+      "backgrounds": [
+        "/appearance/colors/page/background"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "appearance.header.text",
+      "foreground": "/appearance/colors/header/text",
+      "backgrounds": [
+        "/appearance/colors/header/background"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "appearance.scrollbar.thumb",
+      "foreground": "/appearance/colors/scrollbar/thumb",
+      "backgrounds": [
+        "/appearance/colors/scrollbar/track"
+      ],
+      "minimum": 3,
+      "purpose": "boundary"
+    },
+    {
+      "id": "appearance.labels.text",
+      "foreground": "/appearance/colors/labels/text",
+      "backgrounds": [
+        "/appearance/colors/labels/background"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "appearance.labels.border",
+      "foreground": "/appearance/colors/labels/border",
+      "backgrounds": [
+        "/tokens/canvas"
+      ],
+      "minimum": 3,
+      "purpose": "boundary"
+    },
+    {
+      "id": "appearance.topics.text",
+      "foreground": "/appearance/colors/topics/text",
+      "backgrounds": [
+        "/appearance/colors/topics/background"
+      ],
+      "minimum": 4.5,
+      "purpose": "text"
+    },
+    {
+      "id": "appearance.topics.border",
+      "foreground": "/appearance/colors/topics/border",
+      "backgrounds": [
+        "/tokens/canvas"
+      ],
+      "minimum": 3,
+      "purpose": "boundary"
+    },
+    {
+      "id": "appearance.graph.cellBoundary",
+      "foreground": "/appearance/colors/graph/cellBoundary",
+      "backgrounds": [
+        "/tokens/canvas"
+      ],
+      "minimum": 3,
+      "purpose": "boundary"
     }
   ]
 }

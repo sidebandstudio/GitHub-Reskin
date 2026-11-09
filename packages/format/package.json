@@ -2,7 +2,7 @@
   "name": "@github-reskin/format",
   "version": "1.0.0",
   "private": true,
-  "description": "GitHub Reskin theme format v1: schema, tolerant import, normalization, canonical export, RS1 share codes and the AI prompt.",
+  "description": "GitHub Reskin theme format v1: schema, tolerant import, normalization, canonical export, RS1 share codes, the AI prompt and the advanced CSS sanitizer.",
   "license": "MIT",
   "type": "module",
   "exports": {
@@ -10,7 +10,17 @@
       "types": "./index.d.ts",
       "default": "./index.js"
     },
+    "./viewer": {
+      "types": "./index.d.ts",
+      "default": "./viewer.js"
+    },
+    "./authoring": {
+      "types": "./index.d.ts",
+      "default": "./authoring.js"
+    },
     "./theme-v1.schema.json": "./theme-v1.schema.json"
   },
-  "sideEffects": false
+  "sideEffects": [
+    "./authoring.js"
+  ]
 }
