@@ -21,6 +21,7 @@
     "./theme-v1.schema.json": "./theme-v1.schema.json"
   },
   "sideEffects": [
-    "./authoring.js"
+    "./authoring.js",
+    "./index.js"
   ]
 }

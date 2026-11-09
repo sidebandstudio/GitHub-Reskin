@@ -18,6 +18,8 @@ const ASCII_IDENT = /^-?[a-zA-Z_][a-zA-Z0-9_-]*$/;
 const THEME_VARIABLE = new RegExp(POLICY.themeVariablePattern);
 const COLOR_FUNCTIONS = ["rgb", "rgba", "hsl", "hsla", "oklch", "color-mix"];
 const MATH = ["calc", "min", "max", "clamp"];
+// CSS-wide keywords hand the value back to the cascade: inherited ink or no backing at all.
+const CSS_WIDE = ["inherit", "initial", "unset", "revert", "revert-layer"];
 
 let syntax;
 // The forked syntax is built on first use: the lexer data is large and the viewer never needs it.
@@ -96,9 +98,15 @@ function tokenProblems(source, problems) {
 
 // ---------------------------------------------------------------------------------------------
 // Numbers. calc(), min(), max() and clamp() evaluate when their units agree, so every bound is
-// checked against a finite range; anything that cannot be bounded is rejected where bounds apply.
+// checked against a finite, ordered range; anything that cannot be bounded is rejected where
+// bounds apply.
 
 function quantity(node) {
+  const q = interval(node);
+  return q && Number.isFinite(q.min) && Number.isFinite(q.max) && q.min <= q.max ? q : null;
+}
+
+function interval(node) {
   if (!node) return null;
   if (node.type === "Number") return { min: Number(node.value), max: Number(node.value), unit: "" };
   if (node.type === "Percentage") return { min: Number(node.value), max: Number(node.value), unit: "%" };
@@ -108,12 +116,27 @@ function quantity(node) {
     const args = split(children(node)).map(expression);
     if (args.some((a) => !a)) return null;
     if (name === "calc") return args.length === 1 ? args[0] : null;
-    if (name === "clamp") return args.length === 3 && args[0].unit === args[2].unit ? { min: args[0].min, max: args[2].max, unit: args[0].unit } : null;
     if (!args.length || args.some((a) => a.unit !== args[0].unit)) return null;
+    if (name === "clamp") {
+      if (args.length !== 3) return null;
+      // clamp(MIN, VAL, MAX) is max(MIN, min(VAL, MAX)): MIN wins when it exceeds MAX.
+      const [lo, value, hi] = args;
+      return { min: Math.max(lo.min, Math.min(value.min, hi.min)), max: Math.max(lo.max, Math.min(value.max, hi.max)), unit: lo.unit };
+    }
     const pick = name === "min" ? Math.min : Math.max;
     return { min: pick(...args.map((a) => a.min)), max: pick(...args.map((a) => a.max)), unit: args[0].unit };
   }
   return null;
+}
+
+// Every calc(), min(), max() and clamp() in the nodes evaluates to a finite, ordered range.
+function finiteMath(nodes) {
+  for (const node of nodes) {
+    if (node.type === "Function" && MATH.includes(lower(node.name))) {
+      if (!quantity(node)) return false;
+    } else if (node.children && !finiteMath(children(node))) return false;
+  }
+  return true;
 }
 
 // + - * / over quantities, with parentheses. A unit mismatch or a division by zero is unbounded.
@@ -158,7 +181,7 @@ function expression(nodes) {
 // a length of zero wherever lengths are allowed.
 function inRange(node, units) {
   const q = quantity(node);
-  if (!q || !Number.isFinite(q.min) || !Number.isFinite(q.max)) return false;
+  if (!q) return false;
   const unit = q.unit === "" && q.min === 0 && q.max === 0 && !units[""] ? Object.keys(units).find((u) => u !== "%" && u !== "") : q.unit;
   const range = units[unit];
   return Boolean(range) && q.min >= range[0] && q.max <= range[1];
@@ -390,6 +413,7 @@ function checkNodes(nodes, ctx, loc, depth = 0, { strings = false } = {}) {
         const name = decode(node.name);
         if (!ASCII_IDENT.test(name) || name.startsWith("--")) return ctx.problems.add(`${JSON.stringify(name)} is not an allowed keyword`, node.loc ?? loc), false;
         if (/^-(?:webkit|moz|ms|o)-/i.test(name)) return ctx.problems.add(`Vendor keyword ${name} is not allowed`, node.loc ?? loc), false;
+        if (CSS_WIDE.includes(name.toLowerCase())) return ctx.problems.add(`${name.toLowerCase()} is not allowed; a theme sets values, and Reskin decides the cascade`, node.loc ?? loc), false;
         node.name = name.toLowerCase();
         break;
       }
@@ -441,7 +465,9 @@ function checkNodes(nodes, ctx, loc, depth = 0, { strings = false } = {}) {
 }
 
 // var(--reskin-*) from the audited registry, or a theme-local --theme-* declared in this CSS. A
-// fallback must pass the same checks, used or not; it is removed from the output.
+// fallback must pass the same checks, used or not; it is removed from the output. Theme-local
+// names a fallback uses are recorded in ctx.fallbackRefs, so they are checked as dependencies,
+// and each use checks its fallbacks against the property (withFallbacks).
 function checkVariable(node, ctx, loc, depth) {
   const parts = children(node);
   const name = decode(parts[0]?.name ?? "");
@@ -455,14 +481,15 @@ function checkVariable(node, ctx, loc, depth) {
     if (rest[0].type !== "Operator" || rest[0].value.trim() !== ",") return ctx.problems.add("var() takes a name and an optional fallback", node.loc ?? loc), false;
     const fallback = rest.slice(1).flatMap((n) => (n.type === "Value" ? children(n) : [n]));
     if (!fallback.length || !checkNodes(fallback, ctx, loc, depth + 1)) return ctx.problems.full || ctx.problems.list.length || ctx.problems.add("This var() fallback is not an allowed value", node.loc ?? loc), false;
+    for (const ref of variablesIn(fallback)) if (THEME_VARIABLE.test(ref)) ctx.fallbackRefs?.push(ref);
   }
   // The host always defines its variables, so a validated fallback never applies.
   node.children = new csstree.List().fromArray([parts[0]]);
   return true;
 }
 
-// Lexer validation with audited variables replaced by values of their declared kind.
-function lexerMatches(property, value) {
+// A copy of a value with audited variables replaced by values of their declared kind, for the lexer.
+function standIns(value) {
   const copy = csstree.clone(value);
   csstree.walk(copy, {
     visit: "Function",
@@ -473,7 +500,22 @@ function lexerMatches(property, value) {
       list.replace(item, list.createItem(stand));
     },
   });
-  return Boolean(css().lexer.matchProperty(property, copy).matched);
+  return copy;
+}
+
+const lexerMatches = (property, value) => Boolean(css().lexer.matchProperty(property, standIns(value)).matched);
+
+// One expanded theme-local value: an audited variable, a valid color, or a finite number, length
+// or percentage, including bounded math.
+function scalarValue(node) {
+  if (isVariable(node)) return Object.hasOwn(POLICY.variables, variableName(node));
+  if (node.type === "Number" || node.type === "Percentage" || node.type === "Dimension") return true;
+  if (node.type === "Function" && MATH.includes(lower(node.name))) return quantity(node) !== null;
+  if (node.type === "Function" && COLOR_FUNCTIONS.includes(lower(node.name))) {
+    const value = { type: "Value", children: new csstree.List().fromArray([node]) };
+    return finiteMath([node]) && Boolean(css().lexer.matchType("color", standIns(value)).matched);
+  }
+  return node.type !== "Function" && isColor(node);
 }
 
 const PX = (lo, hi) => ({ px: [lo, hi] });
@@ -498,8 +540,10 @@ function checkShadows(property, nodes, ctx, loc, subjects) {
     const asPx = (q) => (q && q.unit === "" && q.min === 0 && q.max === 0 ? { ...q, unit: "px" } : q);
     const [X, Y, B, S] = [x, y, blur, spread].map(asPx);
     if (!px(X, -L.shadowOffset, L.shadowOffset) || !px(Y, -L.shadowOffset, L.shadowOffset)) return ctx.problems.add(`Shadow offsets stay within ${L.shadowOffset}px`, loc), null;
-    if (B && !px(B, 0, L.shadowBlur)) return ctx.problems.add(`Shadow blur stays within 0-${L.shadowBlur}px`, loc), null;
-    if (S && !px(S, L.shadowSpreadMin, L.shadowSpreadMax)) return ctx.problems.add(`Shadow spread stays within ${L.shadowSpreadMin} to ${L.shadowSpreadMax}px`, loc), null;
+    // A supplied blur or spread must be proved in range; only an omitted one is zero. A variable
+    // has no proved range here (--reskin-radius reaches 999px).
+    if (lengths.length > 2 && !px(B, 0, L.shadowBlur)) return ctx.problems.add(`Shadow blur stays within 0-${L.shadowBlur}px`, loc), null;
+    if (lengths.length > 3 && !px(S, L.shadowSpreadMin, L.shadowSpreadMax)) return ctx.problems.add(`Shadow spread stays within ${L.shadowSpreadMin} to ${L.shadowSpreadMax}px`, loc), null;
     const a = alpha(color);
     if (a === null) return ctx.problems.add("This shadow color's opacity cannot be checked", loc), null;
     const blurPx = B ? B.max : 0;
@@ -564,6 +608,11 @@ function checkGradient(fn, ctx, loc) {
       positions.push(quantity(node));
     }
   }
+  // Positions never go backwards. A bare 0 compares with either unit; px and % cannot be ordered
+  // without the box size, so one gradient uses one of them.
+  const units = new Set(positions.filter((q) => !(q.unit === "" && q.min === 0 && q.max === 0)).map((q) => q.unit));
+  if (units.size > 1) return ctx.problems.add("Gradient positions use one unit, px or %, so their order can be checked", loc), false;
+  if (positions.some((q, i) => i > 0 && q.min < positions[i - 1].max)) return ctx.problems.add("Gradient stop positions must not go backwards", loc), false;
   if (name.startsWith("repeating-")) {
     const lastStop = stops.at(-1).filter((n) => !isColor(n));
     const firstStop = stops[0].filter((n) => !isColor(n));
@@ -617,7 +666,6 @@ const BOUNDS = {
   "font-size": { px: [1, 64] },
   "line-height": { "": [1.1, 3] },
   opacity: { "": [0, 1], "%": [0, 100] },
-  "transform-origin": { px: [-360, 360], "%": [0, 100] },
   top: { "%": [0, 100] },
   right: { "%": [0, 100] },
   bottom: { "%": [0, 100] },
@@ -636,7 +684,6 @@ const KEYWORDS = {
   content: ["none"],
   "line-height": ["normal"],
   "letter-spacing": ["normal"],
-  "transform-origin": ["left", "right", "top", "bottom", "center"],
 };
 
 // Keywords the lexer accepts are fine unless the property lists its own; numbers must sit in range.
@@ -661,16 +708,34 @@ function checkBounded(property, nodes, ctx, loc) {
   return true;
 }
 
+// The bounds apply to the whole transform: at most one translation, then at most one rotation.
+// Translating first keeps the movement in page axes, so each axis moves at most 8px.
 function checkTransform(nodes, ctx, loc) {
+  const seen = [];
   for (const node of nodes) {
     if (node.type !== "Function") return ctx.problems.add("transform takes rotate() and translate() only", loc), false;
     const args = split(children(node)).map((group) => group[0]);
     const name = node.name;
-    if (name === "rotate") {
+    const kind = name === "rotate" ? "rotate" : ["translate", "translatex", "translatey"].includes(name) ? "translate" : null;
+    if (!kind) return ctx.problems.add(`${name}() is not an allowed transform`, loc), false;
+    if (seen.includes(kind)) return ctx.problems.add(`A decoration transform has one ${kind === "rotate" ? "rotation" : "translation"}; together they would pass the 8px and 8deg limits`, loc), false;
+    if (kind === "translate" && seen.includes("rotate")) return ctx.problems.add("A decoration transform translates before it rotates, so the rotation cannot turn the movement past 8px on an axis", loc), false;
+    seen.push(kind);
+    if (kind === "rotate") {
       if (args.length !== 1 || !inRange(args[0], { deg: [-8, 8] })) return ctx.problems.add("A decoration rotates at most 8deg", loc), false;
-    } else if (["translate", "translatex", "translatey"].includes(name)) {
-      if (args.length < 1 || args.length > (name === "translate" ? 2 : 1) || !args.every((a) => inRange(a, { px: [-8, 8] }))) return ctx.problems.add("A decoration moves at most 8px", loc), false;
-    } else return ctx.problems.add(`${name}() is not an allowed transform`, loc), false;
+    } else if (args.length < 1 || args.length > (name === "translate" ? 2 : 1) || !args.every((a) => inRange(a, { px: [-8, 8] }))) return ctx.problems.add("A decoration moves at most 8px", loc), false;
+  }
+  return true;
+}
+
+// The origin stays at the box's center, the default for these HTML decorations, so a rotation
+// turns the box in place and only the translation moves it.
+function checkOrigin(nodes, ctx, loc) {
+  const parts = nodes.filter((n) => n.type !== "WhiteSpace");
+  const center = (n) => (n.type === "Identifier" && n.name === "center") || (n.type !== "Identifier" && inRange(n, { "%": [50, 50] }));
+  const zero = (n) => n.type !== "Identifier" && inRange(n, { px: [0, 0] });
+  if (!parts.length || parts.length > 3 || !parts.slice(0, 2).every(center) || (parts[2] && !zero(parts[2]))) {
+    return ctx.problems.add("transform-origin stays at the center (center or 50% 50%), so a rotation cannot move a decoration", loc), false;
   }
   return true;
 }
@@ -698,6 +763,7 @@ function checkDeclaration(decl, ctx, subjects) {
   if (!nodes.length) return ctx.problems.add(`${property} has no value`, loc), null;
   if (!checkNodes(nodes, ctx, loc, 0, { strings: property === "content" })) return null;
   if (!lexerMatches(property, decl.value)) return ctx.problems.add(`This is not a valid ${property} value`, loc), null;
+  if (!finiteMath(nodes)) return ctx.problems.add(`The math in this ${property} value cannot be checked for a finite range: use one unit and no variables inside calc(), min(), max() or clamp()`, loc), null;
   const info = { blur: false, layers: 0 };
   if (property === "box-shadow" || property === "text-shadow") {
     const shadows = checkShadows(property, nodes, ctx, loc, subjects);
@@ -711,6 +777,8 @@ function checkDeclaration(decl, ctx, subjects) {
     if (!checkFontFamily(nodes, ctx, loc)) return null;
   } else if (property === "transform") {
     if (!checkTransform(nodes, ctx, loc)) return null;
+  } else if (property === "transform-origin") {
+    if (!checkOrigin(nodes, ctx, loc)) return null;
   } else if (property === "content") {
     if (!(nodes.length === 1 && ((nodes[0].type === "String" && nodes[0].value === "") || (nodes[0].type === "Identifier" && nodes[0].name === "none")))) {
       return ctx.problems.add('content is only "" on a decoration; CSS cannot add text', loc), null;
@@ -806,9 +874,13 @@ function checkMedia(node, ctx) {
 }
 
 // Theme-local variables: one declaration each, outside @media and state rules, at most eight
-// dependency edges deep, acyclic, defined and each a single resource-free scalar. Returns the
-// expanded value node for each name.
-function resolveVariables(ctx) {
+// dependency edges deep counting fallbacks, acyclic, defined and each a single resource-free
+// scalar, used or not. Every declaration is checked and measured before any expansion is built:
+// the expanded bytes and syntax nodes of each variable, and of all of them together, follow from
+// the dependency graph with saturating counts, so a branching graph fails on its budget without
+// allocating its output. Expansions are then built under a running allocation budget as a second
+// guard. Returns the expanded value node for each name.
+function resolveVariables(ctx, budgets) {
   const declared = new Map();
   for (const rule of ctx.list) {
     for (const decl of rule.declarations) {
@@ -839,39 +911,164 @@ function resolveVariables(ctx) {
       declared.set(name, { decl, nodes });
     }
   }
-  const expanded = new Map();
-  const depthOf = new Map();
-  const lengthOf = new Map();
+  for (const [name, entry] of declared) {
+    if (ctx.problems.full) break;
+    if (entry.nodes.length !== 1) {
+      ctx.problems.add(`${name} holds one value: a color, length, number or audited variable`, entry.decl.loc);
+      continue;
+    }
+    entry.variants = [];
+    for (let next = withFallbacks(entry.nodes); next && entry.variants.length <= L.nesting; next = withFallbacks(next)) entry.variants.push(next);
+    ctx.fallbackRefs = [];
+    const checked = checkNodes(entry.nodes, ctx, entry.decl.loc);
+    entry.fallbackRefs = ctx.fallbackRefs;
+    ctx.fallbackRefs = undefined;
+    if (!checked) continue;
+    entry.refs = themeReferences(entry.nodes);
+    entry.bytes = css().generate(entry.nodes[0]).length - entry.refs.reduce((sum, ref) => sum + `var(${ref})`.length, 0);
+    entry.nodeCount = countNodes(entry.nodes[0], Infinity) - entry.refs.length * 2;
+  }
+  if (ctx.problems.list.length) return null;
+
+  // Sizes from the graph alone. Counts saturate one past their budget.
+  const measured = new Map();
   const visiting = new Set();
-  const expand = (name, loc) => {
-    if (expanded.has(name)) return expanded.get(name);
+  const measure = (name, loc) => {
+    if (measured.has(name)) return measured.get(name);
     const entry = declared.get(name);
     if (!entry) return ctx.problems.add(`${name} is used but never declared`, loc), null;
     if (visiting.has(name)) return ctx.problems.add(`${name} depends on itself`, entry.decl.loc), null;
     visiting.add(name);
-    if (entry.nodes.length !== 1) {
-      visiting.delete(name);
-      return ctx.problems.add(`${name} holds one value: a color, length, number or audited variable`, entry.decl.loc), null;
-    }
-    if (!checkNodes(entry.nodes, ctx, entry.decl.loc)) return visiting.delete(name), null;
     let depth = 0;
-    const holder = [csstree.clone(entry.nodes[0])];
-    const ok = substitute(holder, (ref) => {
-      const value = expand(ref, entry.decl.loc);
-      if (value) depth = Math.max(depth, depthOf.get(ref) + 1);
-      return value;
-    });
+    for (const ref of [...entry.refs, ...entry.fallbackRefs]) {
+      const dependency = measure(ref, entry.decl.loc);
+      if (!dependency) return visiting.delete(name), null;
+      depth = Math.max(depth, dependency.depth + 1);
+    }
     visiting.delete(name);
-    if (!ok) return null;
     if (depth > L.variableEdges) return ctx.problems.add(`${name} depends on more than ${L.variableEdges} other --theme-* variables`, entry.decl.loc), null;
+    let bytes = entry.bytes;
+    let nodes = entry.nodeCount;
+    for (const ref of entry.refs) {
+      bytes = Math.min(budgets.sourceBytes + 1, bytes + measured.get(ref).bytes);
+      nodes = Math.min(budgets.astNodes + 1, nodes + measured.get(ref).nodes);
+    }
+    if (bytes > budgets.sourceBytes || nodes > budgets.astNodes) return ctx.problems.add(`${name} expands to more than ${budgets.sourceBytes} UTF-8 bytes or ${budgets.astNodes} syntax nodes`, entry.decl.loc), null;
+    const result = { bytes, nodes, depth };
+    measured.set(name, result);
+    return result;
+  };
+  let totalBytes = 0;
+  let totalNodes = 0;
+  for (const [name, entry] of declared) {
+    const result = measure(name, entry.decl.loc);
+    if (!result) return null;
+    totalBytes += result.bytes;
+    totalNodes += result.nodes;
+    if (totalBytes > budgets.sourceBytes || totalNodes > budgets.astNodes) {
+      return ctx.problems.add(`Theme-local variables expand to more than ${budgets.sourceBytes} UTF-8 bytes or ${budgets.astNodes} syntax nodes together`, entry.decl.loc), null;
+    }
+  }
+
+  const expanded = new Map();
+  const lengthOf = new Map();
+  // The values a variable could take through any one of its fallbacks, its own or a dependency's,
+  // so each use checks them against its property. Built once per variable under their own budget.
+  const alternativesOf = new Map();
+  let allocated = 0;
+  let alternativeBytes = 0;
+  const build = (name) => {
+    if (expanded.has(name)) return expanded.get(name);
+    const entry = declared.get(name);
+    allocated += measured.get(name).bytes;
+    if (allocated > budgets.sourceBytes) return ctx.problems.add(`Theme-local variables expand to more than ${budgets.sourceBytes} UTF-8 bytes together`, entry.decl.loc), null;
+    const forms = [entry.nodes.map((n) => csstree.clone(n)), ...entry.variants.map((variant) => variant.map((n) => csstree.clone(n)))];
+    const holder = [csstree.clone(entry.nodes[0])];
+    if (!substitute(holder, build)) return null;
     const [node] = holder;
-    depthOf.set(name, depth);
-    lengthOf.set(name, css().generate(node).length);
+    if (!scalarValue(node)) return ctx.problems.add(`${name} is not a valid color, a finite length or number, or an audited variable`, entry.decl.loc), null;
+    // Its fallbacks are scalars too, counted against the same allocation budget.
+    for (const variant of entry.variants) {
+      const substituted = substitute(variant, (ref) => {
+        allocated += measured.get(ref)?.bytes ?? 0;
+        return allocated > budgets.sourceBytes ? null : build(ref);
+      });
+      if (allocated > budgets.sourceBytes) return ctx.problems.add(`Theme-local variables expand to more than ${budgets.sourceBytes} UTF-8 bytes together`, entry.decl.loc), null;
+      if (!substituted) return null;
+      const values = variant.filter((n) => n.type !== "WhiteSpace");
+      if (values.length !== 1 || !scalarValue(values[0])) return ctx.problems.add(`A var() fallback in ${name} is not a valid color, a finite length or number, or an audited variable`, entry.decl.loc), null;
+    }
+    // Each own fallback, then each form with one dependency taking one of its alternatives.
+    const alternatives = [];
+    const seen = new Set([css().generate(node)]);
+    const admit = (candidate) => {
+      const values = candidate.filter((n) => n.type !== "WhiteSpace");
+      const text = values.length === 1 ? css().generate(values[0]) : "";
+      alternativeBytes += text.length;
+      if (alternativeBytes > budgets.sourceBytes) return ctx.problems.add(`The var() fallbacks of theme-local variables expand to more than ${budgets.sourceBytes} UTF-8 bytes`, entry.decl.loc), false;
+      if (values.length !== 1 || !scalarValue(values[0])) return ctx.problems.add(`A var() fallback in ${name} is not a valid color, a finite length or number, or an audited variable`, entry.decl.loc), false;
+      if (!seen.has(text)) seen.add(text), alternatives.push({ node: values[0], length: text.length });
+      return true;
+    };
+    for (const variant of entry.variants) if (!admit(variant)) return null;
+    for (const form of forms) {
+      const ok = eachDeviation(form, build, (ref) => alternativesOf.get(ref), admit);
+      if (!ok) return null;
+    }
     expanded.set(name, node);
+    lengthOf.set(name, css().generate(node).length);
+    alternativesOf.set(name, alternatives);
     return node;
   };
-  for (const name of declared.keys()) expand(name, declared.get(name).decl.loc);
-  return { expanded, lengthOf, expand };
+  for (const name of declared.keys()) if (!build(name)) return null;
+  const expand = (name, loc) => expanded.get(name) ?? (ctx.problems.add(`${name} is used but never declared`, loc), null);
+  return { lengthOf, expand, alternatives: (name) => alternativesOf.get(name) ?? [] };
+}
+
+// Calls visit(copy) for each copy of nodes in which exactly one var(--theme-*) takes one of its
+// alternatives and every other takes its expansion. Stops with false when a lookup or visit fails.
+function eachDeviation(nodes, expand, alternatives, visit) {
+  const refs = [];
+  if (!substitute(nodes.map((n) => csstree.clone(n)), (ref) => (refs.push(ref), expand(ref)))) return false;
+  for (const [index, ref] of refs.entries()) {
+    for (const alternative of alternatives(ref)) {
+      let at = 0;
+      const copy = nodes.map((n) => csstree.clone(n));
+      if (!substitute(copy, (name) => (at++ === index ? alternative.node : expand(name)))) return false;
+      if (!visit(copy, alternative)) return false;
+    }
+  }
+  return true;
+}
+
+// Every var(--theme-*) reference in the nodes, once per occurrence.
+function themeReferences(nodes, out = []) {
+  for (const node of nodes) {
+    if (isVariable(node)) {
+      if (THEME_VARIABLE.test(variableName(node))) out.push(variableName(node));
+    } else if (node.children) themeReferences(children(node), out);
+  }
+  return out;
+}
+
+// The value with every outermost var() that has a fallback replaced by that fallback, as copies,
+// or null when none has one. Applied again, it reaches each nested fallback in turn.
+function withFallbacks(nodes) {
+  let changed = false;
+  const visit = (list) => {
+    list.forEach((node, item) => {
+      if (isVariable(node)) {
+        const parts = children(node);
+        const comma = parts.findIndex((n) => n.type === "Operator" && n.value.trim() === ",");
+        if (comma < 0) return;
+        changed = true;
+        list.replace(item, new csstree.List().fromArray(parts.slice(comma + 1).flatMap((n) => (n.type === "Value" ? children(n) : [n]))));
+      } else if (node.children) visit(node.children);
+    });
+  };
+  const wrapper = new csstree.List().fromArray(nodes.map((node) => csstree.clone(node)));
+  visit(wrapper);
+  return changed ? wrapper.toArray() : null;
 }
 
 // Replaces var(--theme-*) inside nodes using lookup(name), which returns the expanded node.
@@ -931,12 +1128,14 @@ function validateStylesheet(source, path, budgets) {
   const ctx = { problems, list: [], rules: 0, selectors: 0, declarations: 0, state: false };
   collectRules(ast, ctx, [], 0);
   if (problems.list.length) return { problems: problems.list };
-  const variables = resolveVariables(ctx);
+  const variables = resolveVariables(ctx, budgets);
   if (problems.list.length) return { problems: problems.list };
 
   // Substitute theme-local variables into each declaration, keeping a running size so repeated
-  // references stop before the output can pass the byte budget.
+  // references stop before the output can pass the byte budget. Fallback variants count against
+  // their own budget of the same size.
   let size = 0;
+  let work = 0;
   const rules = [];
   for (const rule of ctx.list) {
     const subjects = { owned: false, native: false, root: false, corner: true };
@@ -962,6 +1161,11 @@ function validateStylesheet(source, path, budgets) {
         continue;
       }
       const nodes = children(decl.value);
+      // Each var() fallback is checked against this property too, though it never applies,
+      // including those inside the theme-local variables it uses.
+      const variants = [];
+      for (let next = withFallbacks(nodes); next && variants.length <= L.nesting; next = withFallbacks(next)) variants.push(next);
+      const forms = [nodes.map((n) => csstree.clone(n)), ...variants.map((variant) => variant.map((n) => csstree.clone(n)))];
       const ok = substitute(nodes, (name) => {
         const value = variables.expand(name, decl.loc);
         if (value) size += variables.lengthOf.get(name);
@@ -975,6 +1179,41 @@ function validateStylesheet(source, path, budgets) {
       decl.value.children = new csstree.List().fromArray(nodes);
       const info = checkDeclaration(decl, ctx, subjects);
       if (!info) continue;
+      let fallbacksOk = true;
+      for (const variant of variants) {
+        const substituted = substitute(variant, (name) => {
+          const value = variables.expand(name, decl.loc);
+          if (value) work += variables.lengthOf.get(name);
+          return work > budgets.sourceBytes ? null : value;
+        });
+        if (work > budgets.sourceBytes) problems.add(`The var() fallbacks in this CSS expand to more than ${budgets.sourceBytes} UTF-8 bytes`, decl.loc);
+        const before = problems.list.length;
+        const copy = { type: "Declaration", property: decl.property, loc: decl.loc, value: { type: "Value", children: new csstree.List().fromArray(variant) } };
+        if (!substituted || !checkDeclaration(copy, ctx, subjects)) {
+          for (const problem of problems.list.slice(before)) problem.message = `In a var() fallback: ${problem.message}`;
+          fallbacksOk = false;
+          break;
+        }
+      }
+      for (const form of fallbacksOk ? forms : []) {
+        const expand = (name) => {
+          const value = variables.expand(name, decl.loc);
+          if (value) work += variables.lengthOf.get(name);
+          return work > budgets.sourceBytes ? null : value;
+        };
+        fallbacksOk = eachDeviation(form, expand, variables.alternatives, (candidate, alternative) => {
+          work += alternative.length;
+          if (work > budgets.sourceBytes) return false;
+          const before = problems.list.length;
+          const copy = { type: "Declaration", property: decl.property, loc: decl.loc, value: { type: "Value", children: new csstree.List().fromArray(candidate) } };
+          if (checkDeclaration(copy, ctx, subjects)) return true;
+          for (const problem of problems.list.slice(before)) problem.message = `In a var() fallback: ${problem.message}`;
+          return false;
+        });
+        if (work > budgets.sourceBytes) problems.add(`The var() fallbacks in this CSS expand to more than ${budgets.sourceBytes} UTF-8 bytes`, decl.loc);
+        if (!fallbacksOk) break;
+      }
+      if (!fallbacksOk) continue;
       kept.push(decl);
       const value = css().generate(decl.value);
       const vars = [...variablesIn(nodes)].sort();

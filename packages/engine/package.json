@@ -16,5 +16,7 @@
     },
     "./pairs.json": "./pairs.json"
   },
-  "sideEffects": false
+  "sideEffects": [
+    "./index.js"
+  ]
 }

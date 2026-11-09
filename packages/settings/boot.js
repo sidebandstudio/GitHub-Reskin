@@ -4,7 +4,7 @@
 // else discards it and the selected source is resolved again.
 import { EFFECT_IDS, ENGINE_VERSION, FLAVOR_SLOT_IDS, FONT_IDS, HEX_COLOR, PAIR_MATRIX_VERSION, RENDERER_VERSION, SYNTAX_ROLES } from "../contracts/index.js";
 import { EFFECT_PARAMETERS, FLAVOR_SLOTS } from "../format/index.js";
-import { ANSI_ROLES, auditPairs, COLOR_PATHS, graphProblems, rampDirection, SEMANTIC_FIELDS, SEMANTIC_ROLES, sourceHash, TOKEN_KEYS } from "../engine/index.js";
+import { ANSI_ROLES, auditPairs, graphProblems, PAIR_PATHS, rampDirection, SEMANTIC_FIELDS, SEMANTIC_ROLES, sourceHash, TOKEN_KEYS } from "../engine/index.js";
 import { selectedSource } from "./catalog.js";
 import { EXPANSION_VERSION, SANITIZER_VERSION } from "./constants.js";
 import { effectivePreferences, isPlainObject, selectedConsent, SHA256_HEX } from "./model.js";
@@ -13,9 +13,9 @@ export const BOOT_KEYS = Object.freeze([
   "settingsRevision", "rendererVersion", "engineVersion", "pairMatrixVersion", "expansionVersion", "sanitizerVersion",
   "catalogHash", "selectedSourceHash", "assetHashes", "cssConsent", "validatedTokenSnapshot", "effectivePreferences",
 ]);
-// TODO(C2b): the expanded resolver adds appearance, expansionVersion and sanitizerVersion to
-// ResolvedTheme. Until this list has them, an expanded snapshot fails validation and is re-resolved.
-const THEMED_KEYS = ["tokens", "semantics", "syntax", "ansi", "graph", "rendererVersion", "sourceHash", "seedId", "seedHash", "base", "policy", "font", "effects", "flavor", "motionAllowed", "repairs", "pairAudit"];
+// The expanded resolver adds appearance, expansionVersion and sanitizerVersion to ResolvedTheme.
+const EXPANDED_KEYS = ["expansionVersion", "sanitizerVersion", "appearance"];
+const THEMED_KEYS = ["tokens", "semantics", "syntax", "ansi", "graph", "rendererVersion", "sourceHash", "seedId", "seedHash", "base", "policy", "font", "effects", "flavor", "motionAllowed", "repairs", "pairAudit", ...EXPANDED_KEYS];
 const NATIVE_POLICIES = ["native-high-contrast", "native-unknown", "forced-colors"];
 const PREFERENCE_KEYS = ["enabled", "appearance", "extras", "text", "motion", "fonts", "effects"];
 const MAX_REPAIRS = 512;
@@ -101,7 +101,8 @@ export function snapshotProblems(resolved) {
   if (NATIVE_POLICIES.includes(resolved.policy)) return nativeProblems(resolved);
   if (resolved.policy !== "themed") return ["unknown policy"];
   if (!sameKeys(resolved, THEMED_KEYS)) return ["themed keys are not exactly the renderer 1 keys"];
-  const problems = [];
+  const problems = [...expandedProblems(resolved)];
+  if (!isPlainObject(resolved.appearance)) problems.push("appearance is not an object");
   const group = (name, value, keys, check) => {
     if (!sameKeys(value, keys)) problems.push(`${name} keys are not exact`);
     else for (const key of keys) if (!check(value[key])) problems.push(`${name}.${key} is invalid`);
@@ -135,8 +136,10 @@ export function snapshotProblems(resolved) {
 
 function nativeProblems(resolved) {
   const problems = [];
-  const keys = ["rendererVersion", "sourceHash", "seedId", "seedHash", "base", "policy", "tokens", "semantics", "syntax", "ansi", "graph", "font", "effects", "flavor", "motionAllowed", "repairs", "pairAudit"];
+  const keys = ["rendererVersion", "sourceHash", "seedId", "seedHash", "base", "policy", "tokens", "semantics", "syntax", "ansi", "graph", "font", "effects", "flavor", "motionAllowed", "repairs", "pairAudit", ...EXPANDED_KEYS];
   if (!sameKeys(resolved, keys)) return ["native keys are not exact"];
+  problems.push(...expandedProblems(resolved));
+  if (resolved.appearance !== null) problems.push("native appearance must be null");
   for (const key of ["tokens", "semantics", "syntax", "ansi", "graph"]) if (resolved[key] !== null) problems.push(`${key} must be null`);
   if (resolved.font !== "system" || !sameKeys(resolved.effects, []) || resolved.motionAllowed !== false) problems.push("native fields are not empty");
   if (!equal(resolved.flavor, { enabled: false, locale: "en", slots: {} })) problems.push("native flavor is not empty");
@@ -144,6 +147,13 @@ function nativeProblems(resolved) {
   if (resolved.rendererVersion !== RENDERER_VERSION || typeof resolved.sourceHash !== "string" || !SHA256_HEX.test(resolved.sourceHash)) problems.push("native identity");
   if (!((resolved.seedId === null && resolved.seedHash === null) || (typeof resolved.seedId === "string" && typeof resolved.seedHash === "string" && SHA256_HEX.test(resolved.seedHash)))) problems.push("native seed identity");
   if (resolved.base !== "dark" && resolved.base !== "light") problems.push("base");
+  return problems;
+}
+
+function expandedProblems(resolved) {
+  const problems = [];
+  if (resolved.expansionVersion !== EXPANSION_VERSION) problems.push("expansionVersion");
+  if (resolved.sanitizerVersion !== SANITIZER_VERSION) problems.push("sanitizerVersion");
   return problems;
 }
 
@@ -185,7 +195,7 @@ function repairProblems(repairs) {
   if (!Array.isArray(repairs) || repairs.length > MAX_REPAIRS) return ["repairs is not a bounded list"];
   const bad = repairs.filter((repair) => {
     if (!isPlainObject(repair) || typeof repair.reason !== "string" || repair.reason.length > 400) return true;
-    if (repair.persistence === "render") return !sameKeys(repair, ["persistence", "path", "before", "after", "reason"]) || !COLOR_PATHS.includes(repair.path) || !isHex(repair.before) || !isHex(repair.after);
+    if (repair.persistence === "render") return !sameKeys(repair, ["persistence", "path", "before", "after", "reason"]) || !PAIR_PATHS.includes(repair.path) || !isHex(repair.before) || !isHex(repair.after);
     if (repair.persistence === "source") {
       const ramp = repair.path === "/contributions/levels";
       return !sameKeys(repair, ["persistence", "path", "before", "after", "reason"]) || typeof repair.path !== "string" || !/^\/(colors|overrides|contributions)\//.test(repair.path)

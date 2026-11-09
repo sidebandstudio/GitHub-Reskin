@@ -23,8 +23,8 @@
     "primaryText": "#0a0a17"
   },
   "fonts": {
-    "heading": "oxanium",
-    "body": "atkinson-hyperlegible"
+    "heading": "roboto-condensed",
+    "body": "system"
   },
   "backgrounds": {
     "page": {

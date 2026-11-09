@@ -18,6 +18,8 @@ const M = CSS_MARKERS;
 const SCOPE = `[${M.scope}="active"]`;
 const NATIVE_GATE = `[${M.nativeGate}="active"]`;
 const EXCLUDE = `:not([${M.native}],[${M.native}] *,[${M.protected}],[${M.protected}] *)`;
+// The sanitizer refuses CSS-wide keywords; the compiler refuses them again on GitHub's elements.
+const CSS_WIDE = /(?:^|[\s,(])(?:inherit|initial|unset|revert|revert-layer)(?=$|[\s,)])/i;
 
 const issue = (message) => ({ code: ISSUE_CODES.cssRegistry, path: "/css", message, severity: "error" });
 
@@ -141,12 +143,16 @@ function kindProblem(decl, kind, policy) {
   if (has(POLICY.inheritable, property) && !policy.inheritable) return `${property} is inherited, and ${kind} targets can have unadmitted descendants`;
   if (property === "box-shadow" && decl.blur && !policy.blur) return `blurred shadows are not allowed on ${kind} targets`;
   if (property === "text-shadow" && !policy.textShadow) return `text shadows are not allowed on ${kind} targets`;
+  if (CSS_WIDE.test(decl.value)) return `${property} on ${kind} targets cannot hand its value back to the cascade`;
   if (has(POLICY.colorProperties, property) || property === "background-image") {
     if (policy.literalColors.includes(property)) return null;
     if (decl.literalColor) return `${property} on ${kind} targets uses its audited pair variables, not literal colors`;
     const allowed = policy.colors[property] ?? [];
-    const wrong = decl.variables.filter((v) => POLICY.variables[v] === "color" && !allowed.includes(v));
+    const audited = decl.variables.filter((v) => POLICY.variables[v] === "color");
+    const wrong = audited.filter((v) => !allowed.includes(v));
     if (wrong.length) return `${property} on ${kind} targets must use ${allowed.length ? allowed.join(" or ") : "no color variable"}, not ${wrong.join(", ")}`;
+    // Positive proof: a value with no audited color, a keyword or none, would leave the pair.
+    if (!audited.length) return `${property} on ${kind} targets must use ${allowed.length ? allowed.join(" or ") : "a reviewed literal color"}`;
   }
   return null;
 }

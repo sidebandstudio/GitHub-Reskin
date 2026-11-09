@@ -46,17 +46,10 @@ export async function createAjv(options = {}) {
 // Ajv's standalone output requires two runtime helpers. Inline equivalents keep the validator a
 // plain ES module with no CommonJS dependency.
 const HELPERS = `// Unicode code point length, as JSON Schema counts string length.
+// Each surrogate pair counts once; the native scan keeps a maximum-size paste fast.
 function ucs2length(str) {
-  let length = 0;
-  for (let i = 0; i < str.length; i++) {
-    length++;
-    const code = str.charCodeAt(i);
-    if (code >= 0xd800 && code <= 0xdbff && i + 1 < str.length) {
-      const next = str.charCodeAt(i + 1);
-      if ((next & 0xfc00) === 0xdc00) i++;
-    }
-  }
-  return length;
+  const pairs = str.match(/[\\ud800-\\udbff][\\udc00-\\udfff]/g);
+  return str.length - (pairs ? pairs.length : 0);
 }
 // Deep equality of JSON values, for const and uniqueItems.
 function equal(a, b) {
