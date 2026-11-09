@@ -27,9 +27,9 @@ const matchesText = (def, guard) => def.text === null || def.text.some((t) => (t
 /** True when the element or an ancestor is a root of text people wrote. */
 export const insideAuthored = (element) => Boolean(element.closest(AUTHORED_ROOTS));
 
-/** True when the element or an ancestor below <main> is a control, focusable target or live region. */
+/** True when the element or an ancestor below <main>, or below GitHub's contentinfo footer, is a control, focusable target or live region. */
 export function insideInteractive(element) {
-  for (let node = element; node && node.tagName !== "MAIN" && node !== node.ownerDocument.documentElement; node = node.parentElement) {
+  for (let node = element; node && node.tagName !== "MAIN" && !node.matches("footer[role='contentinfo']") && node !== node.ownerDocument.documentElement; node = node.parentElement) {
     if (node.matches(INTERACTIVE) || node.matches(LIVE_REGIONS)) return true;
   }
   return false;
@@ -40,7 +40,8 @@ const insertionParent = (host, insert) => (insert === "append" ? host : host.par
 
 /** Why a candidate fails, or null when it is a safe anchor. */
 export function rejectReason(def, guard) {
-  if (!guard.closest("main")) return "outside main";
+  // A footer candidate sits in GitHub's contentinfo footer, never in <main>; every other slot in <main>.
+  if (def.region === "footer" ? !guard.closest("footer[role='contentinfo']") || guard.closest("main") : !guard.closest("main")) return def.region === "footer" ? "outside the footer" : "outside main";
   if (!matchesText(def, guard)) return "GitHub's words differ";
   if (def.child && [...guard.children].filter((c) => c.matches(def.child)).length !== 1) return "unexpected structure";
   if (def.next && !guard.nextElementSibling?.matches(def.next)) return "unexpected neighbor";

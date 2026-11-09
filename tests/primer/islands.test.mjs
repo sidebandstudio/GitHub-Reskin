@@ -34,6 +34,22 @@ const resolved = resolvedFromSeed(MODE_INDEX.modes.dark, SENTINEL);
 const compiled = compileGitHub(resolved, { seedMode: "dark", policy: "themed" }, PREFS).css;
 const GREEN = "rgb(64, 196, 99)";
 
+// A stylesheet as an engine without container style queries applies it: every style-query block
+// removed, the blocks nested inside it included.
+function stripStyleQueries(text) {
+  let css = text;
+  for (let i = css.indexOf("@container style(--reskin-on: 1){"); i >= 0; i = css.indexOf("@container style(--reskin-on: 1){")) {
+    let depth = 0;
+    let j = css.indexOf("{", i);
+    for (; j < css.length; j++) {
+      if (css[j] === "{") depth++;
+      else if (css[j] === "}" && --depth === 0) break;
+    }
+    css = css.slice(0, i) + css.slice(j + 2);
+  }
+  return css;
+}
+
 const blob = (id) => `<svg><path id="${id}" class="js-highlight-blob" fill="#40c463" stroke="#40c463" d="M0 0h1v1z"/></svg>`;
 const label = (id) => `<span id="${id}" class="hx_IssueLabel" style="--label-r:215;--label-g:58;--label-b:74;--label-h:353;--label-s:66;--label-l:53;--perceived-lightness:0.36;--lightness-switch:1">bug</span>`;
 // The marketing footer as GitHub renders it on github.com and its 404 page, 2026-11-08.
@@ -338,7 +354,7 @@ for (const [name, engine] of [["Chromium", chromium], ["Firefox", firefox]]) {
       if (name !== "Firefox") return;
       // Gecko before Firefox 151 has no style queries and matches selectors alone: themed through
       // every depth of themed islands, and native wherever its nearest island is not eligible.
-      const css = compiled.replace(/@container style\(--reskin-on: 1\)\{\n(?:.*\n){3}\}\n/g, "");
+      const css = stripStyleQueries(compiled);
       assert.doesNotMatch(css, /@container/);
       for (let n = 1; n <= 6; n++) {
         let t = await open({ body: deep(n, content), css });
@@ -357,7 +373,7 @@ for (const [name, engine] of [["Chromium", chromium], ["Firefox", firefox]]) {
     // `n` standard islands around `inner`, the innermost with an id.
     const nest = (n, inner, id = "deep") => (n ? `${`<div ${STD}>`.repeat(n - 1)}<div id="${id}" ${STD}>${inner}</div>${"</div>".repeat(n - 1)}` : inner);
     // Gecko before Firefox 151 has no style queries: the compiled theme without them.
-    const withoutStyleQueries = compiled.replace(/@container style\(--reskin-on: 1\)\{\n(?:.*\n){3}\}\n/g, "");
+    const withoutStyleQueries = stripStyleQueries(compiled);
     const themedComponents = async (t, why) => {
       assert.equal(await t.p.evaluate(() => getComputedStyle(document.getElementById("blob")).fill), "rgb(57, 255, 20)", `${why} graph`);
       assert.equal(await t.p.evaluate(() => getComputedStyle(document.getElementById("label")).backgroundColor), "rgba(215, 58, 74, 0.18)", `${why} label`);
