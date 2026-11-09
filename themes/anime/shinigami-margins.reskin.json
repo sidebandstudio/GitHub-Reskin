@@ -1,0 +1,77 @@
+{
+  "$schema": "https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json",
+  "author": "sidebandstudio",
+  "base": "light",
+  "colors": {
+    "accent": "#33363b",
+    "background": "#f4f5f6",
+    "contribution": "#282522",
+    "text": "#201f1d"
+  },
+  "contributions": {
+    "levels": [
+      "#dddad4",
+      "#85817b",
+      "#7a756e",
+      "#5b5751",
+      "#282522"
+    ]
+  },
+  "description": "Cool gray paper, graphite activity and a spare margin rule give GitHub an investigative notebook style.",
+  "effects": {
+    "paper": {
+      "opacity": 0.02,
+      "scale": 8,
+      "texture": "grain"
+    },
+    "rules": {
+      "opacity": 0.1,
+      "spacing": 28,
+      "style": "margin"
+    }
+  },
+  "flavor": {
+    "enabled": true,
+    "locale": "en",
+    "slots": {
+      "contributions.caption": "A year of entries, counted in real contributions.",
+      "empty.issues.caption": "No notes in this view.",
+      "empty.pinned.caption": "Room for a first notebook.",
+      "error.notFound.caption": "No entry matches this address.",
+      "profile.activity.heading": "Entry log",
+      "profile.organizations.heading": "Archive outposts",
+      "profile.pinned.heading": "Selected notebooks",
+      "profile.tag": "// notebook view"
+    }
+  },
+  "fonts": {
+    "accent": "cormorant-garamond"
+  },
+  "inspiredBy": "Death Note",
+  "name": "Shinigami Margins",
+  "overrides": {
+    "accentMuted": "#d5d6d8",
+    "border": "#b2aaa0",
+    "controlBorder": "#575d64",
+    "danger": "#a42b36",
+    "focus": "#676159",
+    "hover": "#dbdbdc",
+    "inset": "#e0e3e6",
+    "link": "#3d4c61",
+    "mutedText": "#565c63",
+    "primaryBackground": "#292c31",
+    "primaryText": "#ffffff",
+    "raised": "#e3e4e5",
+    "selectionBackground": "#292c31",
+    "selectionText": "#ffffff",
+    "success": "#3d6246",
+    "surface": "#ffffff",
+    "warning": "#735617"
+  },
+  "schemaVersion": 1,
+  "tags": [
+    "anime",
+    "light"
+  ],
+  "version": "1.0.0"
+}

@@ -1,0 +1,80 @@
+{
+  "$schema": "https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json",
+  "author": "sidebandstudio",
+  "base": "dark",
+  "colors": {
+    "accent": "#9193ff",
+    "background": "#0b101b",
+    "contribution": "#a0a3ff",
+    "text": "#f0f3fa"
+  },
+  "contributions": {
+    "levels": [
+      "#1e223b",
+      "#6162a1",
+      "#6a6cba",
+      "#7778cf",
+      "#a0a3ff"
+    ]
+  },
+  "description": "Ink-blue records, periwinkle activity and spare barrier geometry give GitHub an occult technical edge.",
+  "effects": {
+    "glow": {
+      "strength": 0.12
+    },
+    "orbit": {
+      "count": 2,
+      "opacity": 0.16,
+      "shape": "arc"
+    },
+    "rail": {
+      "opacity": 0.16,
+      "shape": "slash",
+      "thickness": 1
+    }
+  },
+  "flavor": {
+    "enabled": true,
+    "locale": "en",
+    "slots": {
+      "contributions.caption": "A year of field records, one contribution at a time.",
+      "empty.issues.caption": "No field records in this view.",
+      "empty.pinned.caption": "Room for a first field record.",
+      "error.notFound.caption": "No trace of a domain at this address.",
+      "profile.activity.heading": "Field record log",
+      "profile.organizations.heading": "Record outposts",
+      "profile.pinned.heading": "Selected domains",
+      "profile.tag": "// barrier records"
+    }
+  },
+  "fonts": {
+    "accent": "cormorant-garamond"
+  },
+  "inspiredBy": "Jujutsu Kaisen",
+  "name": "Cursed Aperture",
+  "overrides": {
+    "accentMuted": "#20253f",
+    "border": "#354258",
+    "controlBorder": "#a0aec4",
+    "danger": "#ff8b94",
+    "focus": "#a0aec4",
+    "hover": "#262b36",
+    "inset": "#070b12",
+    "link": "#b9beff",
+    "mutedText": "#a0aec4",
+    "primaryBackground": "#4649b9",
+    "primaryText": "#ffffff",
+    "raised": "#1d222d",
+    "selectionBackground": "#4649b9",
+    "selectionText": "#ffffff",
+    "success": "#76d9a3",
+    "surface": "#151e2d",
+    "warning": "#efcb78"
+  },
+  "schemaVersion": 1,
+  "tags": [
+    "anime",
+    "dark"
+  ],
+  "version": "1.0.0"
+}

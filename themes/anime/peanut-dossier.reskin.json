@@ -1,0 +1,82 @@
+{
+  "$schema": "https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json",
+  "author": "sidebandstudio",
+  "base": "light",
+  "colors": {
+    "accent": "#a32678",
+    "background": "#eaf7ef",
+    "contribution": "#285c40",
+    "text": "#21382e"
+  },
+  "contributions": {
+    "levels": [
+      "#e0ebdd",
+      "#628e6d",
+      "#50845a",
+      "#407850",
+      "#285c40"
+    ]
+  },
+  "description": "Mint paper, berry accents and a tidy dossier stamp give GitHub a playful retro-agency look.",
+  "effects": {
+    "paper": {
+      "opacity": 0.035,
+      "scale": 12,
+      "texture": "halftone"
+    },
+    "rules": {
+      "opacity": 0.08,
+      "spacing": 24,
+      "style": "ticks"
+    },
+    "seal": {
+      "opacity": 0.3,
+      "shape": "brackets",
+      "size": 20
+    }
+  },
+  "flavor": {
+    "enabled": true,
+    "locale": "en",
+    "slots": {
+      "contributions.caption": "A year of field notes, one contribution at a time.",
+      "empty.issues.caption": "No dossiers in this view.",
+      "empty.pinned.caption": "Room for a first dossier.",
+      "error.notFound.caption": "No dossier at this address.",
+      "profile.activity.heading": "Mission log",
+      "profile.organizations.heading": "Agency outposts",
+      "profile.pinned.heading": "Selected dossiers",
+      "profile.tag": "// dossier desk"
+    }
+  },
+  "fonts": {
+    "accent": "josefin-sans"
+  },
+  "inspiredBy": "Spy x Family",
+  "name": "Peanut Dossier",
+  "overrides": {
+    "accentMuted": "#dfd6dc",
+    "border": "#aabda8",
+    "controlBorder": "#4d6555",
+    "danger": "#a82e47",
+    "focus": "#536d5d",
+    "hover": "#d2e0d8",
+    "inset": "#d8ebdd",
+    "link": "#8c3249",
+    "mutedText": "#4a6152",
+    "primaryBackground": "#86205e",
+    "primaryText": "#ffffff",
+    "raised": "#dae8e0",
+    "selectionBackground": "#86205e",
+    "selectionText": "#ffffff",
+    "success": "#286344",
+    "surface": "#f7fff9",
+    "warning": "#77570f"
+  },
+  "schemaVersion": 1,
+  "tags": [
+    "anime",
+    "light"
+  ],
+  "version": "1.0.0"
+}
