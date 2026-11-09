@@ -2,7 +2,7 @@
 // name, a missing schemaVersion on an unmistakably v1 shape, and admitted advanced CSS written in
 // its canonical sanitized form. Every change becomes a note. Anything else, including unknown
 // fields, is left for validation to report.
-import { ANSI_ROLES, DIFF_ROLES, OVERRIDE_COLOR_ROLES, SYNTAX_ROLES, THEME_SYNTAX_ROLES } from "../contracts/index.js";
+import { ANSI_ROLES, DIFF_ROLES, LIMITS, OVERRIDE_COLOR_ROLES, SYNTAX_ROLES, THEME_SYNTAX_ROLES } from "../contracts/index.js";
 import { NOTE_CODES } from "./codes.js";
 import { admitCss, admitGradientCss, cssSanitizerInstalled } from "./css/admission.js";
 import { pointer } from "./json.js";
@@ -105,8 +105,10 @@ function normalizeAppearanceColors(theme, color) {
 
 // Admitted CSS is kept in its canonical sanitized form, so exports and consent hashes see one
 // spelling. Only with the sanitizer installed: the viewer leaves CSS for validation to judge.
+// Source over the shared CSS budget is left as supplied, so validation refuses what was imported
+// rather than a shorter canonical form.
 function canonicalCss(theme, notes) {
-  if (!cssSanitizerInstalled()) return;
+  if (!cssSanitizerInstalled() || cssSourceBytes(theme) > LIMITS.cssUtf8Bytes) return;
   if (typeof theme.css === "string") {
     const result = admitCss(theme.css, "/css");
     if (result.ok) {
@@ -132,6 +134,20 @@ function canonicalCss(theme, notes) {
       if (JSON.stringify(layer.gradientCss) !== before) notes.push(note(NOTE_CODES.css, at, "Rewrote this gradient in Reskin's checked, canonical form."));
     });
   }
+}
+
+const encoder = new TextEncoder();
+const bytes = (value) => (typeof value === "string" ? encoder.encode(value).length : 0);
+
+// UTF-8 bytes of the css text and every gradientCss value and size, as validation counts them.
+function cssSourceBytes(theme) {
+  let total = bytes(theme.css);
+  if (!isObject(theme.backgrounds)) return total;
+  for (const target of TARGETS) {
+    const layers = theme.backgrounds[target]?.layers;
+    if (Array.isArray(layers)) for (const layer of layers) if (isObject(layer?.gradientCss)) total += bytes(layer.gradientCss.value) + bytes(layer.gradientCss.size);
+  }
+  return total;
 }
 
 /**
