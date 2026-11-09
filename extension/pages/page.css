@@ -880,6 +880,9 @@ select.rb-input {
 }
 
 /* Backup & help */
+.rk .rs-status-row {
+  min-height: 0;
+}
 .rk-part {
   display: flex;
   flex-direction: column;
@@ -939,4 +942,23 @@ select.rb-input {
 }
 .rk-help dd {
   margin: 2px 0 0;
+}
+
+/* Start from: the legend above two equal choices that use the column's width. */
+.rb-start {
+  display: grid;
+  gap: 6px;
+}
+.rb-start legend {
+  float: none;
+  margin-bottom: 6px;
+}
+.rb-start .rs-segments {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+.rb-start .rs-segments label {
+  justify-content: center;
+  padding: 6px 12px;
+  text-align: center;
 }

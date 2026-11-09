@@ -398,7 +398,9 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
     part("start-remix").textContent = customTheme(target) ? `Edit ${remixName}` : `Remix ${remixName}`;
     part("start-note").textContent = draft.fresh
       ? "Background, Text and Accent make the whole theme; the graph and every other color follow them."
-      : `Starts with every detail of ${remixName}: backgrounds, effects, fonts, code colors and more.`;
+      : customTheme(target)
+        ? `Changes ${remixName} itself, keeping every detail it has.`
+        : `Starts with every detail of ${remixName}: backgrounds, effects, fonts, code colors and more.`;
     for (const input of root.querySelectorAll('input[name="rb-start"]')) input.checked = input.value === (draft.fresh ? "fresh" : "remix");
     part("save").textContent = draft.savedId ? "Save changes" : "Save as theme";
     part("save-copy").hidden = !draft.savedId;

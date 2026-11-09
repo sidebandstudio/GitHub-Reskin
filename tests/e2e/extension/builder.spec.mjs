@@ -304,8 +304,7 @@ async function exportRoundTrip(env) {
   await dialog.getByLabel("Theme file (.json or .reskin.json)").setInputFiles({ name: download.suggestedFilename(), mimeType: "application/json", buffer: bytes });
   await dialog.getByRole("button", { name: "Preview theme" }).click();
   // The show leads when the theme names one; a three-color theme has none, so its name leads.
-  const show = await dialog.locator('[data-rb="import-show"]').textContent();
-  await expect(dialog.locator(show === "Round Trip" ? '[data-rb="import-show"]' : '[data-rb="import-name"]')).toHaveText("Round Trip");
+  await expect(dialog.locator('[data-rb="import-show"], [data-rb="import-name"]').filter({ hasText: /^Round Trip$/ })).toHaveCount(1);
   await dialog.getByRole("button", { name: "Use theme" }).click();
   await expect(hex(page, "Accent")).toHaveValue("#e05d9c");
   await page.getByRole("button", { name: "Download .reskin.json" }).isVisible();

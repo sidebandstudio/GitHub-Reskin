@@ -10,7 +10,7 @@ import { exportFile, kib } from "./importer.js";
 
 export const COPY = Object.freeze({
   none: "Your saved themes will appear here.",
-  capacity: (count, bytes) => `${count} of ${STORAGE_LIMITS.maxCustomThemes} saved themes, ${kib(bytes)} of ${kib(STORAGE_LIMITS.maxCustomSourceBytes)}.`,
+  capacity: (count, bytes) => `${count} of ${STORAGE_LIMITS.maxCustomThemes} saved themes, ${kib(bytes)} of ${STORAGE_LIMITS.maxCustomSourceBytes / 1048576} MiB.`,
   full: "Your theme collection is full. Export or remove a saved theme, then try again.",
   confirmRemove: (name, selected, fallback) =>
     `Remove "${name}" from Reskin in this browser? This can't be undone.${selected ? ` GitHub switches to ${fallback} first.` : ""}\n\nTo keep a copy, choose Cancel, then Export.`,
