@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GitHub Reskin</title>
+    <link rel="stylesheet" href="ui.css" />
+    <link rel="stylesheet" href="popup.css" />
+    <script src="pages.js" defer></script>
+  </head>
+  <body class="rs-popup" data-page="popup">
+    <header class="rs-top rs-popup-fixed">
+      <img class="rs-mark" src="icon.svg" alt="" width="28" height="28" />
+      <h1 class="rs-title">GitHub Reskin</h1>
+      <label class="rs-switch rs-top-switch">
+        <input type="checkbox" role="switch" data-rs="enabled" />
+        <span class="rs-visually-hidden">Reskin</span>
+        <span class="rs-switch-state" aria-hidden="true"></span>
+      </label>
+    </header>
+
+    <section class="rs-summary rs-popup-fixed" aria-label="Current theme">
+      <p class="rs-summary-show" data-rs="summary-show"></p>
+      <p class="rs-summary-name" data-rs="summary-name"></p>
+      <p class="rs-note" data-rs="summary-note"></p>
+    </section>
+
+    <section class="rs-notices" data-rs="notices" aria-label="Update notes" hidden>
+      <ul data-rs-list></ul>
+      <button type="button" class="rs-link-button" data-rs-dismiss>Dismiss</button>
+    </section>
+
+    <div class="rs-browse">
+      <div class="rs-groups" data-rs="groups" role="group" aria-label="Theme groups"></div>
+      <div class="rs-search-row">
+        <label class="rs-visually-hidden" for="rs-search">Search themes or shows</label>
+        <input id="rs-search" class="rs-search" type="search" placeholder="Search themes or shows" autocomplete="off" data-rs="search" aria-describedby="rs-count" />
+        <p id="rs-count" class="rs-count" data-rs="count" aria-live="polite"></p>
+      </div>
+    </div>
+
+    <section class="rs-gallery" aria-label="Themes" data-rs="gallery"></section>
+    <div class="rs-empty" data-rs="empty" hidden>
+      <p data-rs-text></p>
+      <button type="button" class="rs-link-button" data-rs-clear>Clear search</button>
+    </div>
+
+    <section class="rs-prefs" aria-label="Appearance">
+      <fieldset class="rs-segmented" data-rs="appearance">
+        <legend>Appearance</legend>
+        <span class="rs-segments">
+          <label><input type="radio" name="appearance" value="full" />Full</label>
+          <label><input type="radio" name="appearance" value="calm" />Calm</label>
+        </span>
+      </fieldset>
+      <div class="rs-children">
+        <label class="rs-switch"><input type="checkbox" role="switch" data-rs="text" />Text</label>
+        <label class="rs-switch"><input type="checkbox" role="switch" data-rs="motion" aria-describedby="rs-motion-note" />Motion</label>
+      </div>
+      <p class="rs-note" id="rs-motion-note" data-rs="motion-note" hidden>Paused by your device's reduced-motion setting</p>
+      <p class="rs-note" data-rs="calm-note" hidden>Calm keeps colors, the graph and code colors, and hides wallpaper, flavor text, glow and motion. Your Text and Motion choices are kept.</p>
+    </section>
+
+    <div class="rs-status-row">
+      <p class="rs-status" role="status" aria-live="polite" data-rs="status"></p>
+      <button type="button" class="rs-link-button" data-rs="undo" hidden>Undo theme change</button>
+    </div>
+    <p class="rs-error" role="alert" data-rs="error" hidden>
+      <span data-rs-text></span>
+      <button type="button" class="rs-link-button" data-rs="retry" hidden>Retry</button>
+    </p>
+
+    <footer class="rs-popup-footer">
+      <button type="button" class="rs-link-button" data-rs-open="settings">Settings</button>
+      <a href="https://github.com/sidebandstudio/GitHub-Reskin" target="_blank" rel="noopener noreferrer">Source and help</a>
+    </footer>
+  </body>
+</html>

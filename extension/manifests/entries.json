@@ -1,29 +1,173 @@
 {
-  "legacy-1.1.0": {
-    "description": "The 1.1.0 product as merged: content scripts and popup copied unchanged from extension/.",
+  "reskin-2": {
+    "description": "GitHub Reskin 2: C4's background and content lifecycle, C3's GitHub adapter and Primer compiler, the engine and C5's appearance, assembled by C6 with the popup, first-run and settings pages. packages/ui/bundle.mjs bundles the scripts and copies the fonts and preview images.",
     "root": "extension",
-    "files": [
+    "builder": "packages/ui/bundle.mjs",
+    "generated": [
+      "assets/fonts/alegreya/alegreya.woff2",
+      "assets/fonts/barlow-condensed/barlow-condensed.woff2",
+      "assets/fonts/bungee/bungee.woff2",
+      "assets/fonts/cormorant-garamond/cormorant-garamond.woff2",
+      "assets/fonts/fraunces/fraunces.woff2",
+      "assets/fonts/josefin-sans/josefin-sans.woff2",
+      "assets/fonts/rajdhani/rajdhani.woff2",
+      "assets/fonts/space-grotesk/space-grotesk.woff2",
+      "background.js",
       "content.js",
-      "github-modes.js",
-      "icons/icon-128.png",
-      "icons/icon-16.png",
-      "icons/icon-32.png",
-      "icons/icon-48.png",
-      "popup.css",
-      "popup.html",
-      "popup.js",
-      "slang.js",
-      "themes.js"
+      "packages/preview/fixture/assets/avatar-whoisaldo.webp",
+      "packages/preview/fixture/assets/organization-sidebandstudio.webp",
+      "packages/preview/fixture/assets/whoisaldo-readme-city.webp",
+      "packages/preview/fixture/assets/whoisaldo-readme-hero.webp",
+      "packages/preview/fixture/assets/whoisaldo-readme-logos-aws-dark.webp",
+      "packages/preview/fixture/assets/whoisaldo-readme-logos-aws.webp",
+      "packages/preview/fixture/assets/whoisaldo-readme-logos-northeastern.webp",
+      "packages/preview/fixture/assets/whoisaldo-readme-logos-pawtograder.webp",
+      "packages/preview/fixture/assets/whoisaldo-readme-logos-philips.webp",
+      "packages/preview/fixture/assets/whoisaldo-readme-logos-pinnatec-dark.webp",
+      "packages/preview/fixture/assets/whoisaldo-readme-logos-pinnatec.webp",
+      "packages/preview/fixture/assets/whoisaldo-readme-logos-topchoice.webp",
+      "packages/preview/fixture/assets/whoisaldo-readme-panel.svg",
+      "pages/pages.js"
     ],
-    "frozen": {
-      "github-modes.js": "52e1c0ab1130175fda22c84bf2a910899e85363a2ea2b5b82a251b06d259c669"
-    },
+    "files": [
+      "assets/fonts/alegreya/alegreya.woff2",
+      "assets/fonts/barlow-condensed/barlow-condensed.woff2",
+      "assets/fonts/bungee/bungee.woff2",
+      "assets/fonts/cormorant-garamond/cormorant-garamond.woff2",
+      "assets/fonts/fraunces/fraunces.woff2",
+      "assets/fonts/josefin-sans/josefin-sans.woff2",
+      "assets/fonts/rajdhani/rajdhani.woff2",
+      "assets/fonts/space-grotesk/space-grotesk.woff2",
+      "background.js",
+      "content.js",
+      "content/lifecycle/boot.css",
+      "packages/preview/fixture/assets/avatar-whoisaldo.webp",
+      "packages/preview/fixture/assets/organization-sidebandstudio.webp",
+      "packages/preview/fixture/assets/whoisaldo-readme-city.webp",
+      "packages/preview/fixture/assets/whoisaldo-readme-hero.webp",
+      "packages/preview/fixture/assets/whoisaldo-readme-logos-aws-dark.webp",
+      "packages/preview/fixture/assets/whoisaldo-readme-logos-aws.webp",
+      "packages/preview/fixture/assets/whoisaldo-readme-logos-northeastern.webp",
+      "packages/preview/fixture/assets/whoisaldo-readme-logos-pawtograder.webp",
+      "packages/preview/fixture/assets/whoisaldo-readme-logos-philips.webp",
+      "packages/preview/fixture/assets/whoisaldo-readme-logos-pinnatec-dark.webp",
+      "packages/preview/fixture/assets/whoisaldo-readme-logos-pinnatec.webp",
+      "packages/preview/fixture/assets/whoisaldo-readme-logos-topchoice.webp",
+      "packages/preview/fixture/assets/whoisaldo-readme-panel.svg",
+      "pages/icon.svg",
+      "pages/icons/icon-128.png",
+      "pages/icons/icon-16.png",
+      "pages/icons/icon-32.png",
+      "pages/icons/icon-48.png",
+      "pages/onboarding.html",
+      "pages/page.css",
+      "pages/pages.js",
+      "pages/popup.css",
+      "pages/popup.html",
+      "pages/settings.html",
+      "pages/ui.css"
+    ],
+    "frozen": {},
     "notices": [
       {
         "file": "licenses/primer-primitives.txt",
         "license": "MIT",
-        "covers": ["github-modes.js"],
+        "covers": [
+          "background.js",
+          "content.js",
+          "pages/pages.js"
+        ],
         "upstream": "https://github.com/primer/primitives"
+      },
+      {
+        "file": "assets/fonts/alegreya/OFL.txt",
+        "license": "OFL-1.1",
+        "covers": [
+          "assets/fonts/alegreya/alegreya.woff2"
+        ],
+        "upstream": "https://github.com/google/fonts",
+        "userscript": false
+      },
+      {
+        "file": "assets/fonts/barlow-condensed/OFL.txt",
+        "license": "OFL-1.1",
+        "covers": [
+          "assets/fonts/barlow-condensed/barlow-condensed.woff2"
+        ],
+        "upstream": "https://github.com/google/fonts",
+        "userscript": false
+      },
+      {
+        "file": "assets/fonts/bungee/OFL.txt",
+        "license": "OFL-1.1",
+        "covers": [
+          "assets/fonts/bungee/bungee.woff2"
+        ],
+        "upstream": "https://github.com/google/fonts",
+        "userscript": false
+      },
+      {
+        "file": "assets/fonts/cormorant-garamond/OFL.txt",
+        "license": "OFL-1.1",
+        "covers": [
+          "assets/fonts/cormorant-garamond/cormorant-garamond.woff2"
+        ],
+        "upstream": "https://github.com/google/fonts",
+        "userscript": false
+      },
+      {
+        "file": "assets/fonts/fraunces/OFL.txt",
+        "license": "OFL-1.1",
+        "covers": [
+          "assets/fonts/fraunces/fraunces.woff2"
+        ],
+        "upstream": "https://github.com/google/fonts",
+        "userscript": false
+      },
+      {
+        "file": "assets/fonts/josefin-sans/OFL.txt",
+        "license": "OFL-1.1",
+        "covers": [
+          "assets/fonts/josefin-sans/josefin-sans.woff2"
+        ],
+        "upstream": "https://github.com/google/fonts",
+        "userscript": false
+      },
+      {
+        "file": "assets/fonts/rajdhani/OFL.txt",
+        "license": "OFL-1.1",
+        "covers": [
+          "assets/fonts/rajdhani/rajdhani.woff2"
+        ],
+        "upstream": "https://github.com/google/fonts",
+        "userscript": false
+      },
+      {
+        "file": "assets/fonts/space-grotesk/OFL.txt",
+        "license": "OFL-1.1",
+        "covers": [
+          "assets/fonts/space-grotesk/space-grotesk.woff2"
+        ],
+        "upstream": "https://github.com/google/fonts",
+        "userscript": false
+      },
+      {
+        "file": "packages/preview/fixture/OFL-Chakra-Petch.txt",
+        "license": "OFL-1.1",
+        "covers": [
+          "packages/preview/fixture/assets/whoisaldo-readme-panel.svg"
+        ],
+        "upstream": "https://github.com/cadsondemak/Chakra-Petch",
+        "userscript": false
+      },
+      {
+        "file": "packages/preview/fixture/OFL-JetBrains-Mono.txt",
+        "license": "OFL-1.1",
+        "covers": [
+          "packages/preview/fixture/assets/whoisaldo-readme-panel.svg"
+        ],
+        "upstream": "https://github.com/JetBrains/JetBrainsMono",
+        "userscript": false
       }
     ]
   }

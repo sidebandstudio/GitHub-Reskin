@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GitHub Reskin settings</title>
+    <link rel="stylesheet" href="ui.css" />
+    <link rel="stylesheet" href="page.css" />
+    <script src="pages.js" defer></script>
+  </head>
+  <body class="rs-page" data-page="settings">
+    <header class="rs-top rs-page-header">
+      <img class="rs-mark" src="icon.svg" alt="" width="28" height="28" />
+      <p class="rs-title">GitHub Reskin</p>
+      <a class="rs-header-link" href="https://github.com/sidebandstudio/GitHub-Reskin" target="_blank" rel="noopener noreferrer">Help and source</a>
+    </header>
+
+    <main class="rs-main">
+      <h1 class="rs-hero">Settings</h1>
+      <div class="rs-selected" aria-label="Selected theme">
+        <p class="rs-summary-show" data-rs="summary-show"></p>
+        <p class="rs-summary-name" data-rs="summary-name"></p>
+        <p class="rs-note" data-rs="summary-note"></p>
+      </div>
+
+      <section class="rs-notices" data-rs="notices" aria-label="Update notes" hidden>
+        <ul data-rs-list></ul>
+        <button type="button" class="rs-link-button" data-rs-dismiss>Dismiss</button>
+      </section>
+
+      <div class="rs-status-row">
+        <p class="rs-status" role="status" aria-live="polite" data-rs="status"></p>
+        <button type="button" class="rs-link-button" data-rs="undo" hidden>Undo theme change</button>
+      </div>
+      <p class="rs-error" role="alert" data-rs="error" hidden>
+        <span data-rs-text></span>
+        <button type="button" class="rs-link-button" data-rs="retry" hidden>Retry</button>
+      </p>
+
+      <section class="rs-section" aria-labelledby="rs-themes-title">
+        <h2 id="rs-themes-title">Themes</h2>
+        <div class="rs-groups" data-rs="groups" role="group" aria-label="Theme groups"></div>
+        <div class="rs-search-row">
+          <label class="rs-visually-hidden" for="rs-search">Search themes or shows</label>
+          <input id="rs-search" class="rs-search" type="search" placeholder="Search themes or shows" autocomplete="off" data-rs="search" aria-describedby="rs-count" />
+          <p id="rs-count" class="rs-count" data-rs="count" aria-live="polite"></p>
+        </div>
+        <section class="rs-gallery" aria-label="Themes" data-rs="gallery"></section>
+        <div class="rs-empty" data-rs="empty" hidden>
+          <p data-rs-text></p>
+          <button type="button" class="rs-link-button" data-rs-clear>Clear search</button>
+        </div>
+      </section>
+
+      <section class="rs-section" aria-labelledby="rs-prefs-title">
+        <h2 id="rs-prefs-title">Preferences</h2>
+        <p class="rs-note">These change how every theme is displayed.</p>
+        <div class="rs-pref-list">
+          <label class="rs-switch"><input type="checkbox" role="switch" data-rs="enabled" />Reskin on GitHub and Gist</label>
+          <fieldset class="rs-segmented rs-segmented--start" data-rs="appearance">
+            <legend>Appearance</legend>
+            <span class="rs-segments">
+              <label><input type="radio" name="appearance" value="full" />Full</label>
+              <label><input type="radio" name="appearance" value="calm" />Calm</label>
+            </span>
+          </fieldset>
+          <p class="rs-note" data-rs="calm-note" hidden>Calm keeps colors, the graph and code colors, and hides wallpaper, flavor text, glow and motion. Your other choices are kept.</p>
+          <label class="rs-switch"><input type="checkbox" role="switch" data-rs="text" />Text: profile tag, heading and 404 flourishes</label>
+          <label class="rs-switch"><input type="checkbox" role="switch" data-rs="motion" aria-describedby="rs-motion-note" />Motion</label>
+          <p class="rs-note" id="rs-motion-note" data-rs="motion-note" hidden>Paused by your device's reduced-motion setting</p>
+          <label class="rs-switch"><input type="checkbox" role="switch" data-rs="fonts" />Theme fonts</label>
+          <label class="rs-switch"><input type="checkbox" role="switch" data-rs="effects" />Effects</label>
+        </div>
+      </section>
+
+      <section class="rs-section" aria-labelledby="rs-make-title">
+        <h2 id="rs-make-title">Make a theme</h2>
+        <p class="rs-note" id="rs-make-note">The theme builder and theme import arrive in the next update. Your saved themes will appear in My themes.</p>
+        <div class="rs-actions">
+          <button type="button" class="rs-button" disabled aria-describedby="rs-make-note">Import theme</button>
+        </div>
+      </section>
+    </main>
+
+    <footer class="rs-page-footer">
+      <p>Not affiliated with or endorsed by GitHub. Series names identify inspiration; all trademarks belong to their owners.</p>
+    </footer>
+  </body>
+</html>

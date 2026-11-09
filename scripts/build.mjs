@@ -58,9 +58,14 @@ export async function loadEntry(config) {
 export const licenseFiles = (entry) => [...LICENSE_FILES, ...entry.notices.map((notice) => notice.file)];
 
 // The artifacts a license file ships in. The single-file userscript carries the extension's
-// upstream material, so it embeds each upstream notice; the project's own LICENSE is in the archives.
-export const licenseTargets = (entry, file) =>
-  entry.notices.some((notice) => notice.file === file) ? ["chrome", "firefox", "userscript", "amo-source"] : ["chrome", "firefox", "amo-source"];
+// upstream material, so it embeds each upstream notice, except one marked `userscript: false` for
+// material only the browser packages carry (font files, preview images); the project's own
+// LICENSE is in the archives.
+export function licenseTargets(entry, file) {
+  const notice = entry.notices.find((n) => n.file === file);
+  if (!notice) return ["chrome", "firefox", "amo-source"];
+  return notice.userscript === false ? ["chrome", "firefox", "amo-source"] : ["chrome", "firefox", "userscript", "amo-source"];
+}
 
 // Problems with an entry's notices, as messages. Every frozen input is upstream material, so each
 // needs a notice that covers it, and each notice must cover files the entry really has.
@@ -166,6 +171,32 @@ async function freshDir(outDir, name) {
 
 const hashes = (files) => Object.fromEntries(Object.keys(files).sort().map((path) => [path, sha256(files[path])]));
 
+// The repository files an entry's package is made from: each listed file under the entry's root,
+// except generated ones, which come from the entry's builder instead.
+export const entrySourcePaths = (entry) => [
+  ...entry.files.filter((path) => !(entry.generated || []).includes(path)).map((path) => `${entry.root}/${path}`),
+  ...(entry.builder ? [entry.builder] : []),
+];
+
+// An entry's `builder` module exports build({root, entry}), which returns the bytes of exactly the
+// paths the entry lists as `generated` (bundled scripts, copied fonts), each also in `files`.
+async function generatedFiles(entry) {
+  const generated = entry.generated || [];
+  if (!entry.builder) {
+    if (generated.length) throw new Error("An entry with generated files needs a builder");
+    return {};
+  }
+  const outside = generated.filter((path) => !entry.files.includes(path));
+  if (outside.length) throw new Error(`Generated files must be entry files: ${outside.join(", ")}`);
+  const { build: generate } = await import(pathToFileURL(join(ROOT, entry.builder)).href);
+  const files = await generate({ root: ROOT, entry });
+  const got = Object.keys(files).sort();
+  if (JSON.stringify(got) !== JSON.stringify([...generated].sort())) throw new Error(`${entry.builder} generated ${got.join(", ")}, not the entry's generated files`);
+  const empty = got.filter((path) => !files[path]?.length);
+  if (empty.length) throw new Error(`${entry.builder} generated empty files: ${empty.join(", ")}`);
+  return files;
+}
+
 // The files of one browser package: the entry's files, the licenses and manifest.json.
 export async function extensionFiles(browser, { config, entry, testFixture }) {
   const testMatches = testFixture?.matches || [];
@@ -173,8 +204,9 @@ export async function extensionFiles(browser, { config, entry, testFixture }) {
   const files = {};
   for (const path of entry.files) {
     if (isAbsolute(path) || path.split("/").includes("..")) throw new Error(`Entry file ${path} must stay inside ${entry.root}`);
-    files[path] = await readSource(`${entry.root}/${path}`);
   }
+  const generated = await generatedFiles(entry);
+  for (const path of entry.files) files[path] = Object.hasOwn(generated, path) ? Buffer.from(generated[path]) : await readSource(`${entry.root}/${path}`);
   for (const [path, hash] of Object.entries(entry.frozen)) {
     if (!files[path] || sha256(files[path]) !== hash) {
       throw new Error(`${entry.root}/${path} is frozen for this entry and has changed. The build never regenerates it.`);

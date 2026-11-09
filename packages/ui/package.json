@@ -1,0 +1,12 @@
+{
+  "name": "@github-reskin/ui",
+  "version": "1.0.0",
+  "private": true,
+  "description": "GitHub Reskin picker, UI host and runtime assembly shared by the extension and the userscript.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./index.js"
+  },
+  "sideEffects": false
+}

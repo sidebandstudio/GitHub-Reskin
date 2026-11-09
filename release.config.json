@@ -7,10 +7,15 @@
     "npm": "11.12.1"
   },
   "extension": {
-    "entry": "legacy-1.1.0",
+    "entry": "reskin-2",
     "geckoId": "github-reskin@sideband.studio",
-    "permissions": ["storage"],
-    "hostMatches": ["https://github.com/*", "https://gist.github.com/*"]
+    "permissions": [
+      "storage"
+    ],
+    "hostMatches": [
+      "https://github.com/*",
+      "https://gist.github.com/*"
+    ]
   },
   "userscript": {
     "builder": "scripts/userscript.mjs",

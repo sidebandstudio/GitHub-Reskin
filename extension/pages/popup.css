@@ -1,0 +1,101 @@
+/* Popup: 400px where the browser allows, fluid to 320px, at most 600px tall. The title, the
+   on/off switch and the selected theme stay in place; only the gallery scrolls. */
+html {
+  width: 400px;
+  max-width: 100vw;
+  min-width: 320px;
+}
+.rs-popup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  height: 600px;
+  max-height: 600px;
+  padding: 12px 14px 8px;
+  overflow: hidden;
+}
+.rs-popup > * {
+  flex: none;
+}
+.rs-top-switch {
+  margin-left: auto;
+}
+.rs-summary p {
+  margin: 0;
+}
+.rs-summary-show {
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+.rs-summary-name {
+  color: var(--secondary);
+  font-size: 14px;
+}
+.rs-browse {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.rs-popup .rs-gallery {
+  flex: 1 1 auto;
+  min-height: 120px;
+  overflow-y: auto;
+  padding: 3px;
+  margin: 0 -3px;
+  overscroll-behavior: contain;
+}
+.rs-prefs {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding-top: 4px;
+  border-top: 1px solid var(--separator);
+}
+.rs-children {
+  display: flex;
+  gap: 24px;
+}
+.rs-popup .rs-status-row {
+  min-height: 0;
+}
+.rs-popup .rs-cards {
+  gap: 8px;
+}
+.rs-popup .rs-card {
+  padding: 5px 5px 6px;
+}
+.rs-popup .rs-mini {
+  height: 46px;
+}
+.rs-popup .rs-mini-body {
+  padding: 4px 5px;
+}
+.rs-popup .rs-card-text {
+  padding-top: 4px;
+}
+.rs-popup .rs-card-primary {
+  font-size: 13px;
+}
+.rs-popup .rs-card-secondary {
+  font-size: 12px;
+}
+.rs-popup .rs-card-check {
+  top: 8px;
+  right: 8px;
+}
+.rs-popup-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid var(--separator);
+}
+.rs-popup-footer a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+.rs-empty {
+  flex: 1 1 auto;
+}

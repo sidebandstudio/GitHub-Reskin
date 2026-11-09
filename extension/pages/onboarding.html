@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Welcome to GitHub Reskin</title>
+    <link rel="stylesheet" href="ui.css" />
+    <link rel="stylesheet" href="page.css" />
+    <script src="pages.js" defer></script>
+  </head>
+  <body class="rs-page" data-page="onboarding">
+    <header class="rs-top rs-page-header">
+      <img class="rs-mark" src="icon.svg" alt="" width="28" height="28" />
+      <p class="rs-title">GitHub Reskin</p>
+      <a class="rs-header-link" href="https://github.com/sidebandstudio/GitHub-Reskin" target="_blank" rel="noopener noreferrer">Help and source</a>
+    </header>
+
+    <main class="rs-main">
+      <h1 class="rs-hero">Pick your GitHub world.</h1>
+      <p class="rs-lede">Your browser view. Your colors. Reskin changes how GitHub looks in this browser only; nothing on GitHub or your account changes.</p>
+
+      <div class="rs-quick" data-rs="quick" role="group" aria-label="Quick picks">
+        <button type="button" class="rs-chip" data-theme="anime.cyberpunk-edgerunners">Cyberpunk: Edgerunners</button>
+        <button type="button" class="rs-chip" data-theme="anime.frieren">Frieren</button>
+        <button type="button" class="rs-chip" data-theme="anime.demon-slayer">Demon Slayer</button>
+        <button type="button" class="rs-chip rs-chip--more" aria-expanded="false" aria-controls="rs-all" data-rs-more>All 13 anime</button>
+      </div>
+
+      <section id="rs-all" class="rs-all" aria-label="All themes" hidden>
+        <div class="rs-groups" data-rs="groups" role="group" aria-label="Theme groups"></div>
+        <div class="rs-search-row">
+          <label class="rs-visually-hidden" for="rs-search">Search themes or shows</label>
+          <input id="rs-search" class="rs-search" type="search" placeholder="Search themes or shows" autocomplete="off" data-rs="search" aria-describedby="rs-count" />
+          <p id="rs-count" class="rs-count" data-rs="count" aria-live="polite"></p>
+        </div>
+        <section class="rs-gallery" aria-label="Themes" data-rs="gallery"></section>
+        <div class="rs-empty" data-rs="empty" hidden>
+          <p data-rs-text></p>
+          <button type="button" class="rs-link-button" data-rs-clear>Clear search</button>
+        </div>
+      </section>
+
+      <section class="rs-stage" aria-labelledby="rs-preview-title">
+        <div class="rs-stage-bar">
+          <h2 id="rs-preview-title" class="rs-stage-title">Interactive preview</h2>
+          <fieldset class="rs-segmented" data-rs-before>
+            <legend class="rs-visually-hidden">Compare</legend>
+            <span class="rs-segments">
+              <label><input type="radio" name="compare" value="before" />Before</label>
+              <label><input type="radio" name="compare" value="after" checked />After</label>
+            </span>
+          </fieldset>
+        </div>
+        <div class="rs-preview" data-rs-preview tabindex="0" role="region" aria-label="Preview of a GitHub profile, scrollable"></div>
+        <p class="rs-note">A fixed offline copy of a public GitHub profile. Your real GitHub tabs change when you pick a theme.</p>
+      </section>
+
+      <div class="rs-selected" aria-label="Selected theme">
+        <p class="rs-summary-show" data-rs="summary-show"></p>
+        <p class="rs-summary-name" data-rs="summary-name"></p>
+        <p class="rs-note" data-rs="summary-note"></p>
+      </div>
+
+      <section class="rs-prefs rs-prefs--row" aria-label="Appearance">
+        <fieldset class="rs-segmented" data-rs="appearance">
+          <legend>Appearance</legend>
+          <span class="rs-segments">
+            <label><input type="radio" name="appearance" value="full" />Full</label>
+            <label><input type="radio" name="appearance" value="calm" />Calm</label>
+          </span>
+        </fieldset>
+        <label class="rs-switch"><input type="checkbox" role="switch" data-rs="text" />Text</label>
+        <label class="rs-switch"><input type="checkbox" role="switch" data-rs="motion" aria-describedby="rs-motion-note" />Motion</label>
+        <p class="rs-note" id="rs-motion-note" data-rs="motion-note" hidden>Paused by your device's reduced-motion setting</p>
+      </section>
+      <p class="rs-note" data-rs="calm-note" hidden>Calm keeps colors, the graph and code colors, and hides wallpaper, flavor text, glow and motion. Your Text and Motion choices are kept.</p>
+
+      <div class="rs-status-row">
+        <p class="rs-status" role="status" aria-live="polite" data-rs="status"></p>
+        <button type="button" class="rs-link-button" data-rs="undo" hidden>Undo theme change</button>
+      </div>
+      <p class="rs-error" role="alert" data-rs="error" hidden>
+        <span data-rs-text></span>
+        <button type="button" class="rs-link-button" data-rs="retry" hidden>Retry</button>
+      </p>
+
+      <div class="rs-actions">
+        <a class="rs-button rs-button--primary" href="https://github.com/whoisaldo" target="_blank" rel="noopener noreferrer" data-rs-open-github>Open GitHub</a>
+      </div>
+
+      <ul class="rs-tips">
+        <li>Tip: pin GitHub Reskin in your browser's extensions menu.</li>
+        <li>Already had GitHub open? Reload that tab once after installation.</li>
+      </ul>
+    </main>
+
+    <footer class="rs-page-footer">
+      <p>Not affiliated with or endorsed by GitHub. Series names identify inspiration; all trademarks belong to their owners.</p>
+    </footer>
+  </body>
+</html>
