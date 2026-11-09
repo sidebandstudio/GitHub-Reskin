@@ -191,14 +191,19 @@ function restoring(index, covered, colors, baseline) {
   });
 }
 
-// Whether GitHub's own default and muted text of `mode` read at 4.5:1 on `canvas`. A value that
-// is not a plain color cannot be checked and counts as not reading.
-function nativeTextReads(index, mode, baseline, canvas) {
-  const own = indexDeclarations(index, "restoreCss", mode).values;
-  return ["--fgColor-default", "--fgColor-muted"].every((name) => {
-    const value = own.get(name) ?? baseline.get(name);
-    return HEX6.test(value ?? "") && contrast(value, canvas) >= 4.5;
-  });
+// GitHub's text was made for its own canvas, not the theme's. Protected UI in an island whose own
+// default or muted text does not read at 4.5:1 on the theme's canvas takes back GitHub's values of
+// the seed's mode instead, the theme's own base; where the seed's muted text does not read either,
+// as on Nord's lighter dark canvas, its muted text takes the seed's default. No canvas is painted
+// behind protected UI: a block's background extends under the floats beside it, such as the
+// profile timeline before its pagination form, and would sit under themed text. A value that is
+// not a plain color cannot be checked and counts as not reading.
+function legibly(index, restore, seed, colors, baseline, canvas) {
+  const value = (mode, name) => indexDeclarations(index, "restoreCss", mode).values.get(name) ?? baseline.get(name);
+  const reads = (mode, name) => HEX6.test(value(mode, name) ?? "") && contrast(value(mode, name), canvas) >= 4.5;
+  const [[, body]] = restoring(index, [seed.id], colors, baseline);
+  const fallback = reads(seed.id, "--fgColor-muted") ? body : `${body};--fgColor-muted:${value(seed.id, "--fgColor-default")}`;
+  return restore.map(([mode, own]) => [mode, reads(mode, "--fgColor-default") && reads(mode, "--fgColor-muted") ? own : fallback]);
 }
 
 function assertPreferences(prefs) {
@@ -284,7 +289,7 @@ export function compileGitHub(resolved, modePlan, prefs, index = MODE_INDEX, opt
 
   const covered = coveredModes(index, seed.id);
   // The preview fixture holds no protected UI.
-  const restore = preview ? [] : restoring(index, covered, colors, baseline.values);
+  const restore = preview ? [] : legibly(index, restoring(index, covered, colors, baseline.values), seed, colors, baseline.values, colorAt(resolved, "/tokens/canvas"));
   const known = Object.keys(index.modes);
   const baseOf = (m) => index.modes[m]?.base;
   // Fill and stroke paint the blob, background-color the bar.
@@ -390,13 +395,8 @@ export function compileGitHub(resolved, modePlan, prefs, index = MODE_INDEX, opt
     "}",
     // Protected UI inside a themed island takes back that island's native values for its mode,
     // which everything in it inherits. The style query reads the parent's, the nearest island's.
+    // Where that island's own text would not read on the theme's canvas, it takes the seed's.
     ...restore.map(([mode, body]) => `@container style(${ON}: 1) and style(${MODE}: ${mode}){${FRAGMENT}{${body}}}`),
-    // GitHub's text was made for its own canvas, not the theme's. In a mode whose default or muted
-    // text does not read at 4.5:1 on the theme's canvas, every island of the other base among
-    // them, protected UI also takes back that canvas behind it and that mode's text, which it
-    // would otherwise inherit from the themed page: at no specificity, so GitHub's own colors and
-    // backgrounds for it still win.
-    ...restore.filter(([mode]) => !nativeTextReads(index, mode, baseline.values, colorAt(resolved, "/tokens/canvas"))).map(([mode]) => `@container style(${ON}: 1) and style(${MODE}: ${mode}){:where(${FRAGMENT}){color:var(--fgColor-default);background-color:var(--bgColor-default)}}`),
     // Last, protected UI clears the Reskin switches for itself and everything in it, as a native
     // island does, so no style-queried rule or Reskin variable reaches inside.
     `${PROTECTED_UI}{${CLEARED}}`,

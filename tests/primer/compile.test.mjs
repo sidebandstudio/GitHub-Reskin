@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { CSS_VARIABLES } from "../../packages/contracts/index.js";
+import { resolveTheme } from "../../packages/engine/index.js";
 import { cssVariables } from "../../packages/engine/variables.js";
 import { parseStylesheet } from "../../packages/primer/css.js";
 import { colorAt, compileGitHub, contrast, coveredModes, emittedColors, islandScope, MODE_INDEX, modeSelectors, selectMode } from "../../packages/primer/index.js";
@@ -234,50 +235,49 @@ test("structured component rules never reach protected UI or anything inside it,
   }
 });
 
-test("protected UI takes back its nearest island's own native values for each covered mode under the style query, and the seed mode's through the selector fallback", () => {
+test("protected UI takes back its nearest island's own native values for each covered mode under the style query, or the seed mode's where they do not read on the theme's canvas, and the seed mode's through the selector fallback", () => {
   const [resolved, p] = themed("dark");
   const all = rules(compileGitHub(resolved, p, PREFS).css);
   const covered = coveredModes(MODE_INDEX, "dark");
   const ATTRIBUTED = "[data-color-mode]:is([data-light-theme],[data-dark-theme])";
   const own = (mode) => new Map(MODE_INDEX.restoreCss[mode].split(";").map((d) => [d.slice(0, d.indexOf(":")), d.slice(d.indexOf(":") + 1)]));
-  const check = (r, mode) => {
-    const values = own(mode);
+  // The last declaration of each name wins.
+  const check = (r, mode, overrides = {}) => {
+    const values = new Map([...own(mode), ...Object.entries(overrides)]);
     const base = MODE_INDEX.modes[mode].base;
-    for (const d of r.declarations) {
-      assert.equal(d.important, false, `${mode} ${d.name}`);
-      if (d.name === "color-scheme") assert.equal(d.value, base);
-      else if (d.name.startsWith("--lightningcss-")) assert.equal(d.value.trim(), (d.name === `--lightningcss-${base}`) ? "initial" : "");
-      else assert.equal(d.value, values.get(d.name), `${mode} ${d.name} is GitHub's own`);
+    const got = Object.fromEntries(r.declarations.map((d) => [d.name, d.value]));
+    for (const d of r.declarations) assert.equal(d.important, false, `${mode} ${d.name}`);
+    for (const [name, value] of Object.entries(got)) {
+      if (name === "color-scheme") assert.equal(value, base);
+      else if (name.startsWith("--lightningcss-")) assert.equal(value.trim(), (name === `--lightningcss-${base}`) ? "initial" : "");
+      else assert.equal(value, values.get(name), `${mode} ${name} is GitHub's own`);
     }
-    return Object.fromEntries(r.declarations.map((d) => [d.name, d.value]));
+    return got;
   };
   // Engines with style queries: once, after both branches, on protected UI that is no island.
-  const queried = all.filter((r) => r.media.some((m) => m.includes("style(--reskin-mode:")) && !r.selectors[0].startsWith(":where("));
-  // Where GitHub's own default or muted text does not read at 4.5:1 on the theme's canvas, protected
-  // UI also takes back its island's own text and canvas, at no specificity, so its native text never
-  // sits on the theme's canvas. On GitHub's dark canvas only the light island needs it; on a lighter
-  // dark canvas, like Nord's, where dark muted text reads at 4.29:1, the dark islands do too.
-  const backing = (css) => rules(css).filter((r) => r.media.some((m) => m.includes("style(--reskin-mode:")) && r.selectors[0].startsWith(":where("));
-  const expectBacked = (css, modes) => {
-    const backed = backing(css);
-    assert.deepEqual(backed.map((r) => r.media), modes.map((mode) => ["not all and (forced-colors: active)", `style(--reskin-on: 1) and style(--reskin-mode: ${mode})`]));
-    for (const r of backed) {
-      assert.deepEqual(r.selectors, [`:where(${PROTECTED_UI.split(/,(?=[a-z.[])/).map((s) => `${s}:not(${ATTRIBUTED})`).join(",")})`]);
-      assert.deepEqual(r.declarations.map((d) => [d.name, d.value, d.important]), [["color", "var(--fgColor-default)", false], ["background-color", "var(--bgColor-default)", false]]);
+  const queried = (css) => rules(css).filter((r) => r.media.some((m) => m.includes("style(--reskin-mode:")));
+  const expectRestored = (css, modes, overrides) => {
+    const restored = queried(css);
+    assert.deepEqual(restored.map((r) => r.media), covered.map((mode) => ["not all and (forced-colors: active)", `style(--reskin-on: 1) and style(--reskin-mode: ${mode})`]));
+    for (const [i, r] of restored.entries()) {
+      assert.deepEqual(r.selectors, PROTECTED_UI.split(/,(?=[a-z.[])/).map((s) => `${s}:not(${ATTRIBUTED})`));
+      // No canvas is painted behind protected UI: a block's background extends under the floats
+      // beside it, where it would sit under themed text.
+      assert.ok(r.declarations.every((d) => d.name !== "background-color" && d.name !== "color"), covered[i]);
+      check(r, modes[i], overrides);
     }
+    return restored;
   };
-  expectBacked(compileGitHub(resolved, p, PREFS).css, ["light"]);
+  // GitHub's light text does not read on a dark canvas, so protected UI in a light island under a
+  // dark theme takes back dark's values, the seed's; the dark islands keep their own.
+  const restored = expectRestored(compileGitHub(resolved, p, PREFS).css, covered.map((mode) => (mode === "light" ? "dark" : mode)));
+  assert.deepEqual(restored[covered.indexOf("light")].declarations, restored[covered.indexOf("dark")].declarations);
+  // On a lighter dark canvas, like Nord's, where dark's muted text reads at 4.29:1, every island
+  // takes back dark's values with dark's default text for its muted text.
   const nord = resolvedFromSeed(MODE_INDEX.modes.dark, { "/tokens/canvas": "#2e3440" });
   assert.ok(contrast(own("dark").get("--fgColor-muted"), "#2e3440") < 4.5);
-  expectBacked(compileGitHub(nord, p, PREFS).css, covered);
-  assert.deepEqual(queried.map((r) => r.media), covered.map((mode) => ["not all and (forced-colors: active)", `style(--reskin-on: 1) and style(--reskin-mode: ${mode})`]));
-  for (const [i, mode] of covered.entries()) {
-    assert.deepEqual(queried[i].selectors, PROTECTED_UI.split(/,(?=[a-z.[])/).map((s) => `${s}:not(${ATTRIBUTED})`));
-    check(queried[i], mode);
-  }
-  // A light island under a dark theme gets back all of light's own colors.
-  assert.equal(check(queried[covered.indexOf("light")], "light")["--bgColor-default"], own("light").get("--bgColor-default"));
-  assert.ok(queried[covered.indexOf("light")].declarations.length > 400);
+  assert.ok(contrast(own("dark").get("--fgColor-default"), "#2e3440") >= 4.5);
+  expectRestored(compileGitHub(nord, p, PREFS).css, covered.map(() => "dark"), { "--fgColor-muted": own("dark").get("--fgColor-default") });
   for (const branch of ["light", "dark"]) {
     const scope = scopeOf("dark", branch);
     const media = branch === "light" ? "not all and (prefers-color-scheme: dark)" : "(prefers-color-scheme: dark)";
@@ -295,6 +295,24 @@ test("protected UI takes back its nearest island's own native values for each co
     assert.deepEqual(fallback[0].selectors, [`:is(${PROTECTED_UI})${scope.shallow}:not(:is(${PROTECTED_UI}) ${ATTRIBUTED} *,${ATTRIBUTED}:is(${PROTECTED_UI}) *)`]);
     assert.ok(scope.nearest.startsWith(scope.shallow.slice(0, -1)));
     check(fallback[0], "dark");
+  }
+});
+
+test("every catalog theme's protected UI reads at 4.5:1 on its canvas in every covered island, with no canvas behind it", () => {
+  for (const entry of readJson("themes/catalog.json")) {
+    const theme = readJson(entry.file);
+    for (const seed of Object.values(MODE_INDEX.modes).filter((m) => m.base === theme.base && !m.highContrast && coveredModes(MODE_INDEX, m.id).length)) {
+      const resolved = resolveTheme(theme, { seed, policy: "themed", reducedMotion: false, forcedColors: false });
+      const canvas = colorAt(resolved, "/tokens/canvas");
+      const baseline = new Map(MODE_INDEX.nativeCss[seed.id].split(";").map((d) => [d.slice(0, d.indexOf(":")), d.slice(d.indexOf(":") + 1)]));
+      const restored = rules(compileGitHub(resolved, { seedMode: seed.id, policy: "themed" }, PREFS).css).filter((r) => r.media.some((m) => m.includes("style(--reskin-mode:")));
+      assert.equal(restored.length, coveredModes(MODE_INDEX, seed.id).length);
+      for (const r of restored) {
+        const got = new Map([...baseline, ...r.declarations.map((d) => [d.name, d.value])]);
+        assert.ok(!got.has("background-color"), `${entry.slug} ${r.media[1]}`);
+        for (const name of ["--fgColor-default", "--fgColor-muted"]) assert.ok(contrast(got.get(name), canvas) >= 4.5, `${entry.slug} on ${seed.id}, ${r.media[1]}: ${name} ${got.get(name)} on ${canvas}`);
+      }
+    }
   }
 });
 
