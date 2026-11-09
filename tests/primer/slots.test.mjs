@@ -33,6 +33,16 @@ test("the adapter knows exactly the eight frozen slot IDs, and its states match 
   for (const page of evidence.pages) for (const a of page.anchors) assert.ok(!a.authored && !a.interactive, `${page.url} ${a.slot}`);
 });
 
+// Page clocks for locateSlots: one that never advances, and one that jumps 5 ms on every reading,
+// past the 4 ms allowance, as on a runner too slow to finish discovery in time.
+const frozenClock = () => {
+  performance.now = () => 0;
+};
+const slowClock = () => {
+  let t = 0;
+  performance.now = () => (t += 5);
+};
+
 for (const [name, engine] of [["Chromium", chromium], ["Firefox", firefox]]) {
   describe(`slot anchors in ${name}`, () => {
     let browser;
@@ -44,13 +54,18 @@ for (const [name, engine] of [["Chromium", chromium], ["Firefox", firefox]]) {
     });
 
     // Serves html at a github.com (or gist) URL and returns what the adapter reports there.
-    async function locate(html, { url = "https://github.com/octo-sample", route, mutate } = {}) {
+    // locateSlots reads the page's clock, which the helper controls so results never depend on
+    // how fast the runner is: frozen unless a test passes its own. `init` runs before the page's
+    // scripts, as the browser's own environment would.
+    async function locate(html, { url = "https://github.com/octo-sample", route, mutate, clock = frozenClock, init } = {}) {
       const context = await browser.newContext();
       await context.route("**/*", (r) => (r.request().url() === url ? r.fulfill({ contentType: "text/html", body: html }) : r.abort()));
+      if (init) await context.addInitScript(init);
       const page = await context.newPage();
       await page.goto(url);
       await page.addScriptTag({ content: bundle });
       if (mutate) await page.evaluate(mutate);
+      await page.evaluate(clock);
       const result = await page.evaluate((route) => {
         const G = globalThis.ReskinGitHub;
         const before = document.documentElement.outerHTML;
@@ -138,6 +153,7 @@ for (const [name, engine] of [["Chromium", chromium], ["Firefox", firefox]]) {
       const page = await context.newPage();
       await page.goto(url);
       await page.addScriptTag({ content: bundle });
+      await page.evaluate(frozenClock);
       const result = await page.evaluate(() => {
         const calls = { document: [], element: 0 };
         for (const [proto, kind] of [[Document.prototype, "document"], [Element.prototype, "element"]]) {
@@ -170,13 +186,18 @@ for (const [name, engine] of [["Chromium", chromium], ["Firefox", firefox]]) {
         for (let i = 0; i < 250; i++) card.append(Object.assign(document.createElement("h2"), { textContent: `Heading ${i}` }));
       };
       assert.deepEqual((await locate(PROFILE, { mutate: crowd })).anchors, []);
-      // A clock that jumps 5 ms on every reading exhausts the 4 ms allowance.
-      const slowClock = () => {
-        let t = 0;
-        performance.now = () => (t += 5);
-      };
-      assert.deepEqual((await locate(PROFILE, { mutate: slowClock })).anchors, []);
+      assert.deepEqual((await locate(PROFILE, { clock: slowClock })).anchors, []);
       assert.equal((await locate(PROFILE)).anchors.length, 5);
+    });
+
+    test("r4-3 slot results do not depend on the runner's clock: a runner too slow for 4 ms still gets every semantic anchor", async () => {
+      // The page's own clock runs out on every reading, as on a loaded CI runner; the helper's
+      // controlled clock replaces it, so the semantic result is the same as on a fast machine.
+      const r = await locate(PROFILE, { init: slowClock });
+      assert.deepEqual(slots(r), ["contributions.caption", "profile.activity.heading", "profile.organizations.heading", "profile.pinned.heading", "profile.tag"]);
+      assert.equal((await locate(PROFILE, { init: slowClock, mutate: () => document.querySelector("a.avatar-group-item").remove() })).anchors.length, 4);
+      // The production allowance still applies to the clock the adapter reads.
+      assert.deepEqual((await locate(PROFILE, { init: slowClock, clock: slowClock })).anchors, []);
     });
 
     test("authored copies of GitHub's structure never anchor, even with GitHub's classes", async () => {

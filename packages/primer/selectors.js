@@ -61,8 +61,9 @@ export const BRAND_FOOTER = `:is(${BRAND_WRAPPER} > ${CONTENTINFO})`;
 const BRAND_INNER = `${BRAND_FOOTER} ${BRAND_LOOSE}`;
 
 // How many islands with theme attributes, counted from the root, may enclose an element for its
-// nearest one to be found. A deeper island is suppressed by any unsafe island inside it.
-const NESTING = 3;
+// nearest one to be found exactly. A selector cannot name the nearest of any number of ancestors,
+// so each depth has its own selectors, and deeper elements take the narrowest sound tests below.
+const NESTING = 6;
 
 // Elements with at least `n` islands with theme attributes among their ancestors.
 const below = (n) => `${`${ATTRIBUTED} `.repeat(n)}*`;
@@ -93,8 +94,9 @@ function grouped(modes, baseOf, branch) {
  *   inherits from its nearest island with theme attributes; when that island is themed it is
  *   suppressed and keeps GitHub's own declarations for its mode, and when it is a native island
  *   its reset already protects the boundary and nothing above it is suppressed. Other islands
- *   stay themed. Browsers without :has() drop every rule that names `eligible`, which leaves
- *   GitHub native.
+ *   stay themed. Through six islands from the root the nearest island is exact; a deeper island
+ *   is suppressed by an unsafe island inside it that no deeper native island separates from it.
+ *   Browsers without :has() drop every rule that names `eligible`, which leaves GitHub native.
  * - `themed` matches the plan's islands, suppressed or not.
  * - `native` matches islands of the other known modes and unknown attributed islands.
  * - `others` matches every island but the plan's and the Brand footer's, in one compound that
@@ -103,8 +105,9 @@ function grouped(modes, baseOf, branch) {
  *   while it holds no island of `others`: GitHub's mode files do not reset Brand properties, so a
  *   native, unknown or unsafe island must not inherit them. A Brand island beside one keeps them.
  * - `within(target)` matches `target`, a compound selector without theme attributes of its own,
- *   when its nearest island with theme attributes is eligible: through three islands from the
- *   root, and below that while every island above it is themed and none holds an unsafe one.
+ *   when its nearest island with theme attributes is eligible: exactly through six islands from
+ *   the root, and below that while the islands above it form at most three runs of themed and
+ *   native islands, ending themed, and no deeper themed island above it could be suppressed.
  *   A native island is its own boundary, and a themed island nested in it starts a fresh scope.
  *   For rules that are not inherited custom properties, in Gecko before container style queries.
  *
@@ -118,16 +121,30 @@ export function islandScope(covered, known, baseOf, branch) {
   // An island is suppressed when an unsafe boundary below it has no other island with theme
   // attributes in between: both are at the same depth.
   const sameDepth = (depth) => `:has(${unsafe}:not(${below(depth + 1)}))`;
+  const native = `${ATTRIBUTED}:not(${themed})`;
   const suppressed = [];
   for (let depth = 1; depth <= NESTING; depth++) suppressed.push(`${atDepth(depth)}${sameDepth(depth)}`);
-  suppressed.push(`${ATTRIBUTED}:is(${below(NESTING)}):has(${unsafe})`);
-  // A target with exactly `depth` islands with theme attributes above it, the innermost themed
+  // Deeper, a native island past the first six separates an unsafe island below it from every
+  // island above it, but a selector sees such a native island only as an ancestor of the unsafe
+  // one, not as below the island being tested. So an island with one above it is suppressed by
+  // any unsafe island inside it, and any other island by an unsafe island no such one separates.
+  const deepNative = `${native}:is(${below(NESTING)})`;
+  suppressed.push(`${ATTRIBUTED}:is(${below(NESTING)}):is(${deepNative} *):has(${unsafe})`);
+  suppressed.push(`${ATTRIBUTED}:is(${below(NESTING)}):has(${unsafe}:not(${deepNative} *))`);
+  // An element with exactly `depth` islands with theme attributes above it, the innermost themed
   // and not suppressed.
-  const native = `${ATTRIBUTED}:not(${themed})`;
   const nearest = [];
-  for (let depth = 1; depth <= NESTING; depth++) nearest.push((target) => `${atDepth(depth)}${themed}:not(${sameDepth(depth)}) ${target}:not(${ATTRIBUTED}):not(${below(depth + 1)})`);
-  // Deeper, only themed islands above and no unsafe island below any of them: none is suppressed.
-  nearest.push((target) => `${target}:not(${ATTRIBUTED}):is(${below(NESTING + 1)}):not(${native} *):not(${themed}:has(${unsafe}) *)`);
+  for (let depth = 1; depth <= NESTING; depth++) nearest.push(`:is(${atDepth(depth)}${themed}:not(${sameDepth(depth)}) *):not(${below(depth + 1)})`);
+  // Deeper, the innermost island is themed when the islands above, in order, change between
+  // themed and native at most twice and end themed: then the longest alternating sequence of them
+  // that ends themed is longer than any that ends native.
+  const runs = (count, last) => Array.from({ length: count }, (_, i) => ((count - i) % 2 ? last : last === themed ? native : themed)).join(" ");
+  const lastThemed = [1, 2, 3].map((count) => `:is(${runs(count, themed)} *):not(${runs(count, native)} *)`);
+  // It is not suppressed when no deeper themed island above the element has an unsafe island
+  // inside it that no deeper native island separates, and, with a deeper native island above the
+  // element, none has any.
+  const deepThemed = `${themed}:is(${below(NESTING)})`;
+  nearest.push(`:is(${below(NESTING + 1)}):is(${lastThemed.join(",")}):not(${deepThemed}:has(${unsafe}:not(${deepNative} *)) *):not(${deepNative} ${deepThemed}:has(${unsafe}) *)`);
   const others = `[data-color-mode]:not(${themed},${BRAND_WRAPPER},${BRAND_INNER})`;
   return {
     themed,
@@ -136,6 +153,6 @@ export function islandScope(covered, known, baseOf, branch) {
     native,
     others,
     brand: `:is(${BRAND_FOOTER},${BRAND_INNER}):not(:has(${others}))`,
-    within: (target) => `:is(${nearest.map((at) => at(target)).join(",")})`,
+    within: (target) => `${target}:not(${ATTRIBUTED}):is(${nearest.join(",")})`,
   };
 }

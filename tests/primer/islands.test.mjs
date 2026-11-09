@@ -354,6 +354,70 @@ for (const [name, engine] of [["Chromium", chromium], ["Firefox", firefox]]) {
       }
     });
 
+    // `n` standard islands around `inner`, the innermost with an id.
+    const nest = (n, inner, id = "deep") => (n ? `${`<div ${STD}>`.repeat(n - 1)}<div id="${id}" ${STD}>${inner}</div>${"</div>".repeat(n - 1)}` : inner);
+    // Gecko before Firefox 151 has no style queries: the compiled theme without them.
+    const withoutStyleQueries = compiled.replace(/@container style\(--reskin-on: 1\)\{\n(?:.*\n){3}\}\n/g, "");
+    const themedComponents = async (t, why) => {
+      assert.equal(await t.p.evaluate(() => getComputedStyle(document.getElementById("blob")).fill), "rgb(57, 255, 20)", `${why} graph`);
+      assert.equal(await t.p.evaluate(() => getComputedStyle(document.getElementById("label")).backgroundColor), "rgba(215, 58, 74, 0.18)", `${why} label`);
+      assert.equal(await t.read("brand", "--brand-color-text-default"), "#fafbe0", `${why} Brand`);
+    };
+
+    test("r4-1 components of a standard island reopened below a native or suppressed island, or beside an unrelated unsafe one, are themed with or without style queries", async () => {
+      assert.doesNotMatch(withoutStyleQueries, /@container/);
+      const content = `${blob("blob")}${label("label")}${footer("brand")}`;
+      const cases = [];
+      for (let n = 0; n <= 6; n++) {
+        // Root, n standard islands, a high-contrast island, then the reopened standard island:
+        // exact through six islands, and past them by the deep selectors.
+        cases.push([`reopened below high contrast at depth ${n + 3}`, nest(n, `<div ${HC}>${blob("hc-blob")}<div ${STD}>${content}</div></div>`, "outer"), true]);
+        // The same below a standard island that an island without theme attributes suppresses.
+        if (n <= 3) cases.push([`reopened below a suppressed island at depth ${n + 3}`, nest(n, `<div id="suppressed" ${STD}><span data-color-mode="dark">bare</span><div ${STD}>${content}</div></div>`, "outer")]);
+      }
+      for (let n = 1; n <= 5; n++) {
+        // An unknown island suppresses the root; a branch of n standard islands beside it is eligible.
+        cases.push([`beside an unknown island at depth ${n + 1}`, `<div ${UNKNOWN}>Unknown</div>${nest(n, content)}`]);
+        // An unknown island behind a high-contrast island suppresses nothing.
+        cases.push([`beside a shielded unknown island at depth ${n + 1}`, `<div ${HC}><div ${UNKNOWN}>Unknown</div></div>${nest(n, content)}`]);
+      }
+      for (const css of name === "Firefox" ? [compiled, withoutStyleQueries] : [compiled]) {
+        const how = css === compiled ? "" : " without style queries";
+        for (const [why, body, highContrast] of cases) {
+          const t = await open({ body, css });
+          await themedComponents(t, why + how);
+          if (highContrast) assert.equal(await t.p.evaluate(() => getComputedStyle(document.getElementById("hc-blob")).fill), GREEN, `${why}${how} high-contrast graph`);
+          if (why.startsWith("reopened below a suppressed")) assert.equal(await t.read("suppressed", "--reskin-on"), "", `${why}${how} suppressed`);
+          await t.close();
+        }
+      }
+    });
+
+    test("r4-2 a standard island four to eight islands deep stays themed when a high-contrast island shields an unknown one inside it, and is suppressed when the unknown island inherits from it", async () => {
+      for (let n = 4; n <= 8; n++) {
+        // Root, then n - 1 standard islands, the n-th being #deep.
+        const ids = ["unknown"];
+        let t = await open({ body: nest(n - 1, `<div ${HC}><div id="unknown" ${UNKNOWN}>Unknown</div></div><div id="safe" ${STD}>${blob("blob")}${label("label")}${footer("brand")}</div>`), beforeTheme: paint(ids) });
+        assert.equal(await t.read("deep", "--reskin-on"), "1", `${n} deep writer`);
+        assert.equal(await t.read("deep", "--bgColor-default"), "#101a2b", `${n} deep writer canvas`);
+        assert.deepEqual(await paint(ids)(t.p), t.earlier, `${n} deep unknown island keeps its paint`);
+        if (n < 6) await themedComponents(t, `${n} deep safe island`);
+        await t.close();
+        // Unshielded, the unknown island inherits from #deep, which keeps GitHub's light mode.
+        t = await open({ body: nest(n - 1, `<div id="unknown" ${UNKNOWN}>Unknown</div>${blob("blob")}`), beforeTheme: paint(["deep", "unknown"]) });
+        assert.equal(await t.read("deep", "--reskin-on"), "", `${n} deep writer suppressed`);
+        assert.deepEqual(await paint(["deep", "unknown"])(t.p), t.earlier, `${n} deep suppressed`);
+        assert.equal(await t.read("root", "--reskin-on"), "1", `${n} deep root`);
+        await t.close();
+        if (n > 5) continue;
+        // Inside another standard island, the unknown island suppresses only that one.
+        t = await open({ body: nest(n - 1, `<div id="mid" ${STD}><div ${UNKNOWN}>Unknown</div></div>`) });
+        assert.equal(await t.read("mid", "--reskin-on"), "", `${n} deep inner writer suppressed`);
+        assert.equal(await t.read("deep", "--reskin-on"), "1", `${n} deep writer above it`);
+        await t.close();
+      }
+    });
+
     test("graph, label and footer rules follow the nearest island: standard, then high contrast, then standard again", async () => {
       const { p, read, close } = await open();
       const style = (id, prop) => p.evaluate(([id, prop]) => getComputedStyle(document.getElementById(id))[prop], [id, prop]);

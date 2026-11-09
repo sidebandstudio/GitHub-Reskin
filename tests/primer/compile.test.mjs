@@ -128,7 +128,8 @@ test("unsafe islands are every island but the frozen mode combinations and the B
     assert.ok(unsafe.endsWith(`,${LOOSE}:not(${WRAPPER},:is(${WRAPPER} > footer[role="contentinfo"]) ${BRAND_LOOSE}))`), branch);
     // Browsers reject a :has() nested in another; each suppression depth has its own.
     for (const selector of [eligible, unsafe, others]) for (const arg of hasArguments(selector)) assert.doesNotMatch(arg, /:has\(/);
-    assert.equal(hasArguments(eligible).length, 4);
+    // Six exact depths, then two for deeper islands.
+    assert.equal(hasArguments(eligible).length, 8);
     assert.doesNotMatch(unsafe + others, /:has\(/);
     // One compound led by the color-mode attribute, so its :has() is one walk keyed to it.
     assert.ok(others.startsWith("[data-color-mode]:not(") && others.endsWith(")") && !/[ >]/.test(others.slice(0, others.indexOf(":not("))));
