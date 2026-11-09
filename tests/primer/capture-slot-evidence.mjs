@@ -47,13 +47,14 @@ for (const { url, kind } of PAGES) {
     const anchors = G.locateSlots(document, route);
     const describe = (el) => {
       const parts = [];
-      for (let n = el; n && n.tagName !== "MAIN" && parts.length < 6; n = n.parentElement) {
+      const region = el.closest("main") ? "main" : "footer";
+      for (let n = el; n && n.tagName !== region.toUpperCase() && parts.length < 6; n = n.parentElement) {
         const id = n.id && !/\d{3,}|[A-Z0-9]{6,}_/.test(n.id) ? `#${n.id}` : "";
         const testid = n.getAttribute("data-testid") ? `[data-testid=${n.getAttribute("data-testid")}]` : "";
         const component = n.getAttribute("data-component") ? `[data-component=${n.getAttribute("data-component")}]` : "";
         parts.unshift(`${n.tagName.toLowerCase()}${id}${testid}${component}`);
       }
-      return `main > … > ${parts.join(" > ")}`;
+      return `${region} > … > ${parts.join(" > ")}`;
     };
     // Every candidate a slot's scope matches on this page, with the guard's verdict.
     const candidates = G.SLOTS.flatMap((def) => [...document.querySelectorAll(def.scope)].map((el) => ({ slot: def.slot, status: def.status, path: describe(el), reason: def.route === route ? G.rejectReason(def, el) : `route is ${route}, not ${def.route}` })));

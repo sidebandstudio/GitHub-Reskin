@@ -9,6 +9,11 @@ import { repairTheme, resolveTheme } from "../engine/index.js";
 import { BOX_EFFECTS, EFFECTS, FONTS, LIMITS, compileAppearance, effectCss, fontFaceCss, planAppearance, registryProblems } from "./index.js";
 import { EFFECT_PARAMETERS } from "./registry.js";
 import { codePoints, names, readWoff2, weightClass } from "./woff2.mjs";
+import { SLOTS } from "../../extension/content/github/selectors.js";
+
+// The slots one GitHub page can hold. The adapter places each slot on one route class, so the
+// worst case for a document is every slot of one route at once, never all of them.
+export const PAGE_SLOTS = Object.values(Object.groupBy(SLOTS, (def) => def.route)).map((defs) => defs.map((def) => def.slot));
 
 function tally() {
   const problems = [];
@@ -155,12 +160,14 @@ export async function themeAudit(root, documents) {
     const native = resolveTheme(theme, { seed: null, policy: "native-high-contrast", reducedMotion: false, forcedColors: false });
     check(compileAppearance(native, PREFS, "github") === "", `${label} decorates a native high-contrast island`);
     for (const motion of [true, false]) {
-      const plan = planAppearance(resolved, { ...PREFS, motion }, FLAVOR_SLOT_IDS);
-      check(plan.owned <= LIMITS.maxOwnedNodes, `${label} plans ${plan.owned} owned nodes`);
-      check(plan.animated <= LIMITS.maxAnimatedNodes, `${label} plans ${plan.animated} animated nodes`);
-      check(motion || plan.animated === 0, `${label} animates with Motion off`);
-      const textSlots = FLAVOR_SLOT_IDS.filter((slot) => resolved.flavor.enabled && resolved.flavor.slots[slot]);
-      check(textSlots.every((slot) => plan.slots.some((entry) => entry.slot === slot && entry.copy)), `${label} drops flavor copy for decoration`);
+      for (const slots of PAGE_SLOTS) {
+        const plan = planAppearance(resolved, { ...PREFS, motion }, slots);
+        check(plan.owned <= LIMITS.maxOwnedNodes, `${label} plans ${plan.owned} owned nodes`);
+        check(plan.animated <= LIMITS.maxAnimatedNodes, `${label} plans ${plan.animated} animated nodes`);
+        check(motion || plan.animated === 0, `${label} animates with Motion off`);
+        const textSlots = slots.filter((slot) => resolved.flavor.enabled && resolved.flavor.slots[slot]);
+        check(textSlots.every((slot) => plan.slots.some((entry) => entry.slot === slot && entry.copy)), `${label} drops flavor copy for decoration`);
+      }
     }
     for (const id of Object.keys(resolved.effects)) check(BOX_EFFECTS.strip.includes(id), `${label} requests ${id}, which no box draws`);
   }
@@ -179,8 +186,8 @@ export async function auditDocuments(root, extraDirs = []) {
   return documents;
 }
 
-// Every three-effect combination at maximum parameters, with all eight slot strings: the worst
-// case for node counts and motion.
+// Every three-effect combination at maximum parameters, with every slot string: the worst case
+// for node counts and motion.
 export function loadThemes(base) {
   if (!base) return [];
   const ids = Object.keys(EFFECTS);

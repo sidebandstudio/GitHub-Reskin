@@ -21,7 +21,7 @@ const REPAIR_BACKGROUND = (id) => id === "emphasisText" || /^semantic\.[a-z]+\.e
 const MAX_PASSES = 6;
 
 let matrixChecked = false;
-function records() {
+function allRecords() {
   if (!matrixChecked) {
     const problems = pairMatrixProblems(PAIRS);
     if (problems.length) throw new Error(`packages/engine/pairs.json is invalid: ${problems.join("; ")}`);
@@ -29,7 +29,12 @@ function records() {
   }
   return PAIRS.records;
 }
-const recordById = (id) => records().find((r) => r.id === id);
+const recordById = (id) => allRecords().find((r) => r.id === id);
+
+// The records that apply to a source. A record with `supplied` applies only when the source has
+// that override, so a theme without it resolves exactly as it did before the record existed.
+const readSource = (theme, path) => path.split("/").slice(1).reduce((node, key) => node?.[key], theme);
+const recordsFor = (theme) => allRecords().filter((r) => !r.supplied || readSource(theme, r.supplied) !== undefined);
 
 export function deepFreeze(value) {
   if (value && typeof value === "object" && !Object.isFrozen(value)) {
@@ -45,13 +50,15 @@ const lower = (hex) => hex.toLowerCase();
 export const sourceHash = (theme) => sha256(new TextEncoder().encode(canonicalize(theme)));
 
 // Mutable working color set keyed by ColorPath, remembering each path's initial value and the
-// reason for its first correction.
+// reason for its first correction. A noted path reports its reason even when its value ends where
+// it started.
 class Colors {
   constructor(base) {
     this.base = base;
     this.values = new Map();
     this.initial = new Map();
     this.reasons = new Map();
+    this.noted = new Set();
   }
   init(path, hex) {
     this.values.set(path, lower(hex));
@@ -68,8 +75,12 @@ class Colors {
     if (!this.reasons.has(path)) this.reasons.set(path, reason);
     return true;
   }
+  note(path, reason) {
+    this.noted.add(path);
+    this.reasons.set(path, reason);
+  }
   repairs() {
-    return PAIR_PATHS.filter((p) => this.values.get(p) !== this.initial.get(p)).map((path) => ({
+    return PAIR_PATHS.filter((p) => this.values.get(p) !== this.initial.get(p) || this.noted.has(p)).map((path) => ({
       persistence: "render",
       path,
       before: this.initial.get(path),
@@ -145,9 +156,25 @@ function repairForeground(colors, record) {
 }
 const repairRecord = (colors, record) => (isAppearance(record) ? repairForeground(colors, record) : repair(colors, record));
 
+// A supplied accentEmphasis fill answers to two records: the shared emphasis ink on it
+// (emphasisText) and the fill on the canvas (accentEmphasis). Repairing each alone can undo the
+// other, so the fill is fitted against both at once; the ink and the canvas never move.
+const EMPHASIS_FILL = ["emphasisText", "accentEmphasis"];
+const EMPHASIS_FILL_REASON = "Adjusted to reach 4.5:1 for emphasisText and 3:1 for accentEmphasis.";
+const EMPHASIS_FALLBACK_REASON = "No emphasis fill reaches 4.5:1 with the emphasis text and 3:1 on the background, so the accent is used as when accentEmphasis is omitted.";
+function fitEmphasisFill(colors) {
+  const [onFill, onCanvas] = EMPHASIS_FILL.map(recordById);
+  const fill = colors.get(onCanvas.foreground);
+  return fit(fill, [colors.get(onFill.foreground), colors.get(onCanvas.backgrounds[0])], [onFill.minimum, onCanvas.minimum], colors.base);
+}
+function repairEmphasisFill(colors) {
+  const fitted = fitEmphasisFill(colors);
+  return fitted ? colors.set("/tokens/accentEmphasis", fitted, EMPHASIS_FILL_REASON) : false;
+}
+
 // One PairResult per foreground/background pair of a ColorSet and its appearance colors, with
-// unrounded ratios.
-function auditSet(set, appearanceColors) {
+// unrounded ratios, for the records that apply.
+function auditSet(set, appearanceColors, applied) {
   const value = (path) => {
     if (path.startsWith("/appearance/colors/")) {
       const [group, field] = path.slice("/appearance/colors/".length).split("/");
@@ -157,7 +184,7 @@ function auditSet(set, appearanceColors) {
     return b === undefined ? set[group][a] : set[group][a][b];
   };
   const results = [];
-  for (const record of records()) {
+  for (const record of applied) {
     for (const background of record.backgrounds) {
       const ratio = contrast(value(record.foreground), value(background));
       results.push({ id: record.id, foreground: record.foreground, background, ratio, minimum: record.minimum, passed: ratio >= record.minimum });
@@ -179,6 +206,7 @@ export function deriveColors(theme, seed) {
   // code.syntax wins over the older overrides.syntax, role by role.
   const syntaxOv = { ...(ov.syntax ?? {}), ...(code.syntax ?? {}) };
   const accessible = seed.family !== "standard";
+  let applied = recordsFor(theme);
   const colors = new Colors(base);
   const T = (key) => `/tokens/${key}`;
   const tok = (key) => colors.get(T(key));
@@ -212,8 +240,18 @@ export function deriveColors(theme, seed) {
   repairId(colors, "focusOuter");
   init("focusInner", bestInk(tok("focusOuter"), base));
   repairId(colors, "focusInner");
-  init("accentEmphasis", tok("accent"));
+  init("accentEmphasis", ov.accentEmphasis ?? tok("accent"));
   init("emphasisText", s.tokens.emphasisText);
+  let suppliedFill = applied.some((r) => r.id === "accentEmphasis");
+  if (suppliedFill && !fitEmphasisFill(colors)) {
+    // No fill passes both, so the derived default replaces the supplied one and only its ink
+    // pair applies, as for a theme without the override.
+    colors.set(T("accentEmphasis"), tok("accent"), EMPHASIS_FALLBACK_REASON);
+    colors.note(T("accentEmphasis"), EMPHASIS_FALLBACK_REASON);
+    applied = applied.filter((r) => r.id !== "accentEmphasis");
+    suppliedFill = false;
+  }
+  if (suppliedFill) repairEmphasisFill(colors);
   repairId(colors, "emphasisText");
   init("primaryBackground", ov.primaryBackground ?? tok("accent"));
   init("primaryText", ov.primaryText ?? bestInk(tok("primaryBackground"), base));
@@ -301,7 +339,7 @@ export function deriveColors(theme, seed) {
   // A later surface move can affect an earlier pair; repeat the matrix until nothing changes.
   for (let pass = 0; pass < MAX_PASSES; pass++) {
     let changed = false;
-    for (const record of records()) changed = repairRecord(colors, record) || changed;
+    for (const record of applied) changed = (suppliedFill && EMPHASIS_FILL.includes(record.id) ? repairEmphasisFill(colors) : repairRecord(colors, record)) || changed;
     if (!changed) break;
   }
 
@@ -313,7 +351,7 @@ export function deriveColors(theme, seed) {
     colors.init(`/graph/${i}`, initialGraph[i]);
     colors.set(`/graph/${i}`, level, "Contribution colors adjusted so every level is visible and in order.");
   });
-  return { colors, graph };
+  return { colors, graph, applied };
 }
 
 // Extended syntax defaults from resolved core roles (THEME-EXPANSION.md), so an older theme still
@@ -368,7 +406,7 @@ function deriveAppearanceColors(theme, colors, accessible) {
     colors.init(A(`${pill}/border`), p.border ?? tok("labelBorder"));
   }
   colors.init(A("graph/cellBoundary"), theme.contributions?.cellBoundary ?? tok("controlBorder"));
-  for (const record of records()) if (record.id.startsWith("appearance.")) repairForeground(colors, record);
+  for (const record of allRecords()) if (record.id.startsWith("appearance.")) repairForeground(colors, record);
 }
 
 function appearanceColors(colors) {
@@ -488,7 +526,7 @@ export function resolveTheme(theme, context) {
   if (seed.base !== theme.base) throw new TypeError(`Seed ${seed.id} is ${seed.base}; the theme's base is ${theme.base}`);
   if (seed.highContrast) throw new TypeError(`Seed ${seed.id} is high contrast; high-contrast modes stay native`);
   assertBasePolarity(theme);
-  const { colors } = deriveColors(theme, seed);
+  const { colors, applied } = deriveColors(theme, seed);
   const set = colorSet(colors);
   const paired = appearanceColors(colors);
   const appearance = { colors: paired, ...resolveAppearance(theme, set.tokens) };
@@ -511,12 +549,17 @@ export function resolveTheme(theme, context) {
     motionAllowed: !context.reducedMotion,
     appearance: { colors: appearance.colors, paints: appearance.paints, shape: appearance.shape, fonts: appearance.fonts, typography: appearance.typography, graph: appearance.graph, details: appearance.details, css: appearance.css, notes: appearance.notes },
     repairs: colors.repairs(),
-    pairAudit: auditSet(set, paired),
+    pairAudit: auditSet(set, paired, applied),
   });
 }
 
-/** Every PairResult for a themed resolution, one per foreground/background pair, unrounded. */
+/**
+ * Every PairResult for a themed resolution, one per foreground/background pair, unrounded. A
+ * resolution does not carry its source, so a supplied-only record is audited when the resolution
+ * applied it.
+ */
 export function auditPairs(resolved) {
   if (!resolved || resolved.policy !== "themed") throw new TypeError("auditPairs takes a themed ResolvedTheme; native policies have no colors to audit");
-  return deepFreeze(auditSet(resolved, resolved.appearance.colors));
+  const ids = new Set(resolved.pairAudit.map((result) => result.id));
+  return deepFreeze(auditSet(resolved, resolved.appearance.colors, allRecords().filter((r) => !r.supplied || ids.has(r.id))));
 }

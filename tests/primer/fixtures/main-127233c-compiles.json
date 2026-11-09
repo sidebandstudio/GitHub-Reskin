@@ -1,0 +1,1402 @@
+{
+ "tests/fixtures/roundtrip/accessibility-output.reskin.json dark calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "ac26ade0441b1baa768cc85d5cd911b5ded39f9276aee2ee87f5ebe3c3d4ae8a"
+ },
+ "tests/fixtures/roundtrip/accessibility-output.reskin.json dark full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "ac26ade0441b1baa768cc85d5cd911b5ded39f9276aee2ee87f5ebe3c3d4ae8a"
+ },
+ "tests/fixtures/roundtrip/accessibility-output.reskin.json dark_colorblind calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "e6d8112ecfc49e20167d5b752c7c8f94aeab613663e49c0e112b7738d914c201"
+ },
+ "tests/fixtures/roundtrip/accessibility-output.reskin.json dark_colorblind full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "e6d8112ecfc49e20167d5b752c7c8f94aeab613663e49c0e112b7738d914c201"
+ },
+ "tests/fixtures/roundtrip/accessibility-output.reskin.json dark_dimmed calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "ac26ade0441b1baa768cc85d5cd911b5ded39f9276aee2ee87f5ebe3c3d4ae8a"
+ },
+ "tests/fixtures/roundtrip/accessibility-output.reskin.json dark_dimmed full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "ac26ade0441b1baa768cc85d5cd911b5ded39f9276aee2ee87f5ebe3c3d4ae8a"
+ },
+ "tests/fixtures/roundtrip/accessibility-output.reskin.json dark_tritanopia calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "0f478cafeb4afce6b5754d470493c1d36f1c955c9d3b2e10ac3ff4bbe378a055"
+ },
+ "tests/fixtures/roundtrip/accessibility-output.reskin.json dark_tritanopia full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "0f478cafeb4afce6b5754d470493c1d36f1c955c9d3b2e10ac3ff4bbe378a055"
+ },
+ "tests/fixtures/roundtrip/accessibility-output.reskin.json light calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "ac26ade0441b1baa768cc85d5cd911b5ded39f9276aee2ee87f5ebe3c3d4ae8a"
+ },
+ "tests/fixtures/roundtrip/accessibility-output.reskin.json light full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "ac26ade0441b1baa768cc85d5cd911b5ded39f9276aee2ee87f5ebe3c3d4ae8a"
+ },
+ "tests/fixtures/roundtrip/accessibility-output.reskin.json light_colorblind calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "e6d8112ecfc49e20167d5b752c7c8f94aeab613663e49c0e112b7738d914c201"
+ },
+ "tests/fixtures/roundtrip/accessibility-output.reskin.json light_colorblind full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "e6d8112ecfc49e20167d5b752c7c8f94aeab613663e49c0e112b7738d914c201"
+ },
+ "tests/fixtures/roundtrip/accessibility-output.reskin.json light_tritanopia calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "0f478cafeb4afce6b5754d470493c1d36f1c955c9d3b2e10ac3ff4bbe378a055"
+ },
+ "tests/fixtures/roundtrip/accessibility-output.reskin.json light_tritanopia full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "0f478cafeb4afce6b5754d470493c1d36f1c955c9d3b2e10ac3ff4bbe378a055"
+ },
+ "tests/fixtures/roundtrip/primary-states.reskin.json dark calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "9669595d5dc95c37bb46c908133945c8fe715786b1ca17e6a0e2a5be473e82fd"
+ },
+ "tests/fixtures/roundtrip/primary-states.reskin.json dark full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "9669595d5dc95c37bb46c908133945c8fe715786b1ca17e6a0e2a5be473e82fd"
+ },
+ "tests/fixtures/roundtrip/primary-states.reskin.json dark_colorblind calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "f4b90fc0b8e0a17b2212b29481da73c65d2cd678ac262b6f93bfa96618de91b5"
+ },
+ "tests/fixtures/roundtrip/primary-states.reskin.json dark_colorblind full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "f4b90fc0b8e0a17b2212b29481da73c65d2cd678ac262b6f93bfa96618de91b5"
+ },
+ "tests/fixtures/roundtrip/primary-states.reskin.json dark_dimmed calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "9669595d5dc95c37bb46c908133945c8fe715786b1ca17e6a0e2a5be473e82fd"
+ },
+ "tests/fixtures/roundtrip/primary-states.reskin.json dark_dimmed full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "9669595d5dc95c37bb46c908133945c8fe715786b1ca17e6a0e2a5be473e82fd"
+ },
+ "tests/fixtures/roundtrip/primary-states.reskin.json dark_tritanopia calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "18dcefbe2f8b1423960ca75a87d12698129b4f6d0c7b830c0fe4a0f667653743"
+ },
+ "tests/fixtures/roundtrip/primary-states.reskin.json dark_tritanopia full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "18dcefbe2f8b1423960ca75a87d12698129b4f6d0c7b830c0fe4a0f667653743"
+ },
+ "tests/fixtures/roundtrip/primary-states.reskin.json light calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "9669595d5dc95c37bb46c908133945c8fe715786b1ca17e6a0e2a5be473e82fd"
+ },
+ "tests/fixtures/roundtrip/primary-states.reskin.json light full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "9669595d5dc95c37bb46c908133945c8fe715786b1ca17e6a0e2a5be473e82fd"
+ },
+ "tests/fixtures/roundtrip/primary-states.reskin.json light_colorblind calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "f4b90fc0b8e0a17b2212b29481da73c65d2cd678ac262b6f93bfa96618de91b5"
+ },
+ "tests/fixtures/roundtrip/primary-states.reskin.json light_colorblind full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "f4b90fc0b8e0a17b2212b29481da73c65d2cd678ac262b6f93bfa96618de91b5"
+ },
+ "tests/fixtures/roundtrip/primary-states.reskin.json light_tritanopia calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "18dcefbe2f8b1423960ca75a87d12698129b4f6d0c7b830c0fe4a0f667653743"
+ },
+ "tests/fixtures/roundtrip/primary-states.reskin.json light_tritanopia full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "18dcefbe2f8b1423960ca75a87d12698129b4f6d0c7b830c0fe4a0f667653743"
+ },
+ "tests/fixtures/roundtrip/syntax-diff.reskin.json dark calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "de084b578e9c44d128c0bc4cee1e7ab9770dc6220775eb6054ec05a0230cac15"
+ },
+ "tests/fixtures/roundtrip/syntax-diff.reskin.json dark full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "de084b578e9c44d128c0bc4cee1e7ab9770dc6220775eb6054ec05a0230cac15"
+ },
+ "tests/fixtures/roundtrip/syntax-diff.reskin.json dark_colorblind calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "f08fd4425ebd744672ecc1db6a8be6e760213a744fdece6d7e4318bfabd45757"
+ },
+ "tests/fixtures/roundtrip/syntax-diff.reskin.json dark_colorblind full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "f08fd4425ebd744672ecc1db6a8be6e760213a744fdece6d7e4318bfabd45757"
+ },
+ "tests/fixtures/roundtrip/syntax-diff.reskin.json dark_dimmed calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "de084b578e9c44d128c0bc4cee1e7ab9770dc6220775eb6054ec05a0230cac15"
+ },
+ "tests/fixtures/roundtrip/syntax-diff.reskin.json dark_dimmed full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "de084b578e9c44d128c0bc4cee1e7ab9770dc6220775eb6054ec05a0230cac15"
+ },
+ "tests/fixtures/roundtrip/syntax-diff.reskin.json dark_tritanopia calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "e3fdd680f0a85882b465a57a5220b4fca3ee85c9d4200daa29070b893e8a8539"
+ },
+ "tests/fixtures/roundtrip/syntax-diff.reskin.json dark_tritanopia full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "e3fdd680f0a85882b465a57a5220b4fca3ee85c9d4200daa29070b893e8a8539"
+ },
+ "tests/fixtures/roundtrip/syntax-diff.reskin.json light calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "de084b578e9c44d128c0bc4cee1e7ab9770dc6220775eb6054ec05a0230cac15"
+ },
+ "tests/fixtures/roundtrip/syntax-diff.reskin.json light full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "de084b578e9c44d128c0bc4cee1e7ab9770dc6220775eb6054ec05a0230cac15"
+ },
+ "tests/fixtures/roundtrip/syntax-diff.reskin.json light_colorblind calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "f08fd4425ebd744672ecc1db6a8be6e760213a744fdece6d7e4318bfabd45757"
+ },
+ "tests/fixtures/roundtrip/syntax-diff.reskin.json light_colorblind full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "f08fd4425ebd744672ecc1db6a8be6e760213a744fdece6d7e4318bfabd45757"
+ },
+ "tests/fixtures/roundtrip/syntax-diff.reskin.json light_tritanopia calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "e3fdd680f0a85882b465a57a5220b4fca3ee85c9d4200daa29070b893e8a8539"
+ },
+ "tests/fixtures/roundtrip/syntax-diff.reskin.json light_tritanopia full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "e3fdd680f0a85882b465a57a5220b4fca3ee85c9d4200daa29070b893e8a8539"
+ },
+ "tests/fixtures/schema/repair/graph-collapses.reskin.json dark calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "e05ea4c7278a2795de7dd98fedab8c7678063f882fb8242d5e8b6c86f2737c05"
+ },
+ "tests/fixtures/schema/repair/graph-collapses.reskin.json dark full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "e05ea4c7278a2795de7dd98fedab8c7678063f882fb8242d5e8b6c86f2737c05"
+ },
+ "tests/fixtures/schema/repair/graph-collapses.reskin.json dark_colorblind calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "2f046653cf24bf5e65df56e42e5dbb2e43f64623fbee96ea4b5998e8416e3433"
+ },
+ "tests/fixtures/schema/repair/graph-collapses.reskin.json dark_colorblind full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "2f046653cf24bf5e65df56e42e5dbb2e43f64623fbee96ea4b5998e8416e3433"
+ },
+ "tests/fixtures/schema/repair/graph-collapses.reskin.json dark_dimmed calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "e05ea4c7278a2795de7dd98fedab8c7678063f882fb8242d5e8b6c86f2737c05"
+ },
+ "tests/fixtures/schema/repair/graph-collapses.reskin.json dark_dimmed full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "e05ea4c7278a2795de7dd98fedab8c7678063f882fb8242d5e8b6c86f2737c05"
+ },
+ "tests/fixtures/schema/repair/graph-collapses.reskin.json dark_tritanopia calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "4389b949bdf0d82af3e273c5255ef4674edc6bd68c24fab049314ed3dc0ffece"
+ },
+ "tests/fixtures/schema/repair/graph-collapses.reskin.json dark_tritanopia full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "4389b949bdf0d82af3e273c5255ef4674edc6bd68c24fab049314ed3dc0ffece"
+ },
+ "tests/fixtures/schema/repair/graph-collapses.reskin.json light calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "e05ea4c7278a2795de7dd98fedab8c7678063f882fb8242d5e8b6c86f2737c05"
+ },
+ "tests/fixtures/schema/repair/graph-collapses.reskin.json light full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "e05ea4c7278a2795de7dd98fedab8c7678063f882fb8242d5e8b6c86f2737c05"
+ },
+ "tests/fixtures/schema/repair/graph-collapses.reskin.json light_colorblind calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "2f046653cf24bf5e65df56e42e5dbb2e43f64623fbee96ea4b5998e8416e3433"
+ },
+ "tests/fixtures/schema/repair/graph-collapses.reskin.json light_colorblind full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "2f046653cf24bf5e65df56e42e5dbb2e43f64623fbee96ea4b5998e8416e3433"
+ },
+ "tests/fixtures/schema/repair/graph-collapses.reskin.json light_tritanopia calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "4389b949bdf0d82af3e273c5255ef4674edc6bd68c24fab049314ed3dc0ffece"
+ },
+ "tests/fixtures/schema/repair/graph-collapses.reskin.json light_tritanopia full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "4389b949bdf0d82af3e273c5255ef4674edc6bd68c24fab049314ed3dc0ffece"
+ },
+ "tests/fixtures/schema/repair/text-equals-background.reskin.json dark calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "162672de6b71531767dd1373d87cba691ebf6c586e4ba8a5f82a3a8bb0a1f5c2"
+ },
+ "tests/fixtures/schema/repair/text-equals-background.reskin.json dark full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "162672de6b71531767dd1373d87cba691ebf6c586e4ba8a5f82a3a8bb0a1f5c2"
+ },
+ "tests/fixtures/schema/repair/text-equals-background.reskin.json dark_colorblind calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "621e894a4f6c7642bf4ff37a740a7792bc1392ca0b4448bfc4da98ea452ac167"
+ },
+ "tests/fixtures/schema/repair/text-equals-background.reskin.json dark_colorblind full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "621e894a4f6c7642bf4ff37a740a7792bc1392ca0b4448bfc4da98ea452ac167"
+ },
+ "tests/fixtures/schema/repair/text-equals-background.reskin.json dark_dimmed calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "162672de6b71531767dd1373d87cba691ebf6c586e4ba8a5f82a3a8bb0a1f5c2"
+ },
+ "tests/fixtures/schema/repair/text-equals-background.reskin.json dark_dimmed full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "162672de6b71531767dd1373d87cba691ebf6c586e4ba8a5f82a3a8bb0a1f5c2"
+ },
+ "tests/fixtures/schema/repair/text-equals-background.reskin.json dark_tritanopia calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "4204972decdbce3e18c8b813ffa886646beec82674481d4eb3dc78550ec21d72"
+ },
+ "tests/fixtures/schema/repair/text-equals-background.reskin.json dark_tritanopia full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "4204972decdbce3e18c8b813ffa886646beec82674481d4eb3dc78550ec21d72"
+ },
+ "tests/fixtures/schema/repair/text-equals-background.reskin.json light calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "162672de6b71531767dd1373d87cba691ebf6c586e4ba8a5f82a3a8bb0a1f5c2"
+ },
+ "tests/fixtures/schema/repair/text-equals-background.reskin.json light full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "162672de6b71531767dd1373d87cba691ebf6c586e4ba8a5f82a3a8bb0a1f5c2"
+ },
+ "tests/fixtures/schema/repair/text-equals-background.reskin.json light_colorblind calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "621e894a4f6c7642bf4ff37a740a7792bc1392ca0b4448bfc4da98ea452ac167"
+ },
+ "tests/fixtures/schema/repair/text-equals-background.reskin.json light_colorblind full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "621e894a4f6c7642bf4ff37a740a7792bc1392ca0b4448bfc4da98ea452ac167"
+ },
+ "tests/fixtures/schema/repair/text-equals-background.reskin.json light_tritanopia calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "4204972decdbce3e18c8b813ffa886646beec82674481d4eb3dc78550ec21d72"
+ },
+ "tests/fixtures/schema/repair/text-equals-background.reskin.json light_tritanopia full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "4204972decdbce3e18c8b813ffa886646beec82674481d4eb3dc78550ec21d72"
+ },
+ "tests/fixtures/schema/valid/advanced-css.reskin.json dark calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "e05ea4c7278a2795de7dd98fedab8c7678063f882fb8242d5e8b6c86f2737c05"
+ },
+ "tests/fixtures/schema/valid/advanced-css.reskin.json dark full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "e05ea4c7278a2795de7dd98fedab8c7678063f882fb8242d5e8b6c86f2737c05"
+ },
+ "tests/fixtures/schema/valid/advanced-css.reskin.json dark_colorblind calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "2f046653cf24bf5e65df56e42e5dbb2e43f64623fbee96ea4b5998e8416e3433"
+ },
+ "tests/fixtures/schema/valid/advanced-css.reskin.json dark_colorblind full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "2f046653cf24bf5e65df56e42e5dbb2e43f64623fbee96ea4b5998e8416e3433"
+ },
+ "tests/fixtures/schema/valid/advanced-css.reskin.json dark_dimmed calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "e05ea4c7278a2795de7dd98fedab8c7678063f882fb8242d5e8b6c86f2737c05"
+ },
+ "tests/fixtures/schema/valid/advanced-css.reskin.json dark_dimmed full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "e05ea4c7278a2795de7dd98fedab8c7678063f882fb8242d5e8b6c86f2737c05"
+ },
+ "tests/fixtures/schema/valid/advanced-css.reskin.json dark_tritanopia calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "4389b949bdf0d82af3e273c5255ef4674edc6bd68c24fab049314ed3dc0ffece"
+ },
+ "tests/fixtures/schema/valid/advanced-css.reskin.json dark_tritanopia full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "4389b949bdf0d82af3e273c5255ef4674edc6bd68c24fab049314ed3dc0ffece"
+ },
+ "tests/fixtures/schema/valid/advanced-css.reskin.json light calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "e05ea4c7278a2795de7dd98fedab8c7678063f882fb8242d5e8b6c86f2737c05"
+ },
+ "tests/fixtures/schema/valid/advanced-css.reskin.json light full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "e05ea4c7278a2795de7dd98fedab8c7678063f882fb8242d5e8b6c86f2737c05"
+ },
+ "tests/fixtures/schema/valid/advanced-css.reskin.json light_colorblind calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "2f046653cf24bf5e65df56e42e5dbb2e43f64623fbee96ea4b5998e8416e3433"
+ },
+ "tests/fixtures/schema/valid/advanced-css.reskin.json light_colorblind full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "2f046653cf24bf5e65df56e42e5dbb2e43f64623fbee96ea4b5998e8416e3433"
+ },
+ "tests/fixtures/schema/valid/advanced-css.reskin.json light_tritanopia calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "4389b949bdf0d82af3e273c5255ef4674edc6bd68c24fab049314ed3dc0ffece"
+ },
+ "tests/fixtures/schema/valid/advanced-css.reskin.json light_tritanopia full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "4389b949bdf0d82af3e273c5255ef4674edc6bd68c24fab049314ed3dc0ffece"
+ },
+ "tests/fixtures/schema/valid/ai-rich.reskin.json dark calm": {
+  "appearance": "ec5bca89f57d72ba1b258a4f5b749741bd2ad65d7b18d3c623721d1204c61915",
+  "primer": "a5ac76ff6bb4691e52e90bd0784fae3440887875ca7d513ce82495dbd4cf8c60"
+ },
+ "tests/fixtures/schema/valid/ai-rich.reskin.json dark full": {
+  "appearance": "fecde96cbe43d3a5d47b396217ee83c6d35db264b2bc5e963dfa4c8d7483d9d5",
+  "primer": "aa73f3aa93f84c920d567cf242661f843c6f32466fdfd76abbcd6eeecde796dd"
+ },
+ "tests/fixtures/schema/valid/ai-rich.reskin.json dark_colorblind calm": {
+  "appearance": "ec5bca89f57d72ba1b258a4f5b749741bd2ad65d7b18d3c623721d1204c61915",
+  "primer": "74cfb0d5eb1dcd03a9d97b00b1d4cbdf931dd39448b48b4d88e749863ac8e9d0"
+ },
+ "tests/fixtures/schema/valid/ai-rich.reskin.json dark_colorblind full": {
+  "appearance": "fecde96cbe43d3a5d47b396217ee83c6d35db264b2bc5e963dfa4c8d7483d9d5",
+  "primer": "5aece0ed8157324b89338589808ec83c3297ba2caf6b525e94220b6c41bdcf06"
+ },
+ "tests/fixtures/schema/valid/ai-rich.reskin.json dark_dimmed calm": {
+  "appearance": "ec5bca89f57d72ba1b258a4f5b749741bd2ad65d7b18d3c623721d1204c61915",
+  "primer": "a5ac76ff6bb4691e52e90bd0784fae3440887875ca7d513ce82495dbd4cf8c60"
+ },
+ "tests/fixtures/schema/valid/ai-rich.reskin.json dark_dimmed full": {
+  "appearance": "fecde96cbe43d3a5d47b396217ee83c6d35db264b2bc5e963dfa4c8d7483d9d5",
+  "primer": "aa73f3aa93f84c920d567cf242661f843c6f32466fdfd76abbcd6eeecde796dd"
+ },
+ "tests/fixtures/schema/valid/ai-rich.reskin.json dark_tritanopia calm": {
+  "appearance": "ec5bca89f57d72ba1b258a4f5b749741bd2ad65d7b18d3c623721d1204c61915",
+  "primer": "9550f418335b2b2c9842a01f174fabab4f0be99c58399b93134e78e126b70aed"
+ },
+ "tests/fixtures/schema/valid/ai-rich.reskin.json dark_tritanopia full": {
+  "appearance": "fecde96cbe43d3a5d47b396217ee83c6d35db264b2bc5e963dfa4c8d7483d9d5",
+  "primer": "256802c1651807d3198a100abb337f8ffe5afa7bf8cfc3f58bc0e3e798364f55"
+ },
+ "tests/fixtures/schema/valid/ai-rich.reskin.json light calm": {
+  "appearance": "ec5bca89f57d72ba1b258a4f5b749741bd2ad65d7b18d3c623721d1204c61915",
+  "primer": "a5ac76ff6bb4691e52e90bd0784fae3440887875ca7d513ce82495dbd4cf8c60"
+ },
+ "tests/fixtures/schema/valid/ai-rich.reskin.json light full": {
+  "appearance": "fecde96cbe43d3a5d47b396217ee83c6d35db264b2bc5e963dfa4c8d7483d9d5",
+  "primer": "aa73f3aa93f84c920d567cf242661f843c6f32466fdfd76abbcd6eeecde796dd"
+ },
+ "tests/fixtures/schema/valid/ai-rich.reskin.json light_colorblind calm": {
+  "appearance": "ec5bca89f57d72ba1b258a4f5b749741bd2ad65d7b18d3c623721d1204c61915",
+  "primer": "74cfb0d5eb1dcd03a9d97b00b1d4cbdf931dd39448b48b4d88e749863ac8e9d0"
+ },
+ "tests/fixtures/schema/valid/ai-rich.reskin.json light_colorblind full": {
+  "appearance": "fecde96cbe43d3a5d47b396217ee83c6d35db264b2bc5e963dfa4c8d7483d9d5",
+  "primer": "5aece0ed8157324b89338589808ec83c3297ba2caf6b525e94220b6c41bdcf06"
+ },
+ "tests/fixtures/schema/valid/ai-rich.reskin.json light_tritanopia calm": {
+  "appearance": "ec5bca89f57d72ba1b258a4f5b749741bd2ad65d7b18d3c623721d1204c61915",
+  "primer": "9550f418335b2b2c9842a01f174fabab4f0be99c58399b93134e78e126b70aed"
+ },
+ "tests/fixtures/schema/valid/ai-rich.reskin.json light_tritanopia full": {
+  "appearance": "fecde96cbe43d3a5d47b396217ee83c6d35db264b2bc5e963dfa4c8d7483d9d5",
+  "primer": "256802c1651807d3198a100abb337f8ffe5afa7bf8cfc3f58bc0e3e798364f55"
+ },
+ "tests/fixtures/schema/valid/art-additions.reskin.json dark calm": {
+  "appearance": "b886d493b77e9e2566bdfe4059238ae02bfbe0d26933092de12d757a6eb2392a",
+  "primer": "273d890533453850d8a035e93a58055e8e5c68e2ffc9cae864f0ea200224e3f2"
+ },
+ "tests/fixtures/schema/valid/art-additions.reskin.json dark full": {
+  "appearance": "b4011b4ec673699c802adbe262d6238ad7304fbc7587cd5bdbaddd95b384ff5f",
+  "primer": "c9b234320a72318aa66119d968c1521861d81cfef93c8553354982ec80f10962"
+ },
+ "tests/fixtures/schema/valid/art-additions.reskin.json dark_colorblind calm": {
+  "appearance": "b886d493b77e9e2566bdfe4059238ae02bfbe0d26933092de12d757a6eb2392a",
+  "primer": "1d6f993fc7019023036579512acfac220f1272368c6586085e76a2aca23c09d4"
+ },
+ "tests/fixtures/schema/valid/art-additions.reskin.json dark_colorblind full": {
+  "appearance": "b4011b4ec673699c802adbe262d6238ad7304fbc7587cd5bdbaddd95b384ff5f",
+  "primer": "22bc04dc886a59ca2886b7daa324147b8fb15abdcd3cad2b7d9e2ca0f3c74264"
+ },
+ "tests/fixtures/schema/valid/art-additions.reskin.json dark_dimmed calm": {
+  "appearance": "b886d493b77e9e2566bdfe4059238ae02bfbe0d26933092de12d757a6eb2392a",
+  "primer": "273d890533453850d8a035e93a58055e8e5c68e2ffc9cae864f0ea200224e3f2"
+ },
+ "tests/fixtures/schema/valid/art-additions.reskin.json dark_dimmed full": {
+  "appearance": "b4011b4ec673699c802adbe262d6238ad7304fbc7587cd5bdbaddd95b384ff5f",
+  "primer": "c9b234320a72318aa66119d968c1521861d81cfef93c8553354982ec80f10962"
+ },
+ "tests/fixtures/schema/valid/art-additions.reskin.json dark_tritanopia calm": {
+  "appearance": "b886d493b77e9e2566bdfe4059238ae02bfbe0d26933092de12d757a6eb2392a",
+  "primer": "565ea66e6e0466845356b7231e3be77ff71ea34733a7300537f3cfc7038a6592"
+ },
+ "tests/fixtures/schema/valid/art-additions.reskin.json dark_tritanopia full": {
+  "appearance": "b4011b4ec673699c802adbe262d6238ad7304fbc7587cd5bdbaddd95b384ff5f",
+  "primer": "feaf7c900ab748d4d1019da556ff5f2b30b4eac8e3d2abe88243158707d51b35"
+ },
+ "tests/fixtures/schema/valid/art-additions.reskin.json light calm": {
+  "appearance": "b886d493b77e9e2566bdfe4059238ae02bfbe0d26933092de12d757a6eb2392a",
+  "primer": "273d890533453850d8a035e93a58055e8e5c68e2ffc9cae864f0ea200224e3f2"
+ },
+ "tests/fixtures/schema/valid/art-additions.reskin.json light full": {
+  "appearance": "b4011b4ec673699c802adbe262d6238ad7304fbc7587cd5bdbaddd95b384ff5f",
+  "primer": "c9b234320a72318aa66119d968c1521861d81cfef93c8553354982ec80f10962"
+ },
+ "tests/fixtures/schema/valid/art-additions.reskin.json light_colorblind calm": {
+  "appearance": "b886d493b77e9e2566bdfe4059238ae02bfbe0d26933092de12d757a6eb2392a",
+  "primer": "1d6f993fc7019023036579512acfac220f1272368c6586085e76a2aca23c09d4"
+ },
+ "tests/fixtures/schema/valid/art-additions.reskin.json light_colorblind full": {
+  "appearance": "b4011b4ec673699c802adbe262d6238ad7304fbc7587cd5bdbaddd95b384ff5f",
+  "primer": "22bc04dc886a59ca2886b7daa324147b8fb15abdcd3cad2b7d9e2ca0f3c74264"
+ },
+ "tests/fixtures/schema/valid/art-additions.reskin.json light_tritanopia calm": {
+  "appearance": "b886d493b77e9e2566bdfe4059238ae02bfbe0d26933092de12d757a6eb2392a",
+  "primer": "565ea66e6e0466845356b7231e3be77ff71ea34733a7300537f3cfc7038a6592"
+ },
+ "tests/fixtures/schema/valid/art-additions.reskin.json light_tritanopia full": {
+  "appearance": "b4011b4ec673699c802adbe262d6238ad7304fbc7587cd5bdbaddd95b384ff5f",
+  "primer": "feaf7c900ab748d4d1019da556ff5f2b30b4eac8e3d2abe88243158707d51b35"
+ },
+ "tests/fixtures/schema/valid/choom-circuit.reskin.json dark calm": {
+  "appearance": "a6677dfd0f33d415a721a216e81592a03c67d6aae9f68c4a97a04f23787118e9",
+  "primer": "f361f6a47acfd825445aaa11316276f3f8e0ca7ffd4d68cd2abb8c4c401dde98"
+ },
+ "tests/fixtures/schema/valid/choom-circuit.reskin.json dark full": {
+  "appearance": "b8313922bcb084281be13603abafd70ee374ccc016c173dbdd998205745c10bf",
+  "primer": "035aaeab6a293e9ea9fe5bb32f499bba0c25a4d82764b0f3fc47aec828cb1b3d"
+ },
+ "tests/fixtures/schema/valid/choom-circuit.reskin.json dark_colorblind calm": {
+  "appearance": "a6677dfd0f33d415a721a216e81592a03c67d6aae9f68c4a97a04f23787118e9",
+  "primer": "e13c826ed34312a38bbeb193019be56c0a625094cb7f65e69c2e31070196d899"
+ },
+ "tests/fixtures/schema/valid/choom-circuit.reskin.json dark_colorblind full": {
+  "appearance": "b8313922bcb084281be13603abafd70ee374ccc016c173dbdd998205745c10bf",
+  "primer": "ea64feb1e083f66ecf5d572a3dd6e5279698ae4e0dbaeea75baf697ba0b21274"
+ },
+ "tests/fixtures/schema/valid/choom-circuit.reskin.json dark_dimmed calm": {
+  "appearance": "a6677dfd0f33d415a721a216e81592a03c67d6aae9f68c4a97a04f23787118e9",
+  "primer": "f361f6a47acfd825445aaa11316276f3f8e0ca7ffd4d68cd2abb8c4c401dde98"
+ },
+ "tests/fixtures/schema/valid/choom-circuit.reskin.json dark_dimmed full": {
+  "appearance": "b8313922bcb084281be13603abafd70ee374ccc016c173dbdd998205745c10bf",
+  "primer": "035aaeab6a293e9ea9fe5bb32f499bba0c25a4d82764b0f3fc47aec828cb1b3d"
+ },
+ "tests/fixtures/schema/valid/choom-circuit.reskin.json dark_tritanopia calm": {
+  "appearance": "a6677dfd0f33d415a721a216e81592a03c67d6aae9f68c4a97a04f23787118e9",
+  "primer": "3e83492b43fd3c01558ddc5c9119b6607a632c59119cd1cd7564a7e1cea2e838"
+ },
+ "tests/fixtures/schema/valid/choom-circuit.reskin.json dark_tritanopia full": {
+  "appearance": "b8313922bcb084281be13603abafd70ee374ccc016c173dbdd998205745c10bf",
+  "primer": "556694fb624b4ac5ffab743d7ddcf57b474314376fdc7cf031bbdfd41a76dac2"
+ },
+ "tests/fixtures/schema/valid/choom-circuit.reskin.json light calm": {
+  "appearance": "a6677dfd0f33d415a721a216e81592a03c67d6aae9f68c4a97a04f23787118e9",
+  "primer": "f361f6a47acfd825445aaa11316276f3f8e0ca7ffd4d68cd2abb8c4c401dde98"
+ },
+ "tests/fixtures/schema/valid/choom-circuit.reskin.json light full": {
+  "appearance": "b8313922bcb084281be13603abafd70ee374ccc016c173dbdd998205745c10bf",
+  "primer": "035aaeab6a293e9ea9fe5bb32f499bba0c25a4d82764b0f3fc47aec828cb1b3d"
+ },
+ "tests/fixtures/schema/valid/choom-circuit.reskin.json light_colorblind calm": {
+  "appearance": "a6677dfd0f33d415a721a216e81592a03c67d6aae9f68c4a97a04f23787118e9",
+  "primer": "e13c826ed34312a38bbeb193019be56c0a625094cb7f65e69c2e31070196d899"
+ },
+ "tests/fixtures/schema/valid/choom-circuit.reskin.json light_colorblind full": {
+  "appearance": "b8313922bcb084281be13603abafd70ee374ccc016c173dbdd998205745c10bf",
+  "primer": "ea64feb1e083f66ecf5d572a3dd6e5279698ae4e0dbaeea75baf697ba0b21274"
+ },
+ "tests/fixtures/schema/valid/choom-circuit.reskin.json light_tritanopia calm": {
+  "appearance": "a6677dfd0f33d415a721a216e81592a03c67d6aae9f68c4a97a04f23787118e9",
+  "primer": "3e83492b43fd3c01558ddc5c9119b6607a632c59119cd1cd7564a7e1cea2e838"
+ },
+ "tests/fixtures/schema/valid/choom-circuit.reskin.json light_tritanopia full": {
+  "appearance": "b8313922bcb084281be13603abafd70ee374ccc016c173dbdd998205745c10bf",
+  "primer": "556694fb624b4ac5ffab743d7ddcf57b474314376fdc7cf031bbdfd41a76dac2"
+ },
+ "tests/fixtures/schema/valid/effect-defaults.reskin.json dark calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "e05ea4c7278a2795de7dd98fedab8c7678063f882fb8242d5e8b6c86f2737c05"
+ },
+ "tests/fixtures/schema/valid/effect-defaults.reskin.json dark full": {
+  "appearance": "3361833b68fa07eb82adfb513b1221d6cab55c71a1cd37d68083e80bed84e79a",
+  "primer": "e05ea4c7278a2795de7dd98fedab8c7678063f882fb8242d5e8b6c86f2737c05"
+ },
+ "tests/fixtures/schema/valid/effect-defaults.reskin.json dark_colorblind calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "2f046653cf24bf5e65df56e42e5dbb2e43f64623fbee96ea4b5998e8416e3433"
+ },
+ "tests/fixtures/schema/valid/effect-defaults.reskin.json dark_colorblind full": {
+  "appearance": "3361833b68fa07eb82adfb513b1221d6cab55c71a1cd37d68083e80bed84e79a",
+  "primer": "2f046653cf24bf5e65df56e42e5dbb2e43f64623fbee96ea4b5998e8416e3433"
+ },
+ "tests/fixtures/schema/valid/effect-defaults.reskin.json dark_dimmed calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "e05ea4c7278a2795de7dd98fedab8c7678063f882fb8242d5e8b6c86f2737c05"
+ },
+ "tests/fixtures/schema/valid/effect-defaults.reskin.json dark_dimmed full": {
+  "appearance": "3361833b68fa07eb82adfb513b1221d6cab55c71a1cd37d68083e80bed84e79a",
+  "primer": "e05ea4c7278a2795de7dd98fedab8c7678063f882fb8242d5e8b6c86f2737c05"
+ },
+ "tests/fixtures/schema/valid/effect-defaults.reskin.json dark_tritanopia calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "4389b949bdf0d82af3e273c5255ef4674edc6bd68c24fab049314ed3dc0ffece"
+ },
+ "tests/fixtures/schema/valid/effect-defaults.reskin.json dark_tritanopia full": {
+  "appearance": "3361833b68fa07eb82adfb513b1221d6cab55c71a1cd37d68083e80bed84e79a",
+  "primer": "4389b949bdf0d82af3e273c5255ef4674edc6bd68c24fab049314ed3dc0ffece"
+ },
+ "tests/fixtures/schema/valid/effect-defaults.reskin.json light calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "e05ea4c7278a2795de7dd98fedab8c7678063f882fb8242d5e8b6c86f2737c05"
+ },
+ "tests/fixtures/schema/valid/effect-defaults.reskin.json light full": {
+  "appearance": "3361833b68fa07eb82adfb513b1221d6cab55c71a1cd37d68083e80bed84e79a",
+  "primer": "e05ea4c7278a2795de7dd98fedab8c7678063f882fb8242d5e8b6c86f2737c05"
+ },
+ "tests/fixtures/schema/valid/effect-defaults.reskin.json light_colorblind calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "2f046653cf24bf5e65df56e42e5dbb2e43f64623fbee96ea4b5998e8416e3433"
+ },
+ "tests/fixtures/schema/valid/effect-defaults.reskin.json light_colorblind full": {
+  "appearance": "3361833b68fa07eb82adfb513b1221d6cab55c71a1cd37d68083e80bed84e79a",
+  "primer": "2f046653cf24bf5e65df56e42e5dbb2e43f64623fbee96ea4b5998e8416e3433"
+ },
+ "tests/fixtures/schema/valid/effect-defaults.reskin.json light_tritanopia calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "4389b949bdf0d82af3e273c5255ef4674edc6bd68c24fab049314ed3dc0ffece"
+ },
+ "tests/fixtures/schema/valid/effect-defaults.reskin.json light_tritanopia full": {
+  "appearance": "3361833b68fa07eb82adfb513b1221d6cab55c71a1cd37d68083e80bed84e79a",
+  "primer": "4389b949bdf0d82af3e273c5255ef4674edc6bd68c24fab049314ed3dc0ffece"
+ },
+ "tests/fixtures/schema/valid/embedded-images.reskin.json dark calm": {
+  "appearance": "6f5960509381b7da335529b449828c6c8b7f76bdc8bce3d9fd3461ac425d4d25",
+  "primer": "e05ea4c7278a2795de7dd98fedab8c7678063f882fb8242d5e8b6c86f2737c05"
+ },
+ "tests/fixtures/schema/valid/embedded-images.reskin.json dark full": {
+  "appearance": "6f5960509381b7da335529b449828c6c8b7f76bdc8bce3d9fd3461ac425d4d25",
+  "primer": "e05ea4c7278a2795de7dd98fedab8c7678063f882fb8242d5e8b6c86f2737c05"
+ },
+ "tests/fixtures/schema/valid/embedded-images.reskin.json dark_colorblind calm": {
+  "appearance": "6f5960509381b7da335529b449828c6c8b7f76bdc8bce3d9fd3461ac425d4d25",
+  "primer": "2f046653cf24bf5e65df56e42e5dbb2e43f64623fbee96ea4b5998e8416e3433"
+ },
+ "tests/fixtures/schema/valid/embedded-images.reskin.json dark_colorblind full": {
+  "appearance": "6f5960509381b7da335529b449828c6c8b7f76bdc8bce3d9fd3461ac425d4d25",
+  "primer": "2f046653cf24bf5e65df56e42e5dbb2e43f64623fbee96ea4b5998e8416e3433"
+ },
+ "tests/fixtures/schema/valid/embedded-images.reskin.json dark_dimmed calm": {
+  "appearance": "6f5960509381b7da335529b449828c6c8b7f76bdc8bce3d9fd3461ac425d4d25",
+  "primer": "e05ea4c7278a2795de7dd98fedab8c7678063f882fb8242d5e8b6c86f2737c05"
+ },
+ "tests/fixtures/schema/valid/embedded-images.reskin.json dark_dimmed full": {
+  "appearance": "6f5960509381b7da335529b449828c6c8b7f76bdc8bce3d9fd3461ac425d4d25",
+  "primer": "e05ea4c7278a2795de7dd98fedab8c7678063f882fb8242d5e8b6c86f2737c05"
+ },
+ "tests/fixtures/schema/valid/embedded-images.reskin.json dark_tritanopia calm": {
+  "appearance": "6f5960509381b7da335529b449828c6c8b7f76bdc8bce3d9fd3461ac425d4d25",
+  "primer": "4389b949bdf0d82af3e273c5255ef4674edc6bd68c24fab049314ed3dc0ffece"
+ },
+ "tests/fixtures/schema/valid/embedded-images.reskin.json dark_tritanopia full": {
+  "appearance": "6f5960509381b7da335529b449828c6c8b7f76bdc8bce3d9fd3461ac425d4d25",
+  "primer": "4389b949bdf0d82af3e273c5255ef4674edc6bd68c24fab049314ed3dc0ffece"
+ },
+ "tests/fixtures/schema/valid/embedded-images.reskin.json light calm": {
+  "appearance": "6f5960509381b7da335529b449828c6c8b7f76bdc8bce3d9fd3461ac425d4d25",
+  "primer": "e05ea4c7278a2795de7dd98fedab8c7678063f882fb8242d5e8b6c86f2737c05"
+ },
+ "tests/fixtures/schema/valid/embedded-images.reskin.json light full": {
+  "appearance": "6f5960509381b7da335529b449828c6c8b7f76bdc8bce3d9fd3461ac425d4d25",
+  "primer": "e05ea4c7278a2795de7dd98fedab8c7678063f882fb8242d5e8b6c86f2737c05"
+ },
+ "tests/fixtures/schema/valid/embedded-images.reskin.json light_colorblind calm": {
+  "appearance": "6f5960509381b7da335529b449828c6c8b7f76bdc8bce3d9fd3461ac425d4d25",
+  "primer": "2f046653cf24bf5e65df56e42e5dbb2e43f64623fbee96ea4b5998e8416e3433"
+ },
+ "tests/fixtures/schema/valid/embedded-images.reskin.json light_colorblind full": {
+  "appearance": "6f5960509381b7da335529b449828c6c8b7f76bdc8bce3d9fd3461ac425d4d25",
+  "primer": "2f046653cf24bf5e65df56e42e5dbb2e43f64623fbee96ea4b5998e8416e3433"
+ },
+ "tests/fixtures/schema/valid/embedded-images.reskin.json light_tritanopia calm": {
+  "appearance": "6f5960509381b7da335529b449828c6c8b7f76bdc8bce3d9fd3461ac425d4d25",
+  "primer": "4389b949bdf0d82af3e273c5255ef4674edc6bd68c24fab049314ed3dc0ffece"
+ },
+ "tests/fixtures/schema/valid/embedded-images.reskin.json light_tritanopia full": {
+  "appearance": "6f5960509381b7da335529b449828c6c8b7f76bdc8bce3d9fd3461ac425d4d25",
+  "primer": "4389b949bdf0d82af3e273c5255ef4674edc6bd68c24fab049314ed3dc0ffece"
+ },
+ "tests/fixtures/schema/valid/legacy-rich-v1.reskin.json dark calm": {
+  "appearance": "bd108643635b71804e8a2116d372748cb1d2848806104c2f9e4773cd0290b2f5",
+  "primer": "e60cd694c3c7075610f7e3f0eeed2e0c36faa19ea129d2e49ca8af676d32272d"
+ },
+ "tests/fixtures/schema/valid/legacy-rich-v1.reskin.json dark full": {
+  "appearance": "57be7368239dd638e92234d50a38f01b7dd88c489d496f4e06bd532517e8bb26",
+  "primer": "e60cd694c3c7075610f7e3f0eeed2e0c36faa19ea129d2e49ca8af676d32272d"
+ },
+ "tests/fixtures/schema/valid/legacy-rich-v1.reskin.json dark_colorblind calm": {
+  "appearance": "bd108643635b71804e8a2116d372748cb1d2848806104c2f9e4773cd0290b2f5",
+  "primer": "c08ebf23a17f0377cef78728043d9d3e46686d10b8cab396a9a8be5b2485d022"
+ },
+ "tests/fixtures/schema/valid/legacy-rich-v1.reskin.json dark_colorblind full": {
+  "appearance": "57be7368239dd638e92234d50a38f01b7dd88c489d496f4e06bd532517e8bb26",
+  "primer": "c08ebf23a17f0377cef78728043d9d3e46686d10b8cab396a9a8be5b2485d022"
+ },
+ "tests/fixtures/schema/valid/legacy-rich-v1.reskin.json dark_dimmed calm": {
+  "appearance": "bd108643635b71804e8a2116d372748cb1d2848806104c2f9e4773cd0290b2f5",
+  "primer": "e60cd694c3c7075610f7e3f0eeed2e0c36faa19ea129d2e49ca8af676d32272d"
+ },
+ "tests/fixtures/schema/valid/legacy-rich-v1.reskin.json dark_dimmed full": {
+  "appearance": "57be7368239dd638e92234d50a38f01b7dd88c489d496f4e06bd532517e8bb26",
+  "primer": "e60cd694c3c7075610f7e3f0eeed2e0c36faa19ea129d2e49ca8af676d32272d"
+ },
+ "tests/fixtures/schema/valid/legacy-rich-v1.reskin.json dark_tritanopia calm": {
+  "appearance": "bd108643635b71804e8a2116d372748cb1d2848806104c2f9e4773cd0290b2f5",
+  "primer": "203ad1d2f184f1324152bea925607812eb34f9b1446a50bb6b1373f3e6e78f06"
+ },
+ "tests/fixtures/schema/valid/legacy-rich-v1.reskin.json dark_tritanopia full": {
+  "appearance": "57be7368239dd638e92234d50a38f01b7dd88c489d496f4e06bd532517e8bb26",
+  "primer": "203ad1d2f184f1324152bea925607812eb34f9b1446a50bb6b1373f3e6e78f06"
+ },
+ "tests/fixtures/schema/valid/legacy-rich-v1.reskin.json light calm": {
+  "appearance": "bd108643635b71804e8a2116d372748cb1d2848806104c2f9e4773cd0290b2f5",
+  "primer": "e60cd694c3c7075610f7e3f0eeed2e0c36faa19ea129d2e49ca8af676d32272d"
+ },
+ "tests/fixtures/schema/valid/legacy-rich-v1.reskin.json light full": {
+  "appearance": "57be7368239dd638e92234d50a38f01b7dd88c489d496f4e06bd532517e8bb26",
+  "primer": "e60cd694c3c7075610f7e3f0eeed2e0c36faa19ea129d2e49ca8af676d32272d"
+ },
+ "tests/fixtures/schema/valid/legacy-rich-v1.reskin.json light_colorblind calm": {
+  "appearance": "bd108643635b71804e8a2116d372748cb1d2848806104c2f9e4773cd0290b2f5",
+  "primer": "c08ebf23a17f0377cef78728043d9d3e46686d10b8cab396a9a8be5b2485d022"
+ },
+ "tests/fixtures/schema/valid/legacy-rich-v1.reskin.json light_colorblind full": {
+  "appearance": "57be7368239dd638e92234d50a38f01b7dd88c489d496f4e06bd532517e8bb26",
+  "primer": "c08ebf23a17f0377cef78728043d9d3e46686d10b8cab396a9a8be5b2485d022"
+ },
+ "tests/fixtures/schema/valid/legacy-rich-v1.reskin.json light_tritanopia calm": {
+  "appearance": "bd108643635b71804e8a2116d372748cb1d2848806104c2f9e4773cd0290b2f5",
+  "primer": "203ad1d2f184f1324152bea925607812eb34f9b1446a50bb6b1373f3e6e78f06"
+ },
+ "tests/fixtures/schema/valid/legacy-rich-v1.reskin.json light_tritanopia full": {
+  "appearance": "57be7368239dd638e92234d50a38f01b7dd88c489d496f4e06bd532517e8bb26",
+  "primer": "203ad1d2f184f1324152bea925607812eb34f9b1446a50bb6b1373f3e6e78f06"
+ },
+ "tests/fixtures/schema/valid/minimal-light.reskin.json dark calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "e05ea4c7278a2795de7dd98fedab8c7678063f882fb8242d5e8b6c86f2737c05"
+ },
+ "tests/fixtures/schema/valid/minimal-light.reskin.json dark full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "e05ea4c7278a2795de7dd98fedab8c7678063f882fb8242d5e8b6c86f2737c05"
+ },
+ "tests/fixtures/schema/valid/minimal-light.reskin.json dark_colorblind calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "2f046653cf24bf5e65df56e42e5dbb2e43f64623fbee96ea4b5998e8416e3433"
+ },
+ "tests/fixtures/schema/valid/minimal-light.reskin.json dark_colorblind full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "2f046653cf24bf5e65df56e42e5dbb2e43f64623fbee96ea4b5998e8416e3433"
+ },
+ "tests/fixtures/schema/valid/minimal-light.reskin.json dark_dimmed calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "e05ea4c7278a2795de7dd98fedab8c7678063f882fb8242d5e8b6c86f2737c05"
+ },
+ "tests/fixtures/schema/valid/minimal-light.reskin.json dark_dimmed full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "e05ea4c7278a2795de7dd98fedab8c7678063f882fb8242d5e8b6c86f2737c05"
+ },
+ "tests/fixtures/schema/valid/minimal-light.reskin.json dark_tritanopia calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "4389b949bdf0d82af3e273c5255ef4674edc6bd68c24fab049314ed3dc0ffece"
+ },
+ "tests/fixtures/schema/valid/minimal-light.reskin.json dark_tritanopia full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "4389b949bdf0d82af3e273c5255ef4674edc6bd68c24fab049314ed3dc0ffece"
+ },
+ "tests/fixtures/schema/valid/minimal-light.reskin.json light calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "e05ea4c7278a2795de7dd98fedab8c7678063f882fb8242d5e8b6c86f2737c05"
+ },
+ "tests/fixtures/schema/valid/minimal-light.reskin.json light full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "e05ea4c7278a2795de7dd98fedab8c7678063f882fb8242d5e8b6c86f2737c05"
+ },
+ "tests/fixtures/schema/valid/minimal-light.reskin.json light_colorblind calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "2f046653cf24bf5e65df56e42e5dbb2e43f64623fbee96ea4b5998e8416e3433"
+ },
+ "tests/fixtures/schema/valid/minimal-light.reskin.json light_colorblind full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "2f046653cf24bf5e65df56e42e5dbb2e43f64623fbee96ea4b5998e8416e3433"
+ },
+ "tests/fixtures/schema/valid/minimal-light.reskin.json light_tritanopia calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "4389b949bdf0d82af3e273c5255ef4674edc6bd68c24fab049314ed3dc0ffece"
+ },
+ "tests/fixtures/schema/valid/minimal-light.reskin.json light_tritanopia full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "4389b949bdf0d82af3e273c5255ef4674edc6bd68c24fab049314ed3dc0ffece"
+ },
+ "themes/classics/catppuccin-latte.reskin.json dark calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "9a80850772530f12272e74e7f82c097700a03c54ce66e616fbcc487975b9c7fc"
+ },
+ "themes/classics/catppuccin-latte.reskin.json dark full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "9a80850772530f12272e74e7f82c097700a03c54ce66e616fbcc487975b9c7fc"
+ },
+ "themes/classics/catppuccin-latte.reskin.json dark_colorblind calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "189e5ff4f3814f28b106d424f33d78bb25d560570dd67f70bc3f2d0e39a05463"
+ },
+ "themes/classics/catppuccin-latte.reskin.json dark_colorblind full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "189e5ff4f3814f28b106d424f33d78bb25d560570dd67f70bc3f2d0e39a05463"
+ },
+ "themes/classics/catppuccin-latte.reskin.json dark_dimmed calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "9a80850772530f12272e74e7f82c097700a03c54ce66e616fbcc487975b9c7fc"
+ },
+ "themes/classics/catppuccin-latte.reskin.json dark_dimmed full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "9a80850772530f12272e74e7f82c097700a03c54ce66e616fbcc487975b9c7fc"
+ },
+ "themes/classics/catppuccin-latte.reskin.json dark_tritanopia calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "2e12fa046a4dd9ce27638df99f752efde3e9d1afc43fd0eb2213b9a26b45a192"
+ },
+ "themes/classics/catppuccin-latte.reskin.json dark_tritanopia full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "2e12fa046a4dd9ce27638df99f752efde3e9d1afc43fd0eb2213b9a26b45a192"
+ },
+ "themes/classics/catppuccin-latte.reskin.json light calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "9a80850772530f12272e74e7f82c097700a03c54ce66e616fbcc487975b9c7fc"
+ },
+ "themes/classics/catppuccin-latte.reskin.json light full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "9a80850772530f12272e74e7f82c097700a03c54ce66e616fbcc487975b9c7fc"
+ },
+ "themes/classics/catppuccin-latte.reskin.json light_colorblind calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "189e5ff4f3814f28b106d424f33d78bb25d560570dd67f70bc3f2d0e39a05463"
+ },
+ "themes/classics/catppuccin-latte.reskin.json light_colorblind full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "189e5ff4f3814f28b106d424f33d78bb25d560570dd67f70bc3f2d0e39a05463"
+ },
+ "themes/classics/catppuccin-latte.reskin.json light_tritanopia calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "2e12fa046a4dd9ce27638df99f752efde3e9d1afc43fd0eb2213b9a26b45a192"
+ },
+ "themes/classics/catppuccin-latte.reskin.json light_tritanopia full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "2e12fa046a4dd9ce27638df99f752efde3e9d1afc43fd0eb2213b9a26b45a192"
+ },
+ "themes/classics/catppuccin-mocha.reskin.json dark calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "9457446f96fdfd1e9effee69f474844a7ba17e0a28e91788af0a60f02dc76c39"
+ },
+ "themes/classics/catppuccin-mocha.reskin.json dark full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "9457446f96fdfd1e9effee69f474844a7ba17e0a28e91788af0a60f02dc76c39"
+ },
+ "themes/classics/catppuccin-mocha.reskin.json dark_colorblind calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "684d16104a7a5f95c84a5b8cd4de7efea14067af195aea8d93083ead179cc941"
+ },
+ "themes/classics/catppuccin-mocha.reskin.json dark_colorblind full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "684d16104a7a5f95c84a5b8cd4de7efea14067af195aea8d93083ead179cc941"
+ },
+ "themes/classics/catppuccin-mocha.reskin.json dark_dimmed calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "9457446f96fdfd1e9effee69f474844a7ba17e0a28e91788af0a60f02dc76c39"
+ },
+ "themes/classics/catppuccin-mocha.reskin.json dark_dimmed full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "9457446f96fdfd1e9effee69f474844a7ba17e0a28e91788af0a60f02dc76c39"
+ },
+ "themes/classics/catppuccin-mocha.reskin.json dark_tritanopia calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "504dca42f1a8dcf5308cb39c70ea2263c57292eff6cebfabe32c226b7fc6f247"
+ },
+ "themes/classics/catppuccin-mocha.reskin.json dark_tritanopia full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "504dca42f1a8dcf5308cb39c70ea2263c57292eff6cebfabe32c226b7fc6f247"
+ },
+ "themes/classics/catppuccin-mocha.reskin.json light calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "9457446f96fdfd1e9effee69f474844a7ba17e0a28e91788af0a60f02dc76c39"
+ },
+ "themes/classics/catppuccin-mocha.reskin.json light full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "9457446f96fdfd1e9effee69f474844a7ba17e0a28e91788af0a60f02dc76c39"
+ },
+ "themes/classics/catppuccin-mocha.reskin.json light_colorblind calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "684d16104a7a5f95c84a5b8cd4de7efea14067af195aea8d93083ead179cc941"
+ },
+ "themes/classics/catppuccin-mocha.reskin.json light_colorblind full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "684d16104a7a5f95c84a5b8cd4de7efea14067af195aea8d93083ead179cc941"
+ },
+ "themes/classics/catppuccin-mocha.reskin.json light_tritanopia calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "504dca42f1a8dcf5308cb39c70ea2263c57292eff6cebfabe32c226b7fc6f247"
+ },
+ "themes/classics/catppuccin-mocha.reskin.json light_tritanopia full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "504dca42f1a8dcf5308cb39c70ea2263c57292eff6cebfabe32c226b7fc6f247"
+ },
+ "themes/classics/dracula.reskin.json dark calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "55be51b92f2ee99e3680b5ebc150ac41f1adfb167b0ef29a4138d34d2e35124d"
+ },
+ "themes/classics/dracula.reskin.json dark full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "55be51b92f2ee99e3680b5ebc150ac41f1adfb167b0ef29a4138d34d2e35124d"
+ },
+ "themes/classics/dracula.reskin.json dark_colorblind calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "473d1626ddfe1034017be4a231d570f149c39947070fb26468971bcd2abec4dd"
+ },
+ "themes/classics/dracula.reskin.json dark_colorblind full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "473d1626ddfe1034017be4a231d570f149c39947070fb26468971bcd2abec4dd"
+ },
+ "themes/classics/dracula.reskin.json dark_dimmed calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "55be51b92f2ee99e3680b5ebc150ac41f1adfb167b0ef29a4138d34d2e35124d"
+ },
+ "themes/classics/dracula.reskin.json dark_dimmed full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "55be51b92f2ee99e3680b5ebc150ac41f1adfb167b0ef29a4138d34d2e35124d"
+ },
+ "themes/classics/dracula.reskin.json dark_tritanopia calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "17f5dad1c7710f0223edc8e3f814b048afcc345a541fc5d281478726bad46320"
+ },
+ "themes/classics/dracula.reskin.json dark_tritanopia full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "17f5dad1c7710f0223edc8e3f814b048afcc345a541fc5d281478726bad46320"
+ },
+ "themes/classics/dracula.reskin.json light calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "55be51b92f2ee99e3680b5ebc150ac41f1adfb167b0ef29a4138d34d2e35124d"
+ },
+ "themes/classics/dracula.reskin.json light full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "55be51b92f2ee99e3680b5ebc150ac41f1adfb167b0ef29a4138d34d2e35124d"
+ },
+ "themes/classics/dracula.reskin.json light_colorblind calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "473d1626ddfe1034017be4a231d570f149c39947070fb26468971bcd2abec4dd"
+ },
+ "themes/classics/dracula.reskin.json light_colorblind full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "473d1626ddfe1034017be4a231d570f149c39947070fb26468971bcd2abec4dd"
+ },
+ "themes/classics/dracula.reskin.json light_tritanopia calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "17f5dad1c7710f0223edc8e3f814b048afcc345a541fc5d281478726bad46320"
+ },
+ "themes/classics/dracula.reskin.json light_tritanopia full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "17f5dad1c7710f0223edc8e3f814b048afcc345a541fc5d281478726bad46320"
+ },
+ "themes/classics/editing-suite.reskin.json dark calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "d5f9db05df8aa5c51e380e0779f00c726376c8df903f600a0ed3b00c8f6e68b1"
+ },
+ "themes/classics/editing-suite.reskin.json dark full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "d5f9db05df8aa5c51e380e0779f00c726376c8df903f600a0ed3b00c8f6e68b1"
+ },
+ "themes/classics/editing-suite.reskin.json dark_colorblind calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "95b426972e818486305e846b2293120f2baadf09cdfdb0339fa9ad14a0babcd0"
+ },
+ "themes/classics/editing-suite.reskin.json dark_colorblind full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "95b426972e818486305e846b2293120f2baadf09cdfdb0339fa9ad14a0babcd0"
+ },
+ "themes/classics/editing-suite.reskin.json dark_dimmed calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "d5f9db05df8aa5c51e380e0779f00c726376c8df903f600a0ed3b00c8f6e68b1"
+ },
+ "themes/classics/editing-suite.reskin.json dark_dimmed full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "d5f9db05df8aa5c51e380e0779f00c726376c8df903f600a0ed3b00c8f6e68b1"
+ },
+ "themes/classics/editing-suite.reskin.json dark_tritanopia calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "e4b68d2aad132b4185277e421bc86a7a2826bcca10a11024462f79356a7b687d"
+ },
+ "themes/classics/editing-suite.reskin.json dark_tritanopia full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "e4b68d2aad132b4185277e421bc86a7a2826bcca10a11024462f79356a7b687d"
+ },
+ "themes/classics/editing-suite.reskin.json light calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "d5f9db05df8aa5c51e380e0779f00c726376c8df903f600a0ed3b00c8f6e68b1"
+ },
+ "themes/classics/editing-suite.reskin.json light full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "d5f9db05df8aa5c51e380e0779f00c726376c8df903f600a0ed3b00c8f6e68b1"
+ },
+ "themes/classics/editing-suite.reskin.json light_colorblind calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "95b426972e818486305e846b2293120f2baadf09cdfdb0339fa9ad14a0babcd0"
+ },
+ "themes/classics/editing-suite.reskin.json light_colorblind full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "95b426972e818486305e846b2293120f2baadf09cdfdb0339fa9ad14a0babcd0"
+ },
+ "themes/classics/editing-suite.reskin.json light_tritanopia calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "e4b68d2aad132b4185277e421bc86a7a2826bcca10a11024462f79356a7b687d"
+ },
+ "themes/classics/editing-suite.reskin.json light_tritanopia full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "e4b68d2aad132b4185277e421bc86a7a2826bcca10a11024462f79356a7b687d"
+ },
+ "themes/classics/gruvbox.reskin.json dark calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "f387c2d91340163bdf5001199d8fd9224661e52dcce7115aa055c3ed20a4c2f8"
+ },
+ "themes/classics/gruvbox.reskin.json dark full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "f387c2d91340163bdf5001199d8fd9224661e52dcce7115aa055c3ed20a4c2f8"
+ },
+ "themes/classics/gruvbox.reskin.json dark_colorblind calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "a4e7e7e4efacefaf5e41e86eac1e9b38c6fc8481a77425adbc5a56dbb845dee2"
+ },
+ "themes/classics/gruvbox.reskin.json dark_colorblind full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "a4e7e7e4efacefaf5e41e86eac1e9b38c6fc8481a77425adbc5a56dbb845dee2"
+ },
+ "themes/classics/gruvbox.reskin.json dark_dimmed calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "f387c2d91340163bdf5001199d8fd9224661e52dcce7115aa055c3ed20a4c2f8"
+ },
+ "themes/classics/gruvbox.reskin.json dark_dimmed full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "f387c2d91340163bdf5001199d8fd9224661e52dcce7115aa055c3ed20a4c2f8"
+ },
+ "themes/classics/gruvbox.reskin.json dark_tritanopia calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "57493d44ce1cefbd9c4aa944ed440c79a5aa0440659cd11d06600d9d18f07891"
+ },
+ "themes/classics/gruvbox.reskin.json dark_tritanopia full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "57493d44ce1cefbd9c4aa944ed440c79a5aa0440659cd11d06600d9d18f07891"
+ },
+ "themes/classics/gruvbox.reskin.json light calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "f387c2d91340163bdf5001199d8fd9224661e52dcce7115aa055c3ed20a4c2f8"
+ },
+ "themes/classics/gruvbox.reskin.json light full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "f387c2d91340163bdf5001199d8fd9224661e52dcce7115aa055c3ed20a4c2f8"
+ },
+ "themes/classics/gruvbox.reskin.json light_colorblind calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "a4e7e7e4efacefaf5e41e86eac1e9b38c6fc8481a77425adbc5a56dbb845dee2"
+ },
+ "themes/classics/gruvbox.reskin.json light_colorblind full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "a4e7e7e4efacefaf5e41e86eac1e9b38c6fc8481a77425adbc5a56dbb845dee2"
+ },
+ "themes/classics/gruvbox.reskin.json light_tritanopia calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "57493d44ce1cefbd9c4aa944ed440c79a5aa0440659cd11d06600d9d18f07891"
+ },
+ "themes/classics/gruvbox.reskin.json light_tritanopia full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "57493d44ce1cefbd9c4aa944ed440c79a5aa0440659cd11d06600d9d18f07891"
+ },
+ "themes/classics/nord.reskin.json dark calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "816e2d3a3743d136fc853d72000fbf9172077f0dae4cfd0b133efbce22516a37"
+ },
+ "themes/classics/nord.reskin.json dark full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "816e2d3a3743d136fc853d72000fbf9172077f0dae4cfd0b133efbce22516a37"
+ },
+ "themes/classics/nord.reskin.json dark_colorblind calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "5b8ec81eeabd7f84bfaaefdaa487d48776814d209532e92d7e23cb0d11021133"
+ },
+ "themes/classics/nord.reskin.json dark_colorblind full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "5b8ec81eeabd7f84bfaaefdaa487d48776814d209532e92d7e23cb0d11021133"
+ },
+ "themes/classics/nord.reskin.json dark_dimmed calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "816e2d3a3743d136fc853d72000fbf9172077f0dae4cfd0b133efbce22516a37"
+ },
+ "themes/classics/nord.reskin.json dark_dimmed full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "816e2d3a3743d136fc853d72000fbf9172077f0dae4cfd0b133efbce22516a37"
+ },
+ "themes/classics/nord.reskin.json dark_tritanopia calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "9f5c0d2e2a9343aa259c30c64a47047522448952a5c551b5ba75ab48e3a0ec8c"
+ },
+ "themes/classics/nord.reskin.json dark_tritanopia full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "9f5c0d2e2a9343aa259c30c64a47047522448952a5c551b5ba75ab48e3a0ec8c"
+ },
+ "themes/classics/nord.reskin.json light calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "816e2d3a3743d136fc853d72000fbf9172077f0dae4cfd0b133efbce22516a37"
+ },
+ "themes/classics/nord.reskin.json light full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "816e2d3a3743d136fc853d72000fbf9172077f0dae4cfd0b133efbce22516a37"
+ },
+ "themes/classics/nord.reskin.json light_colorblind calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "5b8ec81eeabd7f84bfaaefdaa487d48776814d209532e92d7e23cb0d11021133"
+ },
+ "themes/classics/nord.reskin.json light_colorblind full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "5b8ec81eeabd7f84bfaaefdaa487d48776814d209532e92d7e23cb0d11021133"
+ },
+ "themes/classics/nord.reskin.json light_tritanopia calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "9f5c0d2e2a9343aa259c30c64a47047522448952a5c551b5ba75ab48e3a0ec8c"
+ },
+ "themes/classics/nord.reskin.json light_tritanopia full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "9f5c0d2e2a9343aa259c30c64a47047522448952a5c551b5ba75ab48e3a0ec8c"
+ },
+ "themes/classics/one-dark.reskin.json dark calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "e00a061d7be7f27c162877f642ef830442976378dc8b7fb4e84a2718e026a4a9"
+ },
+ "themes/classics/one-dark.reskin.json dark full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "e00a061d7be7f27c162877f642ef830442976378dc8b7fb4e84a2718e026a4a9"
+ },
+ "themes/classics/one-dark.reskin.json dark_colorblind calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "3cd685bb2af84dde6082a0cf8f5be1ded99c6ba3d6c7b7417e50c9ec102c8166"
+ },
+ "themes/classics/one-dark.reskin.json dark_colorblind full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "3cd685bb2af84dde6082a0cf8f5be1ded99c6ba3d6c7b7417e50c9ec102c8166"
+ },
+ "themes/classics/one-dark.reskin.json dark_dimmed calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "e00a061d7be7f27c162877f642ef830442976378dc8b7fb4e84a2718e026a4a9"
+ },
+ "themes/classics/one-dark.reskin.json dark_dimmed full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "e00a061d7be7f27c162877f642ef830442976378dc8b7fb4e84a2718e026a4a9"
+ },
+ "themes/classics/one-dark.reskin.json dark_tritanopia calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "10ead9c0f4cd8f070f5ff0045df60f2fdbaf2ac6444ffe1e5629817ae03eb9f9"
+ },
+ "themes/classics/one-dark.reskin.json dark_tritanopia full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "10ead9c0f4cd8f070f5ff0045df60f2fdbaf2ac6444ffe1e5629817ae03eb9f9"
+ },
+ "themes/classics/one-dark.reskin.json light calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "e00a061d7be7f27c162877f642ef830442976378dc8b7fb4e84a2718e026a4a9"
+ },
+ "themes/classics/one-dark.reskin.json light full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "e00a061d7be7f27c162877f642ef830442976378dc8b7fb4e84a2718e026a4a9"
+ },
+ "themes/classics/one-dark.reskin.json light_colorblind calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "3cd685bb2af84dde6082a0cf8f5be1ded99c6ba3d6c7b7417e50c9ec102c8166"
+ },
+ "themes/classics/one-dark.reskin.json light_colorblind full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "3cd685bb2af84dde6082a0cf8f5be1ded99c6ba3d6c7b7417e50c9ec102c8166"
+ },
+ "themes/classics/one-dark.reskin.json light_tritanopia calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "10ead9c0f4cd8f070f5ff0045df60f2fdbaf2ac6444ffe1e5629817ae03eb9f9"
+ },
+ "themes/classics/one-dark.reskin.json light_tritanopia full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "10ead9c0f4cd8f070f5ff0045df60f2fdbaf2ac6444ffe1e5629817ae03eb9f9"
+ },
+ "themes/classics/rose-pine-dawn.reskin.json dark calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "c6ff8f417ea910177db0437f1bc4db5c814bd30a505b15ae5587ad3c7f24ae03"
+ },
+ "themes/classics/rose-pine-dawn.reskin.json dark full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "c6ff8f417ea910177db0437f1bc4db5c814bd30a505b15ae5587ad3c7f24ae03"
+ },
+ "themes/classics/rose-pine-dawn.reskin.json dark_colorblind calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "04cf4190134585b4c85a9338eb643a50380cbeac8c7efa973dc79c14c9f8d1e2"
+ },
+ "themes/classics/rose-pine-dawn.reskin.json dark_colorblind full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "04cf4190134585b4c85a9338eb643a50380cbeac8c7efa973dc79c14c9f8d1e2"
+ },
+ "themes/classics/rose-pine-dawn.reskin.json dark_dimmed calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "c6ff8f417ea910177db0437f1bc4db5c814bd30a505b15ae5587ad3c7f24ae03"
+ },
+ "themes/classics/rose-pine-dawn.reskin.json dark_dimmed full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "c6ff8f417ea910177db0437f1bc4db5c814bd30a505b15ae5587ad3c7f24ae03"
+ },
+ "themes/classics/rose-pine-dawn.reskin.json dark_tritanopia calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "db1592c60ad763cacce2a67cbdfb64c71eea7bc011cfe42ff702c00751e0b684"
+ },
+ "themes/classics/rose-pine-dawn.reskin.json dark_tritanopia full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "db1592c60ad763cacce2a67cbdfb64c71eea7bc011cfe42ff702c00751e0b684"
+ },
+ "themes/classics/rose-pine-dawn.reskin.json light calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "c6ff8f417ea910177db0437f1bc4db5c814bd30a505b15ae5587ad3c7f24ae03"
+ },
+ "themes/classics/rose-pine-dawn.reskin.json light full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "c6ff8f417ea910177db0437f1bc4db5c814bd30a505b15ae5587ad3c7f24ae03"
+ },
+ "themes/classics/rose-pine-dawn.reskin.json light_colorblind calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "04cf4190134585b4c85a9338eb643a50380cbeac8c7efa973dc79c14c9f8d1e2"
+ },
+ "themes/classics/rose-pine-dawn.reskin.json light_colorblind full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "04cf4190134585b4c85a9338eb643a50380cbeac8c7efa973dc79c14c9f8d1e2"
+ },
+ "themes/classics/rose-pine-dawn.reskin.json light_tritanopia calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "db1592c60ad763cacce2a67cbdfb64c71eea7bc011cfe42ff702c00751e0b684"
+ },
+ "themes/classics/rose-pine-dawn.reskin.json light_tritanopia full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "db1592c60ad763cacce2a67cbdfb64c71eea7bc011cfe42ff702c00751e0b684"
+ },
+ "themes/classics/rose-pine.reskin.json dark calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "01266f2d95c14b511de20ebc9bb6066a0c65c4bce91d580eab719bd5b5b19844"
+ },
+ "themes/classics/rose-pine.reskin.json dark full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "01266f2d95c14b511de20ebc9bb6066a0c65c4bce91d580eab719bd5b5b19844"
+ },
+ "themes/classics/rose-pine.reskin.json dark_colorblind calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "5a94ec83253e6cbb5b8c9487c2ac4791a107a36a18120893f04636211c972d63"
+ },
+ "themes/classics/rose-pine.reskin.json dark_colorblind full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "5a94ec83253e6cbb5b8c9487c2ac4791a107a36a18120893f04636211c972d63"
+ },
+ "themes/classics/rose-pine.reskin.json dark_dimmed calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "01266f2d95c14b511de20ebc9bb6066a0c65c4bce91d580eab719bd5b5b19844"
+ },
+ "themes/classics/rose-pine.reskin.json dark_dimmed full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "01266f2d95c14b511de20ebc9bb6066a0c65c4bce91d580eab719bd5b5b19844"
+ },
+ "themes/classics/rose-pine.reskin.json dark_tritanopia calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "53a34160bb026ad0340e3907208432330a9b9de96f8cdfc9cd7a1ab89177fe47"
+ },
+ "themes/classics/rose-pine.reskin.json dark_tritanopia full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "53a34160bb026ad0340e3907208432330a9b9de96f8cdfc9cd7a1ab89177fe47"
+ },
+ "themes/classics/rose-pine.reskin.json light calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "01266f2d95c14b511de20ebc9bb6066a0c65c4bce91d580eab719bd5b5b19844"
+ },
+ "themes/classics/rose-pine.reskin.json light full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "01266f2d95c14b511de20ebc9bb6066a0c65c4bce91d580eab719bd5b5b19844"
+ },
+ "themes/classics/rose-pine.reskin.json light_colorblind calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "5a94ec83253e6cbb5b8c9487c2ac4791a107a36a18120893f04636211c972d63"
+ },
+ "themes/classics/rose-pine.reskin.json light_colorblind full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "5a94ec83253e6cbb5b8c9487c2ac4791a107a36a18120893f04636211c972d63"
+ },
+ "themes/classics/rose-pine.reskin.json light_tritanopia calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "53a34160bb026ad0340e3907208432330a9b9de96f8cdfc9cd7a1ab89177fe47"
+ },
+ "themes/classics/rose-pine.reskin.json light_tritanopia full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "53a34160bb026ad0340e3907208432330a9b9de96f8cdfc9cd7a1ab89177fe47"
+ },
+ "themes/classics/solarized-dark.reskin.json dark calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "533e59b85567cd53822eda1f86fef05855aa0e2b9ffe003611ed474a60bc1802"
+ },
+ "themes/classics/solarized-dark.reskin.json dark full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "533e59b85567cd53822eda1f86fef05855aa0e2b9ffe003611ed474a60bc1802"
+ },
+ "themes/classics/solarized-dark.reskin.json dark_colorblind calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "ccdcfc134a0b495f35ef477534cc2fa247e8646422a7c9494f2c91981db71fbc"
+ },
+ "themes/classics/solarized-dark.reskin.json dark_colorblind full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "ccdcfc134a0b495f35ef477534cc2fa247e8646422a7c9494f2c91981db71fbc"
+ },
+ "themes/classics/solarized-dark.reskin.json dark_dimmed calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "533e59b85567cd53822eda1f86fef05855aa0e2b9ffe003611ed474a60bc1802"
+ },
+ "themes/classics/solarized-dark.reskin.json dark_dimmed full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "533e59b85567cd53822eda1f86fef05855aa0e2b9ffe003611ed474a60bc1802"
+ },
+ "themes/classics/solarized-dark.reskin.json dark_tritanopia calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "ebdbfef3fe964356723fd34ae202ef71be0a136e79209d64372ab3c771000645"
+ },
+ "themes/classics/solarized-dark.reskin.json dark_tritanopia full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "ebdbfef3fe964356723fd34ae202ef71be0a136e79209d64372ab3c771000645"
+ },
+ "themes/classics/solarized-dark.reskin.json light calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "533e59b85567cd53822eda1f86fef05855aa0e2b9ffe003611ed474a60bc1802"
+ },
+ "themes/classics/solarized-dark.reskin.json light full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "533e59b85567cd53822eda1f86fef05855aa0e2b9ffe003611ed474a60bc1802"
+ },
+ "themes/classics/solarized-dark.reskin.json light_colorblind calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "ccdcfc134a0b495f35ef477534cc2fa247e8646422a7c9494f2c91981db71fbc"
+ },
+ "themes/classics/solarized-dark.reskin.json light_colorblind full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "ccdcfc134a0b495f35ef477534cc2fa247e8646422a7c9494f2c91981db71fbc"
+ },
+ "themes/classics/solarized-dark.reskin.json light_tritanopia calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "ebdbfef3fe964356723fd34ae202ef71be0a136e79209d64372ab3c771000645"
+ },
+ "themes/classics/solarized-dark.reskin.json light_tritanopia full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "ebdbfef3fe964356723fd34ae202ef71be0a136e79209d64372ab3c771000645"
+ },
+ "themes/classics/solarized-light.reskin.json dark calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "9fe74cfda0e322718f3f025babb7ea1577c0e9063089617c5576b733b605d480"
+ },
+ "themes/classics/solarized-light.reskin.json dark full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "9fe74cfda0e322718f3f025babb7ea1577c0e9063089617c5576b733b605d480"
+ },
+ "themes/classics/solarized-light.reskin.json dark_colorblind calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "bfce3d31778ce8040ea4c3586d6b554dc01f7fa3dee3409ddfd0170dae6eee76"
+ },
+ "themes/classics/solarized-light.reskin.json dark_colorblind full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "bfce3d31778ce8040ea4c3586d6b554dc01f7fa3dee3409ddfd0170dae6eee76"
+ },
+ "themes/classics/solarized-light.reskin.json dark_dimmed calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "9fe74cfda0e322718f3f025babb7ea1577c0e9063089617c5576b733b605d480"
+ },
+ "themes/classics/solarized-light.reskin.json dark_dimmed full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "9fe74cfda0e322718f3f025babb7ea1577c0e9063089617c5576b733b605d480"
+ },
+ "themes/classics/solarized-light.reskin.json dark_tritanopia calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "edebfa31c940832bef5d9d5f6971c4d057ee94f8b59f63e2752f7a1dcc2685e6"
+ },
+ "themes/classics/solarized-light.reskin.json dark_tritanopia full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "edebfa31c940832bef5d9d5f6971c4d057ee94f8b59f63e2752f7a1dcc2685e6"
+ },
+ "themes/classics/solarized-light.reskin.json light calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "9fe74cfda0e322718f3f025babb7ea1577c0e9063089617c5576b733b605d480"
+ },
+ "themes/classics/solarized-light.reskin.json light full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "9fe74cfda0e322718f3f025babb7ea1577c0e9063089617c5576b733b605d480"
+ },
+ "themes/classics/solarized-light.reskin.json light_colorblind calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "bfce3d31778ce8040ea4c3586d6b554dc01f7fa3dee3409ddfd0170dae6eee76"
+ },
+ "themes/classics/solarized-light.reskin.json light_colorblind full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "bfce3d31778ce8040ea4c3586d6b554dc01f7fa3dee3409ddfd0170dae6eee76"
+ },
+ "themes/classics/solarized-light.reskin.json light_tritanopia calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "edebfa31c940832bef5d9d5f6971c4d057ee94f8b59f63e2752f7a1dcc2685e6"
+ },
+ "themes/classics/solarized-light.reskin.json light_tritanopia full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "edebfa31c940832bef5d9d5f6971c4d057ee94f8b59f63e2752f7a1dcc2685e6"
+ },
+ "themes/classics/tokyo-night.reskin.json dark calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "df213fd280233147a2a2cbbb0be091da51ddbc4bb8aa1d8263b63ebb3157debd"
+ },
+ "themes/classics/tokyo-night.reskin.json dark full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "df213fd280233147a2a2cbbb0be091da51ddbc4bb8aa1d8263b63ebb3157debd"
+ },
+ "themes/classics/tokyo-night.reskin.json dark_colorblind calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "187b1d3068d32ef17d9fd2bbdfa9eab650e3742c40c6960b8868899623a44cf5"
+ },
+ "themes/classics/tokyo-night.reskin.json dark_colorblind full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "187b1d3068d32ef17d9fd2bbdfa9eab650e3742c40c6960b8868899623a44cf5"
+ },
+ "themes/classics/tokyo-night.reskin.json dark_dimmed calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "df213fd280233147a2a2cbbb0be091da51ddbc4bb8aa1d8263b63ebb3157debd"
+ },
+ "themes/classics/tokyo-night.reskin.json dark_dimmed full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "df213fd280233147a2a2cbbb0be091da51ddbc4bb8aa1d8263b63ebb3157debd"
+ },
+ "themes/classics/tokyo-night.reskin.json dark_tritanopia calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "3ceba76cc6588c2bfd0f12d7c8f1e1b7749c0e9aa0aef2fa40aa77b8d5cb4321"
+ },
+ "themes/classics/tokyo-night.reskin.json dark_tritanopia full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "3ceba76cc6588c2bfd0f12d7c8f1e1b7749c0e9aa0aef2fa40aa77b8d5cb4321"
+ },
+ "themes/classics/tokyo-night.reskin.json light calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "df213fd280233147a2a2cbbb0be091da51ddbc4bb8aa1d8263b63ebb3157debd"
+ },
+ "themes/classics/tokyo-night.reskin.json light full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "df213fd280233147a2a2cbbb0be091da51ddbc4bb8aa1d8263b63ebb3157debd"
+ },
+ "themes/classics/tokyo-night.reskin.json light_colorblind calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "187b1d3068d32ef17d9fd2bbdfa9eab650e3742c40c6960b8868899623a44cf5"
+ },
+ "themes/classics/tokyo-night.reskin.json light_colorblind full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "187b1d3068d32ef17d9fd2bbdfa9eab650e3742c40c6960b8868899623a44cf5"
+ },
+ "themes/classics/tokyo-night.reskin.json light_tritanopia calm": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "3ceba76cc6588c2bfd0f12d7c8f1e1b7749c0e9aa0aef2fa40aa77b8d5cb4321"
+ },
+ "themes/classics/tokyo-night.reskin.json light_tritanopia full": {
+  "appearance": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "primer": "3ceba76cc6588c2bfd0f12d7c8f1e1b7749c0e9aa0aef2fa40aa77b8d5cb4321"
+ }
+}

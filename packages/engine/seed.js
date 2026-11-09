@@ -1,6 +1,6 @@
 // Runtime checks for the immutable inputs: ModeSeed records, ResolveContext and the pair matrix.
 // A template type cannot prove a string is a color, so every leaf is checked once per object.
-import { MODE_FAMILIES, MODE_POLICIES, PAIR_MATRIX_VERSION, SYNTAX_ROLES } from "../contracts/index.js";
+import { MODE_FAMILIES, MODE_POLICIES, OVERRIDE_COLOR_ROLES, PAIR_MATRIX_VERSION, SYNTAX_ROLES } from "../contracts/index.js";
 import { isHex } from "./color.js";
 import { ANSI_ROLES, COLOR_PATHS, PAIR_PATHS, SEMANTIC_FIELDS, SEMANTIC_ROLES, TOKEN_KEYS } from "./vocabulary.js";
 
@@ -86,6 +86,7 @@ export function pairMatrixProblems(matrix) {
     else for (const bg of record.backgrounds) if (!PAIR_PATHS.includes(bg)) problems.push(`${at} background ${bg} is not a ColorPath or appearance color`);
     if (record.minimum !== 3 && record.minimum !== 4.5) problems.push(`${at} minimum must be 3 or 4.5`);
     if (!["text", "boundary", "focus"].includes(record.purpose)) problems.push(`${at} purpose must be text, boundary or focus`);
+    if (record.supplied !== undefined && !(typeof record.supplied === "string" && OVERRIDE_COLOR_ROLES.some((key) => record.supplied === `/overrides/${key}`))) problems.push(`${at} supplied must name an override color`);
   }
   return problems;
 }

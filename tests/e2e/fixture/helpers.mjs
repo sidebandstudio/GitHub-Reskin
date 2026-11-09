@@ -33,9 +33,11 @@ const SLOTS = {
   "empty.pinned.caption": "Empty pins sentinel caption.",
   "empty.issues.caption": "Empty issues sentinel caption.",
   "contributions.caption": "Calendar sentinel caption.",
+  "footer.signoff": "Signoff sentinel line.",
+  "profile.achievements.heading": "Cred sentinel copy",
 };
 
-/** A Classic with the given effects (defaults filled per id), an accent font and all eight slots. */
+/** A Classic with the given effects (defaults filled per id), an accent font and every slot. */
 export function decorated(id, effects, { font = "rajdhani", flavor = true } = {}) {
   const theme = classic(id);
   return {

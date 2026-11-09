@@ -113,6 +113,10 @@
         "accentMuted": {
           "$ref": "#/$defs/hexColor"
         },
+        "accentEmphasis": {
+          "$ref": "#/$defs/hexColor",
+          "description": "Optional emphasized accent fill GitHub uses for selected states, such as the selected contribution year. Defaults to accent. Repaired against the shared emphasis ink and the canvas."
+        },
         "primaryBackground": {
           "$ref": "#/$defs/hexColor"
         },
@@ -328,6 +332,20 @@
               "maxLength": 120,
               "pattern": "^[^<>\\u0000-\\u001F\\u007F-\\u009F\\u202A-\\u202E\\u2066-\\u2069]*$(?![\\s\\S])",
               "description": "Insert one aria-hidden paragraph after .js-calendar-graph on a verified profile, outside table/svg, legend and native count/date heading. Require ContributionCalendar day data-level cells and intact native summary. Never relabel Less/More or cells."
+            },
+            "footer.signoff": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 40,
+              "pattern": "^[^<>\\u0000-\\u001F\\u007F-\\u009F\\u202A-\\u202E\\u2066-\\u2069]*$(?![\\s\\S])",
+              "description": "Insert a separate aria-hidden span after the span holding GitHub's own copyright line in the verified footer[role=contentinfo] of a profile page, outside main. Require the canonical copyright text. Never edit or replace the copyright, footer links or logo."
+            },
+            "profile.achievements.heading": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 40,
+              "pattern": "^[^<>\\u0000-\\u001F\\u007F-\\u009F\\u202A-\\u202E\\u2066-\\u2069]*$(?![\\s\\S])",
+              "description": "Append a decorative span after the desktop h2 in the profile sidebar whose whole text is the Achievements link, never inside the heading or its link. Require canonical Achievements and no other interactive descendants."
             }
           }
         }
@@ -2081,7 +2099,9 @@
       "error.notFound.caption": "Insert an aria-hidden paragraph after the verified GitHub-owned 404 illustration container containing img[data-static-error-asset=\"404-illustration\"] in .application-main. Keep the real explanation and recovery links. No auth, permission or rate-limit errors. Revision 4 may style this owned caption in a host-provided verified blank illustration-corner frame, with flow fallback when unsafe; never cover the original message or links.",
       "empty.pinned.caption": "Append an aria-hidden paragraph to the GitHub-owned .blankslate inside a verified .js-pinned-items-reorder-container only when the pinned list is empty and the canonical GitHub empty heading matches the captured English fixture. No generic .blankslate matcher.",
       "empty.issues.caption": "Append an aria-hidden paragraph to the verified issue-list empty panel in repository issues index, with native No results or No issues heading plus adjacent native filtering/creation instructions. Require route and validated issue-list container, exact recorded semantic signature, and no issue rows. Never replace the explanation or action. Selector must be captured under the release gate.",
-      "contributions.caption": "Insert one aria-hidden paragraph after .js-calendar-graph on a verified profile, outside table/svg, legend and native count/date heading. Require ContributionCalendar day data-level cells and intact native summary. Never relabel Less/More or cells."
+      "contributions.caption": "Insert one aria-hidden paragraph after .js-calendar-graph on a verified profile, outside table/svg, legend and native count/date heading. Require ContributionCalendar day data-level cells and intact native summary. Never relabel Less/More or cells.",
+      "footer.signoff": "Insert a separate aria-hidden span after the span holding GitHub's own copyright line in the verified footer[role=contentinfo] of a profile page, outside main. Require the canonical copyright text. Never edit or replace the copyright, footer links or logo.",
+      "profile.achievements.heading": "Append a decorative span after the desktop h2 in the profile sidebar whose whole text is the Achievements link, never inside the heading or its link. Require canonical Achievements and no other interactive descendants."
     },
     "inputLimits": {
       "fileUtf8Bytes": 524288,

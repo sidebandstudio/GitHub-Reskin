@@ -14,7 +14,7 @@ import { adapterBundle, readJson, readText, ROOT } from "./helpers.mjs";
 const PROFILE = readText("tests/primer/fixtures/profile.html");
 const bundle = await adapterBundle();
 
-test("the adapter knows exactly the eight frozen slot IDs, and its states match the dated evidence", () => {
+test("the adapter knows exactly the frozen slot IDs, and its states match the dated evidence", () => {
   assert.deepEqual(SLOTS.map((s) => s.slot).sort(), [...FLAVOR_SLOT_IDS].sort());
   const evidence = readJson("tests/primer/slot-evidence.json");
   assert.deepEqual(Object.keys(evidence.slots).sort(), [...FLAVOR_SLOT_IDS].sort());
@@ -83,10 +83,10 @@ for (const [name, engine] of [["Chromium", chromium], ["Firefox", firefox]]) {
     }
     const slots = (r) => r.anchors.map((a) => a.slot).sort();
 
-    test("a profile gets its five evidenced anchors and nothing in the README, name, bio or activity titles", async () => {
+    test("a profile gets its seven evidenced anchors and nothing in the README, name, bio or activity titles", async () => {
       const r = await locate(PROFILE);
       assert.equal(r.route, "profile");
-      assert.deepEqual(slots(r), ["contributions.caption", "profile.activity.heading", "profile.organizations.heading", "profile.pinned.heading", "profile.tag"]);
+      assert.deepEqual(slots(r), ["contributions.caption", "footer.signoff", "profile.achievements.heading", "profile.activity.heading", "profile.organizations.heading", "profile.pinned.heading", "profile.tag"]);
       const by = Object.fromEntries(r.anchors.map((a) => [a.slot, a]));
       assert.deepEqual([by["profile.pinned.heading"].host, by["profile.pinned.heading"].insert], ["h2.f4", "append"]);
       assert.match(by["profile.pinned.heading"].text, /^Pinned Loading/);
@@ -94,6 +94,9 @@ for (const [name, engine] of [["Chromium", chromium], ["Firefox", firefox]]) {
       assert.deepEqual([by["profile.tag"].host, by["profile.tag"].insert], ["div.vcard-names-container", "append"]);
       assert.deepEqual([by["contributions.caption"].host, by["contributions.caption"].insert], ["div.py-2", "after"]);
       assert.equal(by["profile.activity.heading"].text, "Contribution activity");
+      // The Achievements heading is a link, so the node goes after the desktop heading, never inside it.
+      assert.deepEqual([by["profile.achievements.heading"].host, by["profile.achievements.heading"].insert, by["profile.achievements.heading"].text], ["h2.h4", "after", "Achievements"]);
+      assert.deepEqual([by["footer.signoff"].host, by["footer.signoff"].insert, by["footer.signoff"].text], ["span", "after", "© 2026 GitHub, Inc."]);
       for (const a of r.anchors) assert.equal(a.authored, false, a.slot);
       assert.equal(r.unchanged, true, "locating anchors never edits the page");
     });
@@ -126,11 +129,16 @@ for (const [name, engine] of [["Chromium", chromium], ["Firefox", firefox]]) {
         ["contribution count reworded", () => (document.querySelector("#js-contribution-activity-description").firstChild.data = " 1,234 Beiträge "), "contributions.caption"],
         ["graph moved", () => document.querySelector(".graph-before-activity-overview").remove(), "contributions.caption"],
         ["anchor inside a live region", () => document.querySelector("#js-contribution-activity").setAttribute("aria-live", "polite"), "profile.activity.heading"],
+        ["Achievements reworded", () => (document.querySelector(".d-md-block > h2 > a").firstChild.data = "Badges"), "profile.achievements.heading"],
+        ["control beside the Achievements link", () => document.querySelector(".d-md-block > h2").append(Object.assign(document.createElement("button"), { textContent: "Edit" })), "profile.achievements.heading"],
+        ["copyright reworded", () => (document.querySelector("footer .flex-shrink-0 > span").firstChild.data = " © 2026 GitHub "), "footer.signoff"],
+        ["copyright inside a live region", () => document.querySelector("footer .flex-shrink-0").setAttribute("role", "status"), "footer.signoff"],
+        ["footer moved into main", () => document.querySelector("main").append(document.querySelector("footer")), "footer.signoff"],
       ];
       for (const [label, mutate, slot] of cases) {
         const r = await locate(PROFILE, { mutate });
         assert.ok(!slots(r).includes(slot), `${label}: ${slot} must be skipped`);
-        assert.equal(r.anchors.length, 4, `${label}: the other slots are unaffected`);
+        assert.equal(r.anchors.length, 6, `${label}: the other slots are unaffected`);
       }
       assert.deepEqual((await locate(PROFILE, { mutate: () => document.documentElement.setAttribute("lang", "de") })).anchors, []);
     });
@@ -173,7 +181,7 @@ for (const [name, engine] of [["Chromium", chromium], ["Firefox", firefox]]) {
       });
       await context.close();
       assert.equal(result.route, "profile");
-      assert.equal(result.anchors, 5);
+      assert.equal(result.anchors, 7);
       // One document query to classify and one to verify the route and find every candidate,
       // within the architecture's six; each anchor's guard reads at most two small subtrees.
       assert.equal(result.calls.document.length, 2, result.calls.document.join("\n"));
@@ -187,15 +195,15 @@ for (const [name, engine] of [["Chromium", chromium], ["Firefox", firefox]]) {
       };
       assert.deepEqual((await locate(PROFILE, { mutate: crowd })).anchors, []);
       assert.deepEqual((await locate(PROFILE, { clock: slowClock })).anchors, []);
-      assert.equal((await locate(PROFILE)).anchors.length, 5);
+      assert.equal((await locate(PROFILE)).anchors.length, 7);
     });
 
     test("r4-3 slot results do not depend on the runner's clock: a runner too slow for 4 ms still gets every semantic anchor", async () => {
       // The page's own clock runs out on every reading, as on a loaded CI runner; the helper's
       // controlled clock replaces it, so the semantic result is the same as on a fast machine.
       const r = await locate(PROFILE, { init: slowClock });
-      assert.deepEqual(slots(r), ["contributions.caption", "profile.activity.heading", "profile.organizations.heading", "profile.pinned.heading", "profile.tag"]);
-      assert.equal((await locate(PROFILE, { init: slowClock, mutate: () => document.querySelector("a.avatar-group-item").remove() })).anchors.length, 4);
+      assert.deepEqual(slots(r), ["contributions.caption", "footer.signoff", "profile.achievements.heading", "profile.activity.heading", "profile.organizations.heading", "profile.pinned.heading", "profile.tag"]);
+      assert.equal((await locate(PROFILE, { init: slowClock, mutate: () => document.querySelector("a.avatar-group-item").remove() })).anchors.length, 6);
       // The production allowance still applies to the clock the adapter reads.
       assert.deepEqual((await locate(PROFILE, { init: slowClock, clock: slowClock })).anchors, []);
     });
@@ -209,7 +217,7 @@ for (const [name, engine] of [["Chromium", chromium], ["Firefox", firefox]]) {
         document.querySelector(".Layout-main #js-contribution-activity:not(.markdown-body *)").remove();
       };
       const r = await locate(PROFILE, { mutate: forged });
-      assert.deepEqual(slots(r), ["contributions.caption", "profile.organizations.heading", "profile.tag"]);
+      assert.deepEqual(slots(r), ["contributions.caption", "footer.signoff", "profile.achievements.heading", "profile.organizations.heading", "profile.tag"]);
       for (const a of r.anchors) assert.equal(a.authored, false);
     });
   });

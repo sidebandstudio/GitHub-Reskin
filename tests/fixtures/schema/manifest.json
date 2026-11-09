@@ -7,7 +7,8 @@
     "valid/embedded-images.reskin.json",
     "valid/advanced-css.reskin.json",
     "valid/ai-rich.reskin.json",
-    "valid/art-additions.reskin.json"
+    "valid/art-additions.reskin.json",
+    "valid/slots-emphasis.reskin.json"
   ],
   "invalid": [
     {
