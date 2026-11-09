@@ -20,6 +20,7 @@ const SHARED = [
   "packages/format/index.js",
   "packages/format/viewer.js",
   "packages/format/authoring.js",
+  "packages/engine/viewer.js",
   "packages/contracts/index.js",
   "extension/content/github/slots.js",
   "release.config.json",
@@ -49,7 +50,7 @@ test("site files import only site modules and the shared packages' public module
 });
 
 test("only the two seams reach the engine, importer and catalog; browser code never imports the build-time seam", async () => {
-  const engineSide = ["packages/preview/index.js", "packages/primer/index.js", "packages/format/viewer.js", "packages/format/authoring.js", "packages/appearance/index.js", "extension/content/github/slots.js"];
+  const engineSide = ["packages/preview/index.js", "packages/primer/index.js", "packages/format/viewer.js", "packages/format/authoring.js", "packages/engine/viewer.js", "packages/appearance/index.js", "extension/content/github/slots.js"];
   const offenders = [];
   for (const file of await sources()) {
     for (const spec of await importsOf(file)) {

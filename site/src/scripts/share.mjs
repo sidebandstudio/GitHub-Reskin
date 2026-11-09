@@ -6,17 +6,39 @@ const $ = (selector) => document.querySelector(selector);
 const { maxLink } = JSON.parse($("#share-data").textContent);
 const name = $("[data-share-name]");
 const state = $("[data-share-state]");
-const code = decodeURIComponent(location.hash.slice(1));
+const retry = $("[data-share-retry]");
+
+// A new code in the address is a new page. Registered first, so nothing in a link can stop it.
+window.addEventListener("hashchange", () => location.reload());
+retry.addEventListener("click", () => {
+  retry.hidden = true;
+  open();
+});
 
 async function open() {
-  if (!code) return;
+  const fragment = location.hash.slice(1);
+  if (!fragment) return;
   if (location.href.length > maxLink) {
     state.textContent = `This link is longer than ${maxLink.toLocaleString("en-US")} characters, so it is not read. Ask for the theme's .reskin.json file instead.`;
     return;
   }
+  // A damaged escape is read as it stands, so it gets the same answer as any damaged code.
+  let code = fragment;
+  try {
+    code = decodeURIComponent(fragment);
+  } catch {}
   name.textContent = "Reading the shared theme";
-  const module = await import("../engine.mjs");
-  await module.loadAuthoring();
+  let module;
+  try {
+    module = await import("../engine.mjs");
+    await module.loadAuthoring();
+  } catch {
+    // The theme stays in the address; trying again imports the previewer again.
+    name.textContent = "The shared theme didn't load";
+    state.textContent = "Your browser couldn't load the previewer. Check your connection and try again.";
+    retry.hidden = false;
+    return;
+  }
   const result = module.decodeShare(code);
   if (!result.ok) {
     name.textContent = "This share code can't be read";
@@ -43,7 +65,7 @@ async function open() {
   const windowEl = $("[data-window]");
   windowEl.hidden = false;
   const container = $("[data-live]");
-  const handle = module.mountPreview(container, { view: "profile", theme, preferences: module.DEFAULT_PREFERENCES, cssAllowed: false });
+  const handle = module.mountPreview(container, { view: "profile", theme, preferences: module.DEFAULT_PREFERENCES, cssAllowed: false, compact: true });
   container.querySelector("[data-reskin-preview]").addEventListener("reskin-preview-complete", () => {
     windowEl.dataset.preview = "live";
     $("[data-pending]").hidden = true;
@@ -73,4 +95,3 @@ async function open() {
 }
 
 open();
-window.addEventListener("hashchange", () => location.reload());

@@ -5,6 +5,8 @@
 //   a visitor reaches for the preview or the gallery, and replaces the capture once its first frame
 //   is shown. Views, Before/After, Calm and the whole page need it; a choice made while it loads is
 //   kept and applied when it arrives.
+// - If the live preview fails to load or draw, the capture stays, named as a picture, with Try
+//   again; if Try again fails too, it offers a reload, which keeps the selected theme's address.
 // Nothing here measures or sends anything.
 import { copyText } from "./clipboard.mjs";
 
@@ -25,37 +27,67 @@ const shot = $("[data-shot-img]");
 const shotDesk = $("[data-shot-desk]");
 const pending = $("[data-pending]");
 const status = $("[data-status]");
+const failedNote = $("[data-failed]");
+const retry = $("[data-retry]");
 const themeUrl = (slug) => `${data.canonical}themes/${slug}/`;
 // The capture shows the profile in Full, after; anything else needs the live preview.
 const captureShows = () => state.view === "profile" && !state.before && !state.calm && !state.expanded;
 
-// The live preview.
+// The live preview. A failed import is forgotten, so the next attempt imports again.
 let engine = null;
 let live = null;
 let liveReady = false;
+// Try again is in progress; once it has failed, the button reloads the page.
+let retrying = false;
+let reload = false;
 function loadLive() {
   engine ??= import("../engine.mjs").then((module) => {
     const preferences = () => (state.calm ? module.CALM : module.DEFAULT_PREFERENCES);
     const container = $("[data-live]");
     // Bundled themes use their packaged, reviewed CSS, as the extension does in Full.
-    const handle = module.mountPreview(container, { view: state.view, theme: module.DOCS[state.slug], preferences: preferences(), cssAllowed: true });
+    // compact: the profile's phone composition, so the phone window holds a repository and the
+    // graph; the whole page shows the whole profile.
+    const handle = module.mountPreview(container, { view: state.view, theme: module.DOCS[state.slug], preferences: preferences(), cssAllowed: true, compact: !state.expanded });
     if (state.before) handle.setBefore(true);
     const host = container.querySelector("[data-reskin-preview]");
     host.addEventListener("reskin-preview-complete", () => {
       liveReady = true;
+      retrying = reload = false;
+      failedNote.hidden = true;
       windowEl.dataset.preview = "live";
       refresh();
     });
+    host.addEventListener("reskin-preview-error", () => liveReady || failed());
     live = {
       host,
-      update: () => handle.update({ theme: module.DOCS[state.slug], preferences: preferences(), cssAllowed: true }),
+      update: () => handle.update({ theme: module.DOCS[state.slug], preferences: preferences(), cssAllowed: true, compact: !state.expanded }),
       setView: () => handle.setView(state.view),
       setBefore: () => handle.setBefore(state.before),
     };
     return live;
+  }).catch(() => {
+    engine = null;
+    failed();
+    return null;
   });
   return engine;
 }
+function failed() {
+  reload ||= retrying;
+  retrying = false;
+  failedNote.hidden = false;
+  retry.textContent = reload ? "Reload the page" : "Try again";
+  status.textContent = "The live preview didn't load.";
+  refresh();
+}
+retry.addEventListener("click", () => {
+  if (reload) return location.reload();
+  retrying = true;
+  failedNote.hidden = true;
+  refresh();
+  if (live) live.update();
+  else loadLive();
+});
 // Intent: pointing at, touching or focusing the preview or gallery starts the load.
 for (const region of $$("[data-intent], #themes, #extras")) {
   for (const type of ["pointerenter", "pointerdown", "focusin", "touchstart"]) region.addEventListener(type, loadLive, { once: true, passive: true });
@@ -66,7 +98,7 @@ function refresh() {
   const theme = themes.get(state.slug);
   const needsLive = !captureShows();
   windowEl.dataset.expanded = String(state.expanded);
-  pending.hidden = liveReady || !needsLive;
+  pending.hidden = liveReady || !needsLive || !failedNote.hidden;
   if (!liveReady) {
     if (shot.dataset.slug !== state.slug) {
       shot.src = theme.phone;
@@ -92,6 +124,9 @@ function select(slug, { announce = true } = {}) {
   for (const node of $$('[data-selected="title"]')) node.textContent = theme.title;
   for (const node of $$('[data-selected="name"]')) node.textContent = node.closest(".picker-drop") ? theme.sub : theme.name;
   for (const node of $$('[data-selected="description"]')) node.textContent = theme.description;
+  // A theme page names its theme in the heading and lede; the home page keeps its own.
+  for (const node of $$('[data-selected="heading"]')) node.textContent = theme.themeFor;
+  for (const node of $$('[data-selected="lede"]')) node.textContent = theme.lede;
   for (const node of $$('[data-selected="themeFor"]')) node.textContent = theme.group === "anime" ? `${theme.name} · ${theme.themeFor}` : theme.themeFor;
   for (const node of $$('[data-selected="badge"]')) node.hidden = !theme.advancedCss;
   for (const swatch of $$('[data-selected="swatch"]')) swatch.querySelectorAll("i").forEach((cell, i) => cell.style.setProperty("--c", theme.swatch[i]));
@@ -108,7 +143,12 @@ function select(slug, { announce = true } = {}) {
     row.append(Object.assign(document.createElement("dt"), { textContent: label }), Object.assign(document.createElement("dd"), { textContent: text }));
     return row;
   }));
+  // The address becomes the theme's page, so the page describes that theme.
   document.title = theme.pageTitle;
+  $('link[rel="canonical"]').href = themeUrl(slug);
+  $('meta[property="og:url"]').content = themeUrl(slug);
+  $('meta[property="og:title"]').content = theme.pageTitle;
+  for (const meta of $$('meta[name="description"], meta[property="og:description"]')) meta.content = theme.metaDescription;
   history.replaceState(null, "", `${data.base}themes/${slug}/${location.hash}`);
   refresh();
   if (live) live.update();
@@ -183,7 +223,8 @@ expand.addEventListener("click", () => {
   expand.setAttribute("aria-expanded", String(state.expanded));
   expand.textContent = state.expanded ? "Show less" : "Show the whole page";
   refresh();
-  loadLive();
+  if (live) live.update();
+  else loadLive();
   if (!state.expanded) windowEl.scrollIntoView({ block: "nearest" });
 });
 

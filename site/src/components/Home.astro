@@ -8,7 +8,7 @@ import ThemeCard from "./ThemeCard.astro";
 import KeepSheet from "./KeepSheet.astro";
 import Faq from "./Faq.astro";
 import { AI_PROMPT, CATALOG_SOURCE } from "../catalog.mjs";
-import { ANIME, BASE, BROWSERS, CANONICAL, CLASSICS, THEMES, href, pageTitle, themeBySlug, themeFor } from "../lib/site.mjs";
+import { ANIME, BASE, BROWSERS, CANONICAL, CLASSICS, THEMES, href, pageTitle, themeBySlug, themeDescription, themeFor, themeLede } from "../lib/site.mjs";
 
 interface Props { slug: string; home?: boolean }
 const { slug, home = false } = Astro.props;
@@ -21,7 +21,7 @@ const data = {
   initial: slug,
   themes: THEMES.map((t) => {
     const c = t.captures;
-    return { slug: t.slug, title: t.title, name: t.name, sub: t.anime ? t.name : "Classic", group: t.group, pageTitle: pageTitle(t), themeFor: themeFor(t), description: t.description, advancedCss: t.advancedCss, swatch: [t.doc.colors.background, t.doc.colors.accent, t.doc.colors.contribution || t.doc.colors.accent], phone: c.phone.src, desk: c.desk.src, calm: c.calm.src, lines: t.profileLines, sourceHash: c.sourceHash };
+    return { slug: t.slug, title: t.title, name: t.name, sub: t.anime ? t.name : "Classic", group: t.group, pageTitle: pageTitle(t), themeFor: themeFor(t), lede: themeLede(t), metaDescription: themeDescription(t), description: t.description, advancedCss: t.advancedCss, swatch: [t.doc.colors.background, t.doc.colors.accent, t.doc.colors.contribution || t.doc.colors.accent], phone: c.phone.src, desk: c.desk.src, calm: c.calm.src, lines: t.profileLines, sourceHash: c.sourceHash };
   }),
 };
 ---
@@ -29,11 +29,11 @@ const data = {
   <div class="wrap hero-top">
     {home
       ? <h1 id="hero-title">Your GitHub.<br /> Your world.</h1>
-      : <h1 id="hero-title" class="hero-theme-title">{themeFor(theme)}</h1>}
+      : <h1 id="hero-title" class="hero-theme-title" data-selected="heading">{themeFor(theme)}</h1>}
     <div class="hero-side">
-      <p class="hero-lede">{home
-        ? "Anime themes for GitHub, in your own browser. Thirteen anime, twelve Classics, free."
-        : `${theme.name}, ${theme.anime ? "one of 13 anime themes" : "one of 12 Classics"} in GitHub Reskin, a free extension that re-themes GitHub in your own browser.`}</p>
+      {home
+        ? <p class="hero-lede">Anime themes for GitHub, in your own browser. Thirteen anime, twelve Classics, free.</p>
+        : <p class="hero-lede" data-selected="lede">{themeLede(theme)}</p>}
       <div class="hero-actions">
         <a class="btn btn-primary for-desk" href="#install">Install on your browser</a>
         <a class="btn" href={href("make/")}>Make a theme</a>
@@ -71,6 +71,10 @@ const data = {
         </picture>
         <div class="window-live" data-live></div>
         <p class="window-pending" data-pending hidden><span class="spinner" aria-hidden="true"></span> Loading the live preview</p>
+        <div class="window-failed" data-failed hidden>
+          <p>The live preview didn't load. This is a picture of the profile with the theme on.</p>
+          <button class="btn btn-small" type="button" data-retry>Try again</button>
+        </div>
       </div>
       <div class="viewer-foot">
         <fieldset class="seg seg-appearance needs-js">

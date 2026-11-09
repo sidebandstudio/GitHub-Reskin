@@ -67,6 +67,16 @@ const WARNING = "Advanced CSS changes GitHub's appearance and can break layout o
         <div class="make-summary" data-summary>
           <p class="make-name" data-make-name>Showing {initial.title}: {initial.name}</p>
           <p class="make-state" role="status" aria-live="polite" data-import-status>Paste an answer to preview your own theme.</p>
+          <div class="repair-note" data-repairs hidden>
+            <p data-repair-summary></p>
+            <details class="faq-list">
+              <summary>See changes</summary>
+              <div>
+                <ul class="repair-list" data-repair-list></ul>
+                <p class="field-help">A saved color adjustment is in the file and preview link you make here. Colors adjusted for this preview are worked out again from your theme wherever GitHub Reskin shows it.</p>
+              </div>
+            </details>
+          </div>
           <ul class="make-notes" data-notes hidden></ul>
           <div class="css-review" data-css-review hidden>
             <p class="badge">Advanced CSS</p>
@@ -88,6 +98,7 @@ const WARNING = "Advanced CSS changes GitHub's appearance and can break layout o
           <div class="window-live" data-live></div>
           <p class="window-pending" data-pending hidden><span class="spinner" aria-hidden="true"></span> Loading the preview</p>
         </div>
+        <p class="field-help" data-exports-empty>Preview a theme to download its file or copy a preview link.</p>
         <div class="prompt-actions" data-exports hidden>
           <button class="btn" type="button" data-download><Icon name="arrow" /> <span data-download-label>Download theme</span></button>
           <button class="btn" type="button" data-copy-share><Icon name="copy" /> Copy preview link</button>

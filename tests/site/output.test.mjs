@@ -135,6 +135,15 @@ describe("static theme states", () => {
     for (const theme of CATALOG) assert.equal(card(theme.slug).includes("Advanced CSS · Bundled and reviewed"), withCss.includes(theme), theme.slug);
   });
 
+  test("every phone first paint shows the profile's first pinned repository and the graph's legend inside the phone window", () => {
+    for (const [slug, entry] of Object.entries(manifest.themes)) {
+      for (const kind of ["phone", "calm"]) {
+        assert.equal(entry[kind].height, 372, `${slug} ${kind} is the phone window's height`);
+        assert.deepEqual(entry[kind].shows, { pinned: true, legend: true }, `${slug} ${kind}`);
+      }
+    }
+  });
+
   test("every capture in the manifest ships, and the Full/Calm comparison uses the selected theme's pair", () => {
     for (const entry of Object.values(manifest.themes)) for (const kind of ["phone", "desk", "card", "calm"]) assert.ok(files.includes(`previews/${entry[kind].file}`), entry[kind].file);
     const html = page("themes/longroad-petals/");

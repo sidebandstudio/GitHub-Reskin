@@ -10,6 +10,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, test as base } from "../../helpers/e2e.mjs";
+import { encodeShare } from "../../../packages/format/viewer.js";
 
 const ROOT = fileURLToPath(new URL("../../../", import.meta.url));
 const SITE = process.env.RESKIN_SITE_DIR || join(ROOT, "dist/site");
@@ -17,6 +18,7 @@ const PHONE = { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch:
 const manifest = () => JSON.parse(readFileSync(join(ROOT, "site/.cache/previews/manifest.json"), "utf8"));
 const CHOOM = JSON.parse(readFileSync(join(ROOT, "themes/anime/choom-circuit.reskin.json"), "utf8"));
 const FULL = { enabled: true, extras: true, text: true, motion: true, fonts: true, effects: true };
+const NORD = JSON.parse(readFileSync(join(ROOT, "themes/classics/nord.reskin.json"), "utf8"));
 
 export const test = base.extend({
   site: [
@@ -194,7 +196,8 @@ test("the site's live preview is the same document C5's fixture app renders for 
     const other = await browser.newPage({ viewport: { width, height: 900 } });
     await other.goto(`${app.url}preview.html`);
     await other.waitForFunction(() => window.reskinPreview);
-    await other.evaluate(({ theme, preferences }) => window.reskinPreview.mount({ view: "profile", theme, preferences, cssAllowed: true }), { theme: CHOOM, preferences: FULL });
+    // The site asks for the compact phone composition, which changes nothing in a wide layout.
+    await other.evaluate(({ theme, preferences }) => window.reskinPreview.mount({ view: "profile", theme, preferences, cssAllowed: true, compact: true }), { theme: CHOOM, preferences: FULL });
     await expect.poll(() => other.evaluate(() => document.querySelector("#preview [data-reskin-preview]")?.dataset.completed), { timeout: 20000 }).toBe("1");
     const fixtureDoc = await other.evaluate(() => window.reskinPreview.srcdoc());
     expect(siteDoc.length).toBeGreaterThan(1000);
@@ -457,4 +460,208 @@ test("install shows honest per-browser states with every browser reachable", asy
   for (const name of ["Chrome", "Firefox", "Safari"]) await expect(install.getByRole("heading", { name, exact: true })).toBeVisible();
   await expect(install.locator('a[href*="chromewebstore"], a[href*="addons.mozilla.org"]')).toHaveCount(0);
   await expect(install.locator(".browser.is-likely")).toHaveCount(1);
+});
+
+// The phone window holds the profile's name and tag, one pinned repository and the contribution
+// graph through its legend: in the first paint and in the live preview, at both common widths.
+for (const size of [{ width: 390, height: 844 }, { width: 430, height: 932 }]) {
+  test.describe(`phone preview at ${size.width}x${size.height}`, () => {
+    test.use({ viewport: size, isMobile: true, hasTouch: true });
+
+    test("the window shows the name and tag, a pinned repository and the contribution graph, before and after the live preview loads", async ({ page, site }) => {
+      await page.goto(site);
+      const window = await page.locator("[data-window]").boundingBox();
+      const keep = await page.locator(".hero-keep [data-open-keep]").boundingBox();
+      expect(keep.y + keep.height).toBeLessThanOrEqual(size.height);
+      // First paint: the capture is the window's own shape, so nothing of it is cropped, and the
+      // build recorded that it holds the repository and the legend.
+      const shot = page.locator("[data-shot-img]");
+      await expect.poll(() => shot.evaluate((img) => img.complete && img.naturalWidth > 0)).toBe(true);
+      const ratio = await shot.evaluate((img) => img.naturalHeight / img.naturalWidth);
+      expect(Math.abs(ratio - window.height / window.width)).toBeLessThan(0.01);
+      expect(manifest().themes["choom-circuit"].phone.shows).toEqual({ pinned: true, legend: true });
+
+      await goLive(page, true);
+      await settled(page);
+      const { window: live, parts } = await page.locator("[data-live] iframe[aria-hidden]").evaluate((frame) => {
+        const at = (selector) => {
+          const r = frame.contentDocument.querySelector(selector).getBoundingClientRect();
+          const f = frame.getBoundingClientRect();
+          return { top: f.top + r.top, bottom: f.top + r.bottom, height: r.height };
+        };
+        const w = document.querySelector("[data-window]").getBoundingClientRect();
+        return {
+          window: { top: w.top, bottom: w.bottom },
+          parts: { name: at(".vcard-names"), tag: at('[data-reskin-slot="profile.tag"]'), repository: at(".pinned-item-list-item"), graph: at(".ContributionCalendar-grid"), legend: at(".ContributionCalendar-legend") },
+        };
+      });
+      for (const [part, box] of Object.entries(parts)) {
+        expect(box.height, part).toBeGreaterThan(0);
+        expect(box.top, part).toBeGreaterThanOrEqual(live.top);
+        expect(box.bottom, part).toBeLessThanOrEqual(live.bottom);
+      }
+      expect(await noOverflow(page)).toBe(true);
+
+      // The whole page is the whole profile again.
+      await page.locator("[data-expand]").click();
+      await settled(page);
+      const bio = await page.locator("[data-live] iframe[aria-hidden]").evaluate((frame) => frame.contentDocument.querySelector(".user-profile-bio").getBoundingClientRect().height);
+      expect(bio).toBeGreaterThan(0);
+      expect(await noOverflow(page)).toBe(true);
+    });
+  });
+}
+
+test.describe("theme switching on a phone", () => {
+  test.use(PHONE);
+
+  test("a theme page's heading, lede and description follow every switch, and the home page keeps its own heading", async ({ page, site }) => {
+    await page.goto(`${site}themes/choom-circuit/`);
+    const heading = page.locator("h1");
+    await expect(heading).toHaveText("Cyberpunk: Edgerunners theme for GitHub");
+    const choose = async (slug) => {
+      await page.locator("[data-picker] > summary").click();
+      if (slug === "nord") await page.locator(".drop-panel .picker-classics > summary").click();
+      await page.locator(`.drop-panel [data-select="${slug}"]`).click();
+    };
+    await choose("longroad-petals");
+    await expect(heading).toHaveText("Frieren: Beyond Journey's End theme for GitHub");
+    await expect(page.locator(".hero-lede")).toHaveText("Longroad Petals, one of 13 anime themes in GitHub Reskin, a free extension that re-themes GitHub in your own browser.");
+    for (const region of [".hero-top", ".viewer", "#extras figure"]) await expect(page.locator(region)).not.toContainText(/Choom|Cyberpunk/);
+    const canonical = "https://sidebandstudio.github.io/GitHub-Reskin/themes/longroad-petals/";
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", canonical);
+    await expect(page.locator('meta[property="og:url"]')).toHaveAttribute("content", canonical);
+    await expect(page.locator('meta[property="og:title"]')).toHaveAttribute("content", "Frieren: Beyond Journey's End theme for GitHub: Longroad Petals · GitHub Reskin");
+    for (const meta of ['meta[name="description"]', 'meta[property="og:description"]']) await expect(page.locator(meta)).toHaveAttribute("content", /^Frieren: Beyond Journey's End theme for GitHub: Longroad Petals\. /);
+
+    await choose("nord");
+    await expect(heading).toHaveText("Nord, a Classic theme for GitHub");
+    await expect(page.locator(".hero-lede")).toHaveText("Nord, one of 12 Classics in GitHub Reskin, a free extension that re-themes GitHub in your own browser.");
+    await expect(page.locator(".hero-top")).not.toContainText(/Frieren|Longroad/);
+
+    await page.goto(site);
+    await choose("longroad-petals");
+    await expect(page.locator("[data-picker] > summary")).toContainText("Longroad Petals");
+    await expect(heading).toHaveText(/Your GitHub.\s*Your world./);
+    await expect(page.locator(".hero-lede")).toHaveText("Anime themes for GitHub, in your own browser. Thirteen anime, twelve Classics, free.");
+  });
+});
+
+test.describe("a failed load", () => {
+  test.use(PHONE);
+
+  test("of the live preview leaves the picture, named as one, with Try again, which brings the live preview back", async ({ page, site }) => {
+    let fail = true;
+    await page.route(/\/engine\.[^/]*\.js$/, (route) => (fail ? route.abort() : route.continue()));
+    await page.goto(site);
+    await page.locator(".seg label", { hasText: "Diff" }).click();
+    const note = page.locator("[data-failed]");
+    await expect(note).toBeVisible();
+    await expect(note).toContainText("The live preview didn't load. This is a picture of the profile with the theme on.");
+    await expect(page.locator("[data-pending]")).toBeHidden();
+    await expect(page.locator("[data-shot-img]")).toBeVisible();
+    fail = false;
+    await note.getByRole("button", { name: "Try again" }).click();
+    await expect(host(page)).toHaveAttribute("data-view", "diff", { timeout: 20000 });
+    await expect(page.locator('[data-window][data-preview="live"]')).toHaveCount(1);
+    await expect(note).toBeHidden();
+    await expect(page.locator("[data-pending]")).toBeHidden();
+  });
+
+  test("that Try again cannot fix offers a reload, which keeps the selected theme", async ({ page, site }) => {
+    let fail = true;
+    await page.route(/\/engine\.[^/]*\.js$/, (route) => (fail ? route.abort() : route.continue()));
+    await page.goto(`${site}themes/longroad-petals/`);
+    await page.locator("[data-window]").dispatchEvent("touchstart");
+    const retry = page.locator("[data-failed] button");
+    await expect(retry).toHaveText("Try again");
+    await retry.click();
+    await expect(retry).toHaveText("Reload the page");
+    fail = false;
+    await retry.click();
+    await page.waitForURL(/themes\/longroad-petals\/$/);
+    await goLive(page, true);
+    await expect(host(page)).toHaveAttribute("data-source-hash", manifest().themes["longroad-petals"].sourceHash);
+  });
+
+  test("of the importer or a shared link says so, and trying again reads the theme", async ({ page, site }) => {
+    let fail = true;
+    await page.route(/\/engine\.[^/]*\.js$/, (route) => (fail ? route.abort() : route.continue()));
+    await page.goto(`${site}make/`);
+    const sample = page.getByRole("button", { name: "Use a sample answer" });
+    await sample.click();
+    await expect(page.locator("[data-import-status]")).toHaveText("The previewer didn't load, so nothing was read. Check your connection and try again.");
+    fail = false;
+    await sample.click();
+    await expect(page.locator("[data-import-status]")).toHaveText("Theme ready to preview.");
+
+    fail = true;
+    await page.goto(`${site}share/#${encodeShare(NORD)}`);
+    await expect(page.locator("[data-share-name]")).toHaveText("The shared theme didn't load");
+    await expect(page.locator("[data-share-state]")).toHaveText("Your browser couldn't load the previewer. Check your connection and try again.");
+    await expect(page.locator("[data-exports]")).toBeHidden();
+    fail = false;
+    await page.getByRole("button", { name: "Try again" }).click();
+    await expect(page.locator("[data-share-name]")).toHaveText("Nord");
+    await expect(page.locator('[data-window][data-preview="live"]')).toHaveCount(1, { timeout: 20000 });
+  });
+});
+
+test("make and share offer Download and Copy only once there is a theme, and say what to do until then", async ({ page, site }) => {
+  await page.goto(`${site}make/`);
+  const exportsRow = page.locator("[data-exports]");
+  await expect(exportsRow).toBeHidden();
+  await expect(page.locator("[data-download]")).toBeHidden();
+  await expect(page.locator("[data-copy-share]")).toBeHidden();
+  await expect(page.locator("[data-exports-empty]")).toHaveText("Preview a theme to download its file or copy a preview link.");
+  await page.getByRole("button", { name: "Use a sample answer" }).click();
+  await expect(page.getByRole("button", { name: "Download Midnight signal" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Copy preview link" })).toBeVisible();
+  await expect(page.locator("[data-exports-empty]")).toBeHidden();
+
+  for (const hash of ["", "#RS1.abc.00000000"]) {
+    await page.goto(`${site}share/${hash}`);
+    await expect(page.locator("[data-share-state]")).toHaveText(hash ? /incomplete/ : /This link has no shared theme\. Ask for the full link or the theme's \.reskin\.json file\./);
+    await expect(page.locator("[data-download]")).toBeHidden();
+    await expect(page.locator("[data-copy-code]")).toBeHidden();
+  }
+});
+
+test("an import the preview repairs says so, shows each change as before and after swatches, and the file keeps the saved adjustment", async ({ page, site }) => {
+  await page.goto(`${site}make/`);
+  const unreadable = { schemaVersion: 1, name: "Unreadable gray", base: "dark", colors: { background: "#111111", text: "#111111", accent: "#111111" } };
+  await page.getByLabel("Chatbot answer").fill(JSON.stringify(unreadable));
+  await page.getByRole("button", { name: "Preview theme" }).click();
+  await expect(page.locator("[data-import-status]")).toHaveText("Theme ready to preview.");
+  const note = page.locator("[data-repairs]");
+  await expect(note.locator("[data-repair-summary]")).toHaveText("We adjusted 1 color so links and text are easier to read. Other colors were adjusted for this preview so they stay readable on your background. We spaced the graph colors so activity levels stay visible.");
+  await note.locator("summary", { hasText: "See changes" }).click();
+  const text = note.locator("[data-repair-list] li").filter({ has: page.locator("b", { hasText: /^Text$/ }) });
+  await expect(text).toContainText("Saved color adjustment");
+  await expect(text).toContainText("Raised to 4.5:1 contrast so it reads.");
+  const swatches = await text.locator(".repair-swatch").evaluateAll((nodes) => nodes.map((node) => getComputedStyle(node).backgroundColor));
+  expect(swatches).toHaveLength(2);
+  expect(swatches[0]).toBe("rgb(17, 17, 17)");
+  expect(swatches[1]).not.toBe(swatches[0]);
+  const repaired = (await text.locator(".repair-colors").nth(1).textContent()).trim();
+  expect(repaired).toMatch(/^#[0-9a-f]{6}$/);
+  await expect(note.locator("[data-repair-list] li", { hasText: "Adjusted for this preview" }).first()).toBeVisible();
+  await expect(note.locator("[data-repair-list] li", { hasText: "Graph level 1" })).toHaveCount(1);
+
+  const [download] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "Download Unreadable gray" }).click()]);
+  const saved = JSON.parse(readFileSync(await download.path(), "utf8"));
+  expect(saved.colors.text).toBe(repaired);
+  expect(saved.colors.background).toBe("#111111");
+});
+
+test("a shared link with a damaged escape gets the damaged-code message without an error, and a new code in the address still opens", async ({ page, site }) => {
+  const errors = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await page.goto(`${site}share/#%E0%A4%A`);
+  await expect(page.locator("[data-share-name]")).toHaveText("This share code can't be read");
+  await expect(page.locator("[data-share-state]")).toHaveText("This share code is incomplete. Ask for the full code or the theme file.");
+  await expect(page.locator("[data-download]")).toBeHidden();
+  await page.evaluate((code) => (location.hash = code), encodeShare(NORD));
+  await expect(page.locator("[data-share-name]")).toHaveText("Nord");
+  expect(errors).toEqual([]);
 });

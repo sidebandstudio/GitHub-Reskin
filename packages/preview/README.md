@@ -11,6 +11,8 @@ handle.update({ theme, preferences }); // a newly selected theme plays its one m
 handle.setView("diff"); handle.setBefore(true); handle.destroy();
 ```
 
+`compact: true` asks for the profile's phone composition, for a host that shows the preview in a small fixed window: in the narrow layout the profile keeps the name and tag, one pinned repository and the graph with its legend, and leaves out GitHub's header, the bio and the profile details. Other views and wide layouts are unchanged. `handle.update({ ..., compact })` changes it; an update without `compact` keeps it.
+
 - `primer` is C3's adapter module (`selectMode`, `compileGitHub`), and `modeIndex` is `vendor/primer/modes.json`.
 - `resources` is a runtime adapter from `@github-reskin/appearance`.
 - `dormantSlots` lists the flavor slots that have no evidence on current GitHub markup. The default matches C3's evidence today: the issues caption only. Hosts pass C3's current `dormantSlots()`. The capture has no Contribution activity section, so that slot has no anchor here.

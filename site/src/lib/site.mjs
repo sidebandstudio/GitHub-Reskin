@@ -66,6 +66,10 @@ export const themeBySlug = (slug) => THEMES.find((theme) => theme.slug === slug)
 
 /** "Cyberpunk: Edgerunners theme for GitHub", or the Classic's name. */
 export const themeFor = (theme) => (theme.anime ? `${theme.anime} theme for GitHub` : `${theme.name}, a Classic theme for GitHub`);
+/** The hero paragraph under a theme page's anime-first heading. */
+export const themeLede = (theme) => `${theme.name}, ${theme.anime ? "one of 13 anime themes" : "one of 12 Classics"} in GitHub Reskin, a free extension that re-themes GitHub in your own browser.`;
+/** The meta and Open Graph description of a theme page. */
+export const themeDescription = (theme) => `${themeFor(theme)}: ${theme.name}. ${theme.description} Preview it on a GitHub profile, then keep it for desktop.`;
 /** The document title of a theme page. */
 export const pageTitle = (theme) => (theme.anime ? `${theme.anime} theme for GitHub: ${theme.name} · GitHub Reskin` : `${theme.name}, a Classic theme for GitHub · GitHub Reskin`);
 

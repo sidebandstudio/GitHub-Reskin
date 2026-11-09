@@ -7,6 +7,7 @@
 import { configurePreview, mountPreview } from "../../packages/preview/index.js";
 import * as primer from "../../packages/primer/index.js";
 import { siteResources } from "../../packages/appearance/index.js";
+import { repairTheme } from "../../packages/engine/viewer.js";
 import { dormantSlots } from "../../extension/content/github/slots.js";
 import { compileCss, decodeShare, encodeShare, exportTheme, fileStem, parseImport, rasterLayers, registerCssProofs } from "../../packages/format/viewer.js";
 import { CSS_PROOFS, DOCS } from "reskin:themes";
@@ -22,8 +23,18 @@ configurePreview({ primer, modeIndex: primer.MODE_INDEX, resources: siteResource
 registerCssProofs(CSS_PROOFS);
 
 let authoring = null;
-/** Installs the CSS sanitizer for imported themes; resolves once parseImport admits CSS. */
-export const loadAuthoring = () => (authoring ??= import("../../packages/format/authoring.js"));
+/** Installs the CSS sanitizer for imported themes; resolves once parseImport admits CSS. A failed load is tried again on the next call. */
+export const loadAuthoring = () =>
+  (authoring ??= import("../../packages/format/authoring.js").catch((error) => {
+    authoring = null;
+    throw error;
+  }));
+
+/**
+ * The portable source a theme file or preview link carries: the theme with the extension's source
+ * repair against the standard seed of its base, as Import saves it. Returns { theme, repairs }.
+ */
+export const repairSource = (theme) => repairTheme(theme, primer.standardSeed(primer.MODE_INDEX, theme.base));
 
 /**
  * What a theme's advanced CSS can reach: "owned" when it styles only Reskin's own decorations,

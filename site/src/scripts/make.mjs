@@ -1,7 +1,8 @@
 // Make a theme: Copy AI prompt and the local importer. The format's parseImport reads the pasted
 // answer or file, with the CSS sanitizer loaded, and the shared preview shows it. Imported advanced
 // CSS stays off until the visitor enables it. Nothing is fetched or uploaded; the engine and the
-// sanitizer load when the visitor starts on an answer.
+// sanitizer load when the visitor starts on an answer. The preview's readability repairs are shown
+// beside it, and the file and preview link carry the repaired source, as Import saves it.
 import { copyText } from "./clipboard.mjs";
 
 const $ = (selector) => document.querySelector(selector);
@@ -17,17 +18,25 @@ const cssReview = $("[data-css-review]");
 const cssEnable = $("[data-css-enable]");
 const images = $("[data-images]");
 const exportsRow = $("[data-exports]");
+const exportsEmpty = $("[data-exports-empty]");
+const repairs = $("[data-repairs]");
 const exportStatus = $("[data-export-status]");
 const windowEl = $("[data-window]");
 
+// A failed load is forgotten, so the next action imports again.
 let engine = null;
 const load = () =>
-  (engine ??= import("../engine.mjs").then(async (module) => {
-    await module.loadAuthoring();
-    return module;
-  }));
+  (engine ??= import("../engine.mjs")
+    .then(async (module) => {
+      await module.loadAuthoring();
+      return module;
+    })
+    .catch((error) => {
+      engine = null;
+      throw error;
+    }));
 for (const node of [answer, $("[data-preview-answer]"), $("[data-sample]"), $("[data-file]")]) {
-  for (const type of ["focus", "pointerenter", "touchstart"]) node.addEventListener(type, load, { once: true, passive: true });
+  for (const type of ["focus", "pointerenter", "touchstart"]) node.addEventListener(type, () => load().catch(() => {}), { once: true, passive: true });
 }
 
 // The last valid theme, and whether its advanced CSS is enabled in the preview.
@@ -40,16 +49,77 @@ const list = (node, items) => {
 };
 const kib = (bytes) => `${(bytes / 1024).toFixed(bytes < 10240 ? 1 : 0)} KiB`;
 
+// Plain names for the colors a repair can change, from the end of its path.
+const COLOR_NAMES = { text: "Text", background: "Background", accent: "Accent", link: "Links", mutedText: "Muted text", controlBorder: "Control borders", focusOuter: "Focus ring", focus: "Focus ring" };
+const words = (key) => key.replace(/([a-z])([A-Z0-9])/g, "$1 $2").toLowerCase();
+const capital = (text) => text[0].toUpperCase() + text.slice(1);
+function colorName(path) {
+  const parts = path.split("/").filter(Boolean);
+  const [key, parent] = [parts.at(-1), parts.at(-2)];
+  if (parts.includes("graph") || parts.includes("contributions")) return /^\d$/.test(key) ? `Graph level ${key}` : key === "levels" ? "Graph colors" : `Graph ${words(key)}`;
+  if (parts.includes("syntax")) return `Code ${words(key)}`;
+  if (parts.includes("ansi")) return `Terminal ${words(key)}`;
+  if (parts.includes("diff") || /^diff[A-Z]/.test(key)) return `Diff ${words(key.replace(/^diff/, ""))}`;
+  if (parent === "code") return `Code ${words(key)}`;
+  if (["tokens", "colors", "overrides"].includes(parent)) return COLOR_NAMES[key] ?? capital(words(key));
+  return capital(`${words(parent)} ${words(key)}`);
+}
+const isGraph = (repair) => /\/(graph|contributions)\//.test(`${repair.path}/`);
+const swatch = (color) => {
+  const cell = Object.assign(document.createElement("span"), { className: "repair-swatch" });
+  cell.style.setProperty("--c", color);
+  return cell;
+};
+const colors = (value) => {
+  const span = Object.assign(document.createElement("span"), { className: "repair-colors" });
+  const values = [value].flat();
+  span.append(...values.map(swatch), values.join(" "));
+  return span;
+};
+const because = (repair) => {
+  if (isGraph(repair)) return "So every activity level is visible and in order.";
+  const ratio = /reach ([\d.]+):1/.exec(repair.reason)?.[1];
+  return ratio ? `Raised to ${ratio}:1 contrast so it reads.` : repair.reason;
+};
+
+// The shared preview's repairs for the theme it shows: what changed, from what to what, and
+// whether the file keeps it.
+function showRepairs(list) {
+  // The theme's own colors lead; colors the preview works out for it follow.
+  const own = list.filter((repair) => repair.persistence === "source" && !isGraph(repair));
+  const other = list.filter((repair) => repair.persistence !== "source" && !isGraph(repair));
+  const lines = [];
+  if (own.length) lines.push(`We adjusted ${own.length} color${own.length === 1 ? "" : "s"} so links and text are easier to read.`);
+  if (other.length) lines.push(`${own.length ? "Other" : "Some"} colors were adjusted for this preview so they stay readable on your background.`);
+  if (list.some(isGraph)) lines.push("We spaced the graph colors so activity levels stay visible.");
+  repairs.hidden = !list.length;
+  $("[data-repair-summary]").textContent = lines.join(" ");
+  $("[data-repair-list]").replaceChildren(...list.map((repair) => {
+    const row = document.createElement("li");
+    const head = Object.assign(document.createElement("p"), { className: "repair-head" });
+    head.append(Object.assign(document.createElement("b"), { textContent: colorName(repair.path) }), " ", Object.assign(document.createElement("span"), { className: "repair-kind", textContent: repair.persistence === "source" ? "Saved color adjustment" : "Adjusted for this preview" }));
+    const change = Object.assign(document.createElement("p"), { className: "repair-change" });
+    change.append(colors(repair.before), Object.assign(document.createElement("span"), { textContent: " to ", className: "repair-to" }), colors(repair.after));
+    row.append(head, change, Object.assign(document.createElement("p"), { className: "field-help", textContent: because(repair) }));
+    return row;
+  }));
+}
+
 async function show() {
   const module = await load();
   const options = { theme: current, preferences: module.DEFAULT_PREFERENCES, cssAllowed: cssEnable.checked };
   if (handle) handle.update(options);
   else {
     const container = $("[data-live]");
-    handle = module.mountPreview(container, { view: "profile", ...options });
-    container.querySelector("[data-reskin-preview]").addEventListener("reskin-preview-complete", () => {
+    handle = module.mountPreview(container, { view: "profile", compact: true, ...options, onState: (state) => showRepairs(state.repairs) });
+    const host = container.querySelector("[data-reskin-preview]");
+    host.addEventListener("reskin-preview-complete", () => {
       windowEl.dataset.preview = "live";
       $("[data-pending]").hidden = true;
+    });
+    host.addEventListener("reskin-preview-error", () => {
+      $("[data-pending]").hidden = true;
+      status.textContent = "This theme couldn't be drawn in the preview. Try another answer.";
     });
     $("[data-pending]").hidden = false;
   }
@@ -62,7 +132,14 @@ function clearError() {
 }
 
 async function runImport(input, kind) {
-  const module = await load();
+  let module;
+  try {
+    module = await load();
+  } catch {
+    // Nothing was read; the same button tries again.
+    status.textContent = "The previewer didn't load, so nothing was read. Check your connection and try again.";
+    return;
+  }
   clearError();
   list(issues, []);
   candidates.hidden = true;
@@ -109,6 +186,7 @@ async function runImport(input, kind) {
   images.textContent = layers.length ? `This theme embeds ${layers.length} image${layers.length === 1 ? "" : "s"}, ${kib(bytes)} in all. Its file and preview link include them, and anyone you share them with can save them.` : "";
   $("[data-download-label]").textContent = `Download ${current.name}`;
   exportsRow.hidden = false;
+  exportsEmpty.hidden = true;
   exportStatus.textContent = "";
   $("[data-share-fallback]").hidden = true;
   await show();
@@ -135,7 +213,8 @@ $("[data-file]").addEventListener("change", async (event) => {
 
 $("[data-download]").addEventListener("click", async () => {
   if (!current) return;
-  const { filename, mime, bytes } = (await load()).exportTheme(current);
+  const module = await load();
+  const { filename, mime, bytes } = module.exportTheme(module.repairSource(current).theme);
   const url = URL.createObjectURL(new Blob([bytes], { type: mime }));
   const link = Object.assign(document.createElement("a"), { href: url, download: filename });
   link.click();
@@ -145,7 +224,8 @@ $("[data-download]").addEventListener("click", async () => {
 
 $("[data-copy-share]").addEventListener("click", async () => {
   if (!current) return;
-  const code = (await load()).encodeShare(current);
+  const module = await load();
+  const code = module.encodeShare(module.repairSource(current).theme);
   const url = `${new URL("../share/", document.querySelector('link[rel="canonical"]').href)}#${code}`;
   const fallback = $("[data-share-fallback]");
   if (url.length > maxLink) {

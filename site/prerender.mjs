@@ -6,7 +6,9 @@
 // hashes as the live preview reported them; tests compare them with the extension's resolver.
 //
 // For each bundled theme:
-//   phone  the 358px narrow layout, top PHONE.height px, at 2x: the phone hero's first paint
+//   phone  the 358px narrow layout in the preview's compact phone composition, top PHONE.height
+//          px, at 2x: the phone hero's first paint. It records whether the first pinned repository
+//          and the graph's legend are inside the picture.
 //   desk   the 896px wide layout, top DESK.height px, at 2x: the desktop hero's first paint
 //   card   the narrow layout from the first pinned repository through the contribution graph box,
 //          at 1.25x and lighter compression: gallery cards, which browsers fetch early
@@ -20,11 +22,12 @@ import { ROOT, esbuildPlugin } from "./modules.mjs";
 
 export const CACHE_DIR = join(ROOT, "site/.cache/previews");
 export const BASE = "/GitHub-Reskin/";
-export const PHONE = Object.freeze({ width: 358, height: 420, scale: 2 });
+// The phone window's size (site.css): the compact composition through the graph's legend.
+export const PHONE = Object.freeze({ width: 358, height: 372, scale: 2 });
 export const DESK = Object.freeze({ width: 896, height: 640, scale: 2 });
 export const CARD = Object.freeze({ width: 358, scale: 1.25, quality: 0.72 });
 const QUALITY = 0.8;
-const CAPTURE_VERSION = 3;
+const CAPTURE_VERSION = 4;
 
 // Everything a capture depends on, hashed for the cache.
 const INPUTS = [
@@ -138,16 +141,19 @@ export async function prerender({ log = () => {} } = {}) {
     };
     for (const theme of CATALOG) {
       const entry = {};
-      const save = async (kind, shot) => {
+      const save = async (kind, shot, extra = {}) => {
         const file = `${theme.slug}-${kind}.webp`;
         await writeFile(join(CACHE_DIR, file), shot.image.bytes);
-        entry[kind] = { file, width: shot.css.width, height: shot.css.height, bytes: shot.image.bytes.length };
+        entry[kind] = { file, width: shot.css.width, height: shot.css.height, bytes: shot.image.bytes.length, ...extra };
       };
-      const phone = await shoot("narrow", { slug: theme.slug, width: PHONE.width }, (i) => ({ top: 0, bottom: Math.min(PHONE.height, i.height) }));
-      await save("phone", phone);
+      const top = (i) => ({ top: 0, bottom: Math.min(PHONE.height, i.height) });
+      const shows = (shot) => ({ shows: Object.fromEntries(Object.entries(shot.info.ends).map(([part, end]) => [part, end !== null && end <= shot.css.height])) });
+      const phone = await shoot("narrow", { slug: theme.slug, width: PHONE.width, compact: true }, top);
+      await save("phone", phone, shows(phone));
       await save("desk", await shoot("wide", { slug: theme.slug, width: DESK.width }, (i) => ({ top: 0, bottom: Math.min(DESK.height, i.height) })));
       await save("card", await shoot("card", { slug: theme.slug, width: CARD.width }, (i) => i.card, CARD.quality));
-      await save("calm", await shoot("narrow", { slug: theme.slug, width: PHONE.width, calm: true }, (i) => ({ top: 0, bottom: Math.min(PHONE.height, i.height) })));
+      const calm = await shoot("narrow", { slug: theme.slug, width: PHONE.width, calm: true, compact: true }, top);
+      await save("calm", calm, shows(calm));
       const { sourceHash, seedHash, fingerprint, policy } = phone.info;
       Object.assign(entry, { sourceHash, seedHash, fingerprint, policy });
       manifest.themes[theme.slug] = entry;

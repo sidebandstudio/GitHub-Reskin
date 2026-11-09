@@ -4,12 +4,12 @@ import { DEFAULT_PREFERENCES, DOCS, mountPreview } from "../engine.mjs";
 
 let handle = null;
 
-window.reskinCapture = async ({ slug, width, calm = false, view = "profile" }) => {
+window.reskinCapture = async ({ slug, width, calm = false, view = "profile", compact = false }) => {
   handle?.destroy();
   const stage = document.getElementById("stage");
   stage.style.width = `${width}px`;
   const preferences = calm ? { ...DEFAULT_PREFERENCES, extras: false } : DEFAULT_PREFERENCES;
-  handle = mountPreview(stage, { view, theme: DOCS[slug], preferences, cssAllowed: true });
+  handle = mountPreview(stage, { view, theme: DOCS[slug], preferences, cssAllowed: true, compact });
   // The host exists at once; its first job completes in a later animation frame.
   const host = stage.querySelector("[data-reskin-preview]");
   await new Promise((resolve, reject) => {
@@ -25,6 +25,8 @@ window.reskinCapture = async ({ slug, width, calm = false, view = "profile" }) =
   const pinned = box(".pinned-item-list-item");
   const graph = box(".ContributionCalendar");
   const frame = host.getBoundingClientRect();
+  // Where the phone window's proof ends: the first pinned repository and the graph's legend.
+  const legend = box(".ContributionCalendar-legend");
   return {
     height: Math.round(frame.height),
     sourceHash: host.dataset.sourceHash,
@@ -33,5 +35,6 @@ window.reskinCapture = async ({ slug, width, calm = false, view = "profile" }) =
     policy: host.dataset.policy,
     ownedNodes: Number(host.dataset.ownedNodes),
     card: pinned && graph ? { top: Math.max(0, Math.floor(pinned.top) - 12), bottom: Math.ceil(graph.bottom) + 12 } : null,
+    ends: { pinned: pinned ? Math.ceil(pinned.bottom) : null, legend: legend?.height ? Math.ceil(legend.bottom) : null },
   };
 };
