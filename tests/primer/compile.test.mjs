@@ -3,7 +3,7 @@ import test from "node:test";
 import { CSS_VARIABLES } from "../../packages/contracts/index.js";
 import { cssVariables } from "../../packages/engine/variables.js";
 import { parseStylesheet } from "../../packages/primer/css.js";
-import { colorAt, compileGitHub, coveredModes, emittedColors, islandScope, MODE_INDEX, modeSelectors, selectMode } from "../../packages/primer/index.js";
+import { colorAt, compileGitHub, contrast, coveredModes, emittedColors, islandScope, MODE_INDEX, modeSelectors, selectMode } from "../../packages/primer/index.js";
 import { PROTECTED } from "../../packages/primer/registry.js";
 import { EXTRAS_OFF, nativeResolved, PREFS, readJson, resolvedFromSeed } from "./helpers.mjs";
 
@@ -252,7 +252,24 @@ test("protected UI takes back its nearest island's own native values for each co
     return Object.fromEntries(r.declarations.map((d) => [d.name, d.value]));
   };
   // Engines with style queries: once, after both branches, on protected UI that is no island.
-  const queried = all.filter((r) => r.media.some((m) => m.includes("style(--reskin-mode:")));
+  const queried = all.filter((r) => r.media.some((m) => m.includes("style(--reskin-mode:")) && !r.selectors[0].startsWith(":where("));
+  // Where GitHub's own default or muted text does not read at 4.5:1 on the theme's canvas, protected
+  // UI also takes back its island's own text and canvas, at no specificity, so its native text never
+  // sits on the theme's canvas. On GitHub's dark canvas only the light island needs it; on a lighter
+  // dark canvas, like Nord's, where dark muted text reads at 4.29:1, the dark islands do too.
+  const backing = (css) => rules(css).filter((r) => r.media.some((m) => m.includes("style(--reskin-mode:")) && r.selectors[0].startsWith(":where("));
+  const expectBacked = (css, modes) => {
+    const backed = backing(css);
+    assert.deepEqual(backed.map((r) => r.media), modes.map((mode) => ["not all and (forced-colors: active)", `style(--reskin-on: 1) and style(--reskin-mode: ${mode})`]));
+    for (const r of backed) {
+      assert.deepEqual(r.selectors, [`:where(${PROTECTED_UI.split(/,(?=[a-z.[])/).map((s) => `${s}:not(${ATTRIBUTED})`).join(",")})`]);
+      assert.deepEqual(r.declarations.map((d) => [d.name, d.value, d.important]), [["color", "var(--fgColor-default)", false], ["background-color", "var(--bgColor-default)", false]]);
+    }
+  };
+  expectBacked(compileGitHub(resolved, p, PREFS).css, ["light"]);
+  const nord = resolvedFromSeed(MODE_INDEX.modes.dark, { "/tokens/canvas": "#2e3440" });
+  assert.ok(contrast(own("dark").get("--fgColor-muted"), "#2e3440") < 4.5);
+  expectBacked(compileGitHub(nord, p, PREFS).css, covered);
   assert.deepEqual(queried.map((r) => r.media), covered.map((mode) => ["not all and (forced-colors: active)", `style(--reskin-on: 1) and style(--reskin-mode: ${mode})`]));
   for (const [i, mode] of covered.entries()) {
     assert.deepEqual(queried[i].selectors, PROTECTED_UI.split(/,(?=[a-z.[])/).map((s) => `${s}:not(${ATTRIBUTED})`));

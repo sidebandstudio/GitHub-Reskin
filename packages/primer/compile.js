@@ -25,6 +25,10 @@ const GRAPH_TARGET = '.js-highlight-blob,.Progress-item:is(main #js-contribution
 // native values.
 const PROTECTED_UI = `${PROTECTED},[${CSS_MARKERS.protected}]`;
 const UNPROTECTED = `:not(${PROTECTED_UI},:is(${PROTECTED_UI}) *)`;
+// GitHub's mode files do not reset Brand variables, and no captured baseline restores them, so a
+// Brand subject that holds protected UI keeps GitHub's own: its sign-in and sign-up links and its
+// forms then inherit native Brand values, as they do natively.
+const HOLDS_NO_PROTECTED = `:not(:has(${PROTECTED_UI}))`;
 // Scrollbar colors inherit. Set on an island they would restyle every element in it, which on a
 // large diff costs more than a frame, so an island's children start from the browser's again and
 // only the viewport, through the root island, and GitHub's own scroll containers take them.
@@ -187,6 +191,16 @@ function restoring(index, covered, colors, baseline) {
   });
 }
 
+// Whether GitHub's own default and muted text of `mode` read at 4.5:1 on `canvas`. A value that
+// is not a plain color cannot be checked and counts as not reading.
+function nativeTextReads(index, mode, baseline, canvas) {
+  const own = indexDeclarations(index, "restoreCss", mode).values;
+  return ["--fgColor-default", "--fgColor-muted"].every((name) => {
+    const value = own.get(name) ?? baseline.get(name);
+    return HEX6.test(value ?? "") && contrast(value, canvas) >= 4.5;
+  });
+}
+
 function assertPreferences(prefs) {
   if (!prefs || PREFERENCE_KEYS.some((k) => typeof prefs[k] !== "boolean")) throw new TypeError("compileGitHub needs EffectivePreferences with six booleans");
   if (prefs.appearance !== undefined && prefs.appearance !== "full" && prefs.appearance !== "calm") throw new TypeError("EffectivePreferences.appearance must be full or calm");
@@ -297,7 +311,7 @@ export function compileGitHub(resolved, modePlan, prefs, index = MODE_INDEX, opt
       ...(wanted("graph") ? [[GRAPH_TARGET, graph, guard]] : []),
       ...(wanted("issue-label") ? [[".hx_IssueLabel", label, guard]] : []),
       ...(scrollbar ? [[SCROLLERS, scrollbar, guard]] : []),
-      ...(preview ? [] : [[scope.brand, brandDeclarations, `:not(${ATTRIBUTED})`], [scope.brandPage, brandPageDeclarations, `:not(${ATTRIBUTED})`], [BRAND_HEADER, brandPageDeclarations, `:not(${ATTRIBUTED})`]]),
+      ...(preview ? [] : [[`${scope.brand}${HOLDS_NO_PROTECTED}`, brandDeclarations, `:not(${ATTRIBUTED})`], [`${scope.brandPage}${HOLDS_NO_PROTECTED}`, brandPageDeclarations, `:not(${ATTRIBUTED})`], [`${BRAND_HEADER}${HOLDS_NO_PROTECTED}`, brandPageDeclarations, `:not(${ATTRIBUTED})`]]),
       ...same.map(component),
     ];
     // No nesting: an engine tests a nested rule's parent against every element. Each alternative
@@ -324,10 +338,10 @@ export function compileGitHub(resolved, modePlan, prefs, index = MODE_INDEX, opt
       // Brand footer holds no island of `others`, unsafe ones included.
       ...(wanted("graph") ? [`${each(GRAPH_TARGET, `${scope.themed}:not(:has(${scope.unsafe}))${UNPROTECTED}`)}{${graph}}`] : []),
       ...(wanted("issue-label") ? [`.hx_IssueLabel${scope.themed}:not(:has(${scope.unsafe}))${UNPROTECTED}{${label}}`] : []),
-      ...(preview ? [] : [`${scope.brand}${scope.themed}${UNPROTECTED}{${brandDeclarations}}`]),
+      ...(preview ? [] : [`${scope.brand}${scope.themed}${HOLDS_NO_PROTECTED}${UNPROTECTED}{${brandDeclarations}}`]),
       // The marketing header, usually an island itself, takes the Brand page mapping by the same
       // shorter test: it holds no islands.
-      ...(preview ? [] : [`${BRAND_HEADER}${scope.themed}:not(:has(${scope.unsafe}))${UNPROTECTED}{${brandPageDeclarations}}`]),
+      ...(preview ? [] : [`${BRAND_HEADER}${scope.themed}:not(:has(${scope.unsafe}))${HOLDS_NO_PROTECTED}${UNPROTECTED}{${brandPageDeclarations}}`]),
       // The other component rules read the nearest island's switch with a style query, which
       // reads the parent's, so it never sees a subject's own island, through any depth.
       `@container style(${ON}: 1){`,
@@ -377,6 +391,12 @@ export function compileGitHub(resolved, modePlan, prefs, index = MODE_INDEX, opt
     // Protected UI inside a themed island takes back that island's native values for its mode,
     // which everything in it inherits. The style query reads the parent's, the nearest island's.
     ...restore.map(([mode, body]) => `@container style(${ON}: 1) and style(${MODE}: ${mode}){${FRAGMENT}{${body}}}`),
+    // GitHub's text was made for its own canvas, not the theme's. In a mode whose default or muted
+    // text does not read at 4.5:1 on the theme's canvas, every island of the other base among
+    // them, protected UI also takes back that canvas behind it and that mode's text, which it
+    // would otherwise inherit from the themed page: at no specificity, so GitHub's own colors and
+    // backgrounds for it still win.
+    ...restore.filter(([mode]) => !nativeTextReads(index, mode, baseline.values, colorAt(resolved, "/tokens/canvas"))).map(([mode]) => `@container style(${ON}: 1) and style(${MODE}: ${mode}){:where(${FRAGMENT}){color:var(--fgColor-default);background-color:var(--bgColor-default)}}`),
     // Last, protected UI clears the Reskin switches for itself and everything in it, as a native
     // island does, so no style-queried rule or Reskin variable reaches inside.
     `${PROTECTED_UI}{${CLEARED}}`,

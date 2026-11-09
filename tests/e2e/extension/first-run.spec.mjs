@@ -2,7 +2,7 @@
 // Circuit selected, a working Before/After preview, instant theme choice and Open GitHub, with the
 // result, Undo and Open GitHub in the first screen and a preview that scrolls.
 import { chromium } from "@playwright/test";
-import { CHOOM, expect, storage, test } from "./helpers.mjs";
+import { CHOOM, expect, openGitHub, storage, test, waitPainted } from "./helpers.mjs";
 
 const onboardingTabs = (extension) => extension.context.pages().filter((page) => page.url() === extension.url("onboarding"));
 
@@ -152,4 +152,39 @@ test("the preview region scrolls by wheel and keyboard and shows the contributio
     await welcome.keyboard.press("Home");
     await expect.poll(() => region.evaluate((el) => el.scrollTop)).toBe(0);
   }
+});
+
+// The theme's own CSS names GitHub's elements as well as its owned slots. The preview compiles it
+// against the same registry as github.com, so its owned slots look as they do there.
+test("the welcome preview paints Choom's own tag and heading treatment as on GitHub", async ({ extension }) => {
+  await expect.poll(() => onboardingTabs(extension).length).toBe(1);
+  const welcome = onboardingTabs(extension)[0];
+  await welcome.setViewportSize({ width: 1440, height: 900 });
+  await expect(welcome.locator("[data-reskin-preview]")).toHaveAttribute("data-policy", "themed", { timeout: 15000 });
+  const SLOTS = ["profile.tag", "profile.pinned.heading"];
+  const read = (doc, slots) =>
+    Object.fromEntries(slots.map((slot) => {
+      const node = doc.querySelector(`[data-reskin-slot="${slot}"]`);
+      if (!node) return [slot, null];
+      const cs = getComputedStyle(node);
+      return [slot, { color: cs.color, border: cs.borderTopColor, borderWidth: cs.borderTopWidth, textShadow: cs.textShadow, boxShadow: cs.boxShadow, letterSpacing: cs.letterSpacing, textTransform: cs.textTransform }];
+    }));
+  // The shown frame is sandboxed, so its document is read from inside it; the layout frame lays
+  // out the same document and must agree.
+  const inFrames = () => Promise.all(welcome.frames().filter((f) => f.url() === "about:srcdoc").map((f) => f.evaluate(([slots, source]) => new Function("doc", "slots", `return (${source})(doc, slots)`)(document, slots), [SLOTS, read.toString()]).catch(() => null)));
+  await expect.poll(async () => (await inFrames()).filter((r) => r?.["profile.tag"]).length).toBeGreaterThanOrEqual(2);
+  const frames = (await inFrames()).filter((r) => r?.["profile.tag"]);
+  const preview = frames[0];
+  for (const other of frames) expect(other).toEqual(preview);
+  // The tag glows in the theme's yellow with a link-colored border, as Choom's CSS draws it.
+  expect(preview["profile.tag"].textShadow).not.toBe("none");
+  expect(preview["profile.tag"].boxShadow).not.toBe("none");
+  expect(preview["profile.tag"].borderWidth).toBe("1px");
+  expect(preview["profile.tag"].border).toBe(preview["profile.tag"].color);
+  expect(preview["profile.pinned.heading"].textShadow).not.toBe("none");
+
+  const github = await openGitHub(extension);
+  await waitPainted(github, (state) => state.owned.includes("profile.tag"));
+  const live = await github.evaluate(([slots, source]) => new Function("doc", "slots", `return (${source})(doc, slots)`)(document, slots), [SLOTS, read.toString()]);
+  expect(preview).toEqual(live);
 });

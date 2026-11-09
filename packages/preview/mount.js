@@ -159,7 +159,10 @@ export function createFixtureRenderer(fdoc, rt = runtime) {
       const face = font(state);
       const url = fontUrl === undefined ? face?.url : fontUrl;
       const cssAllowed = Boolean(state.cssAllowed);
-      const owned = { css: state.theme.css ?? null, cssAllowed };
+      // The same registry the content runtime compiles against, so a theme's CSS that also names
+      // GitHub's own elements still compiles here. Those rules need admission markers, which the
+      // preview never writes; only the owned-slot rules apply.
+      const owned = { css: state.theme.css ?? null, cssAllowed, registry: rt.primer.CSS_TARGET_REGISTRY ?? null };
       const css = {
         fixture: FIXTURE_CSS,
         native: nativeBaseline(rt.modeIndex, plan.seedMode ?? standardMode(rt.modeIndex, state.theme.base)),

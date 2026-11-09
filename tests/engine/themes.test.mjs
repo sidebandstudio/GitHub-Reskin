@@ -1,5 +1,5 @@
-// Every bundled catalog theme against every same-base synthetic seed. Today the catalog holds the
-// twelve Classics; S1's anime documents join automatically when they are added to the catalog.
+// Every bundled catalog theme against every same-base synthetic seed: the twelve Classics and the
+// thirteen Anime themes.
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
@@ -55,10 +55,11 @@ test("the deterministic adversarial sweep passes every pair and graph rule", () 
   assert.ok(switched > 0 && switched < themes.length, `${switched} of ${themes.length} sweep themes contradict their base`);
 });
 
-test("contrast scopes: primer runs, the full gate needs the remaining catalog, and unknown scopes fail", async () => {
+test("contrast scopes: primer runs, the full gate passes with the complete 25-theme catalog, and unknown scopes fail", async () => {
   assert.equal((await run({ command: "contrast", args: ["--scope=primer"], root: ROOT })).exitCode, 0);
   assert.equal((await run({ command: "contrast", args: ["--scope", "primer"], root: ROOT })).exitCode, 0);
-  assert.equal((await run({ command: "contrast", args: [], root: ROOT })).exitCode, 1);
+  // The checked-in catalog is complete; the test below proves an incomplete one fails.
+  assert.equal((await run({ command: "contrast", args: [], root: ROOT })).exitCode, 0);
   assert.equal((await run({ command: "contrast", args: ["--scope=preview"], root: ROOT })).exitCode, 2);
   assert.equal((await run({ command: "nope", args: [], root: ROOT })).exitCode, 2);
 });

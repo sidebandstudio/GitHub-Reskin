@@ -1,7 +1,8 @@
 // The compiled stylesheets of every Classic and C2 fixture theme, as sha256 per mode and Full or
 // Calm, read from a checkout's own modules, with the Primer stylesheet's declarations of the two
-// variables C2c added left out. Not a test file itself. The accent emphasis tests
-// compare this checkout with the hashes recorded on main before overrides.accentEmphasis existed:
+// variables C2c added, and C6's two protected-UI rules, left out. Not a test file itself. The
+// accent emphasis tests compare this checkout with the hashes recorded on main before
+// overrides.accentEmphasis existed:
 //   node tests/primer/compile-baseline.mjs <checkout>   prints that checkout's hashes as JSON
 import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
@@ -16,8 +17,13 @@ const sha256 = (text) => createHash("sha256").update(text).digest("hex");
 // GitHub's elements and sets each in the theme CSS scope, so it gains their declarations, and
 // only those, wherever it writes the others.
 const ADDED = /--reskin-accent-emphasis(?:-text)?:[^;}]*(?:;|(?=\}))/g;
-/** The stylesheet without the declarations of the two added variables. */
-export const withoutAdded = (css) => css.replace(ADDED, "");
+// C6's two protected-UI changes: a Brand subject that holds protected UI takes no Brand mapping,
+// and protected UI takes back its island's own text and canvas where GitHub's own text does not
+// read at 4.5:1 on the theme's canvas.
+const BRAND_HOLDS_PROTECTED = /:not\(:has\(form,a\[href\^="\/login"\][^{]*?\[data-reskin-protected\]\)\)/g;
+const OTHER_BASE_BACKING = /^@container style\(--reskin-on: 1\) and style\(--reskin-mode: [a-z_]+\)\{:where\([^{]*\)\{color:var\(--fgColor-default\);background-color:var\(--bgColor-default\)\}\}\n/gm;
+/** The stylesheet without the declarations of the two added variables and C6's protected-UI rules. */
+export const withoutAdded = (css) => css.replace(ADDED, "").replace(BRAND_HOLDS_PROTECTED, "").replace(OTHER_BASE_BACKING, "");
 
 /** The baseline's theme sources in a checkout: the Classics and the fixtures, by path. */
 export function baselineThemes(root, only = null) {
