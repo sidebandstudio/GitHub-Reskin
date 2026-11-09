@@ -33,7 +33,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const DEFAULT_ROOT = resolve(HERE, "../..");
 // The reviewed public schema. Changing the schema file is a contract change; update this hash
 // only with that review.
-export const REVIEWED_SCHEMA_SHA256 = "9658042f606f58a7dda4d43599508fd69412d6f03a389467ad74055a4ed2b742";
+export const REVIEWED_SCHEMA_SHA256 = "9cf356d3d97ef3463b075764fb1db63cebe4683d7d34a8205939492292b76d00";
 // AI-PROMPT.md caps the copyable prompt at 16 KiB of UTF-8.
 const MAX_PROMPT_BYTES = 16384;
 // Schema input-limit names that LIMITS spells differently.

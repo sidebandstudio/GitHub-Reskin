@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "name": "Signoff probe",
+  "base": "dark",
+  "colors": {
+    "background": "#0a0a17",
+    "text": "#e4f3ff",
+    "accent": "#fcee0a",
+    "contribution": "#00f0ff"
+  },
+  "overrides": {
+    "accentEmphasis": "#007880"
+  },
+  "flavor": {
+    "enabled": true,
+    "locale": "en",
+    "slots": {
+      "profile.pinned.heading": "Preem picks",
+      "footer.signoff": "Stay preem, choom.",
+      "profile.achievements.heading": "Street cred"
+    }
+  }
+}

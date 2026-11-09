@@ -15,7 +15,7 @@ const diffToken = (role) => `/tokens/diff${role[0].toUpperCase()}${role.slice(1)
 // that the source has wins.
 const SOURCE_MAP = [
   ["/colors/text", "/tokens/text"],
-  ...["surface", "inset", "raised", "hover", "mutedText", "link", "border", "controlBorder", "accentMuted", "primaryBackground", "primaryText"].map((k) => [`/overrides/${k}`, `/tokens/${k}`]),
+  ...["surface", "inset", "raised", "hover", "mutedText", "link", "border", "controlBorder", "accentMuted", "accentEmphasis", "primaryBackground", "primaryText"].map((k) => [`/overrides/${k}`, `/tokens/${k}`]),
   [["/details/selection/background", "/overrides/selectionBackground"], "/tokens/selectionBackground"],
   [["/details/selection/text", "/overrides/selectionText"], "/tokens/selectionText"],
   ["/overrides/focus", "/tokens/focusOuter"],
