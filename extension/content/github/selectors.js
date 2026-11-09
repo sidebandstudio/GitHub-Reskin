@@ -73,7 +73,7 @@ export const SOURCE_CODE = "[itemtype='http://schema.org/SoftwareSourceCode']";
 export const MARKETING_MAIN = "main.font-mktg";
 
 /**
- * The eight flavor slots. `scope` finds candidate guard elements; `text` is the exact English
+ * The ten flavor slots. `scope` finds candidate guard elements; `text` is the exact English
  * GitHub prints in the guard's own text nodes (a RegExp where GitHub interpolates a name or
  * number); `host` picks the anchor from the guard; `insert` is where C5 places its node.
  * `status` is `enabled` only with dated live DOM evidence in tests/primer/slot-evidence.json.
@@ -161,18 +161,9 @@ export const SLOTS = [
     graph: ".graph-before-activity-overview",
     insert: "after",
   },
-];
-
-/**
- * Slot candidates for the next schema revision, outside the frozen eight. locateSlots never
- * yields them until C2b adds their IDs and they move into SLOTS. `proposed` passed every guard on
- * the dated capture in tests/primer/slot-evidence.json; `dormant` explains why no safe location
- * exists. A heading whose text is a link, button or tab stays dormant.
- */
-export const CANDIDATE_SLOTS = [
   {
     slot: "footer.signoff",
-    status: "proposed",
+    status: "enabled",
     route: "profile",
     // GitHub's own footer line, outside <main>: the copyright span beside the footer logo link.
     region: "footer",
@@ -183,7 +174,7 @@ export const CANDIDATE_SLOTS = [
   },
   {
     slot: "profile.achievements.heading",
-    status: "proposed",
+    status: "enabled",
     route: "profile",
     // The desktop copy of the sidebar's Achievements heading; GitHub also renders a mobile copy,
     // hidden at desktop widths, without d-md-block. The heading's whole text is a link, so the
@@ -193,6 +184,15 @@ export const CANDIDATE_SLOTS = [
     host: "parent",
     insert: "after",
   },
+];
+
+/**
+ * Slot candidates outside the ten. locateSlots never yields them until a schema revision adds
+ * their IDs and they move into SLOTS. `proposed` passed every guard on the dated capture in
+ * tests/primer/registry-evidence.json; `dormant` explains why no safe location exists. A heading
+ * whose text is a link, button or tab is decorated only after the heading, never inside it.
+ */
+export const CANDIDATE_SLOTS = [
   {
     slot: "repository.releases.heading",
     status: "dormant",

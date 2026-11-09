@@ -11,7 +11,8 @@ export const BANNER_SLOT = "profile.banner";
 
 // Each slot's shape: headings get an out-of-flow strip in the blank end of their row, the profile
 // tag a badge, captions an in-flow paragraph of copy with an optional out-of-flow edge at the
-// blank end of its last line.
+// blank end of its last line. The footer sign-off is a caption: a line of copy after GitHub's
+// copyright, in the footer's own row.
 export const SLOT_KINDS = Object.freeze({
   "profile.pinned.heading": "heading",
   "profile.activity.heading": "heading",
@@ -21,6 +22,8 @@ export const SLOT_KINDS = Object.freeze({
   "empty.pinned.caption": "caption",
   "empty.issues.caption": "caption",
   "contributions.caption": "caption",
+  "footer.signoff": "caption",
+  "profile.achievements.heading": "heading",
 });
 const BOX_OF = { heading: "strip", tag: "badge", caption: "edge" };
 

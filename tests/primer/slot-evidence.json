@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "captured": "2026-11-08",
+  "captured": "2026-11-09",
   "method": "tests/primer/capture-slot-evidence.mjs: logged-out Chromium, en-US, 1280x900, the shipped extension/content/github adapter injected after load (CSP bypassed, as for a content script). Nothing was signed in, clicked, starred or followed.",
   "slots": {
     "profile.pinned.heading": {
       "status": "enabled",
-      "date": "2026-11-08",
+      "date": "2026-11-09",
       "route": "profile",
       "url": "https://github.com/whoisaldo",
       "insert": "append",
@@ -20,7 +20,7 @@
     },
     "profile.activity.heading": {
       "status": "enabled",
-      "date": "2026-11-08",
+      "date": "2026-11-09",
       "route": "profile",
       "url": "https://github.com/whoisaldo",
       "insert": "append",
@@ -34,7 +34,7 @@
     },
     "profile.organizations.heading": {
       "status": "enabled",
-      "date": "2026-11-08",
+      "date": "2026-11-09",
       "route": "profile",
       "url": "https://github.com/whoisaldo",
       "insert": "append",
@@ -45,7 +45,7 @@
     },
     "profile.tag": {
       "status": "enabled",
-      "date": "2026-11-08",
+      "date": "2026-11-09",
       "route": "profile",
       "url": "https://github.com/whoisaldo",
       "insert": "append",
@@ -60,7 +60,7 @@
     },
     "contributions.caption": {
       "status": "enabled",
-      "date": "2026-11-08",
+      "date": "2026-11-09",
       "route": "profile",
       "url": "https://github.com/whoisaldo",
       "insert": "after",
@@ -72,9 +72,39 @@
         "https://github.com/torvalds"
       ]
     },
+    "footer.signoff": {
+      "status": "enabled",
+      "date": "2026-11-09",
+      "route": "profile",
+      "url": "https://github.com/whoisaldo",
+      "insert": "after",
+      "host": "footer > … > div > div > span",
+      "nativeSignature": "footer.signoff|span|/^© \\d{4} GitHub, Inc\\.$/|0",
+      "screenshot": "tests/primer/evidence/footer.signoff.png",
+      "alsoSeenOn": [
+        "https://github.com/Alitleis123",
+        "https://github.com/torvalds",
+        "https://github.com/ghost"
+      ]
+    },
+    "profile.achievements.heading": {
+      "status": "enabled",
+      "date": "2026-11-09",
+      "route": "profile",
+      "url": "https://github.com/whoisaldo",
+      "insert": "after",
+      "host": "main > … > div > div > div > div > div > h2",
+      "nativeSignature": "profile.achievements.heading|h2|Achievements|1",
+      "screenshot": "tests/primer/evidence/profile.achievements.heading.png",
+      "alsoSeenOn": [
+        "https://github.com/Alitleis123",
+        "https://github.com/torvalds",
+        "https://github.com/ghost"
+      ]
+    },
     "empty.pinned.caption": {
       "status": "enabled",
-      "date": "2026-11-08",
+      "date": "2026-11-09",
       "route": "profile",
       "url": "https://github.com/ghost",
       "insert": "after",
@@ -85,7 +115,7 @@
     },
     "error.notFound.caption": {
       "status": "enabled",
-      "date": "2026-11-08",
+      "date": "2026-11-09",
       "route": "not-found",
       "url": "https://github.com/whoisaldo/this-page-does-not-exist-reskin-qa",
       "insert": "after",
@@ -96,7 +126,7 @@
     },
     "empty.issues.caption": {
       "status": "dormant",
-      "date": "2026-11-08",
+      "date": "2026-11-09",
       "reason": "The issue-list blankslate is inside a focusable list container (tabindex=-1) and a role=status live region.",
       "refused": [
         {
@@ -112,7 +142,7 @@
       "url": "https://github.com/whoisaldo",
       "kind": "reference profile 1",
       "status": 200,
-      "date": "2026-11-08",
+      "date": "2026-11-09",
       "route": "profile",
       "lang": "en",
       "title": "… · GitHub",
@@ -161,6 +191,22 @@
           "host": "main > … > div > div > div > div > div > div",
           "authored": false,
           "interactive": false
+        },
+        {
+          "slot": "footer.signoff",
+          "insert": "after",
+          "nativeSignature": "footer.signoff|span|/^© \\d{4} GitHub, Inc\\.$/|0",
+          "host": "footer > … > div > div > span",
+          "authored": false,
+          "interactive": false
+        },
+        {
+          "slot": "profile.achievements.heading",
+          "insert": "after",
+          "nativeSignature": "profile.achievements.heading|h2|Achievements|1",
+          "host": "main > … > div > div > div > div > div > h2",
+          "authored": false,
+          "interactive": false
         }
       ],
       "candidates": [
@@ -210,6 +256,18 @@
           "slot": "contributions.caption",
           "status": "enabled",
           "path": "main > … > div > div > div > div > div > h2#js-contribution-activity-description",
+          "reason": null
+        },
+        {
+          "slot": "footer.signoff",
+          "status": "enabled",
+          "path": "footer > … > div > div > span",
+          "reason": null
+        },
+        {
+          "slot": "profile.achievements.heading",
+          "status": "enabled",
+          "path": "main > … > div > div > div > div > h2 > a",
           "reason": null
         }
       ]
@@ -218,7 +276,7 @@
       "url": "https://github.com/Alitleis123",
       "kind": "reference profile 2",
       "status": 200,
-      "date": "2026-11-08",
+      "date": "2026-11-09",
       "route": "profile",
       "lang": "en",
       "title": "… · GitHub",
@@ -259,6 +317,22 @@
           "host": "main > … > div > div > div > div > div > div",
           "authored": false,
           "interactive": false
+        },
+        {
+          "slot": "footer.signoff",
+          "insert": "after",
+          "nativeSignature": "footer.signoff|span|/^© \\d{4} GitHub, Inc\\.$/|0",
+          "host": "footer > … > div > div > span",
+          "authored": false,
+          "interactive": false
+        },
+        {
+          "slot": "profile.achievements.heading",
+          "insert": "after",
+          "nativeSignature": "profile.achievements.heading|h2|Achievements|1",
+          "host": "main > … > div > div > div > div > div > h2",
+          "authored": false,
+          "interactive": false
         }
       ],
       "candidates": [
@@ -296,6 +370,18 @@
           "slot": "contributions.caption",
           "status": "enabled",
           "path": "main > … > div > div > div > div > div > h2#js-contribution-activity-description",
+          "reason": null
+        },
+        {
+          "slot": "footer.signoff",
+          "status": "enabled",
+          "path": "footer > … > div > div > span",
+          "reason": null
+        },
+        {
+          "slot": "profile.achievements.heading",
+          "status": "enabled",
+          "path": "main > … > div > div > div > div > h2 > a",
           "reason": null
         }
       ]
@@ -304,7 +390,7 @@
       "url": "https://github.com/torvalds",
       "kind": "reference profile 3",
       "status": 200,
-      "date": "2026-11-08",
+      "date": "2026-11-09",
       "route": "profile",
       "lang": "en",
       "title": "… · GitHub",
@@ -345,6 +431,22 @@
           "host": "main > … > div > div > div > div > div > div",
           "authored": false,
           "interactive": false
+        },
+        {
+          "slot": "footer.signoff",
+          "insert": "after",
+          "nativeSignature": "footer.signoff|span|/^© \\d{4} GitHub, Inc\\.$/|0",
+          "host": "footer > … > div > div > span",
+          "authored": false,
+          "interactive": false
+        },
+        {
+          "slot": "profile.achievements.heading",
+          "insert": "after",
+          "nativeSignature": "profile.achievements.heading|h2|Achievements|1",
+          "host": "main > … > div > div > div > div > div > h2",
+          "authored": false,
+          "interactive": false
         }
       ],
       "candidates": [
@@ -383,6 +485,18 @@
           "status": "enabled",
           "path": "main > … > div > div > div > div > div > h2#js-contribution-activity-description",
           "reason": null
+        },
+        {
+          "slot": "footer.signoff",
+          "status": "enabled",
+          "path": "footer > … > div > div > span",
+          "reason": null
+        },
+        {
+          "slot": "profile.achievements.heading",
+          "status": "enabled",
+          "path": "main > … > div > div > div > div > h2 > a",
+          "reason": null
         }
       ]
     },
@@ -390,7 +504,7 @@
       "url": "https://github.com/ghost",
       "kind": "profile without public repositories",
       "status": 200,
-      "date": "2026-11-08",
+      "date": "2026-11-09",
       "route": "profile",
       "lang": "en",
       "title": "… · GitHub",
@@ -420,6 +534,22 @@
           "slot": "empty.pinned.caption",
           "insert": "after",
           "nativeSignature": "empty.pinned.caption|h2|/^\\S+ doesn't have any public repositories yet\\.$/|0",
+          "host": "main > … > div > div > div > div > div > h2",
+          "authored": false,
+          "interactive": false
+        },
+        {
+          "slot": "footer.signoff",
+          "insert": "after",
+          "nativeSignature": "footer.signoff|span|/^© \\d{4} GitHub, Inc\\.$/|0",
+          "host": "footer > … > div > div > span",
+          "authored": false,
+          "interactive": false
+        },
+        {
+          "slot": "profile.achievements.heading",
+          "insert": "after",
+          "nativeSignature": "profile.achievements.heading|h2|Achievements|1",
           "host": "main > … > div > div > div > div > div > h2",
           "authored": false,
           "interactive": false
@@ -455,6 +585,18 @@
           "status": "enabled",
           "path": "main > … > div > div > div > div > div > h2",
           "reason": null
+        },
+        {
+          "slot": "footer.signoff",
+          "status": "enabled",
+          "path": "footer > … > div > div > span",
+          "reason": null
+        },
+        {
+          "slot": "profile.achievements.heading",
+          "status": "enabled",
+          "path": "main > … > div > div > div > div > h2 > a",
+          "reason": null
         }
       ]
     },
@@ -462,7 +604,7 @@
       "url": "https://github.com/sidebandstudio/GitHub-Reskin",
       "kind": "repository",
       "status": 200,
-      "date": "2026-11-08",
+      "date": "2026-11-09",
       "route": "repository",
       "lang": "en",
       "title": "… · GitHub",
@@ -472,14 +614,21 @@
         "header[data-color-mode=dark][data-light-theme=light][data-dark-theme=dark]"
       ],
       "anchors": [],
-      "candidates": []
+      "candidates": [
+        {
+          "slot": "footer.signoff",
+          "status": "enabled",
+          "path": "footer > … > div > div > span",
+          "reason": "route is repository, not profile"
+        }
+      ]
     },
     {
       "url": "https://github.com/sidebandstudio/GitHub-Reskin/blob/main/README.md",
       "kind": "file view",
       "status": 200,
-      "date": "2026-11-08",
-      "route": "other",
+      "date": "2026-11-09",
+      "route": "repository",
       "lang": "en",
       "title": "… · sidebandstudio/GitHub-Reskin · GitHub",
       "islands": [
@@ -488,14 +637,21 @@
         "header[data-color-mode=dark][data-light-theme=light][data-dark-theme=dark]"
       ],
       "anchors": [],
-      "candidates": []
+      "candidates": [
+        {
+          "slot": "footer.signoff",
+          "status": "enabled",
+          "path": "footer > … > div > div > span",
+          "reason": "route is repository, not profile"
+        }
+      ]
     },
     {
       "url": "https://github.com/sidebandstudio/GitHub-Reskin/commit/46c0e6f",
       "kind": "diff",
       "status": 200,
-      "date": "2026-11-08",
-      "route": "other",
+      "date": "2026-11-09",
+      "route": "commit",
       "lang": "en",
       "title": "… · sidebandstudio/GitHub-Reskin@46c0e6f · GitHub",
       "islands": [
@@ -504,13 +660,20 @@
         "header[data-color-mode=dark][data-light-theme=light][data-dark-theme=dark]"
       ],
       "anchors": [],
-      "candidates": []
+      "candidates": [
+        {
+          "slot": "footer.signoff",
+          "status": "enabled",
+          "path": "footer > … > div > div > span",
+          "reason": "route is commit, not profile"
+        }
+      ]
     },
     {
       "url": "https://github.com/sidebandstudio/GitHub-Reskin/issues",
       "kind": "issue list",
       "status": 200,
-      "date": "2026-11-08",
+      "date": "2026-11-09",
       "route": "issues",
       "lang": "en",
       "title": "… · sidebandstudio/GitHub-Reskin · GitHub",
@@ -526,6 +689,12 @@
           "status": "dormant",
           "path": "main > … > div#_R_39tad85_-list-view-container > div > div > div > div[data-component=Blankslate] > h2[data-component=Blankslate.Heading]",
           "reason": "inside a control"
+        },
+        {
+          "slot": "footer.signoff",
+          "status": "enabled",
+          "path": "footer > … > div > div > span",
+          "reason": "route is issues, not profile"
         }
       ]
     },
@@ -533,7 +702,7 @@
       "url": "https://gist.github.com/octocat/6cad326836d38bd3a7ae",
       "kind": "gist",
       "status": 200,
-      "date": "2026-11-08",
+      "date": "2026-11-09",
       "route": "gist",
       "lang": "en",
       "title": "… · GitHub",
@@ -541,13 +710,20 @@
         "html[data-color-mode=auto][data-light-theme=light][data-dark-theme=dark]"
       ],
       "anchors": [],
-      "candidates": []
+      "candidates": [
+        {
+          "slot": "footer.signoff",
+          "status": "enabled",
+          "path": "footer > … > div > div > span",
+          "reason": "route is gist, not profile"
+        }
+      ]
     },
     {
       "url": "https://github.com/whoisaldo/this-page-does-not-exist-reskin-qa",
       "kind": "404",
       "status": 404,
-      "date": "2026-11-08",
+      "date": "2026-11-09",
       "route": "not-found",
       "lang": "en",
       "title": "… · GitHub · GitHub",
