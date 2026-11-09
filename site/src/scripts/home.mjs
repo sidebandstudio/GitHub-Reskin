@@ -37,7 +37,8 @@ function loadLive() {
   engine ??= import("../engine.mjs").then((module) => {
     const preferences = () => (state.calm ? module.CALM : module.DEFAULT_PREFERENCES);
     const container = $("[data-live]");
-    const handle = module.mountPreview(container, { view: state.view, theme: module.DOCS[state.slug], preferences: preferences() });
+    // Bundled themes use their packaged, reviewed CSS, as the extension does in Full.
+    const handle = module.mountPreview(container, { view: state.view, theme: module.DOCS[state.slug], preferences: preferences(), cssAllowed: true });
     if (state.before) handle.setBefore(true);
     const host = container.querySelector("[data-reskin-preview]");
     host.addEventListener("reskin-preview-complete", () => {
@@ -47,7 +48,7 @@ function loadLive() {
     });
     live = {
       host,
-      update: () => handle.update({ theme: module.DOCS[state.slug], preferences: preferences() }),
+      update: () => handle.update({ theme: module.DOCS[state.slug], preferences: preferences(), cssAllowed: true }),
       setView: () => handle.setView(state.view),
       setBefore: () => handle.setBefore(state.before),
     };

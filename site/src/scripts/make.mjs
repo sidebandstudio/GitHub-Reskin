@@ -39,16 +39,14 @@ const list = (node, items) => {
   node.hidden = !items.length;
 };
 const kib = (bytes) => `${(bytes / 1024).toFixed(bytes < 10240 ? 1 : 0)} KiB`;
-const withoutCss = ({ css, ...rest }) => rest;
 
 async function show() {
   const module = await load();
-  const theme = cssEnable.checked ? current : withoutCss(current);
-  const preferences = module.DEFAULT_PREFERENCES;
-  if (handle) handle.update({ theme, preferences });
+  const options = { theme: current, preferences: module.DEFAULT_PREFERENCES, cssAllowed: cssEnable.checked };
+  if (handle) handle.update(options);
   else {
     const container = $("[data-live]");
-    handle = module.mountPreview(container, { view: "profile", theme, preferences });
+    handle = module.mountPreview(container, { view: "profile", ...options });
     container.querySelector("[data-reskin-preview]").addEventListener("reskin-preview-complete", () => {
       windowEl.dataset.preview = "live";
       $("[data-pending]").hidden = true;
@@ -100,7 +98,9 @@ async function runImport(input, kind) {
   if (css) {
     $("[data-css-size]").textContent = `${new TextEncoder().encode(current.css).length.toLocaleString("en-US")} bytes of CSS, checked by the sanitizer. It is off in this preview until you enable it.`;
     $("[data-css-source]").textContent = current.css;
-    $("[data-css-note]").hidden = true;
+    const note = $("[data-css-note]");
+    note.hidden = await module.cssStylesOwnedOnly(current.css);
+    note.textContent = "This CSS styles GitHub's own elements. Reskin cannot apply those rules yet, so enabling it changes nothing here or in the extension.";
   }
   const layers = module.rasterLayers(current);
   const bytes = layers.reduce((n, layer) => n + Math.floor((layer.image.data.length - layer.image.data.indexOf(",") - 1) * 0.75), 0);
@@ -115,8 +115,6 @@ async function runImport(input, kind) {
 
 cssEnable.addEventListener("change", async () => {
   if (!current) return;
-  const module = await load();
-  $("[data-css-note]").hidden = !cssEnable.checked || module.PREVIEW_DRAWS_CSS;
   status.textContent = cssEnable.checked ? "Advanced CSS is enabled in this preview." : "Advanced CSS is off in this preview.";
   await show();
 });

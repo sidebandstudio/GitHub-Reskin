@@ -16,9 +16,6 @@ export { mountPreview, decodeShare, encodeShare, exportTheme, fileStem, parseImp
 // What every preview starts from: the extension's defaults, Full appearance.
 export const DEFAULT_PREFERENCES = Object.freeze({ enabled: true, extras: true, text: true, motion: true, fonts: true, effects: true });
 export const CALM = Object.freeze({ ...DEFAULT_PREFERENCES, extras: false });
-// The shared preview compiles a theme's advanced CSS once C3b's preview compile target lands. Until
-// then a consented preview looks like the structured one, and /make/ says so.
-export const PREVIEW_DRAWS_CSS = false;
 
 // The base path, for example "/GitHub-Reskin/"; both bundlers define it.
 configurePreview({ primer, modeIndex: primer.MODE_INDEX, resources: siteResources(import.meta.env.BASE_URL), dormantSlots: dormantSlots() });
@@ -27,3 +24,14 @@ registerCssProofs(CSS_PROOFS);
 let authoring = null;
 /** Installs the CSS sanitizer for imported themes; resolves once parseImport admits CSS. */
 export const loadAuthoring = () => (authoring ??= import("../../packages/format/authoring.js"));
+
+/**
+ * Whether a theme's advanced CSS styles only Reskin's own decorations. Those rules compile in the
+ * preview and the extension; a rule for GitHub's own elements fails the whole CSS closed until
+ * C3b's target registry lands.
+ */
+export async function cssStylesOwnedOnly(css) {
+  const { sanitizeCss } = await loadAuthoring();
+  const result = sanitizeCss(css);
+  return result.ok && result.value.rules.every((rule) => rule.selectors.every((selector) => selector.compounds.some((compound) => compound.attributes.some((a) => a.name === "data-reskin-slot"))));
+}

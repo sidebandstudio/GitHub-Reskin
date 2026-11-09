@@ -9,7 +9,7 @@ window.reskinCapture = async ({ slug, width, calm = false, view = "profile" }) =
   const stage = document.getElementById("stage");
   stage.style.width = `${width}px`;
   const preferences = calm ? { ...DEFAULT_PREFERENCES, extras: false } : DEFAULT_PREFERENCES;
-  handle = mountPreview(stage, { view, theme: DOCS[slug], preferences });
+  handle = mountPreview(stage, { view, theme: DOCS[slug], preferences, cssAllowed: true });
   // The host exists at once; its first job completes in a later animation frame.
   const host = stage.querySelector("[data-reskin-preview]");
   await new Promise((resolve, reject) => {

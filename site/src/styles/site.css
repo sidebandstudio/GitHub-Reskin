@@ -78,7 +78,6 @@ a:hover { text-decoration-color: var(--brand); }
 .nav {
   position: sticky; top: 0; z-index: 20;
   background: var(--canvas);
-  border-bottom: 1px solid var(--sep);
 }
 .nav-in { display: flex; align-items: center; gap: 20px; height: var(--nav-h); }
 .brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; min-height: 44px; }
@@ -157,10 +156,9 @@ a:hover { text-decoration-color: var(--brand); }
 .drop-panel {
   position: absolute; z-index: 15; top: calc(100% + 6px); left: 0; right: 0;
   max-height: min(68vh, 560px); overflow-y: auto; overscroll-behavior: contain; padding: 6px;
-  border: 1px solid var(--control); border-radius: 12px; background: var(--surface);
-  box-shadow: 0 16px 40px rgb(0 0 0 / 0.5);
+  border: 1px solid var(--control); border-radius: 12px; background: var(--raised);
 }
-.drop-panel .pick[aria-current="true"] { background: var(--raised); }
+.drop-panel .pick:hover, .drop-panel .pick[aria-current="true"] { background: var(--hover); }
 
 /* Preview */
 .viewer { min-width: 0; }
@@ -194,7 +192,7 @@ a:hover { text-decoration-color: var(--brand); }
 .spinner { width: 14px; height: 14px; border: 2px solid var(--control); border-top-color: var(--brand); border-radius: 50%; animation: spin 800ms linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .viewer-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; margin-top: 12px; }
-.viewer-desc { flex: 1 1 320px; color: var(--text-2); font-size: 15px; }
+.viewer-desc { flex: 1 1 320px; color: var(--text-2); font-size: 16px; }
 .hero-keep { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-top: 16px; }
 .hero-keep .hero-compat { margin: 0; }
 .nojs-note { margin-top: 10px; color: var(--caption); font-size: 14px; }
@@ -210,7 +208,7 @@ html:not(.js) .needs-js { display: none !important; }
 .card-body { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; padding: 16px; flex: 1; }
 .card-title { font-size: 22px; line-height: 1.15; letter-spacing: -0.025em; }
 .card-name { color: var(--text-2); font-size: 16px; font-weight: 600; }
-.card-desc { color: var(--text-2); font-size: 15px; margin-top: 4px; }
+.card-desc { color: var(--text-2); font-size: 16px; margin-top: 4px; }
 .card .badge { margin-top: 6px; }
 .card-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; margin-top: auto; padding-top: 12px; }
 .card-actions .btn { display: inline-grid; min-width: 136px; }
@@ -236,7 +234,7 @@ html:not(.js) .needs-js { display: none !important; }
 .compare-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .compare-label { margin-bottom: 8px; font: 650 18px/1.2 var(--font-display); }
 .compare-item img { display: block; width: 100%; height: auto; aspect-ratio: 358 / 420; object-fit: cover; object-position: top; border-radius: 12px; background: var(--surface); }
-.compare figcaption { margin-top: 12px; color: var(--text-2); font-size: 15px; }
+.compare figcaption { margin-top: 12px; color: var(--text-2); font-size: 16px; }
 
 /* Still your GitHub */
 .split { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: clamp(28px, 5vw, 64px); align-items: center; }
@@ -261,7 +259,7 @@ html:not(.js) .needs-js { display: none !important; }
 .steps li { display: grid; grid-template-columns: 40px 1fr; gap: 14px; align-items: start; counter-increment: step; }
 .steps li::before { content: counter(step); display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--raised); font: 650 17px/1 var(--font-display); }
 .steps b { display: block; font-size: 18px; }
-.steps p { color: var(--text-2); font-size: 15px; }
+.steps p { color: var(--text-2); font-size: 16px; }
 .prompt-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
 .copy-status { margin-top: 12px; min-height: 1.6em; color: var(--text); font-weight: 600; }
 .prompt-box { margin-top: 16px; }
@@ -292,7 +290,7 @@ html:not(.js) .needs-js { display: none !important; }
 .likely { display: none; color: var(--text); font-size: 14px; font-weight: 600; }
 .browser.is-likely .likely { display: block; }
 .store-state { display: inline-flex; align-items: center; gap: 8px; min-height: 48px; margin-top: 8px; padding: 0 16px; border-radius: var(--r-control); background: var(--raised); color: var(--text); font-weight: 600; }
-.browser p { color: var(--text-2); font-size: 15px; }
+.browser p { color: var(--text-2); font-size: 16px; }
 .browser a { margin-top: auto; padding-top: 8px; }
 .install-body { display: flex; flex-direction: column-reverse; gap: 16px; }
 @media (hover: none) and (pointer: coarse) { .install-body { flex-direction: column; } }
@@ -302,7 +300,7 @@ html:not(.js) .needs-js { display: none !important; }
 .link-plain { display: inline-flex; align-items: center; min-height: 48px; }
 .phone-path { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px 32px; align-items: center; padding: 24px; border-radius: 12px; background: var(--raised); }
 .phone-path h3 { font-size: 22px; letter-spacing: -0.02em; }
-.phone-path p { color: var(--text-2); font-size: 15px; margin-top: 4px; }
+.phone-path p { color: var(--text-2); font-size: 16px; margin-top: 4px; }
 
 /* FAQ */
 .faq { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: clamp(28px, 5vw, 64px); }
@@ -316,9 +314,9 @@ html:not(.js) .needs-js { display: none !important; }
 .faq-list details > div p + p { margin-top: 10px; }
 
 /* Footer */
-.footer { padding: 40px 0 48px; border-top: 1px solid var(--sep); }
+.footer { padding: 48px 0 56px; background: var(--surface); }
 .footer-in { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 24px 48px; align-items: start; }
-.footer-note { color: var(--text-2); font-size: 15px; max-width: 640px; margin-top: 12px; }
+.footer-note { color: var(--text-2); font-size: 16px; max-width: 640px; margin-top: 12px; }
 .footer-links { display: flex; flex-wrap: wrap; gap: 4px 20px; margin: 0; padding: 0; list-style: none; max-width: 420px; justify-content: flex-end; }
 .footer-links a { display: inline-flex; align-items: center; min-height: 44px; color: var(--text-2); font-size: 15px; }
 
@@ -333,7 +331,7 @@ html:not(.js) .needs-js { display: none !important; }
 .sheet-head { display: flex; justify-content: space-between; align-items: start; gap: 12px; }
 .sheet h2 { font-size: 24px; line-height: 1.15; letter-spacing: -0.02em; }
 .sheet-close { flex: none; width: 44px; height: 44px; padding: 0; }
-.sheet p { color: var(--text-2); font-size: 15px; }
+.sheet p { color: var(--text-2); font-size: 16px; }
 .field label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 15px; }
 .field input { font-size: 15px; }
 .sheet-actions { display: flex; flex-wrap: wrap; gap: 10px; }
@@ -356,7 +354,7 @@ html:not(.js) .needs-js { display: none !important; }
 .make { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: clamp(24px, 4vw, 48px); align-items: start; margin-top: 40px; }
 .field textarea { min-height: 240px; resize: vertical; }
 .make-h2 { margin-top: 40px; margin-bottom: 16px; font-size: 26px; letter-spacing: -0.02em; }
-.field-help { margin-top: 8px; color: var(--text-2); font-size: 15px; }
+.field-help { margin-top: 8px; color: var(--text-2); font-size: 16px; }
 .field-error { margin-top: 8px; color: var(--text); font-weight: 600; padding: 10px 14px; border-radius: var(--r-control); background: #3a1d1d; }
 .field-error[hidden] { display: none; }
 .field textarea[aria-invalid="true"] { border-color: #ff9a8a; }
@@ -368,7 +366,7 @@ html:not(.js) .needs-js { display: none !important; }
 .make-summary { display: grid; gap: 10px; padding: 20px; border-radius: 12px; background: var(--surface); }
 .make-name { font: 650 22px/1.2 var(--font-display); letter-spacing: -0.02em; }
 .make-state { color: var(--text); font-weight: 600; }
-.make-notes { margin: 0; padding-left: 1.2em; color: var(--text-2); font-size: 15px; }
+.make-notes { margin: 0; padding-left: 1.2em; color: var(--text-2); font-size: 16px; }
 .css-review { display: grid; gap: 10px; justify-items: start; padding-top: 12px; border-top: 1px solid var(--sep); }
 .css-review[hidden], .make-notes[hidden], [data-images][hidden] { display: none; }
 .css-warning { color: var(--text); }
@@ -447,4 +445,25 @@ html:not(.js) .needs-js { display: none !important; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
+}
+
+/* Motion: the hero arrives in order, and each section's parts rise in as they scroll into view
+   where the browser supports scroll-driven animation. Transform and opacity only; content is
+   visible without it, and reduced motion keeps everything still. */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes rise { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+  .hero h1, .hero-side, .stage { animation: rise 640ms var(--ease) both; }
+  .hero-side { animation-delay: 80ms; }
+  .stage { animation-delay: 160ms; }
+  .pick, .card-preview, .btn, .seg span, .classics > summary, .picker-drop > summary { transition: background-color 150ms, border-color 150ms, transform 150ms var(--ease); }
+  .pick:active, .card-preview:active, .picker-drop > summary:active { transform: scale(0.98); }
+  .card-shot img { transition: transform 400ms var(--ease); }
+  .card:hover .card-shot img { transform: scale(1.03); }
+  @supports (animation-timeline: view()) {
+    .section-head > *, .gallery > li, .compare-item, .facts > li, .steps > li, .browser, .phone-path, .faq-list details, .film {
+      animation: rise linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 40%;
+    }
+  }
 }

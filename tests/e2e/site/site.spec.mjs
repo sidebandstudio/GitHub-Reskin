@@ -194,7 +194,7 @@ test("the site's live preview is the same document C5's fixture app renders for 
     const other = await browser.newPage({ viewport: { width, height: 900 } });
     await other.goto(`${app.url}preview.html`);
     await other.waitForFunction(() => window.reskinPreview);
-    await other.evaluate(({ theme, preferences }) => window.reskinPreview.mount({ view: "profile", theme, preferences }), { theme: CHOOM, preferences: FULL });
+    await other.evaluate(({ theme, preferences }) => window.reskinPreview.mount({ view: "profile", theme, preferences, cssAllowed: true }), { theme: CHOOM, preferences: FULL });
     await expect.poll(() => other.evaluate(() => document.querySelector("#preview [data-reskin-preview]")?.dataset.completed), { timeout: 20000 }).toBe("1");
     const fixtureDoc = await other.evaluate(() => window.reskinPreview.srcdoc());
     expect(siteDoc.length).toBeGreaterThan(1000);
@@ -386,7 +386,8 @@ test("the importer previews a sample with Advanced CSS off until chosen, and kee
   await expect(enable).not.toBeChecked();
   await enable.check();
   await expect(page.locator("[data-import-status]")).toHaveText("Advanced CSS is enabled in this preview.");
-  await expect(page.locator("[data-css-note]")).toBeVisible();
+  // The sample's rule targets .AppHeader, a GitHub element, which fails closed until C3b.
+  await expect(page.locator("[data-css-note]")).toHaveText(/styles GitHub's own elements/);
   await expect(page.getByRole("button", { name: "Download Midnight signal" })).toBeVisible();
 
   const answer = page.getByLabel("Chatbot answer");

@@ -29,24 +29,25 @@ async function open() {
   const css = typeof theme.css === "string" && theme.css !== "";
   const enable = $("[data-css-enable]");
   $("[data-css-review]").hidden = !css;
-  if (css) $("[data-css-source]").textContent = theme.css;
+  if (css) {
+    $("[data-css-source]").textContent = theme.css;
+    const note = $("[data-css-note]");
+    note.hidden = await module.cssStylesOwnedOnly(theme.css);
+    note.textContent = "This CSS styles GitHub's own elements. Reskin cannot apply those rules yet, so enabling it changes nothing here or in the extension.";
+  }
   const layers = module.rasterLayers(theme);
   $("[data-images]").hidden = !layers.length;
   $("[data-images]").textContent = layers.length ? `This theme embeds ${layers.length} image${layers.length === 1 ? "" : "s"}. Its file and share code include them.` : "";
 
   const windowEl = $("[data-window]");
   windowEl.hidden = false;
-  const withoutCss = ({ css: _css, ...rest }) => rest;
   const container = $("[data-live]");
-  const handle = module.mountPreview(container, { view: "profile", theme: withoutCss(theme), preferences: module.DEFAULT_PREFERENCES });
+  const handle = module.mountPreview(container, { view: "profile", theme, preferences: module.DEFAULT_PREFERENCES, cssAllowed: false });
   container.querySelector("[data-reskin-preview]").addEventListener("reskin-preview-complete", () => {
     windowEl.dataset.preview = "live";
     $("[data-pending]").hidden = true;
   });
-  enable.addEventListener("change", () => {
-    $("[data-css-note]").hidden = !enable.checked || module.PREVIEW_DRAWS_CSS;
-    handle.update({ theme: enable.checked ? theme : withoutCss(theme), preferences: module.DEFAULT_PREFERENCES });
-  });
+  enable.addEventListener("change", () => handle.update({ theme, preferences: module.DEFAULT_PREFERENCES, cssAllowed: enable.checked }));
 
   $("[data-download-label]").textContent = `Download ${theme.name}`;
   $("[data-exports]").hidden = false;
