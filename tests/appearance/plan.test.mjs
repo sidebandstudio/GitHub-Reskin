@@ -5,7 +5,7 @@ import { test } from "node:test";
 import { FLAVOR_SLOT_IDS } from "../../packages/contracts/index.js";
 import { repairTheme, resolveTheme } from "../../packages/engine/index.js";
 import { boundedParams, compileAppearance, effectNodes, effectiveAppearance, ownedNodePlan, planAppearance } from "../../packages/appearance/index.js";
-import { auditDocuments, loadThemes, themeAudit } from "../../packages/appearance/audit.mjs";
+import { PAGE_SLOTS, auditDocuments, loadThemes, themeAudit } from "../../packages/appearance/audit.mjs";
 
 const ROOT = new URL("../../", import.meta.url).pathname;
 const read = (path) => JSON.parse(readFileSync(`${ROOT}${path}`, "utf8"));
@@ -29,12 +29,15 @@ test("effective appearance follows the master, extras, child switches, flavor re
   assert.deepEqual({ ...effectiveAppearance(native, ON) }, { text: false, fonts: false, effects: false, motion: false });
 });
 
-test("worst-case themes stay within 24 owned and six animated nodes and keep every copy", () => {
+test("worst-case themes stay within 24 owned and six animated nodes and keep every copy on every page", () => {
+  assert.deepEqual(PAGE_SLOTS.flat().sort(), [...FLAVOR_SLOT_IDS].sort());
   for (const [label, theme] of loadThemes(read("themes/classics/dracula.reskin.json"))) {
-    const plan = planAppearance(resolve(theme), ON, FLAVOR_SLOT_IDS);
-    assert.ok(plan.owned <= 24 && plan.animated <= 6, `${label}: ${plan.owned}/${plan.animated}`);
-    assert.equal(plan.slots.filter((s) => s.copy).length, FLAVOR_SLOT_IDS.length, label);
-    assert.equal(ownedNodePlan(resolve(theme), ON, FLAVOR_SLOT_IDS).length, plan.owned, label);
+    for (const slots of PAGE_SLOTS) {
+      const plan = planAppearance(resolve(theme), ON, slots);
+      assert.ok(plan.owned <= 24 && plan.animated <= 6, `${label}: ${plan.owned}/${plan.animated}`);
+      assert.equal(plan.slots.filter((s) => s.copy).length, slots.length, label);
+      assert.equal(ownedNodePlan(resolve(theme), ON, slots).length, plan.owned, label);
+    }
   }
 });
 

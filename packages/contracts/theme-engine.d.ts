@@ -200,8 +200,10 @@ export interface PairRecord {
   backgrounds: readonly [PairPath, ...PairPath[]];
   minimum: 3 | 4.5;
   purpose: "text" | "boundary" | "focus";
+  /** The record applies only when the source supplies this override; otherwise it is not audited. */
+  supplied?: `/overrides/${OverrideColorKey}`;
 }
-/** Version 2 keeps every version 1 record, first and unchanged, and adds the appearance pairs. */
+/** Version 2 keeps every version 1 record, first and unchanged, and adds the appearance and supplied-only pairs. */
 export interface PairMatrix {
   version: 2;
   records: readonly PairRecord[];
@@ -224,6 +226,7 @@ export type OverrideColorKey =
   | "border"
   | "controlBorder"
   | "accentMuted"
+  | "accentEmphasis"
   | "primaryBackground"
   | "primaryText"
   | "focus"
@@ -299,7 +302,9 @@ export type FlavorSlotId =
   | "error.notFound.caption"
   | "empty.pinned.caption"
   | "empty.issues.caption"
-  | "contributions.caption";
+  | "contributions.caption"
+  | "footer.signoff"
+  | "profile.achievements.heading";
 export interface ResolvedFlavor {
   enabled: boolean;
   locale: "en";

@@ -1123,6 +1123,16 @@
       ],
       "minimum": 3,
       "purpose": "boundary"
+    },
+    {
+      "id": "accentEmphasis",
+      "foreground": "/tokens/accentEmphasis",
+      "backgrounds": [
+        "/tokens/canvas"
+      ],
+      "minimum": 3,
+      "purpose": "boundary",
+      "supplied": "/overrides/accentEmphasis"
     }
   ]
 }

@@ -96,7 +96,7 @@ test("registries match the theme format's IDs and limits", () => {
   assert.equal(contracts.FONT_IDS.length, 9);
   assert.equal(contracts.FONT_IDS[0], "system");
   assert.equal(contracts.EFFECT_IDS.length, 10);
-  assert.equal(contracts.FLAVOR_SLOT_IDS.length, 8);
+  assert.equal(contracts.FLAVOR_SLOT_IDS.length, 10);
   assert.equal(contracts.LIMITS.maxEffectsPerTheme, 3);
   // Revision 4: eighteen families at most, 768 KiB of WOFF2, 64 KiB a family, 32 KiB a file.
   assert.equal(contracts.HEADING_FONT_IDS.length, 19);

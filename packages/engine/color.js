@@ -71,12 +71,14 @@ export function bestInk(background, base) {
 
 /**
  * The smallest k/255 mix of `color` toward black or white that reaches `minimum` against every
- * background. When both directions succeed at the same step, the base's safe ink wins. Returns
- * null when even pure black and white fail, which means the backgrounds straddle polarities.
+ * background, or against each background's own minimum when `minimum` is an array. When both
+ * directions succeed at the same step, the base's safe ink wins. Returns null when no step of
+ * either direction passes, as when the backgrounds straddle polarities.
  */
 export function fit(color, backgrounds, minimum, base) {
   const ends = base === "dark" ? [WHITE, BLACK] : [BLACK, WHITE];
-  const passes = (candidate) => backgrounds.every((bg) => contrast(candidate, bg) >= minimum);
+  const min = (i) => (Array.isArray(minimum) ? minimum[i] : minimum);
+  const passes = (candidate) => backgrounds.every((bg, i) => contrast(candidate, bg) >= min(i));
   if (passes(color)) return color;
   for (let k = 1; k <= 255; k++) {
     for (const end of ends) {
