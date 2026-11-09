@@ -71,14 +71,18 @@ ${`<div ${ISLAND}>`.repeat(7)}<div class="flash">${parts("deep")}</div>${"</div>
 const FRAGMENT_IDS = ["plain", "nested", "self", "query", "permission", "light", "dimmed", "deep", "within"];
 
 // In-page helpers, installed once per page.
-function install({ css, modes }) {
+function install({ css, modes, pace }) {
   const G = globalThis.ReskinGitHub;
+  // Shared CI runners are a few times slower than a user's machine, so there the classification
+  // budget is read from a clock running at `pace`; these tests are about which subjects are
+  // admitted, not about the budget, which keeps its real value everywhere else.
+  const clock = { now: () => performance.now() * pace };
   const style = document.createElement("style");
   // The audited variables the compiled rules read, as the Primer stylesheet sets them.
   style.textContent = `:root{--reskin-accent:#fcee0a;--reskin-graph-4:#00f0ff;--reskin-link:#fcee0a}\n${css}`;
   document.head.append(style);
   window.events = [];
-  window.H = G.startAdmission(document, { modes, onEvent: (e) => window.events.push({ ...e, at: performance.now() }) });
+  window.H = G.startAdmission(document, { modes, clock, onEvent: (e) => window.events.push({ ...e, at: performance.now() }) });
   window.frame = () => new Promise((resolve) => requestAnimationFrame(resolve));
   window.settle = async () => {
     for (let i = 0; i < 30 && window.H.state().pending; i++) await window.frame();
@@ -104,6 +108,7 @@ function install({ css, modes }) {
       });
     });
 }
+const PACE = process.env.CI ? 1 / 3 : 1;
 const run = (page, change, id) => page.evaluate(([source, id]) => window.nextFrame(new Function(`return (${source})()`), id), [change.toString(), id]);
 
 for (const [name, engine] of [["Chromium", chromium], ["Firefox", firefox]]) {
@@ -122,7 +127,7 @@ for (const [name, engine] of [["Chromium", chromium], ["Firefox", firefox]]) {
       const page = await context.newPage();
       await page.goto(url);
       await page.addScriptTag({ content: bundle });
-      await page.evaluate(install, { css: compiled.css, modes: MODES });
+      await page.evaluate(install, { css: compiled.css, modes: MODES, pace: PACE });
       const state = await page.evaluate(() => window.settle());
       return { page, context, state };
     }
@@ -212,7 +217,7 @@ for (const [name, engine] of [["Chromium", chromium], ["Firefox", firefox]]) {
         assert.equal((await page.evaluate(() => window.settle())).gate, false, `${label}: stays off`);
         await page.goto("https://github.com/octo-sample");
         await page.addScriptTag({ content: bundle });
-        await page.evaluate(install, { css: compiled.css, modes: MODES });
+        await page.evaluate(install, { css: compiled.css, modes: MODES, pace: PACE });
       }
       await context.close();
     });
