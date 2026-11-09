@@ -1,0 +1,580 @@
+{
+  "version": 1,
+  "captured": "2026-11-08",
+  "method": "tests/primer/capture-slot-evidence.mjs: logged-out Chromium, en-US, 1280x900, the shipped extension/content/github adapter injected after load (CSP bypassed, as for a content script). Nothing was signed in, clicked, starred or followed.",
+  "slots": {
+    "profile.pinned.heading": {
+      "status": "enabled",
+      "date": "2026-11-08",
+      "route": "profile",
+      "url": "https://github.com/whoisaldo",
+      "insert": "append",
+      "host": "main > … > div > turbo-frame#user-profile-frame > div > div > div > h2",
+      "nativeSignature": "profile.pinned.heading|h2|Pinned|2",
+      "screenshot": "tests/primer/evidence/profile.pinned.heading.png",
+      "alsoSeenOn": [
+        "https://github.com/Alitleis123",
+        "https://github.com/torvalds",
+        "https://github.com/ghost"
+      ]
+    },
+    "profile.activity.heading": {
+      "status": "enabled",
+      "date": "2026-11-08",
+      "route": "profile",
+      "url": "https://github.com/whoisaldo",
+      "insert": "append",
+      "host": "main > … > div > div > div > div > div#js-contribution-activity > h2",
+      "nativeSignature": "profile.activity.heading|h2|Contribution activity|0",
+      "screenshot": "tests/primer/evidence/profile.activity.heading.png",
+      "alsoSeenOn": [
+        "https://github.com/Alitleis123",
+        "https://github.com/torvalds"
+      ]
+    },
+    "profile.organizations.heading": {
+      "status": "enabled",
+      "date": "2026-11-08",
+      "route": "profile",
+      "url": "https://github.com/whoisaldo",
+      "insert": "append",
+      "host": "main > … > div > div > div > div > div > h2",
+      "nativeSignature": "profile.organizations.heading|h2|Organizations|0",
+      "screenshot": "tests/primer/evidence/profile.organizations.heading.png",
+      "alsoSeenOn": []
+    },
+    "profile.tag": {
+      "status": "enabled",
+      "date": "2026-11-08",
+      "route": "profile",
+      "url": "https://github.com/whoisaldo",
+      "insert": "append",
+      "host": "main > … > div > div > div > div > div > div",
+      "nativeSignature": "profile.tag|div||1",
+      "screenshot": "tests/primer/evidence/profile.tag.png",
+      "alsoSeenOn": [
+        "https://github.com/Alitleis123",
+        "https://github.com/torvalds",
+        "https://github.com/ghost"
+      ]
+    },
+    "contributions.caption": {
+      "status": "enabled",
+      "date": "2026-11-08",
+      "route": "profile",
+      "url": "https://github.com/whoisaldo",
+      "insert": "after",
+      "host": "main > … > div > div > div > div > div > div",
+      "nativeSignature": "contributions.caption|div|/^\\d[\\d,]* contributions? in (?:the last year|\\d{4})$/|1",
+      "screenshot": "tests/primer/evidence/contributions.caption.png",
+      "alsoSeenOn": [
+        "https://github.com/Alitleis123",
+        "https://github.com/torvalds"
+      ]
+    },
+    "empty.pinned.caption": {
+      "status": "enabled",
+      "date": "2026-11-08",
+      "route": "profile",
+      "url": "https://github.com/ghost",
+      "insert": "after",
+      "host": "main > … > div > div > div > div > div > h2",
+      "nativeSignature": "empty.pinned.caption|h2|/^\\S+ doesn't have any public repositories yet\\.$/|0",
+      "screenshot": "tests/primer/evidence/empty.pinned.caption.png",
+      "alsoSeenOn": []
+    },
+    "error.notFound.caption": {
+      "status": "enabled",
+      "date": "2026-11-08",
+      "route": "not-found",
+      "url": "https://github.com/whoisaldo/this-page-does-not-exist-reskin-qa",
+      "insert": "after",
+      "host": "main > … > div > div",
+      "nativeSignature": "error.notFound.caption|div||1",
+      "screenshot": "tests/primer/evidence/error.notFound.caption.png",
+      "alsoSeenOn": []
+    },
+    "empty.issues.caption": {
+      "status": "dormant",
+      "date": "2026-11-08",
+      "reason": "The issue-list blankslate is inside a focusable list container (tabindex=-1) and a role=status live region.",
+      "refused": [
+        {
+          "url": "https://github.com/sidebandstudio/GitHub-Reskin/issues",
+          "host": "main > … > div#_R_39tad85_-list-view-container > div > div > div > div[data-component=Blankslate] > h2[data-component=Blankslate.Heading]",
+          "reason": "inside a control"
+        }
+      ]
+    }
+  },
+  "pages": [
+    {
+      "url": "https://github.com/whoisaldo",
+      "kind": "reference profile 1",
+      "status": 200,
+      "date": "2026-11-08",
+      "route": "profile",
+      "lang": "en",
+      "title": "… · GitHub",
+      "islands": [
+        "html[data-color-mode=auto][data-light-theme=light][data-dark-theme=dark]",
+        "div[data-color-mode=dark][data-light-theme=light][data-dark-theme=dark]",
+        "header[data-color-mode=dark][data-light-theme=light][data-dark-theme=dark]"
+      ],
+      "anchors": [
+        {
+          "slot": "profile.pinned.heading",
+          "insert": "append",
+          "nativeSignature": "profile.pinned.heading|h2|Pinned|2",
+          "host": "main > … > div > turbo-frame#user-profile-frame > div > div > div > h2",
+          "authored": false,
+          "interactive": false
+        },
+        {
+          "slot": "profile.activity.heading",
+          "insert": "append",
+          "nativeSignature": "profile.activity.heading|h2|Contribution activity|0",
+          "host": "main > … > div > div > div > div > div#js-contribution-activity > h2",
+          "authored": false,
+          "interactive": false
+        },
+        {
+          "slot": "profile.organizations.heading",
+          "insert": "append",
+          "nativeSignature": "profile.organizations.heading|h2|Organizations|0",
+          "host": "main > … > div > div > div > div > div > h2",
+          "authored": false,
+          "interactive": false
+        },
+        {
+          "slot": "profile.tag",
+          "insert": "append",
+          "nativeSignature": "profile.tag|div||1",
+          "host": "main > … > div > div > div > div > div > div",
+          "authored": false,
+          "interactive": false
+        },
+        {
+          "slot": "contributions.caption",
+          "insert": "after",
+          "nativeSignature": "contributions.caption|div|/^\\d[\\d,]* contributions? in (?:the last year|\\d{4})$/|1",
+          "host": "main > … > div > div > div > div > div > div",
+          "authored": false,
+          "interactive": false
+        }
+      ],
+      "candidates": [
+        {
+          "slot": "profile.pinned.heading",
+          "status": "enabled",
+          "path": "main > … > div > turbo-frame#user-profile-frame > div > div > div > h2",
+          "reason": null
+        },
+        {
+          "slot": "profile.activity.heading",
+          "status": "enabled",
+          "path": "main > … > div > div > div > div > div#js-contribution-activity > h2",
+          "reason": null
+        },
+        {
+          "slot": "profile.organizations.heading",
+          "status": "enabled",
+          "path": "main > … > div > div > div > div > div > h2",
+          "reason": "GitHub's words differ"
+        },
+        {
+          "slot": "profile.organizations.heading",
+          "status": "enabled",
+          "path": "main > … > div > div > div > div > div > h2",
+          "reason": "GitHub's words differ"
+        },
+        {
+          "slot": "profile.organizations.heading",
+          "status": "enabled",
+          "path": "main > … > div > div > div > div > div > h2",
+          "reason": "GitHub's words differ"
+        },
+        {
+          "slot": "profile.organizations.heading",
+          "status": "enabled",
+          "path": "main > … > div > div > div > div > div > h2",
+          "reason": null
+        },
+        {
+          "slot": "profile.tag",
+          "status": "enabled",
+          "path": "main > … > div > div > div > div > div > div",
+          "reason": null
+        },
+        {
+          "slot": "contributions.caption",
+          "status": "enabled",
+          "path": "main > … > div > div > div > div > div > h2#js-contribution-activity-description",
+          "reason": null
+        }
+      ]
+    },
+    {
+      "url": "https://github.com/Alitleis123",
+      "kind": "reference profile 2",
+      "status": 200,
+      "date": "2026-11-08",
+      "route": "profile",
+      "lang": "en",
+      "title": "… · GitHub",
+      "islands": [
+        "html[data-color-mode=auto][data-light-theme=light][data-dark-theme=dark]",
+        "div[data-color-mode=dark][data-light-theme=light][data-dark-theme=dark]",
+        "header[data-color-mode=dark][data-light-theme=light][data-dark-theme=dark]"
+      ],
+      "anchors": [
+        {
+          "slot": "profile.pinned.heading",
+          "insert": "append",
+          "nativeSignature": "profile.pinned.heading|h2|Pinned|2",
+          "host": "main > … > div > turbo-frame#user-profile-frame > div > div > div > h2",
+          "authored": false,
+          "interactive": false
+        },
+        {
+          "slot": "profile.activity.heading",
+          "insert": "append",
+          "nativeSignature": "profile.activity.heading|h2|Contribution activity|0",
+          "host": "main > … > div > div > div > div > div#js-contribution-activity > h2",
+          "authored": false,
+          "interactive": false
+        },
+        {
+          "slot": "profile.tag",
+          "insert": "append",
+          "nativeSignature": "profile.tag|div||1",
+          "host": "main > … > div > div > div > div > div > div",
+          "authored": false,
+          "interactive": false
+        },
+        {
+          "slot": "contributions.caption",
+          "insert": "after",
+          "nativeSignature": "contributions.caption|div|/^\\d[\\d,]* contributions? in (?:the last year|\\d{4})$/|1",
+          "host": "main > … > div > div > div > div > div > div",
+          "authored": false,
+          "interactive": false
+        }
+      ],
+      "candidates": [
+        {
+          "slot": "profile.pinned.heading",
+          "status": "enabled",
+          "path": "main > … > div > turbo-frame#user-profile-frame > div > div > div > h2",
+          "reason": null
+        },
+        {
+          "slot": "profile.activity.heading",
+          "status": "enabled",
+          "path": "main > … > div > div > div > div > div#js-contribution-activity > h2",
+          "reason": null
+        },
+        {
+          "slot": "profile.organizations.heading",
+          "status": "enabled",
+          "path": "main > … > div > div > div > div > div > h2",
+          "reason": "GitHub's words differ"
+        },
+        {
+          "slot": "profile.organizations.heading",
+          "status": "enabled",
+          "path": "main > … > div > div > div > div > div > h2",
+          "reason": "GitHub's words differ"
+        },
+        {
+          "slot": "profile.tag",
+          "status": "enabled",
+          "path": "main > … > div > div > div > div > div > div",
+          "reason": null
+        },
+        {
+          "slot": "contributions.caption",
+          "status": "enabled",
+          "path": "main > … > div > div > div > div > div > h2#js-contribution-activity-description",
+          "reason": null
+        }
+      ]
+    },
+    {
+      "url": "https://github.com/torvalds",
+      "kind": "reference profile 3",
+      "status": 200,
+      "date": "2026-11-08",
+      "route": "profile",
+      "lang": "en",
+      "title": "… · GitHub",
+      "islands": [
+        "html[data-color-mode=auto][data-light-theme=light][data-dark-theme=dark]",
+        "div[data-color-mode=dark][data-light-theme=light][data-dark-theme=dark]",
+        "header[data-color-mode=dark][data-light-theme=light][data-dark-theme=dark]"
+      ],
+      "anchors": [
+        {
+          "slot": "profile.pinned.heading",
+          "insert": "append",
+          "nativeSignature": "profile.pinned.heading|h2|Pinned|2",
+          "host": "main > … > div > turbo-frame#user-profile-frame > div > div > div > h2",
+          "authored": false,
+          "interactive": false
+        },
+        {
+          "slot": "profile.activity.heading",
+          "insert": "append",
+          "nativeSignature": "profile.activity.heading|h2|Contribution activity|0",
+          "host": "main > … > div > div > div > div > div#js-contribution-activity > h2",
+          "authored": false,
+          "interactive": false
+        },
+        {
+          "slot": "profile.tag",
+          "insert": "append",
+          "nativeSignature": "profile.tag|div||1",
+          "host": "main > … > div > div > div > div > div > div",
+          "authored": false,
+          "interactive": false
+        },
+        {
+          "slot": "contributions.caption",
+          "insert": "after",
+          "nativeSignature": "contributions.caption|div|/^\\d[\\d,]* contributions? in (?:the last year|\\d{4})$/|1",
+          "host": "main > … > div > div > div > div > div > div",
+          "authored": false,
+          "interactive": false
+        }
+      ],
+      "candidates": [
+        {
+          "slot": "profile.pinned.heading",
+          "status": "enabled",
+          "path": "main > … > div > turbo-frame#user-profile-frame > div > div > div > h2",
+          "reason": null
+        },
+        {
+          "slot": "profile.activity.heading",
+          "status": "enabled",
+          "path": "main > … > div > div > div > div > div#js-contribution-activity > h2",
+          "reason": null
+        },
+        {
+          "slot": "profile.organizations.heading",
+          "status": "enabled",
+          "path": "main > … > div > div > div > div > div > h2",
+          "reason": "GitHub's words differ"
+        },
+        {
+          "slot": "profile.organizations.heading",
+          "status": "enabled",
+          "path": "main > … > div > div > div > div > div > h2",
+          "reason": "GitHub's words differ"
+        },
+        {
+          "slot": "profile.tag",
+          "status": "enabled",
+          "path": "main > … > div > div > div > div > div > div",
+          "reason": null
+        },
+        {
+          "slot": "contributions.caption",
+          "status": "enabled",
+          "path": "main > … > div > div > div > div > div > h2#js-contribution-activity-description",
+          "reason": null
+        }
+      ]
+    },
+    {
+      "url": "https://github.com/ghost",
+      "kind": "profile without public repositories",
+      "status": 200,
+      "date": "2026-11-08",
+      "route": "profile",
+      "lang": "en",
+      "title": "… · GitHub",
+      "islands": [
+        "html[data-color-mode=auto][data-light-theme=light][data-dark-theme=dark]",
+        "div[data-color-mode=dark][data-light-theme=light][data-dark-theme=dark]",
+        "header[data-color-mode=dark][data-light-theme=light][data-dark-theme=dark]"
+      ],
+      "anchors": [
+        {
+          "slot": "profile.pinned.heading",
+          "insert": "append",
+          "nativeSignature": "profile.pinned.heading|h2|Pinned|2",
+          "host": "main > … > div > turbo-frame#user-profile-frame > div > div > div > h2",
+          "authored": false,
+          "interactive": false
+        },
+        {
+          "slot": "profile.tag",
+          "insert": "append",
+          "nativeSignature": "profile.tag|div||1",
+          "host": "main > … > div > div > div > div > div > div",
+          "authored": false,
+          "interactive": false
+        },
+        {
+          "slot": "empty.pinned.caption",
+          "insert": "after",
+          "nativeSignature": "empty.pinned.caption|h2|/^\\S+ doesn't have any public repositories yet\\.$/|0",
+          "host": "main > … > div > div > div > div > div > h2",
+          "authored": false,
+          "interactive": false
+        }
+      ],
+      "candidates": [
+        {
+          "slot": "profile.pinned.heading",
+          "status": "enabled",
+          "path": "main > … > div > turbo-frame#user-profile-frame > div > div > div > h2",
+          "reason": null
+        },
+        {
+          "slot": "profile.organizations.heading",
+          "status": "enabled",
+          "path": "main > … > div > div > div > div > div > h2",
+          "reason": "GitHub's words differ"
+        },
+        {
+          "slot": "profile.organizations.heading",
+          "status": "enabled",
+          "path": "main > … > div > div > div > div > div > h2",
+          "reason": "GitHub's words differ"
+        },
+        {
+          "slot": "profile.tag",
+          "status": "enabled",
+          "path": "main > … > div > div > div > div > div > div",
+          "reason": null
+        },
+        {
+          "slot": "empty.pinned.caption",
+          "status": "enabled",
+          "path": "main > … > div > div > div > div > div > h2",
+          "reason": null
+        }
+      ]
+    },
+    {
+      "url": "https://github.com/sidebandstudio/GitHub-Reskin",
+      "kind": "repository",
+      "status": 200,
+      "date": "2026-11-08",
+      "route": "repository",
+      "lang": "en",
+      "title": "… · GitHub",
+      "islands": [
+        "html[data-color-mode=auto][data-light-theme=light][data-dark-theme=dark]",
+        "div[data-color-mode=dark][data-light-theme=light][data-dark-theme=dark]",
+        "header[data-color-mode=dark][data-light-theme=light][data-dark-theme=dark]"
+      ],
+      "anchors": [],
+      "candidates": []
+    },
+    {
+      "url": "https://github.com/sidebandstudio/GitHub-Reskin/blob/main/README.md",
+      "kind": "file view",
+      "status": 200,
+      "date": "2026-11-08",
+      "route": "other",
+      "lang": "en",
+      "title": "… · sidebandstudio/GitHub-Reskin · GitHub",
+      "islands": [
+        "html[data-color-mode=auto][data-light-theme=light][data-dark-theme=dark]",
+        "div[data-color-mode=dark][data-light-theme=light][data-dark-theme=dark]",
+        "header[data-color-mode=dark][data-light-theme=light][data-dark-theme=dark]"
+      ],
+      "anchors": [],
+      "candidates": []
+    },
+    {
+      "url": "https://github.com/sidebandstudio/GitHub-Reskin/commit/46c0e6f",
+      "kind": "diff",
+      "status": 200,
+      "date": "2026-11-08",
+      "route": "other",
+      "lang": "en",
+      "title": "… · sidebandstudio/GitHub-Reskin@46c0e6f · GitHub",
+      "islands": [
+        "html[data-color-mode=auto][data-light-theme=light][data-dark-theme=dark]",
+        "div[data-color-mode=dark][data-light-theme=light][data-dark-theme=dark]",
+        "header[data-color-mode=dark][data-light-theme=light][data-dark-theme=dark]"
+      ],
+      "anchors": [],
+      "candidates": []
+    },
+    {
+      "url": "https://github.com/sidebandstudio/GitHub-Reskin/issues",
+      "kind": "issue list",
+      "status": 200,
+      "date": "2026-11-08",
+      "route": "issues",
+      "lang": "en",
+      "title": "… · sidebandstudio/GitHub-Reskin · GitHub",
+      "islands": [
+        "html[data-color-mode=auto][data-light-theme=light][data-dark-theme=dark]",
+        "div[data-color-mode=dark][data-light-theme=light][data-dark-theme=dark]",
+        "header[data-color-mode=dark][data-light-theme=light][data-dark-theme=dark]"
+      ],
+      "anchors": [],
+      "candidates": [
+        {
+          "slot": "empty.issues.caption",
+          "status": "dormant",
+          "path": "main > … > div#_R_39tad85_-list-view-container > div > div > div > div[data-component=Blankslate] > h2[data-component=Blankslate.Heading]",
+          "reason": "inside a control"
+        }
+      ]
+    },
+    {
+      "url": "https://gist.github.com/octocat/6cad326836d38bd3a7ae",
+      "kind": "gist",
+      "status": 200,
+      "date": "2026-11-08",
+      "route": "gist",
+      "lang": "en",
+      "title": "… · GitHub",
+      "islands": [
+        "html[data-color-mode=auto][data-light-theme=light][data-dark-theme=dark]"
+      ],
+      "anchors": [],
+      "candidates": []
+    },
+    {
+      "url": "https://github.com/whoisaldo/this-page-does-not-exist-reskin-qa",
+      "kind": "404",
+      "status": 404,
+      "date": "2026-11-08",
+      "route": "not-found",
+      "lang": "en",
+      "title": "… · GitHub · GitHub",
+      "islands": [
+        "html[data-color-mode=auto][data-light-theme=light][data-dark-theme=dark]",
+        "div[data-color-mode=dark][data-light-theme=light][data-dark-theme=dark]",
+        "header[data-color-mode=dark][data-light-theme=light][data-dark-theme=dark]",
+        "div[data-color-mode=light]"
+      ],
+      "anchors": [
+        {
+          "slot": "error.notFound.caption",
+          "insert": "after",
+          "nativeSignature": "error.notFound.caption|div||1",
+          "host": "main > … > div > div",
+          "authored": false,
+          "interactive": false
+        }
+      ],
+      "candidates": [
+        {
+          "slot": "error.notFound.caption",
+          "status": "enabled",
+          "path": "main > … > div > div > img",
+          "reason": null
+        }
+      ]
+    }
+  ]
+}

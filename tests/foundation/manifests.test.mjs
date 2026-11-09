@@ -46,7 +46,7 @@ test("the legacy entry lists exactly the runtime files in extension/, and the ma
     }
   };
   await walk("");
-  const runtime = files.filter((path) => path !== "manifest.json" && !path.startsWith("manifests/")).sort();
+  const runtime = files.filter((path) => path !== "manifest.json" && !path.startsWith("manifests/") && !path.startsWith("content/")).sort();
   assert.equal(config.extension.entry, "legacy-1.1.0");
   assert.deepEqual(entry.files, runtime);
   for (const browser of ["chrome", "firefox"]) {

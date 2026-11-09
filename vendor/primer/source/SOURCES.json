@@ -1,0 +1,67 @@
+{
+  "retrieved": "2026-11-08",
+  "page": "https://github.com/",
+  "files": {
+    "dark.css": {
+      "url": "https://github.githubassets.com/assets/dark-37b5e41810563d82.css",
+      "sha256": "add1cf5036900fd9e6b808442822aa0dd7b5861c77165ca7034445a33292d44b"
+    },
+    "dark_colorblind.css": {
+      "url": "https://github.githubassets.com/assets/dark_colorblind-6cec1cef27f80205.css",
+      "sha256": "effd0192310813e3078ac04c5a8a109cd7e7b689539aa70a97506e7509eda484"
+    },
+    "dark_colorblind_high_contrast.css": {
+      "url": "https://github.githubassets.com/assets/dark_colorblind_high_contrast-98af04953887e6b1.css",
+      "sha256": "6fc6c766de9bc615bb82e0a0fbed6c4b9271a54fc9ec13d3433fe3527f578d7e"
+    },
+    "dark_dimmed.css": {
+      "url": "https://github.githubassets.com/assets/dark_dimmed-c1d783f33c1db2a8.css",
+      "sha256": "d7ad4975d46ff42e56b3079aef5710d22c28269bdec5136173a0fd2cdf9c5911"
+    },
+    "dark_dimmed_high_contrast.css": {
+      "url": "https://github.githubassets.com/assets/dark_dimmed_high_contrast-6717e1e8beb457ad.css",
+      "sha256": "1856a457c10d1b46a9546117ff69e4e450bb29726810809ef62c112e38fcd697"
+    },
+    "dark_high_contrast.css": {
+      "url": "https://github.githubassets.com/assets/dark_high_contrast-d69295870cb5f203.css",
+      "sha256": "ff8b8e8e200bf6c79df123958474e7a9da2387a98ab03412e936735a390d503d"
+    },
+    "dark_tritanopia.css": {
+      "url": "https://github.githubassets.com/assets/dark_tritanopia-1bdae783a6e7f314.css",
+      "sha256": "e1528705c31b68bed2c1df73fec7da9548405e35c79df78713b58feb7ad57cba"
+    },
+    "dark_tritanopia_high_contrast.css": {
+      "url": "https://github.githubassets.com/assets/dark_tritanopia_high_contrast-cc7a55015ac3ac9e.css",
+      "sha256": "386cb01e30e81955cfe92cca0049d0b9ea15202269cd50968a2cd10800fc6985"
+    },
+    "light.css": {
+      "url": "https://github.githubassets.com/assets/light-0011b1fed09cb294.css",
+      "sha256": "be4716a33447d160d878c61f3e38778267faf83d16ac26f8fbdda5ba0feeb8f4"
+    },
+    "light_colorblind.css": {
+      "url": "https://github.githubassets.com/assets/light_colorblind-099f205806bcc4a8.css",
+      "sha256": "c58ad5ee8e4ce27c56becbccbd7e4a57bccf5105e802d196af87eb9632a4fd98"
+    },
+    "light_colorblind_high_contrast.css": {
+      "url": "https://github.githubassets.com/assets/light_colorblind_high_contrast-0676b30822f1adb0.css",
+      "sha256": "e4646ed8a26a756007a827a7d01ae446d88b097cc8ecb4fda05e9b35c1c70845"
+    },
+    "light_high_contrast.css": {
+      "url": "https://github.githubassets.com/assets/light_high_contrast-267ab2e12d3b7ade.css",
+      "sha256": "07270c699602f48282fffaa3ba373ca53cd4bedab7f83e1754391b08c983bb73"
+    },
+    "light_tritanopia.css": {
+      "url": "https://github.githubassets.com/assets/light_tritanopia-5ed4733e4ee6a8ba.css",
+      "sha256": "5444196c1cc38140cef13545deed0764744ada1bc528e72c646a72feb903be9d"
+    },
+    "light_tritanopia_high_contrast.css": {
+      "url": "https://github.githubassets.com/assets/light_tritanopia_high_contrast-c7ac71fdcac9204f.css",
+      "sha256": "2a59b378e9d7d0152b99e30882e64feb347ac2f622df33b50e3295943a40abec"
+    }
+  },
+  "license": {
+    "file": "LICENSE.primer-primitives.txt",
+    "url": "https://raw.githubusercontent.com/primer/primitives/main/LICENSE",
+    "sha256": "e63582a78dddebe610b6cb59f0e7f5f761c1bb6a1c9551443beddc64fe525c3a"
+  }
+}
