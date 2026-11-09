@@ -247,9 +247,50 @@ test("optional decoration stops for the rest of a navigation once it exceeds 10 
   await page.frame();
   assert.equal(renderer.calls.decorate, 1, "no more optional work this navigation");
   assert.ok(page.style(), "colors still apply");
+  page.fire("document", "turbo:visit");
   page.fire("document", "turbo:load");
   await page.frame();
   assert.equal(renderer.calls.decorate, 2, "a new navigation gets a new budget");
+  content.destroy();
+});
+
+test("the decoration budget adds up every pass of a navigation, not just the latest one", async () => {
+  const { storage, repository } = await stored();
+  const { page, renderer, events, content } = start(storage, {}, { decorateCost: 6 });
+  await content.ready;
+  page.document.readyState = "interactive";
+  page.fire("document", "DOMContentLoaded");
+  await page.frame();
+  assert.equal(renderer.calls.decorate, 1);
+  assert.equal(events.some((e) => e.type === "budget"), false, "6 ms is under the budget");
+  // Preference updates on the same document: each pass is under 10 ms, their total is not.
+  for (const [revision, value] of [[0, false], [1, true], [2, false]]) {
+    await repository.commit({ type: "setPreference", key: "appearance", value: value ? "full" : "calm" }, revision);
+    await page.frame();
+    await page.frame();
+  }
+  assert.equal(renderer.calls.decorate, 2, "the second pass reaches 12 ms and ends optional work");
+  assert.deepEqual(events.filter((e) => e.type === "budget"), [{ type: "budget", spent: 12 }]);
+  content.destroy();
+});
+
+test("completion events in separate frames do not reopen an exhausted navigation budget", async () => {
+  const { storage } = await stored();
+  const { page, renderer, content } = start(storage, {}, { decorateCost: LIMITS.maxNavigationMs });
+  await content.ready;
+  page.fire("document", "turbo:visit");
+  page.document.readyState = "interactive";
+  page.fire("document", "turbo:render");
+  await page.frame();
+  assert.equal(renderer.calls.decorate, 1);
+  page.fire("document", "turbo:load");
+  await page.frame();
+  page.fire("document", "pjax:end");
+  await page.frame();
+  assert.equal(renderer.calls.decorate, 1, "turbo:load and a late completion belong to the same navigation");
+  page.fire("view", "popstate");
+  await page.frame();
+  assert.equal(renderer.calls.decorate, 2, "history navigation starts a new budget");
   content.destroy();
 });
 

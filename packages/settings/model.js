@@ -151,18 +151,24 @@ export function validateSettings(value, catalog) {
 
 /**
  * Builds the safest usable settings from a damaged record: every field that validates on its own
- * is kept, the rest take defaults, and what was dropped goes to `dropped` for the recovery copy.
+ * is kept, the rest take defaults, and every value replaced goes to `dropped` for the recovery copy.
  */
 export function salvageSettings(value, catalog) {
   const settings = defaultSettings(catalog);
   const dropped = {};
   if (!isPlainObject(value)) return { settings, dropped: { record: value } };
+  const extraKeys = Object.fromEntries(Object.entries(value).filter(([key]) => !SETTINGS_KEYS.includes(key)));
+  if (Object.keys(extraKeys).length) dropped.extraKeys = extraKeys;
+  if (value.settingsVersion !== SETTINGS_VERSION) dropped.settingsVersion = value.settingsVersion;
   if (Number.isSafeInteger(value.revision) && value.revision >= 0) settings.revision = value.revision;
+  else if ("revision" in value) dropped.revision = value.revision;
   for (const key of ["enabled", "onboardingCompleted"]) {
     if (typeof value[key] === "boolean") settings[key] = value[key];
     else if (key in value) dropped[key] = value[key];
   }
   if (isPlainObject(value.preferences)) {
+    const preferences = Object.entries(value.preferences).filter(([key, field]) => (key === "appearance" ? !APPEARANCE_MODES.includes(field) : !BOOLEAN_PREFERENCE_KEYS.includes(key) || typeof field !== "boolean"));
+    if (preferences.length) dropped.preferences = Object.fromEntries(preferences);
     for (const key of BOOLEAN_PREFERENCE_KEYS) if (typeof value.preferences[key] === "boolean") settings.preferences[key] = value.preferences[key];
     // Either value asking for Calm wins: less decoration is the safe reading.
     const calm = value.preferences.appearance === "calm" || value.preferences.extras === false;
@@ -186,13 +192,17 @@ export function salvageSettings(value, catalog) {
 
   const ids = new Set(kept.map((t) => t.id));
   if (isPlainObject(value.cssConsent)) {
+    const consent = {};
     for (const [id, record] of Object.entries(value.cssConsent)) {
       if (!consentIssues({ [id]: record }, ids, "").length) settings.cssConsent[id] = { hash: record.hash, sanitizerVersion: record.sanitizerVersion };
+      else consent[id] = record;
     }
-  }
+    if (Object.keys(consent).length) dropped.cssConsent = consent;
+  } else if ("cssConsent" in value) dropped.cssConsent = value.cssConsent;
   const selected = value.selectedThemeId;
   if (typeof selected === "string" && (selected.startsWith(LOCAL_THEME_ID_PREFIX) ? ids.has(selected) : catalog.has(selected))) settings.selectedThemeId = selected;
   else if ("selectedThemeId" in value) dropped.selectedThemeId = selected;
   if (!migrationIssues(value.migration, "").length) settings.migration = structuredClone(value.migration);
+  else if ("migration" in value) dropped.migration = value.migration;
   return { settings, dropped };
 }

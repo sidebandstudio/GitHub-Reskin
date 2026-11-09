@@ -17,9 +17,12 @@ page-storage call removes 1.1.0's `github-reskin-css` key, without reading it, a
 | --- | --- |
 | `reskin.settings` | `SettingsV2`: `settingsVersion: 2`, `revision`, `enabled`, `selectedThemeId`, `preferences {appearance, extras, text, motion, fonts, effects}`, `cssConsent {[localId]: {hash, sanitizerVersion}}`, `customThemes`, `onboardingCompleted`, `migration {from?, notices}` |
 | `reskin.boot` | `BootRecord`, or `null` when disabled or no snapshot could be made. Written in the same `storage.set` as settings. |
-| `reskin.lastGood` | `{themeId, sourceHash, revision}` of the previous selection, for Undo. Cleared, with an `undo-cleared` notice, when its local theme is deleted. |
+| `reskin.lastGood` | `{themeId, sourceHash, revision}` of the previous selection, for Undo. Cleared, with an `undo-cleared` notice, when its local theme is deleted, including when that theme was the selection being replaced. |
 | `reskin.draft` | One editor draft, up to 1.25 MiB. |
-| `reskin.recovery` | One bounded copy (1 MiB) of 1.x or damaged v2 data that could not be used. It is kept until `dismissMigration` or `resetAll`. |
+| `reskin.recovery` | One bounded copy (1 MiB) of 1.x or damaged v2 data that could not be used. It is kept until `dismissMigration` or `resetAll`. A later salvage never replaces it: its copy is appended to `salvaged` within the room left, and what does not fit is marked truncated. |
+
+A commit clears `reskin.lastGood`, `reskin.draft` or `reskin.recovery` by writing `null` in the same
+`storage.set` as settings and boot, never by a separate removal, and readers treat `null` as absent.
 
 The limits: 50 saved themes, 4 MiB of canonical custom source and 8 MiB across every record. The
 8 MiB is measured, keys included, before each write. A write that would exceed it is refused, and
@@ -31,7 +34,7 @@ the committed state stays.
 | --- | --- |
 | `createCatalogSource(entries)` | `{hash, ids, has, document, sourceHash}` from validated bundled documents. C6 builds it from `themes/catalog.json`. |
 | `validateSettings(value, catalog)` | `{ok:true, settings, upgraded}` or `{ok:false, newer, issues}`. It is strict, except that a Revision 3 record without `appearance`/`cssConsent` is upgraded, and there extras false becomes Calm. |
-| `salvageSettings(value, catalog)` | Rebuilds a damaged record from defaults, keeping every field that validates on its own. Whatever it drops goes to recovery. |
+| `salvageSettings(value, catalog)` | Rebuilds a damaged record from defaults, keeping every field that validates on its own. Every value it drops or replaces, down to a single preference, goes to recovery. |
 | `effectivePreferences(settings)` | `{enabled, appearance, extras, text, motion, fonts, effects}`, with extras false under Calm. |
 | `migrateLegacy(raw, {catalog, newId, repair?})` | The 1.1.0 migration table below. Pure. |
 | `reduceAction(settings, action, {catalog, newId, css?, images?})` | Applies one commit action, or throws `ActionError`. |

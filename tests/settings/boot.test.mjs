@@ -175,7 +175,8 @@ test("the package's boot.css gate is finite, bounded and bypassed by forced colo
   assert.match(css, /@media not \(forced-colors: active\)/);
   assert.match(css, /html:not\(\[data-reskin-boot\]\)/);
   assert.match(css, /animation: reskin-boot-gate 120ms step-end 0s 1 normal none running !important;/);
-  assert.match(css, /visibility: hidden;/);
-  assert.equal(/infinite|forwards|both|url\(|@import|opacity|display/.test(css.replace(/\/\*[\s\S]*?\*\//g, "")), false);
+  // Both keyframes hold the same values under step-end, so opacity is a hold, never a fade.
+  assert.match(css, /from,\s*to \{\s*visibility: hidden;\s*opacity: 0;\s*\}/);
+  assert.equal(/infinite|forwards|both|transition|url\(|@import|display/.test(css.replace(/\/\*[\s\S]*?\*\//g, "")), false);
   assert.ok(Buffer.byteLength(css) < 1024);
 });

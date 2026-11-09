@@ -154,14 +154,18 @@ test("saving, selecting and deleting a local theme keeps selection, lastGood and
   const deleted = await repository.commit({ type: "deleteCustom", id }, 2);
   assert.equal(deleted.ok, true);
   assert.deepEqual(deleted.notices, ["undo-cleared"], "the recovery reference is cleared visibly");
-  assert.equal(storage.data.has(STORAGE_KEYS.lastGood), false);
+  assert.equal(await repository.lastGood(), null);
 });
 
 test("deleting the selected local theme first switches to its built-in source", async () => {
-  const { repository } = await ready();
+  const { storage, repository } = await ready();
   const saved = await repository.commit({ type: "saveCustom", document: nord, basedOn: "nord", select: true }, 0);
   const result = await repository.commit({ type: "deleteCustom", id: saved.settings.selectedThemeId }, 1);
   assert.equal(result.settings.selectedThemeId, "nord");
+  // Undo cannot point at the deleted theme: the reference is cleared, visibly, in the same write.
+  assert.deepEqual(result.notices, ["undo-cleared"]);
+  assert.equal(await repository.lastGood(), null);
+  assert.equal(storage.data.get(STORAGE_KEYS.lastGood), null);
 });
 
 test("the primary switch and the extras alias move together; child switches never do", () => {
@@ -262,7 +266,31 @@ test("reset all clears drafts, recovery and lastGood but does not repeat first r
   assert.equal(reply.ok, true);
   assert.equal(reply.settings.selectedThemeId, DEFAULT_THEME_ID);
   assert.equal(reply.settings.onboardingCompleted, true);
-  for (const key of [STORAGE_KEYS.draft, RECOVERY_KEY, STORAGE_KEYS.lastGood]) assert.equal(storage.data.has(key), false, key);
+  for (const key of [STORAGE_KEYS.draft, RECOVERY_KEY, STORAGE_KEYS.lastGood]) assert.equal(storage.data.get(key), null, key);
+});
+
+test("a reset or dismissal whose write fails reports failure and leaves every record in place", async () => {
+  const { storage, repository } = await ready({ theme: "vaporwave" }, { remove: async () => { throw new Error("remove denied"); } });
+  await repository.saveDraft({ document: nord, savedAt: 1 });
+  await repository.commit({ type: "selectTheme", id: "nord" }, 0);
+  storage.log.length = 0;
+  // Removal is never part of a commit: cleared records go in the one set, as null.
+  const reset = await repository.commit({ type: "resetAll" }, 1);
+  assert.equal(reset.ok, true);
+  assert.deepEqual(storage.log.filter(([op]) => op === "remove"), []);
+  for (const key of [STORAGE_KEYS.draft, RECOVERY_KEY, STORAGE_KEYS.lastGood]) assert.equal(storage.data.get(key), null, key);
+  assert.equal(await repository.loadDraft(), null);
+  assert.equal(await repository.loadRecovery(), null);
+  assert.equal(await repository.lastGood(), null);
+
+  let fail = false;
+  const second = await ready({ theme: "vaporwave" }, { set: async () => { if (fail) throw new Error("denied"); } });
+  const before = second.storage.snapshot();
+  fail = true;
+  const dismissed = await second.repository.commit({ type: "dismissMigration" }, 0);
+  assert.equal(dismissed.ok, false);
+  assert.equal(dismissed.code, "storage");
+  assert.deepEqual(second.storage.snapshot(), before, "the recovery copy is still there and nothing claims otherwise");
 });
 
 test("dismissing migration clears notices and the recovery copy", async () => {
@@ -306,6 +334,32 @@ test("a corrupt v2 record is salvaged field by field with a bounded recovery cop
   assert.ok(settings.migration.notices.includes("settings-recovered"));
   const recovery = storage.data.get(RECOVERY_KEY);
   assert.deepEqual(recovery.customThemes, [{ id: "local:bad", document: { name: 1 } }]);
+});
+
+test("corruption after a repaired migration keeps the original colors in recovery", async () => {
+  const custom = { bg: "#0a0a17", text: "#0a0a17", accent: "#0a0a17", graph: "#0a0a17" };
+  const { storage, init } = await ready({ theme: "cyberpunk", enabled: true, custom });
+  assert.equal(init.state, "migrated");
+  assert.deepEqual(storage.data.get(RECOVERY_KEY).custom, custom);
+  assert.equal(storage.data.has("custom"), false, "the legacy keys are gone, so recovery is the only copy");
+  storage.data.set(STORAGE_KEYS.settings, { ...stored(storage), preferences: { ...stored(storage).preferences, text: "yes" } });
+
+  const restarted = createRepository(storage, context());
+  assert.equal((await restarted.initialize()).state, "recovered");
+  const recovery = await restarted.loadRecovery();
+  assert.equal(recovery.from, "1.1.0");
+  assert.deepEqual(recovery.custom, custom, "the four original colors survive");
+  assert.deepEqual(recovery.salvaged, [{ from: "2", preferences: { text: "yes" } }], "the replaced preference is recorded");
+
+  // When the earlier copy leaves no room, it stays whole and the new copy is reported truncated.
+  const full = { from: "1.1.0", custom: "x".repeat(STORAGE_LIMITS.maxRecoveryBytes - 28) };
+  storage.data.set(RECOVERY_KEY, full);
+  storage.data.set(STORAGE_KEYS.settings, { ...stored(storage), enabled: "no" });
+  assert.equal((await createRepository(storage, context()).initialize()).state, "recovered");
+  const kept = storage.data.get(RECOVERY_KEY);
+  assert.equal(kept.custom, full.custom);
+  assert.deepEqual(kept.salvaged, [{ from: "2", enabled: { truncated: true, bytes: 4 } }]);
+  assert.ok(stored(storage).migration.notices.includes("recovery-truncated"));
 });
 
 test("a newer settings record is never overwritten and commits are refused", async () => {

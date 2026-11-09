@@ -8,7 +8,8 @@
 // boot        runs the boot record and lifecycle unit tests, then measures the boot gate in real
 //             Chromium and Firefox: a stalled boot (CSS only, and the JavaScript watchdog) must
 //             release GitHub within 120 ms plus one frame, a healthy boot must end the gate in the
-//             same frame its stylesheet lands, and forced colors must bypass the gate.
+//             same frame its stylesheet lands, forced colors must bypass the gate, and a descendant
+//             declaring visibility:visible must not paint while the gate is pending.
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -96,7 +97,7 @@ async function checkMigrations(root) {
 // ---------------------------------------------------------------------------------------------
 // Real-engine boot gate timing.
 
-// Samples every animation frame: document time, the root's computed visibility, the boot marker
+// Samples every animation frame: document time, the root's computed visibility and opacity, the boot marker
 // and whether the owned style holds CSS. Records the gate animation's start, and the instant the
 // marker changes with whether the style was already there.
 const SAMPLER = `
@@ -113,7 +114,7 @@ new MutationObserver(() => {
       if (a && a.startTime !== null) g.start = a.startTime;
     }
     const s = document.getElementById("reskin-style");
-    g.frames.push({ t: document.timeline.currentTime, visibility: getComputedStyle(document.documentElement).visibility, boot: document.documentElement.getAttribute("data-reskin-boot"), styled: Boolean(s && s.isConnected && s.textContent) });
+    g.frames.push({ t: document.timeline.currentTime, visibility: getComputedStyle(document.documentElement).visibility, opacity: getComputedStyle(document.documentElement).opacity, boot: document.documentElement.getAttribute("data-reskin-boot"), styled: Boolean(s && s.isConnected && s.textContent) });
     if (g.frames.length < 45) loop();
   });
 })();`;
@@ -125,6 +126,42 @@ function page(bootCss, script) {
 }
 
 const median = (values) => [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)];
+
+// GitHub's Primer ships .v-visible{visibility:visible!important}. The gate is frozen 60 ms in by the
+// last parser script (Firefox has no root animation while the head parses), so the capture cannot
+// race it; a pixel-identical match with the same region after the child is removed proves the child
+// did not paint.
+const LEAK_PAGE = (bootCss) => `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>leak</title>
+<style>${bootCss}\n.v-visible{visibility:visible!important}#leak{width:240px;height:120px;background:#d00;color:#fff}</style></head>
+<body><p>Native GitHub text.</p><div id="leak" class="v-visible">Visible native child</div>
+<script>for (const a of document.getAnimations()) if (a.animationName === "reskin-boot-gate") { a.pause(); a.currentTime = 60; }</script></body></html>`;
+
+async function visibleDescendant(browser, bootCss, check) {
+  const label = `${browser.browserType().name()} visible descendant`;
+  const context = await browser.newContext();
+  try {
+    const tab = await context.newPage();
+    await tab.route("**/*", (route) => (route.request().url() === "http://reskin.test/" ? route.fulfill({ contentType: "text/html", body: LEAK_PAGE(bootCss) }) : route.abort()));
+    await tab.goto("http://reskin.test/");
+    const state = await tab.evaluate(() => {
+      const gate = document.getAnimations().find((a) => a.animationName === "reskin-boot-gate");
+      const { x, y, width, height } = document.getElementById("leak").getBoundingClientRect();
+      return { paused: gate?.playState === "paused", child: getComputedStyle(document.getElementById("leak")).visibility, clip: { x, y, width, height } };
+    });
+    if (!check(state.paused && state.child === "visible", `${label}: fixture did not hold the gate with a visible child`)) return;
+    const shot = () => tab.screenshot({ clip: state.clip });
+    const gated = await shot();
+    await tab.evaluate(() => document.getAnimations().find((a) => a.animationName === "reskin-boot-gate").finish());
+    const open = await shot();
+    await tab.evaluate(() => document.getElementById("leak").remove());
+    const blank = await shot();
+    check(!open.equals(blank), `${label}: the fixture child never painted`);
+    check(gated.equals(blank), `${label}: the child painted while the gate was pending`);
+    console.log(`  ${label}: ${gated.equals(blank) ? "no paint" : "painted"} during the gate`);
+  } finally {
+    await context.close();
+  }
+}
 
 async function gateScenarios(root, check) {
   const { build } = await import("esbuild");
@@ -153,7 +190,7 @@ async function gateScenarios(root, check) {
     const browser = await type.launch();
     try {
       for (const [name, html] of Object.entries(scenarios)) {
-        for (const forced of type === chromium ? [false, true] : [false]) {
+        for (const forced of [false, true]) {
           if (forced && name !== "css-only stall") continue;
           const label = `${type.name()} ${name}${forced ? " under forced colors" : ""}`;
           const context = await browser.newContext({ ...(forced && { forcedColors: "active" }) });
@@ -186,6 +223,7 @@ async function gateScenarios(root, check) {
             continue;
           }
           check(gate.start !== null && gate.frames[0].visibility === "hidden", `${label}: the gate was not active at the first frame`);
+          check(gate.frames.every((f) => f.visibility === "visible" || f.opacity === "0"), `${label}: a gated frame was not fully transparent`);
           const released = firstVisible.t - gate.start;
           // 120 ms plus one frame, measured on real frames; 1 ms for timer rounding.
           check(released <= GATE_MS + frameMs + 1, `${label}: GitHub released after ${released.toFixed(1)} ms (limit ${(GATE_MS + frameMs).toFixed(1)})`);
@@ -197,6 +235,7 @@ async function gateScenarios(root, check) {
           console.log(`  ${label}: visible ${released.toFixed(1)} ms after the gate started, frame ${frameMs.toFixed(1)} ms`);
         }
       }
+      await visibleDescendant(browser, bootCss, check);
     } finally {
       await browser.close();
     }

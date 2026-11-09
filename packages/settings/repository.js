@@ -1,17 +1,18 @@
 // The settings repository: reads that never write, and the one serialized writer. Only the
 // background creates a writing repository. Every commit re-reads storage first, so a restarted
 // worker and an empty in-memory queue lose nothing; storage is the only authority.
-import { ISSUE_CODES, LEGACY_STORAGE_KEYS, STORAGE_KEYS } from "../contracts/index.js";
+import { ISSUE_CODES, LEGACY_STORAGE_KEYS, LOCAL_THEME_ID_PREFIX, STORAGE_KEYS } from "../contracts/index.js";
 import { ActionError, reduceAction } from "./actions.js";
 import { capacityIssues } from "./admission.js";
 import { bootRecordProblems, buildBootRecord } from "./boot.js";
 import { selectedSource } from "./catalog.js";
 import { NOTICES, RECOVERY_KEY, STORAGE_LIMITS } from "./constants.js";
 import { boundRecovery, hasLegacyKeys, migrateLegacy } from "./migrate.js";
-import { defaultSettings, issue, salvageSettings, validateSettings } from "./model.js";
+import { defaultSettings, isPlainObject, issue, salvageSettings, validateSettings } from "./model.js";
 import { sourceHash } from "../engine/index.js";
 
 const ALL_KEYS = [...Object.values(STORAGE_KEYS), RECOVERY_KEY];
+const jsonBytes = (value) => new TextEncoder().encode(JSON.stringify(value)).length;
 const storageIssue = (error) => issue(ISSUE_CODES.storage, "", `Storage failed: ${error?.message ?? String(error)}`);
 
 /**
@@ -60,19 +61,17 @@ export function createRepository(storage, context) {
   const boot = (settings) => buildBootRecord(settings, { catalog, snapshot });
 
   // The record a write leaves, measured with every other extension record before it is attempted.
+  // A cleared draft, recovery or lastGood is written as null in the same set, never removed in a
+  // second call, so a commit that reports success has no stale record beside it.
   async function write(raw, changes) {
     const after = { ...raw, ...changes };
-    for (const [key, value] of Object.entries(changes)) if (value === undefined) delete after[key];
     const capacity = capacityIssues(Object.fromEntries(ALL_KEYS.map((key) => [key, after[key]])));
     if (capacity.length) throw new ActionError("storage", capacity);
-    const set = Object.fromEntries(Object.entries(changes).filter(([, value]) => value !== undefined));
-    const removed = Object.keys(changes).filter((key) => changes[key] === undefined);
     try {
-      await storage.set(set);
+      await storage.set(changes);
     } catch (error) {
       throw new ActionError("storage", [storageIssue(error)]);
     }
-    if (removed.length) await storage.remove(removed).catch(() => {});
   }
 
   /**
@@ -124,11 +123,16 @@ export function createRepository(storage, context) {
     }
     if (result.newer) return { state: "newer", issues: result.issues };
     const { settings, dropped } = salvageSettings(stored, catalog);
-    const bounded = boundRecovery(dropped);
+    // Earlier recovery (the 1.1.0 originals or an earlier salvage) is kept whole until dismissed;
+    // this salvage gets only the room left, and what does not fit is reported as truncated.
+    const previous = isPlainObject(raw[RECOVERY_KEY]) ? raw[RECOVERY_KEY] : null;
+    const bounded = boundRecovery(dropped, STORAGE_LIMITS.maxRecoveryBytes - (previous ? jsonBytes(previous) : 0));
+    const copy = { from: "2", ...bounded.value };
+    const recovery = previous ? { ...previous, salvaged: [...(Array.isArray(previous.salvaged) ? previous.salvaged : []), copy] } : copy;
     const notices = [...settings.migration.notices, NOTICES.settingsRecovered, ...(bounded.truncated ? [NOTICES.recoveryTruncated] : [])];
     settings.migration = { ...settings.migration, notices: [...new Set(notices)].slice(0, STORAGE_LIMITS.maxNotices) };
     settings.revision += 1;
-    await write(raw, { [STORAGE_KEYS.settings]: settings, [STORAGE_KEYS.boot]: boot(settings), [RECOVERY_KEY]: { from: "2", ...bounded.value } });
+    await write(raw, { [STORAGE_KEYS.settings]: settings, [STORAGE_KEYS.boot]: boot(settings), [RECOVERY_KEY]: recovery });
     return { state: "recovered", settings, issues: result.issues };
   }
 
@@ -182,8 +186,8 @@ export function createRepository(storage, context) {
       const changes = { [STORAGE_KEYS.settings]: next, [STORAGE_KEYS.boot]: boot(next) };
       const notices = [];
       Object.assign(changes, lastGoodChanges(raw[STORAGE_KEYS.lastGood], current, next, notices));
-      if (action.type === "resetAll") Object.assign(changes, { [STORAGE_KEYS.draft]: undefined, [RECOVERY_KEY]: undefined, [STORAGE_KEYS.lastGood]: undefined });
-      if (action.type === "dismissMigration") changes[RECOVERY_KEY] = undefined;
+      if (action.type === "resetAll") Object.assign(changes, { [STORAGE_KEYS.draft]: null, [RECOVERY_KEY]: null, [STORAGE_KEYS.lastGood]: null });
+      if (action.type === "dismissMigration") changes[RECOVERY_KEY] = null;
       try {
         await write(raw, changes);
       } catch (error) {
@@ -195,20 +199,19 @@ export function createRepository(storage, context) {
   }
 
   // lastGood is one recoverable prior selection, by theme ID and source hash. Deleting its local
-  // theme clears it visibly.
+  // theme clears it visibly, including when that theme was the selection the action replaced.
   function lastGoodChanges(stored, current, next, notices) {
-    if (current.selectedThemeId !== next.selectedThemeId) {
+    const deleted = (id) => typeof id === "string" && id.startsWith(LOCAL_THEME_ID_PREFIX) && !next.customThemes.some((t) => t.id === id);
+    const changed = current.selectedThemeId !== next.selectedThemeId;
+    if (changed && !deleted(current.selectedThemeId)) {
       const source = selectedSource(current, catalog);
-      return { [STORAGE_KEYS.lastGood]: source ? { themeId: current.selectedThemeId, sourceHash: sourceHash(source), revision: current.revision } : undefined };
+      return { [STORAGE_KEYS.lastGood]: source ? { themeId: current.selectedThemeId, sourceHash: sourceHash(source), revision: current.revision } : null };
     }
-    if (stored && typeof stored.themeId === "string" && stored.themeId.startsWith("local:") && !next.customThemes.some((t) => t.id === stored.themeId)) {
-      notices.push(NOTICES.undoCleared);
-      return { [STORAGE_KEYS.lastGood]: undefined };
-    }
-    return {};
+    if (!deleted(changed ? current.selectedThemeId : stored?.themeId)) return {};
+    notices.push(NOTICES.undoCleared);
+    return { [STORAGE_KEYS.lastGood]: null };
   }
 
-  const draftBytes = (draft) => new TextEncoder().encode(JSON.stringify(draft)).length;
   return {
     initialize,
     read: () => readSettings(storage, context),
@@ -219,7 +222,7 @@ export function createRepository(storage, context) {
     },
     saveDraft(draft) {
       return serialize(async () => {
-        if (draftBytes(draft) > STORAGE_LIMITS.maxDraftBytes) throw new ActionError("storage", [issue(ISSUE_CODES.capacity, "/draft", "This draft is larger than 1.25 MiB. Download it, then make it smaller.")]);
+        if (jsonBytes(draft) > STORAGE_LIMITS.maxDraftBytes) throw new ActionError("storage", [issue(ISSUE_CODES.capacity, "/draft", "This draft is larger than 1.25 MiB. Download it, then make it smaller.")]);
         await write(await readAll(), { [STORAGE_KEYS.draft]: draft });
       });
     },

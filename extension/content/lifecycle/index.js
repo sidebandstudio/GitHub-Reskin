@@ -25,6 +25,9 @@ import {
 
 const MEDIA_QUERIES = ["(prefers-color-scheme: dark)", "(forced-colors: active)", "(prefers-reduced-motion: reduce)"];
 const DEFAULT_MODE_ATTRIBUTES = ["data-color-mode", "data-light-theme", "data-dark-theme"];
+// A navigation begins once (turbo:visit, pjax:start) and may complete in several events; only the
+// beginning opens a new optional-work budget.
+const NAVIGATION_VISIT = ["turbo:visit", "pjax:start"];
 const NAVIGATION_END = ["turbo:load", "turbo:render", "pjax:end"];
 const NAVIGATION_START = ["turbo:before-render", "turbo:before-cache", "pjax:start"];
 const REMOVAL_WINDOW_MS = 1000;
@@ -55,6 +58,7 @@ export function startContent({ storage, document, view, catalog, renderer, onEve
   let prefsNow = null;
   let decorations = null;
   let decorationsDropped = false;
+  let navigationSpent = 0;
   let frame = 0;
   const pending = new Set();
   const removals = [];
@@ -198,11 +202,11 @@ export function startContent({ storage, document, view, catalog, renderer, onEve
     if (!renderer.decorate || !resolvedNow || decorationsDropped || document.readyState === "loading") return;
     const start = now();
     decorations = renderer.decorate(document, resolvedNow, prefsNow) ?? null;
-    const spent = now() - start;
-    // Optional work stops for this navigation once it exceeds the navigation budget.
-    if (spent > LIMITS.maxNavigationMs) {
+    navigationSpent += now() - start;
+    // Optional work stops for the rest of this navigation once its passes together reach the budget.
+    if (navigationSpent >= LIMITS.maxNavigationMs) {
       decorationsDropped = true;
-      onEvent({ type: "budget", spent });
+      onEvent({ type: "budget", spent: navigationSpent });
     }
   }
 
@@ -262,12 +266,17 @@ export function startContent({ storage, document, view, catalog, renderer, onEve
   // Navigation: owned nodes leave before Turbo caches or swaps the body, and are placed again once
   // the new page is in. Each navigation gets a fresh optional-work budget.
   for (const type of NAVIGATION_START) listen(document, type, dropDecorations);
-  const navigated = () => {
+  const began = () => {
+    navigationSpent = 0;
     decorationsDropped = false;
-    schedule("decorate");
   };
+  const navigated = () => schedule("decorate");
+  for (const type of NAVIGATION_VISIT) listen(document, type, began);
   for (const type of NAVIGATION_END) listen(document, type, navigated);
-  listen(view, "popstate", navigated);
+  listen(view, "popstate", () => {
+    began();
+    navigated();
+  });
   if (document.readyState === "loading") listen(document, "DOMContentLoaded", navigated, { once: true });
   // bfcache: drop queued work on the way out, and re-read on return because storage may have
   // changed while the page was frozen.
@@ -278,6 +287,7 @@ export function startContent({ storage, document, view, catalog, renderer, onEve
   listen(view, "pageshow", (event) => {
     if (event.persisted) {
       schedule("read");
+      began();
       navigated();
     } else if (pending.size && !frame) frame = view.requestAnimationFrame(flush);
   });

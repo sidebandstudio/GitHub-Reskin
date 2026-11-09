@@ -96,8 +96,9 @@ function localTheme(source, custom, repair) {
   return validateTheme(document).ok ? { document, repairs } : null;
 }
 
-// Keeps the recovery copy within its bound. A field too large to keep is replaced by its size.
-export function boundRecovery(recovery) {
+// Keeps the recovery copy within its bound, or within the room an earlier copy leaves. A field too
+// large to keep is replaced by its size.
+export function boundRecovery(recovery, limit = STORAGE_LIMITS.maxRecoveryBytes) {
   const value = {};
   let truncated = false;
   let bytes = 0;
@@ -108,7 +109,7 @@ export function boundRecovery(recovery) {
     } catch {
       size = Infinity;
     }
-    if (bytes + size <= STORAGE_LIMITS.maxRecoveryBytes) {
+    if (bytes + size <= limit) {
       value[key] = field === undefined ? null : jsonCopy(field);
       bytes += size;
     } else {
