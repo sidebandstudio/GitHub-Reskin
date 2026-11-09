@@ -1,0 +1,50 @@
+<!doctype html>
+<!-- Modeled on GitHub's logged-out 404 at https://github.com/whoisaldo/this-page-does-not-exist,
+     recorded on 2026-11-09. The structure, classes and inline styles of <main> are GitHub's: a
+     z-index:0 stage holding the backdrop image at z-index:1 and, above it, the z-index:2,
+     overflow-hidden column of the illustration. The images are stand-ins of the same size; the
+     illustration is transparent around its art, as GitHub's is. The utility classes it uses are
+     reproduced below. -->
+<html lang="en" data-color-mode="dark" data-light-theme="light" data-dark-theme="dark">
+<head>
+  <title>Page not found · GitHub · GitHub</title>
+  <meta name="route-pattern" content="/:user_id/:repository">
+  <meta name="route-controller" content="application">
+  <meta name="route-action" content="not_found">
+  <style>
+    body{margin:0;font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+    header{display:flex;align-items:center;gap:16px;height:68px;padding:0 16px;box-sizing:border-box}
+    header a{color:inherit}
+    .position-relative{position:relative}.position-absolute{position:absolute}
+    .overflow-hidden{overflow:hidden}.width-full{width:100%}.top-0{top:0}.left-0{left:0}
+    .d-block{display:block}.mx-auto{margin-left:auto;margin-right:auto}
+    .container-lg{max-width:1012px;margin:0 auto;padding:32px 16px;box-sizing:border-box}
+    .not-found-search{display:flex;gap:8px}
+    .not-found-search input{flex:1;height:32px}
+    @media (max-width:767.98px){header{height:52px}}
+  </style>
+</head>
+<body>
+<div class="logged-out env-production page-responsive">
+<header class="HeaderMktg"><a href="/" aria-label="Homepage">GitHub</a><a href="/login">Sign in</a></header>
+<div class="application-main"><main class="font-mktg">
+  <div class="position-relative" style="z-index: 0; --not-found-height: clamp(clamp(240px, calc(100vw - 280px), 370px), min(56.3vw, calc(100dvh - 390px)), 529px)">
+    <div class="position-absolute overflow-hidden width-full top-0 left-0" style="height: var(--not-found-height)" data-hpc="">
+      <img data-static-error-asset="404-background" alt="" class="position-absolute" height="415" width="940" style="inset: 0; z-index: 1; width: 100%; height: 100%; max-width: none; object-fit: cover; object-position: center 48%;" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1259' height='465'%3E%3Crect width='1259' height='173' fill='%2371BBE7'/%3E%3Crect y='172' width='1259' height='293' fill='%23F1DCB1'/%3E%3C/svg%3E">
+    </div>
+    <div class="position-relative width-full mx-auto overflow-hidden" style="z-index: 2; max-width: 806px; clear: both; padding: 0 var(--base-size-8, 8px); height: var(--not-found-height);">
+      <img data-static-error-asset="404-illustration" alt="404 “This is not the web page you are looking for”" class="d-block width-full" width="806" height="275" style="height: auto; position: relative; top: 50%; transform: translateY(-50%);" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='806' height='275'%3E%3Crect x='20' y='10' width='240' height='120' rx='12' fill='%23ffffff'/%3E%3Cellipse cx='380' cy='240' rx='84' ry='26' fill='%23b29c6f'/%3E%3Crect x='300' y='40' width='160' height='190' rx='40' fill='%235c3d2e'/%3E%3Crect x='420' y='120' width='370' height='110' rx='30' fill='%23a98a69'/%3E%3C/svg%3E">
+    </div>
+  </div>
+  <div class="container-lg">
+    <form accept-charset="UTF-8" method="get" action="/search" class="not-found-search">
+      <label for="not-found-search">Find code, projects, and people on GitHub:</label>
+      <input type="text" id="not-found-search" name="q">
+      <button class="btn" type="submit">Search</button>
+    </form>
+    <p class="text-center"><a href="https://support.github.com?tags=dotcom-404">Contact Support</a> — <a href="https://githubstatus.com">GitHub Status</a> — <a href="https://twitter.com/githubstatus">@githubstatus</a></p>
+  </div>
+</main></div>
+</div>
+</body>
+</html>

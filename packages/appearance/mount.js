@@ -12,6 +12,12 @@ export const OWNED_ATTRIBUTE = "data-reskin-owned";
 export const SLOT_ATTRIBUTE = "data-reskin-slot";
 // Below this width an illustration has no reliable blank corner, and a corner caption flows.
 const CORNER_MIN_WIDTH = 480;
+// The profile tag's distance above the line box of the name it labels.
+const TAG_GAP = 2;
+// A native neighbor with more elements than this counts as its whole box.
+const NEIGHBOR_ELEMENTS = 32;
+const CLEAR = /^(transparent|rgba\(.*,\s*0\))$/;
+const DRAWN = /^(img|svg|video|canvas|iframe|input|select|textarea|button)$/i;
 const INSERTS = ["after", "append", "before"];
 // Defense in depth behind the adapter's own locator rules: never decorate inside authored or
 // interactive content, even if an anchor points there.
@@ -63,17 +69,72 @@ function textRects(doc, node, skipOwned) {
   return rects;
 }
 
+// The nearest native element from node in one direction, skipping owned ones.
+function nativeSibling(node, step) {
+  while (node?.hasAttribute(OWNED_ATTRIBUTE)) node = node[step];
+  return node;
+}
+
 // What an overlay box may not cover: the line boxes of the host's own native text and the boxes
 // of its native neighbors. Owned copy is never an obstacle: an appended slot's copy sits inside
 // its own box, beneath the host.
 function obstacles(doc, host) {
   const rects = textRects(doc, host, true);
-  const native = (node, step) => {
-    while (node?.hasAttribute(OWNED_ATTRIBUTE)) node = node[step];
-    return node;
-  };
-  for (const node of [native(host.previousElementSibling, "previousElementSibling"), native(host.nextElementSibling, "nextElementSibling")]) if (node) rects.push(node.getBoundingClientRect());
+  for (const node of [nativeSibling(host.previousElementSibling, "previousElementSibling"), nativeSibling(host.nextElementSibling, "nextElementSibling")]) if (node) rects.push(node.getBoundingClientRect());
   return rects;
+}
+
+// An element paints its border box, or the ellipse inside it when every corner is rounded by half
+// the box or more, as GitHub draws avatars.
+function isRound(style, box) {
+  return ["TopLeft", "TopRight", "BottomRight", "BottomLeft"].every((corner) => {
+    const radius = style[`border${corner}Radius`];
+    return radius.endsWith("%") ? parseFloat(radius) >= 50 : parseFloat(radius) >= Math.min(box.width, box.height) / 2;
+  });
+}
+
+function covers(rect, { box, round }) {
+  if (!overlaps(rect, box)) return false;
+  if (!round) return true;
+  // The point of rect nearest the ellipse's center lies inside the ellipse.
+  const cx = box.left + box.width / 2;
+  const cy = box.top + box.height / 2;
+  const x = Math.max(rect.left, Math.min(cx, rect.right)) - cx;
+  const y = Math.max(rect.top, Math.min(cy, rect.bottom)) - cy;
+  return (x / (box.width / 2)) ** 2 + (y / (box.height / 2)) ** 2 < 1;
+}
+
+// What a native neighbor paints: its text and every element that draws something (an image or
+// control, a background, a border or a shadow). A transparent wrapper, such as the link around
+// an avatar, is not an obstacle; owned nodes take no pointer input, so they never block it.
+function painted(view, doc, node) {
+  const elements = [node, ...node.querySelectorAll("*")];
+  if (!view || elements.length > NEIGHBOR_ELEMENTS) return [{ box: node.getBoundingClientRect() }];
+  const shapes = textRects(doc, node, true).map((box) => ({ box }));
+  for (const element of elements) {
+    const style = view.getComputedStyle(element);
+    const border = ["Top", "Right", "Bottom", "Left"].some((side) => parseFloat(style[`border${side}Width`]) > 0 && !CLEAR.test(style[`border${side}Color`]));
+    if (style.visibility === "hidden") continue;
+    if (!DRAWN.test(element.tagName) && style.backgroundImage === "none" && CLEAR.test(style.backgroundColor) && style.boxShadow === "none" && !border) continue;
+    const box = element.getBoundingClientRect();
+    shapes.push({ box, round: isRound(style, box) });
+  }
+  return shapes;
+}
+
+// What the profile tag may not cover. It sits above or beside the first line of its host, so
+// beyond the host's native text and what its native neighbors paint, every element placed before
+// the host or before one of its ancestors inside root is an obstacle by its whole box.
+function tagObstacles(view, doc, root, host) {
+  const shapes = textRects(doc, host, true).map((box) => ({ box }));
+  const neighbors = [nativeSibling(host.previousElementSibling, "previousElementSibling"), nativeSibling(host.nextElementSibling, "nextElementSibling")];
+  for (const node of neighbors) if (node) shapes.push(...painted(view, doc, node));
+  for (let node = host; node && node !== root && root.contains(node); node = node.parentElement) {
+    for (let before = node.previousElementSibling; before; before = before.previousElementSibling) {
+      if (!neighbors.includes(before) && !before.hasAttribute(OWNED_ATTRIBUTE)) shapes.push({ box: before.getBoundingClientRect() });
+    }
+  }
+  return shapes;
 }
 
 // The nearest native element after node, skipping owned ones.
@@ -118,23 +179,61 @@ export function mountAppearance(root, resolved, prefs, anchors, { css = null, cs
     node.setAttribute(SLOT_ATTRIBUTE, slot);
     node.setAttribute("aria-hidden", "true");
   };
+  // Leaving the root's area counts as blocked too: a box nobody can see is not blank space.
+  const outside = (rect) => {
+    const bounds = (root.nodeType === 9 ? root.documentElement : root).getBoundingClientRect();
+    return rect.top < bounds.top || rect.left < bounds.left || rect.right > bounds.right;
+  };
   // Decoration must land in blank space. An overlay may not cover the host's native text or a
   // native neighbor; a caption edge, which hangs out of flow at the end of its paragraph, may not
   // cover the caption's own copy either. If the first place is not blank, try the one alternate
   // place. Returns false when that is not blank either: the caller leaves the slot out (a caption
   // keeps its copy and drops only its edge).
   const settle = (box, wrapper, caption, host) => {
-    // Leaving the root's area counts as blocked too: a box nobody can see is not blank space.
     const blocked = () => {
-      const bounds = (root.nodeType === 9 ? root.documentElement : root).getBoundingClientRect();
       const rect = box.getBoundingClientRect();
       const covered = caption ? textRects(doc, wrapper, false) : obstacles(doc, host);
-      return rect.top < bounds.top || rect.left < bounds.left || rect.right > bounds.right || covered.some((other) => overlaps(rect, other));
+      return outside(rect) || covered.some((other) => overlaps(rect, other));
     };
     if (!blocked()) return true;
     wrapper.setAttribute("data-rs-alt", "");
     if (!blocked()) return true;
     wrapper.removeAttribute("data-rs-alt");
+    return false;
+  };
+  // The profile tag labels the name like a kicker: just above the first line of its host's text, at
+  // its start. Where that is not blank space it sits at the end of that line instead, then at the
+  // end of the host's last line. Every place is measured from the lines, so the tag follows the
+  // name wherever GitHub's layout puts it, and nothing native moves. Returns false, with the
+  // badge detached, when no place is blank.
+  const tags = [];
+  const placeTag = (tag) => {
+    const { wrapper, box, host } = tag;
+    wrapper.removeAttribute("data-rs-alt");
+    if (!box.isConnected) wrapper.append(box);
+    const hostBox = host.getBoundingClientRect();
+    tag.size = `${Math.round(hostBox.width)}x${Math.round(hostBox.height)}`;
+    const lines = textRects(doc, host, true).filter((rect) => rect.width > 0 && rect.height > 0);
+    const at = wrapper.getBoundingClientRect();
+    const blocked = () => {
+      const rect = box.getBoundingClientRect();
+      return outside(rect) || tagObstacles(view, doc, root, host).some((shape) => covers(rect, shape));
+    };
+    if (lines.length) {
+      const [first] = lines;
+      const last = lines.at(-1);
+      box.style.setProperty("--rs-x", `${first.left - at.left}px`);
+      box.style.setProperty("--rs-y", `${at.bottom - first.top + TAG_GAP}px`);
+      if (!blocked()) return true;
+      wrapper.setAttribute("data-rs-alt", "");
+      const height = box.getBoundingClientRect().height;
+      for (const line of last === first ? [first] : [first, last]) {
+        box.style.setProperty("--rs-y", `${at.bottom - line.bottom + (line.height - height) / 2}px`);
+        if (!blocked()) return true;
+      }
+      wrapper.removeAttribute("data-rs-alt");
+    }
+    box.remove();
     return false;
   };
   // A corner caption the theme places: lay a frame exactly over the illustration and keep the copy
@@ -154,7 +253,10 @@ export function mountAppearance(root, resolved, prefs, anchors, { css = null, cs
     const art = host.getBoundingClientRect();
     const at = wrapper.getBoundingClientRect();
     corner.size = `${Math.round(art.width)}x${Math.round(art.height)}/${Math.round(at.width)}`;
-    frame.style.cssText = `left:${art.left - at.left}px;bottom:${at.top - art.bottom}px;width:${art.width}px;height:${art.height}px`;
+    // The frame stacks at the illustration's own z-index and after it, so it paints above the
+    // illustration and whatever the illustration covers, such as GitHub's 404 backdrop.
+    const z = parseInt(view?.getComputedStyle?.(host).zIndex, 10);
+    frame.style.cssText = `left:${art.left - at.left}px;bottom:${at.top - art.bottom}px;width:${art.width}px;height:${art.height}px;--rs-z:${Number.isFinite(z) ? z : 0}`;
     const rect = copy.getBoundingClientRect();
     const fits = rect.left >= art.left && rect.right <= art.right && rect.top >= art.top && rect.bottom <= art.bottom;
     const next = nativeAfter(wrapper);
@@ -219,6 +321,16 @@ export function mountAppearance(root, resolved, prefs, anchors, { css = null, cs
       created.push(wrapper);
       continue;
     }
+    if (entry.kind === "tag") {
+      const tag = { wrapper, box, host: anchor.host, size: "" };
+      if (!placeTag(tag)) {
+        wrapper.remove();
+        continue;
+      }
+      tags.push(tag);
+      created.push(wrapper);
+      continue;
+    }
     if (box && !settle(box, wrapper, caption, anchor.host)) {
       if (!caption || !copy) {
         wrapper.remove();
@@ -245,8 +357,8 @@ export function mountAppearance(root, resolved, prefs, anchors, { css = null, cs
   };
   const onVisibility = () => doc.hidden && stop();
   doc.addEventListener?.("visibilitychange", onVisibility);
-  // Corner captions are measured again when their illustration or its row changes size, at most
-  // once a frame, and when a late font changes the copy's size.
+  // Corner captions are measured again when their illustration or its row changes size, and the
+  // tag when its host does, at most once a frame, and both when a late font changes text sizes.
   let sizes = null;
   const remeasure = (force) => {
     for (const corner of corners) {
@@ -254,15 +366,20 @@ export function mountAppearance(root, resolved, prefs, anchors, { css = null, cs
       const row = corner.wrapper.getBoundingClientRect();
       if (force || corner.size !== `${Math.round(art.width)}x${Math.round(art.height)}/${Math.round(row.width)}`) place(corner);
     }
+    for (const tag of tags) {
+      const host = tag.host.getBoundingClientRect();
+      if (force || tag.size !== `${Math.round(host.width)}x${Math.round(host.height)}`) placeTag(tag);
+    }
   };
   const onFonts = () => remeasure(true);
-  if (corners.length) {
+  if (corners.length || tags.length) {
     if (typeof view?.ResizeObserver === "function") {
       sizes = new view.ResizeObserver(() => remeasure(false));
       for (const corner of corners) {
         sizes.observe(corner.host);
         sizes.observe(corner.wrapper);
       }
+      for (const tag of tags) sizes.observe(tag.host);
     }
     doc.fonts?.addEventListener?.("loadingdone", onFonts);
   }
