@@ -7,7 +7,7 @@ import { after, before, describe, test } from "node:test";
 import { chromium, firefox } from "playwright";
 import { readModeFile } from "../../packages/primer/convert.js";
 import { compileGitHub, MODE_INDEX } from "../../packages/primer/index.js";
-import { PREFS, readText, resolvedFromSeed } from "./helpers.mjs";
+import { PREFS, readText, resolvedFromSeed, stripStyleQueries } from "./helpers.mjs";
 
 const MODES = Object.keys(MODE_INDEX.modes);
 const raw = Object.fromEntries(MODES.map((id) => [id, readText(`vendor/primer/source/${id}.css`)]));
@@ -33,22 +33,6 @@ const SENTINEL = { "/tokens/canvas": "#101a2b", "/tokens/text": "#fafbe0", "/tok
 const resolved = resolvedFromSeed(MODE_INDEX.modes.dark, SENTINEL);
 const compiled = compileGitHub(resolved, { seedMode: "dark", policy: "themed" }, PREFS).css;
 const GREEN = "rgb(64, 196, 99)";
-
-// A stylesheet as an engine without container style queries applies it: every style-query block
-// removed, the blocks nested inside it included.
-function stripStyleQueries(text) {
-  let css = text;
-  for (let i = css.indexOf("@container style(--reskin-on: 1){"); i >= 0; i = css.indexOf("@container style(--reskin-on: 1){")) {
-    let depth = 0;
-    let j = css.indexOf("{", i);
-    for (; j < css.length; j++) {
-      if (css[j] === "{") depth++;
-      else if (css[j] === "}" && --depth === 0) break;
-    }
-    css = css.slice(0, i) + css.slice(j + 2);
-  }
-  return css;
-}
 
 const blob = (id) => `<svg><path id="${id}" class="js-highlight-blob" fill="#40c463" stroke="#40c463" d="M0 0h1v1z"/></svg>`;
 const label = (id) => `<span id="${id}" class="hx_IssueLabel" style="--label-r:215;--label-g:58;--label-b:74;--label-h:353;--label-s:66;--label-l:53;--perceived-lightness:0.36;--lightness-switch:1">bug</span>`;

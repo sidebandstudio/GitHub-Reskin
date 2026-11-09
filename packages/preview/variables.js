@@ -1,7 +1,8 @@
-// The Primer variables the inert fixture reads, and the resolved color each carries. The fixture
-// styles itself only through these names, so GitHub's native mode CSS paints the Before view and
-// the Primer compiler's output paints the After view, exactly as on github.com. C3's compiler and
-// native mode CSS must define every name here; tests check that.
+// The Primer variables the inert fixture reads, and the resolved color each carries: the role C3's
+// compiler writes it from. The fixture styles itself only through these names, so GitHub's native
+// mode CSS paints the Before view and the Primer compiler's output paints the After view, exactly
+// as on github.com. C3's compiler and native mode CSS must define every name here; tests check
+// that.
 export const PREVIEW_VARIABLES = Object.freeze({
   "--bgColor-default": "/tokens/canvas",
   "--bgColor-muted": "/tokens/surface",
@@ -42,18 +43,28 @@ export const PREVIEW_VARIABLES = Object.freeze({
   "--contribution-default-bgColor-3": "/graph/3",
   "--contribution-default-bgColor-4": "/graph/4",
   "--contribution-default-borderColor-0": "/tokens/controlBorder",
-  "--header-bgColor": "/tokens/inset",
-  "--header-fgColor-default": "/tokens/mutedText",
+  "--header-bgColor": "/appearance/colors/header/background",
+  "--header-fgColor-default": "/appearance/colors/header/text",
   "--header-fgColor-logo": "/tokens/text",
   "--header-borderColor-divider": "/tokens/border",
   "--headerSearch-bgColor": "/tokens/canvas",
   "--headerSearch-borderColor": "/tokens/controlBorder",
 });
 
-/** The value at a ColorPath of a ColorSet (a seed's colors or a themed resolution). */
+// A mode seed's ColorSet has no appearance record. For the appearance roles above, Before and
+// disabled views read the seed role that stands for GitHub's own color there instead.
+export const NATIVE_ROLES = Object.freeze({
+  "/appearance/colors/header/background": "/tokens/inset",
+  "/appearance/colors/header/text": "/tokens/mutedText",
+});
+
+/**
+ * The value at a ColorPath, of any depth, of a ColorSet: a themed resolution, or a seed's colors,
+ * which read an appearance role through NATIVE_ROLES.
+ */
 export function colorAt(colors, path) {
-  const [group, key, field] = path.slice(1).split("/");
-  const value = group === "graph" ? colors.graph[Number(key)] : field ? colors[group][key][field] : colors[group][key];
+  const own = colors.appearance ? path : (NATIVE_ROLES[path] ?? path);
+  const value = own.slice(1).split("/").reduce((node, key) => (node == null ? undefined : node[key]), colors);
   if (typeof value !== "string") throw new Error(`No color at ${path}`);
   return value;
 }
