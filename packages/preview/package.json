@@ -1,0 +1,12 @@
+{
+  "name": "@github-reskin/preview",
+  "version": "1.0.0",
+  "private": true,
+  "description": "GitHub Reskin's shared inert preview of a GitHub profile, repository, diff, empty states and 404.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./index.js"
+  },
+  "sideEffects": false
+}

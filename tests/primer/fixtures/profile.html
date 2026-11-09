@@ -1,0 +1,68 @@
+<!doctype html>
+<!-- Modeled on the logged-out profile markup recorded in slot-evidence.json on 2026-11-08, with a
+     fictional user. The README, name and bio hold hostile copies of GitHub's own heading words. -->
+<html lang="en" data-color-mode="auto" data-light-theme="light" data-dark-theme="dark">
+<head>
+  <title>octo-sample (Pinned) · GitHub</title>
+  <meta name="route-pattern" content="/:user_id(.:format)">
+  <meta name="route-controller" content="profiles">
+  <meta name="route-action" content="show">
+</head>
+<body>
+<div class="application-main"><main>
+<div class="container-xl"><div class="Layout">
+  <div class="Layout-sidebar">
+    <div class="h-card" itemscope itemtype="http://schema.org/Person">
+      <div class="js-profile-editable-replace">
+        <div class="clearfix d-flex d-md-block">
+          <div class="vcard-names-container float-left js-profile-editable-names col-12">
+            <h1 class="vcard-names"><span class="p-name vcard-fullname" itemprop="name">Pinned</span><span class="p-nickname vcard-username" itemprop="additionalName">octo-sample</span></h1>
+          </div>
+        </div>
+        <div class="p-note user-profile-bio"><div>Organizations</div><h2>Organizations</h2></div>
+        <div class="border-top"><h2 class="h4 mb-2"><a href="/octo-sample?tab=achievements" class="Link--primary">Achievements</a></h2></div>
+        <div class="border-top"><h2 class="h4 mb-2">Highlights</h2></div>
+        <div class="border-top">
+          <h2 class="mb-2 h4">Organizations</h2>
+          <a aria-label="sample-org" itemprop="follows" class="avatar-group-item" data-hovercard-type="organization" href="/sample-org"><img alt="@sample-org" width="32" height="32"></a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="Layout-main">
+    <turbo-frame id="user-profile-frame"><div class="position-relative">
+      <div class="Box profile-readme"><div class="Box-body"><article class="markdown-body entry-content">
+        <div class="markdown-heading"><h2 class="heading-element">Pinned</h2></div>
+        <h2>Contribution activity</h2>
+        <h2>Organizations</h2>
+        <div id="user-content-js-contribution-activity"><h2>Contribution activity</h2></div>
+        <div><h2>1,234 contributions in the last year</h2></div>
+        <p>No results matched your search</p>
+        <p>octo-sample doesn't have any public repositories yet.</p>
+      </article></div></div>
+      <div class="mt-4">
+        <div class="js-pinned-items-reorder-container">
+          <h2 class="f4 mb-2 text-normal"> Pinned <span><svg aria-hidden="true" class="spinner pinned-items-spinner" width="16" height="16"></svg><span class="sr-only">Loading</span></span><span class="pinned-items-setting-success color-fg-success" hidden> Order updated. </span></h2>
+          <ol class="d-flex flex-wrap list-style-none"><li><a href="/octo-sample/pinned">Pinned</a></li></ol>
+        </div>
+      </div>
+      <div class="mt-4 position-relative"><div class="d-flex"><div class="col-12 col-lg-10">
+        <div class="js-yearly-contributions"><div class="position-relative">
+          <h2 tabindex="-1" id="js-contribution-activity-description" class="f4 text-normal mb-2"> 1,234 contributions in the last year </h2>
+          <a href="#year-link-2026" class="show-on-focus">Skip to contributions year list</a>
+          <div class="py-2 graph-before-activity-overview">
+            <div class="js-calendar-graph ContributionCalendar"><table><tbody><tr><td tabindex="0" class="ContributionCalendar-day" data-level="2"></td></tr></tbody></table></div>
+          </div>
+          <div class="position-relative" id="user-activity-overview"><div class="Box"><h3 class="text-normal f5"> Activity overview </h3></div></div>
+        </div></div>
+        <div id="js-contribution-activity" class="activity-listing contribution-activity">
+          <h2 class="f4 text-normal mt-4 mb-3"> Contribution activity </h2>
+          <div class="TimelineItem"><h3><a class="markdown-title" href="/octo-sample/x/pull/1">Contribution activity</a></h3></div>
+        </div>
+      </div></div></div>
+    </div></turbo-frame>
+  </div>
+</div></div>
+</main></div>
+</body>
+</html>

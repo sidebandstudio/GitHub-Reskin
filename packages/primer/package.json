@@ -1,0 +1,14 @@
+{
+  "name": "@github-reskin/primer",
+  "version": "1.0.0",
+  "private": true,
+  "description": "GitHub Reskin Primer adapter: mode selection, the maintained Primer variable mapping and the trusted GitHub stylesheet compiler.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./index.js",
+    "./mappings.json": "./mappings.json",
+    "./mode-policy.json": "./mode-policy.json"
+  },
+  "sideEffects": false
+}

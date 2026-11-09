@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en" data-color-mode="dark" data-light-theme="light" data-dark-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Adversarial profile fixture</title>
+<script type="module" src="./app.js"></script>
+<script type="module">window.reskinNative.boot(); document.documentElement.dataset.ready = "true";</script>
+</head>
+<body>
+<!-- Fictional content. Authored text deliberately repeats GitHub's own section names, slot copy
+     and class names, and every native control has a real accessible name. -->
+<main class="application-main page">
+  <div class="layout">
+    <div class="h-card">
+      <span class="avatar" style="width:128px;height:128px;margin-bottom:16px" role="img" aria-label="@sentinel-user"></span>
+      <div class="vcard-names-container"><h1 class="vcard-names"><span class="vcard-fullname p-name">Sentinel User</span><span class="vcard-username p-nickname">sentinel-user</span></h1></div>
+      <div class="after-names">
+        <div class="user-profile-bio">SENTINEL-BIO-a41c: Pinned // choom view, Organizations</div>
+        <button type="button" class="btn-follow">Follow</button>
+        <details><summary>Profile menu</summary><a href="#block">Block or report</a></details>
+        <div class="border-top">
+          <h2 class="h4">Organizations</h2>
+          <div class="org-list"><a href="#org" aria-label="sentinel-org"><span class="avatar" style="width:32px;height:32px"></span></a></div>
+        </div>
+      </div>
+    </div>
+    <div class="main">
+      <div class="Box profile-readme">
+        <article class="markdown-body" id="readme">
+          <h2>Pinned</h2>
+          <p>SENTINEL-README-7f3a: Contribution activity, Popular repositories, // choom view.</p>
+          <h2>Contribution activity</h2>
+          <p><span class="vcard-names">SENTINEL-README-NAME-02e9</span></p>
+          <div class="js-pinned-items-reorder-container"><h2>Pinned</h2><p>SENTINEL-README-NESTED-6b10</p></div>
+        </article>
+      </div>
+      <div class="js-pinned-items-reorder-container">
+        <h2 class="f4 mb-2 text-normal">Pinned</h2>
+        <ol class="pinned-items-list">
+          <li class="Box pinned-item-list-item">
+            <div class="pinned-item-title"><a href="#repo"><span class="repo">sentinel-repo</span></a><span class="Label">Public</span></div>
+            <p class="pinned-item-desc">SENTINEL-PIN-c7d1: Signal picks are authored here, not by Reskin.</p>
+            <div class="pinned-item-meta"><button type="button" aria-label="Star sentinel-repo">Star</button></div>
+          </li>
+        </ol>
+      </div>
+      <div class="js-yearly-contributions">
+        <h2 class="f4 text-normal mb-2">1,234 contributions in the last year</h2>
+        <div class="Box ContributionCalendar graph-before-activity-overview">
+          <div class="js-calendar-graph">
+            <div class="ContributionCalendar-grid" role="img" aria-label="Contribution graph">
+              <span class="ContributionCalendar-day" data-level="0"></span><span class="ContributionCalendar-day" data-level="1"></span><span class="ContributionCalendar-day" data-level="2"></span><span class="ContributionCalendar-day" data-level="3"></span><span class="ContributionCalendar-day" data-level="4"></span><span class="ContributionCalendar-day" data-level="0"></span><span class="ContributionCalendar-day" data-level="2"></span>
+            </div>
+            <div class="ContributionCalendar-footer"><a href="#help">Learn how we count contributions</a><div class="ContributionCalendar-legend"><span>Less</span><span>More</span></div></div>
+          </div>
+        </div>
+        <div id="user-activity-overview" class="Box" style="margin-top:8px;padding:16px"><h2 class="f4 text-normal mb-2">Activity overview</h2><p>Contributed to sentinel-repo and 2 other repositories</p></div>
+      </div>
+      <div id="js-contribution-activity" style="margin-top:24px">
+        <h2 class="f4 text-normal mb-2">Contribution activity</h2>
+        <form role="search" aria-label="Filter activity"><label for="year">Year</label> <select id="year"><option>2026</option><option>2025</option></select> <label for="q">Find a repository</label> <input id="q" type="search" placeholder="Find a repository"></form>
+        <div class="Box" style="margin-top:16px;padding:16px">
+          <h3 class="js-issue-title">SENTINEL-ISSUE-55c2: Pinned heading shows Gig log</h3>
+          <div class="comment-body"><h3>Contribution activity</h3><p>SENTINEL-COMMENT-19bd: A year of gigs, one contribution at a time.</p></div>
+          <pre><code>// SENTINEL-CODE-90aa Pinned
+const choom = "view";</code></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+</body>
+</html>

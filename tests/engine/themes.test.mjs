@@ -55,10 +55,10 @@ test("the deterministic adversarial sweep passes every pair and graph rule", () 
   assert.ok(switched > 0 && switched < themes.length, `${switched} of ${themes.length} sweep themes contradict their base`);
 });
 
-test("contrast scopes: primer and the full gate need C3's mode index; unknown scopes fail", async () => {
-  assert.equal((await run({ command: "contrast", args: ["--scope=primer"], root: ROOT })).exitCode, 2);
-  assert.equal((await run({ command: "contrast", args: ["--scope", "primer"], root: ROOT })).exitCode, 2);
-  assert.equal((await run({ command: "contrast", args: [], root: ROOT })).exitCode, 2);
+test("contrast scopes: primer runs, the full gate needs the remaining catalog, and unknown scopes fail", async () => {
+  assert.equal((await run({ command: "contrast", args: ["--scope=primer"], root: ROOT })).exitCode, 0);
+  assert.equal((await run({ command: "contrast", args: ["--scope", "primer"], root: ROOT })).exitCode, 0);
+  assert.equal((await run({ command: "contrast", args: [], root: ROOT })).exitCode, 1);
   assert.equal((await run({ command: "contrast", args: ["--scope=preview"], root: ROOT })).exitCode, 2);
   assert.equal((await run({ command: "nope", args: [], root: ROOT })).exitCode, 2);
 });
@@ -93,6 +93,7 @@ test("--scope=primer runs every themed seed in a ModeIndex and the full gate req
   const root = mkdtempSync(join(tmpdir(), "reskin-contrast-"));
   try {
     for (const path of ["themes", "tests/fixtures"]) cpSync(join(ROOT, path), join(root, path), { recursive: true });
+    assert.equal((await run({ command: "contrast", args: ["--scope=primer"], root })).exitCode, 2, "without a mode index the primer scope cannot run");
     const modes = Object.fromEntries(seeds.map((s) => [s.id, s]));
     const highContrast = { ...seeds[0], id: "fixture.hc-dark", highContrast: true };
     modes[highContrast.id] = highContrast;
