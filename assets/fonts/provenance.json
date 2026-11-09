@@ -5,196 +5,882 @@
     "python": "3.14.7"
   },
   "acquire": "assets/fonts/acquire.py",
-  "totalBytes": 104492,
+  "totalBytes": 427808,
   "fonts": [
     {
       "id": "rajdhani",
-      "weight": 600,
-      "file": "rajdhani/rajdhani.woff2",
-      "bytes": 8996,
-      "sha256": "046d4a7c5108076ada8ad2bd2fdc4b92289b1c035d23bcf5dddff3a6a16eed0c",
+      "weights": [
+        600,
+        700
+      ],
+      "bytes": 17852,
       "license": "OFL-1.1",
       "licenseFile": "rajdhani/OFL.txt",
       "licenseSha256": "f62ef357d3a1c3d27edd35a6e1ba350e8a8d13499797964eeadefbf0b3b15d1f",
-      "reservedFontName": false,
+      "licenseUrl": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/rajdhani/OFL.txt",
+      "reservedFontName": null,
       "internalFamily": "Rajdhani",
-      "source": {
-        "repository": "https://github.com/google/fonts",
-        "commit": "5bb28733cec313b63fbd415b574b5ae35c8aa8b8",
-        "path": "ofl/rajdhani/Rajdhani-SemiBold.ttf",
-        "url": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/rajdhani/Rajdhani-SemiBold.ttf",
-        "licenseUrl": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/rajdhani/OFL.txt",
-        "sha256": "94bbd25a18ca665999feb05a537de9fd2b860dcfb78bbe9ca00270825bf235da",
-        "version": "Version 1.201;PS 1.0;hotconv 1.0.78;makeotf.lib2.5.61930; ttfautohint (v1.1) -l 7 -r 28 -G 50 -x 13 -D latn -f deva -w G",
-        "instance": {}
-      }
+      "repository": "https://github.com/google/fonts",
+      "commit": "5bb28733cec313b63fbd415b574b5ae35c8aa8b8",
+      "files": [
+        {
+          "id": "rajdhani",
+          "weight": 600,
+          "file": "rajdhani/rajdhani.woff2",
+          "bytes": 8996,
+          "sha256": "046d4a7c5108076ada8ad2bd2fdc4b92289b1c035d23bcf5dddff3a6a16eed0c",
+          "source": {
+            "path": "ofl/rajdhani/Rajdhani-SemiBold.ttf",
+            "url": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/rajdhani/Rajdhani-SemiBold.ttf",
+            "sha256": "94bbd25a18ca665999feb05a537de9fd2b860dcfb78bbe9ca00270825bf235da",
+            "version": "Version 1.201;PS 1.0;hotconv 1.0.78;makeotf.lib2.5.61930; ttfautohint (v1.1) -l 7 -r 28 -G 50 -x 13 -D latn -f deva -w G",
+            "instance": {}
+          }
+        },
+        {
+          "id": "rajdhani",
+          "weight": 700,
+          "file": "rajdhani/rajdhani-700.woff2",
+          "bytes": 8856,
+          "sha256": "9d581a8043e4c0851a1bcd8962b2afebb820cd8105f2b7d8b262445c0f4be3ff",
+          "source": {
+            "path": "ofl/rajdhani/Rajdhani-Bold.ttf",
+            "url": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/rajdhani/Rajdhani-Bold.ttf",
+            "sha256": "691470dd3286a14e9677940d0bf75796179841ba5215cbda1a2c8910a3226afd",
+            "version": "Version 1.201;PS 1.0;hotconv 1.0.78;makeotf.lib2.5.61930; ttfautohint (v1.1) -l 7 -r 28 -G 50 -x 13 -D latn -f deva -w G",
+            "instance": {}
+          }
+        }
+      ]
     },
     {
       "id": "barlow-condensed",
-      "weight": 600,
-      "file": "barlow-condensed/barlow-condensed.woff2",
-      "bytes": 12036,
-      "sha256": "3163fc2ca3dad6369394c398a23edc6eb963783e7bfeb0c561a35325fc4a9343",
+      "weights": [
+        600,
+        700
+      ],
+      "bytes": 24084,
       "license": "OFL-1.1",
       "licenseFile": "barlow-condensed/OFL.txt",
       "licenseSha256": "186d750eb496a4c17a76385f82be6aea2ac1cf2de074a811d63786cf374ea73f",
-      "reservedFontName": false,
+      "licenseUrl": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/barlowcondensed/OFL.txt",
+      "reservedFontName": null,
       "internalFamily": "Barlow Condensed",
-      "source": {
-        "repository": "https://github.com/google/fonts",
-        "commit": "5bb28733cec313b63fbd415b574b5ae35c8aa8b8",
-        "path": "ofl/barlowcondensed/BarlowCondensed-SemiBold.ttf",
-        "url": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/barlowcondensed/BarlowCondensed-SemiBold.ttf",
-        "licenseUrl": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/barlowcondensed/OFL.txt",
-        "sha256": "7b619d14bc2327509a9ef32b0890f709626f7ecc9ff61191c2a4314c5499d2d9",
-        "version": "Version 1.408",
-        "instance": {}
-      }
+      "repository": "https://github.com/google/fonts",
+      "commit": "5bb28733cec313b63fbd415b574b5ae35c8aa8b8",
+      "files": [
+        {
+          "id": "barlow-condensed",
+          "weight": 600,
+          "file": "barlow-condensed/barlow-condensed.woff2",
+          "bytes": 12036,
+          "sha256": "3163fc2ca3dad6369394c398a23edc6eb963783e7bfeb0c561a35325fc4a9343",
+          "source": {
+            "path": "ofl/barlowcondensed/BarlowCondensed-SemiBold.ttf",
+            "url": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/barlowcondensed/BarlowCondensed-SemiBold.ttf",
+            "sha256": "7b619d14bc2327509a9ef32b0890f709626f7ecc9ff61191c2a4314c5499d2d9",
+            "version": "Version 1.408",
+            "instance": {}
+          }
+        },
+        {
+          "id": "barlow-condensed",
+          "weight": 700,
+          "file": "barlow-condensed/barlow-condensed-700.woff2",
+          "bytes": 12048,
+          "sha256": "c412bb52685d57f9147c34531dbc0673e062907a70b1d14b6578b9e0afa78a83",
+          "source": {
+            "path": "ofl/barlowcondensed/BarlowCondensed-Bold.ttf",
+            "url": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/barlowcondensed/BarlowCondensed-Bold.ttf",
+            "sha256": "e476562ec9c1e16cf16475895b511f08c804f438cc9a9f80a44ea50a0eeb5b65",
+            "version": "Version 1.408",
+            "instance": {}
+          }
+        }
+      ]
     },
     {
       "id": "fraunces",
-      "weight": 600,
-      "file": "fraunces/fraunces.woff2",
-      "bytes": 17308,
-      "sha256": "6f48ad7f42c96ca827589102fe53d9907f77cb4364116ea01aec8ad1959835cf",
+      "weights": [
+        600,
+        700
+      ],
+      "bytes": 34696,
       "license": "OFL-1.1",
       "licenseFile": "fraunces/OFL.txt",
       "licenseSha256": "bdf4c22802eaf804f998195871c6b8938aac2ac14b2d78a8bd66a6f1eced833b",
-      "reservedFontName": false,
+      "licenseUrl": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/fraunces/OFL.txt",
+      "reservedFontName": null,
       "internalFamily": "Fraunces",
-      "source": {
-        "repository": "https://github.com/google/fonts",
-        "commit": "5bb28733cec313b63fbd415b574b5ae35c8aa8b8",
-        "path": "ofl/fraunces/Fraunces[SOFT,WONK,opsz,wght].ttf",
-        "url": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/fraunces/Fraunces[SOFT,WONK,opsz,wght].ttf",
-        "licenseUrl": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/fraunces/OFL.txt",
-        "sha256": "177ff6c0f14e5550a3c624247cd1189611d4eb65d000b14944c63d967958abbb",
-        "version": "Version 1.000;[b76b70a41]",
-        "instance": {
-          "SOFT": 0,
-          "WONK": 0,
-          "opsz": 24,
-          "wght": 600
+      "repository": "https://github.com/google/fonts",
+      "commit": "5bb28733cec313b63fbd415b574b5ae35c8aa8b8",
+      "files": [
+        {
+          "id": "fraunces",
+          "weight": 600,
+          "file": "fraunces/fraunces.woff2",
+          "bytes": 17308,
+          "sha256": "6f48ad7f42c96ca827589102fe53d9907f77cb4364116ea01aec8ad1959835cf",
+          "source": {
+            "path": "ofl/fraunces/Fraunces[SOFT,WONK,opsz,wght].ttf",
+            "url": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/fraunces/Fraunces[SOFT,WONK,opsz,wght].ttf",
+            "sha256": "177ff6c0f14e5550a3c624247cd1189611d4eb65d000b14944c63d967958abbb",
+            "version": "Version 1.000;[b76b70a41]",
+            "instance": {
+              "SOFT": 0,
+              "WONK": 0,
+              "opsz": 24,
+              "wght": 600
+            }
+          }
+        },
+        {
+          "id": "fraunces",
+          "weight": 700,
+          "file": "fraunces/fraunces-700.woff2",
+          "bytes": 17388,
+          "sha256": "223ccc62359f1aa3bb2ff98279e95b905ec0e4426c89edabf6b84f3f316fd26d",
+          "source": {
+            "path": "ofl/fraunces/Fraunces[SOFT,WONK,opsz,wght].ttf",
+            "url": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/fraunces/Fraunces[SOFT,WONK,opsz,wght].ttf",
+            "sha256": "177ff6c0f14e5550a3c624247cd1189611d4eb65d000b14944c63d967958abbb",
+            "version": "Version 1.000;[b76b70a41]",
+            "instance": {
+              "SOFT": 0,
+              "WONK": 0,
+              "opsz": 24,
+              "wght": 700
+            }
+          }
         }
-      }
+      ]
     },
     {
       "id": "alegreya",
-      "weight": 600,
-      "file": "alegreya/alegreya.woff2",
-      "bytes": 18980,
-      "sha256": "64cce7a7f0fb0b9fec8a85cb6fd87bc608daf695fcd188c594b5a80545b10642",
+      "weights": [
+        600,
+        700
+      ],
+      "bytes": 37912,
       "license": "OFL-1.1",
       "licenseFile": "alegreya/OFL.txt",
       "licenseSha256": "f6f60d5d4cf4f4b1fc4e41353c897a2f5a16e6396c0cd8fa8bdfd2f4586a9a68",
-      "reservedFontName": false,
+      "licenseUrl": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/alegreya/OFL.txt",
+      "reservedFontName": null,
       "internalFamily": "Alegreya",
-      "source": {
-        "repository": "https://github.com/google/fonts",
-        "commit": "5bb28733cec313b63fbd415b574b5ae35c8aa8b8",
-        "path": "ofl/alegreya/Alegreya[wght].ttf",
-        "url": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/alegreya/Alegreya[wght].ttf",
-        "licenseUrl": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/alegreya/OFL.txt",
-        "sha256": "ba5564634b93a8f8ba57b48cd4f1ae7417d2b4656fbac779028679b00de3cf12",
-        "version": "Version 2.009",
-        "instance": {
-          "wght": 600
+      "repository": "https://github.com/google/fonts",
+      "commit": "5bb28733cec313b63fbd415b574b5ae35c8aa8b8",
+      "files": [
+        {
+          "id": "alegreya",
+          "weight": 600,
+          "file": "alegreya/alegreya.woff2",
+          "bytes": 18980,
+          "sha256": "64cce7a7f0fb0b9fec8a85cb6fd87bc608daf695fcd188c594b5a80545b10642",
+          "source": {
+            "path": "ofl/alegreya/Alegreya[wght].ttf",
+            "url": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/alegreya/Alegreya[wght].ttf",
+            "sha256": "ba5564634b93a8f8ba57b48cd4f1ae7417d2b4656fbac779028679b00de3cf12",
+            "version": "Version 2.009",
+            "instance": {
+              "wght": 600
+            }
+          }
+        },
+        {
+          "id": "alegreya",
+          "weight": 700,
+          "file": "alegreya/alegreya-700.woff2",
+          "bytes": 18932,
+          "sha256": "d407a8a653225fecfcf009c3b254f578c46add480926260a44a75938475e9ceb",
+          "source": {
+            "path": "ofl/alegreya/Alegreya[wght].ttf",
+            "url": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/alegreya/Alegreya[wght].ttf",
+            "sha256": "ba5564634b93a8f8ba57b48cd4f1ae7417d2b4656fbac779028679b00de3cf12",
+            "version": "Version 2.009",
+            "instance": {
+              "wght": 700
+            }
+          }
         }
-      }
+      ]
     },
     {
       "id": "cormorant-garamond",
-      "weight": 700,
-      "file": "cormorant-garamond/cormorant-garamond.woff2",
-      "bytes": 16372,
-      "sha256": "f543683a1a012185dc75d37b3849a55e7f7aafcead39a2da46b7e68ba2f976b3",
+      "weights": [
+        700,
+        600
+      ],
+      "bytes": 33600,
       "license": "OFL-1.1",
       "licenseFile": "cormorant-garamond/OFL.txt",
       "licenseSha256": "60700d351cac4650c51f3f9db318d2a420f8b45052dba2715eb5fec41f0f6956",
-      "reservedFontName": false,
+      "licenseUrl": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/cormorantgaramond/OFL.txt",
+      "reservedFontName": null,
       "internalFamily": "Cormorant Garamond",
-      "source": {
-        "repository": "https://github.com/google/fonts",
-        "commit": "5bb28733cec313b63fbd415b574b5ae35c8aa8b8",
-        "path": "ofl/cormorantgaramond/CormorantGaramond[wght].ttf",
-        "url": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/cormorantgaramond/CormorantGaramond[wght].ttf",
-        "licenseUrl": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/cormorantgaramond/OFL.txt",
-        "sha256": "b20b7d9626dd956b2c5e558692ad328b1f19e3275e2782db4fa07670d83f35e0",
-        "version": "Version 4.001",
-        "instance": {
-          "wght": 700
+      "repository": "https://github.com/google/fonts",
+      "commit": "5bb28733cec313b63fbd415b574b5ae35c8aa8b8",
+      "files": [
+        {
+          "id": "cormorant-garamond",
+          "weight": 700,
+          "file": "cormorant-garamond/cormorant-garamond.woff2",
+          "bytes": 16372,
+          "sha256": "f543683a1a012185dc75d37b3849a55e7f7aafcead39a2da46b7e68ba2f976b3",
+          "source": {
+            "path": "ofl/cormorantgaramond/CormorantGaramond[wght].ttf",
+            "url": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/cormorantgaramond/CormorantGaramond[wght].ttf",
+            "sha256": "b20b7d9626dd956b2c5e558692ad328b1f19e3275e2782db4fa07670d83f35e0",
+            "version": "Version 4.001",
+            "instance": {
+              "wght": 700
+            }
+          }
+        },
+        {
+          "id": "cormorant-garamond",
+          "weight": 600,
+          "file": "cormorant-garamond/cormorant-garamond-600.woff2",
+          "bytes": 17228,
+          "sha256": "954a25ab87306dc66c9fab7a14f90e060494a881b1e5a3cce5dd75567633a163",
+          "source": {
+            "path": "ofl/cormorantgaramond/CormorantGaramond[wght].ttf",
+            "url": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/cormorantgaramond/CormorantGaramond[wght].ttf",
+            "sha256": "b20b7d9626dd956b2c5e558692ad328b1f19e3275e2782db4fa07670d83f35e0",
+            "version": "Version 4.001",
+            "instance": {
+              "wght": 600
+            }
+          }
         }
-      }
+      ]
     },
     {
       "id": "josefin-sans",
-      "weight": 600,
-      "file": "josefin-sans/josefin-sans.woff2",
-      "bytes": 10784,
-      "sha256": "5a8804f0d8f0264d781c73029700bdec2e7fbee1c12cb03a403414c76a17b500",
+      "weights": [
+        600,
+        700
+      ],
+      "bytes": 21248,
       "license": "OFL-1.1",
       "licenseFile": "josefin-sans/OFL.txt",
       "licenseSha256": "aee5a4081e8a52f80428b30f178b719d115f18dad3e1fa15a986163e1078a85b",
-      "reservedFontName": true,
+      "licenseUrl": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/josefinsans/OFL.txt",
+      "reservedFontName": "Josefin",
       "internalFamily": "Reskin Geometric Accent",
-      "source": {
-        "repository": "https://github.com/google/fonts",
-        "commit": "5bb28733cec313b63fbd415b574b5ae35c8aa8b8",
-        "path": "ofl/josefinsans/JosefinSans[wght].ttf",
-        "url": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/josefinsans/JosefinSans[wght].ttf",
-        "licenseUrl": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/josefinsans/OFL.txt",
-        "sha256": "9255abdb5f393bc51e101abbd07a716a977fd3e15472b1b84b260f426a342bfd",
-        "version": "Version 2.001",
-        "instance": {
-          "wght": 600
+      "repository": "https://github.com/google/fonts",
+      "commit": "5bb28733cec313b63fbd415b574b5ae35c8aa8b8",
+      "files": [
+        {
+          "id": "josefin-sans",
+          "weight": 600,
+          "file": "josefin-sans/josefin-sans.woff2",
+          "bytes": 10784,
+          "sha256": "5a8804f0d8f0264d781c73029700bdec2e7fbee1c12cb03a403414c76a17b500",
+          "source": {
+            "path": "ofl/josefinsans/JosefinSans[wght].ttf",
+            "url": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/josefinsans/JosefinSans[wght].ttf",
+            "sha256": "9255abdb5f393bc51e101abbd07a716a977fd3e15472b1b84b260f426a342bfd",
+            "version": "Version 2.001",
+            "instance": {
+              "wght": 600
+            }
+          }
+        },
+        {
+          "id": "josefin-sans",
+          "weight": 700,
+          "file": "josefin-sans/josefin-sans-700.woff2",
+          "bytes": 10464,
+          "sha256": "ea52a88d5092c636da9420576db556122eb9e9e73d464c9ac21a492e6a9975cf",
+          "source": {
+            "path": "ofl/josefinsans/JosefinSans[wght].ttf",
+            "url": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/josefinsans/JosefinSans[wght].ttf",
+            "sha256": "9255abdb5f393bc51e101abbd07a716a977fd3e15472b1b84b260f426a342bfd",
+            "version": "Version 2.001",
+            "instance": {
+              "wght": 700
+            }
+          }
         }
-      }
+      ]
     },
     {
       "id": "bungee",
-      "weight": 400,
-      "file": "bungee/bungee.woff2",
+      "weights": [
+        400
+      ],
       "bytes": 9048,
-      "sha256": "5109b408db19759b7370c9e3ba2d57c8b289e421ca107df014715895e10eabdd",
       "license": "OFL-1.1",
       "licenseFile": "bungee/OFL.txt",
       "licenseSha256": "ff43f39d2143afa2ef0a7009629d25f62de23f0614ecdaea6dd07f6c58c5d2b1",
-      "reservedFontName": false,
+      "licenseUrl": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/bungee/OFL.txt",
+      "reservedFontName": null,
       "internalFamily": "Bungee",
-      "source": {
-        "repository": "https://github.com/google/fonts",
-        "commit": "5bb28733cec313b63fbd415b574b5ae35c8aa8b8",
-        "path": "ofl/bungee/Bungee-Regular.ttf",
-        "url": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/bungee/Bungee-Regular.ttf",
-        "licenseUrl": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/bungee/OFL.txt",
-        "sha256": "c4f5361ce120af3e6b9156d0bf379fa19cda2ea0cd18ac01fd99596c6bf66e3f",
-        "version": "Version 2.000",
-        "instance": {}
-      }
+      "repository": "https://github.com/google/fonts",
+      "commit": "5bb28733cec313b63fbd415b574b5ae35c8aa8b8",
+      "files": [
+        {
+          "id": "bungee",
+          "weight": 400,
+          "file": "bungee/bungee.woff2",
+          "bytes": 9048,
+          "sha256": "5109b408db19759b7370c9e3ba2d57c8b289e421ca107df014715895e10eabdd",
+          "source": {
+            "path": "ofl/bungee/Bungee-Regular.ttf",
+            "url": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/bungee/Bungee-Regular.ttf",
+            "sha256": "c4f5361ce120af3e6b9156d0bf379fa19cda2ea0cd18ac01fd99596c6bf66e3f",
+            "version": "Version 2.000",
+            "instance": {}
+          }
+        }
+      ]
     },
     {
       "id": "space-grotesk",
-      "weight": 600,
-      "file": "space-grotesk/space-grotesk.woff2",
+      "weights": [
+        600
+      ],
       "bytes": 10968,
-      "sha256": "bd1265d6463d723deda368bb90fe545e661f93deaa2dd5aeb7085c6f2645de93",
       "license": "OFL-1.1",
       "licenseFile": "space-grotesk/OFL.txt",
       "licenseSha256": "c6dec685825f73b18c20926fddc65e8315642e12986f15db0699170940a09efc",
-      "reservedFontName": false,
+      "licenseUrl": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/spacegrotesk/OFL.txt",
+      "reservedFontName": null,
       "internalFamily": "Space Grotesk",
-      "source": {
-        "repository": "https://github.com/google/fonts",
-        "commit": "5bb28733cec313b63fbd415b574b5ae35c8aa8b8",
-        "path": "ofl/spacegrotesk/SpaceGrotesk[wght].ttf",
-        "url": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/spacegrotesk/SpaceGrotesk[wght].ttf",
-        "licenseUrl": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/spacegrotesk/OFL.txt",
-        "sha256": "acad6de1fc93436f5c0f1f4137751ef04f1aea3063e7036535970ffcfbd79f72",
-        "version": "Version 2.000",
-        "instance": {
-          "wght": 600
+      "repository": "https://github.com/google/fonts",
+      "commit": "5bb28733cec313b63fbd415b574b5ae35c8aa8b8",
+      "files": [
+        {
+          "id": "space-grotesk",
+          "weight": 600,
+          "file": "space-grotesk/space-grotesk.woff2",
+          "bytes": 10968,
+          "sha256": "bd1265d6463d723deda368bb90fe545e661f93deaa2dd5aeb7085c6f2645de93",
+          "source": {
+            "path": "ofl/spacegrotesk/SpaceGrotesk[wght].ttf",
+            "url": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/spacegrotesk/SpaceGrotesk[wght].ttf",
+            "sha256": "acad6de1fc93436f5c0f1f4137751ef04f1aea3063e7036535970ffcfbd79f72",
+            "version": "Version 2.000",
+            "instance": {
+              "wght": 600
+            }
+          }
         }
-      }
+      ]
+    },
+    {
+      "id": "bebas-neue",
+      "weights": [
+        400
+      ],
+      "bytes": 6916,
+      "license": "OFL-1.1",
+      "licenseFile": "bebas-neue/OFL.txt",
+      "licenseSha256": "72082f6cb4d04be2ecf7cc7d9e1e7d73787f0af8a5a278a47cade70c16b78341",
+      "licenseUrl": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/bebasneue/OFL.txt",
+      "reservedFontName": null,
+      "internalFamily": "Bebas Neue",
+      "repository": "https://github.com/google/fonts",
+      "commit": "5bb28733cec313b63fbd415b574b5ae35c8aa8b8",
+      "files": [
+        {
+          "id": "bebas-neue",
+          "weight": 400,
+          "file": "bebas-neue/bebas-neue.woff2",
+          "bytes": 6916,
+          "sha256": "d3593e3bda6a916a435646e17b9100a5e724870a1e62afc42eed1ce364bb1a29",
+          "source": {
+            "path": "ofl/bebasneue/BebasNeue-Regular.ttf",
+            "url": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/bebasneue/BebasNeue-Regular.ttf",
+            "sha256": "08e4623805102d819f58601e46e345648846075e363b2ceb23313c2d1c83ec73",
+            "version": "Version 2.000",
+            "instance": {}
+          }
+        }
+      ]
+    },
+    {
+      "id": "cinzel",
+      "weights": [
+        600
+      ],
+      "bytes": 14368,
+      "license": "OFL-1.1",
+      "licenseFile": "cinzel/OFL.txt",
+      "licenseSha256": "f2b3029aba64c378bf0963b62945eee15e564fe4330b934c8f2eb058282b5e83",
+      "licenseUrl": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/cinzel/OFL.txt",
+      "reservedFontName": null,
+      "internalFamily": "Cinzel",
+      "repository": "https://github.com/google/fonts",
+      "commit": "5bb28733cec313b63fbd415b574b5ae35c8aa8b8",
+      "files": [
+        {
+          "id": "cinzel",
+          "weight": 600,
+          "file": "cinzel/cinzel.woff2",
+          "bytes": 14368,
+          "sha256": "5c3430ba90a01e79062633c3088db57b9f3dbcb09ac7e59bd4a738517e3c34dd",
+          "source": {
+            "path": "ofl/cinzel/Cinzel[wght].ttf",
+            "url": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/cinzel/Cinzel[wght].ttf",
+            "sha256": "f4d83d34d1f6c741193e4acf4b3dff9531e5a67b6aa65228d00a7db72a4e0f34",
+            "version": "Version 2.000",
+            "instance": {
+              "wght": 600
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "orbitron",
+      "weights": [
+        600
+      ],
+      "bytes": 6228,
+      "license": "OFL-1.1",
+      "licenseFile": "orbitron/OFL.txt",
+      "licenseSha256": "ab609b0e110d622435ff337cdf233288556e011bbf9bd0550be98846c0630819",
+      "licenseUrl": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/orbitron/OFL.txt",
+      "reservedFontName": "Orbitron",
+      "internalFamily": "Reskin Wide Display",
+      "repository": "https://github.com/google/fonts",
+      "commit": "5bb28733cec313b63fbd415b574b5ae35c8aa8b8",
+      "files": [
+        {
+          "id": "orbitron",
+          "weight": 600,
+          "file": "orbitron/orbitron.woff2",
+          "bytes": 6228,
+          "sha256": "4e0b6265a45e75da07ad84c20c868e87999fa20852dae6ceb97c1bd346ff4a94",
+          "source": {
+            "path": "ofl/orbitron/Orbitron[wght].ttf",
+            "url": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/orbitron/Orbitron[wght].ttf",
+            "sha256": "f42db2dd16e642258e35782916eceb1dcdbea06fb958d77ad71dc5963587e8fd",
+            "version": "Version 2.001",
+            "instance": {
+              "wght": 600
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "oxanium",
+      "weights": [
+        600
+      ],
+      "bytes": 6380,
+      "license": "OFL-1.1",
+      "licenseFile": "oxanium/OFL.txt",
+      "licenseSha256": "fe17c0f2581d71b4e1ea7e636e7f4877c29223e11bb1dd1a871e8c3f2a86336b",
+      "licenseUrl": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/oxanium/OFL.txt",
+      "reservedFontName": null,
+      "internalFamily": "Oxanium",
+      "repository": "https://github.com/google/fonts",
+      "commit": "5bb28733cec313b63fbd415b574b5ae35c8aa8b8",
+      "files": [
+        {
+          "id": "oxanium",
+          "weight": 600,
+          "file": "oxanium/oxanium.woff2",
+          "bytes": 6380,
+          "sha256": "55fb9f0057cf4e75c8e650deca165ae11fa4eb26349e8e38e99a953d8188b634",
+          "source": {
+            "path": "ofl/oxanium/Oxanium[wght].ttf",
+            "url": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/oxanium/Oxanium[wght].ttf",
+            "sha256": "2ce01d946e1e1ffc8d7eecfffbda8623bedd63eaf811a20488c4b69af45babb0",
+            "version": "Version 2.000",
+            "instance": {
+              "wght": 600
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "ibm-plex-sans",
+      "weights": [
+        400,
+        500,
+        600,
+        700
+      ],
+      "bytes": 52704,
+      "license": "OFL-1.1",
+      "licenseFile": "ibm-plex-sans/OFL.txt",
+      "licenseSha256": "37784b44044a4ffd9256702b7c0982c37e5c8887ba90c6dca0479aea93dc898d",
+      "licenseUrl": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/ibmplexsans/OFL.txt",
+      "reservedFontName": "Plex",
+      "internalFamily": "Reskin Industrial Sans",
+      "repository": "https://github.com/google/fonts",
+      "commit": "5bb28733cec313b63fbd415b574b5ae35c8aa8b8",
+      "files": [
+        {
+          "id": "ibm-plex-sans",
+          "weight": 400,
+          "file": "ibm-plex-sans/ibm-plex-sans.woff2",
+          "bytes": 12648,
+          "sha256": "1ec5b94eb5dd1c87ca9e2b2fa8a6834004f34d4c54dfac7029b50bc0ede8fee5",
+          "source": {
+            "path": "ofl/ibmplexsans/IBMPlexSans[wdth,wght].ttf",
+            "url": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/ibmplexsans/IBMPlexSans[wdth,wght].ttf",
+            "sha256": "3b031aa4216174205bd8471f88a49b91f093169e9e87bd5262242bc5967fe2e3",
+            "version": "Version 3.201",
+            "instance": {
+              "wdth": 100,
+              "wght": 400
+            }
+          }
+        },
+        {
+          "id": "ibm-plex-sans",
+          "weight": 500,
+          "file": "ibm-plex-sans/ibm-plex-sans-500.woff2",
+          "bytes": 13588,
+          "sha256": "54679b354506fa031fc80e4eea0c8d1532a1bfb9c559ea71784d1d874ae9c3fe",
+          "source": {
+            "path": "ofl/ibmplexsans/IBMPlexSans[wdth,wght].ttf",
+            "url": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/ibmplexsans/IBMPlexSans[wdth,wght].ttf",
+            "sha256": "3b031aa4216174205bd8471f88a49b91f093169e9e87bd5262242bc5967fe2e3",
+            "version": "Version 3.201",
+            "instance": {
+              "wdth": 100,
+              "wght": 500
+            }
+          }
+        },
+        {
+          "id": "ibm-plex-sans",
+          "weight": 600,
+          "file": "ibm-plex-sans/ibm-plex-sans-600.woff2",
+          "bytes": 13520,
+          "sha256": "eb77eb79f9e1e38729ccd04ccdfc3f9012e0ac580ae90c4e147ae8541d5ed005",
+          "source": {
+            "path": "ofl/ibmplexsans/IBMPlexSans[wdth,wght].ttf",
+            "url": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/ibmplexsans/IBMPlexSans[wdth,wght].ttf",
+            "sha256": "3b031aa4216174205bd8471f88a49b91f093169e9e87bd5262242bc5967fe2e3",
+            "version": "Version 3.201",
+            "instance": {
+              "wdth": 100,
+              "wght": 600
+            }
+          }
+        },
+        {
+          "id": "ibm-plex-sans",
+          "weight": 700,
+          "file": "ibm-plex-sans/ibm-plex-sans-700.woff2",
+          "bytes": 12948,
+          "sha256": "d0109285dc4c5fb0e678105e43152729849a19e1b6f4ebcd1a3d941345ab936a",
+          "source": {
+            "path": "ofl/ibmplexsans/IBMPlexSans[wdth,wght].ttf",
+            "url": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/ibmplexsans/IBMPlexSans[wdth,wght].ttf",
+            "sha256": "3b031aa4216174205bd8471f88a49b91f093169e9e87bd5262242bc5967fe2e3",
+            "version": "Version 3.201",
+            "instance": {
+              "wdth": 100,
+              "wght": 700
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "source-sans-3",
+      "weights": [
+        400,
+        600,
+        700
+      ],
+      "bytes": 33796,
+      "license": "OFL-1.1",
+      "licenseFile": "source-sans-3/OFL.txt",
+      "licenseSha256": "ed86f375d70bd39238d13b2ba5bd3bed20b3fe4847fa1356a63f380d2b26a8a5",
+      "licenseUrl": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/sourcesans3/OFL.txt",
+      "reservedFontName": "Source",
+      "internalFamily": "Reskin Humanist Sans",
+      "repository": "https://github.com/google/fonts",
+      "commit": "5bb28733cec313b63fbd415b574b5ae35c8aa8b8",
+      "files": [
+        {
+          "id": "source-sans-3",
+          "weight": 400,
+          "file": "source-sans-3/source-sans-3.woff2",
+          "bytes": 11280,
+          "sha256": "00e41ac31f947f64e2e1abbe02e956e97e12af23ae422441d935ff88b7560472",
+          "source": {
+            "path": "ofl/sourcesans3/SourceSans3[wght].ttf",
+            "url": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/sourcesans3/SourceSans3[wght].ttf",
+            "sha256": "042fe2cc0b933e328410d7acbd0aa6a1873dca5aef81875f4bc214b08825c7b9",
+            "version": "Version 3.052;hotconv 1.1.0;makeotfexe 2.6.0",
+            "instance": {
+              "wght": 400
+            }
+          }
+        },
+        {
+          "id": "source-sans-3",
+          "weight": 600,
+          "file": "source-sans-3/source-sans-3-600.woff2",
+          "bytes": 11280,
+          "sha256": "2b4c564e4ea1e82f6100f7ee1c63746d75a7c58d69e7b80c98b2a4018d8d6db2",
+          "source": {
+            "path": "ofl/sourcesans3/SourceSans3[wght].ttf",
+            "url": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/sourcesans3/SourceSans3[wght].ttf",
+            "sha256": "042fe2cc0b933e328410d7acbd0aa6a1873dca5aef81875f4bc214b08825c7b9",
+            "version": "Version 3.052;hotconv 1.1.0;makeotfexe 2.6.0",
+            "instance": {
+              "wght": 600
+            }
+          }
+        },
+        {
+          "id": "source-sans-3",
+          "weight": 700,
+          "file": "source-sans-3/source-sans-3-700.woff2",
+          "bytes": 11236,
+          "sha256": "9b6c80b34af53366cfe53a1c5619aadebe13ea801b51ef0c64a1390bc2f0129c",
+          "source": {
+            "path": "ofl/sourcesans3/SourceSans3[wght].ttf",
+            "url": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/sourcesans3/SourceSans3[wght].ttf",
+            "sha256": "042fe2cc0b933e328410d7acbd0aa6a1873dca5aef81875f4bc214b08825c7b9",
+            "version": "Version 3.052;hotconv 1.1.0;makeotfexe 2.6.0",
+            "instance": {
+              "wght": 700
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "nunito-sans",
+      "weights": [
+        400,
+        700
+      ],
+      "bytes": 21904,
+      "license": "OFL-1.1",
+      "licenseFile": "nunito-sans/OFL.txt",
+      "licenseSha256": "efbb0c9e864cef973982d9a17567e6be5c3d1759695574586f3f18c7ecca064b",
+      "licenseUrl": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/nunitosans/OFL.txt",
+      "reservedFontName": null,
+      "internalFamily": "Nunito Sans",
+      "repository": "https://github.com/google/fonts",
+      "commit": "5bb28733cec313b63fbd415b574b5ae35c8aa8b8",
+      "files": [
+        {
+          "id": "nunito-sans",
+          "weight": 400,
+          "file": "nunito-sans/nunito-sans.woff2",
+          "bytes": 11012,
+          "sha256": "2d1a4674a0b441852a351b376406ecbe6baf5db76b76f82b3fcfc9cea8aaf674",
+          "source": {
+            "path": "ofl/nunitosans/NunitoSans[YTLC,opsz,wdth,wght].ttf",
+            "url": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/nunitosans/NunitoSans[YTLC,opsz,wdth,wght].ttf",
+            "sha256": "f934d7142fb4784bf828da485b7dcbd90c0c80d514e9d49a5da0ed3a1ae2491d",
+            "version": "Version 3.101;gftools[0.9.27]",
+            "instance": {
+              "YTLC": 500,
+              "opsz": 12,
+              "wdth": 100,
+              "wght": 400
+            }
+          }
+        },
+        {
+          "id": "nunito-sans",
+          "weight": 700,
+          "file": "nunito-sans/nunito-sans-700.woff2",
+          "bytes": 10892,
+          "sha256": "e592f084cb7643cbe24d2c66fead1c536e52f7e0d98f2d497d79c623c88fe1db",
+          "source": {
+            "path": "ofl/nunitosans/NunitoSans[YTLC,opsz,wdth,wght].ttf",
+            "url": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/nunitosans/NunitoSans[YTLC,opsz,wdth,wght].ttf",
+            "sha256": "f934d7142fb4784bf828da485b7dcbd90c0c80d514e9d49a5da0ed3a1ae2491d",
+            "version": "Version 3.101;gftools[0.9.27]",
+            "instance": {
+              "YTLC": 500,
+              "opsz": 12,
+              "wdth": 100,
+              "wght": 700
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "atkinson-hyperlegible",
+      "weights": [
+        400,
+        700
+      ],
+      "bytes": 20156,
+      "license": "OFL-1.1",
+      "licenseFile": "atkinson-hyperlegible/OFL.txt",
+      "licenseSha256": "f32d22b3908fcad2c86a74000614ec22e6a7f66ea7e867e616026a27aebdc143",
+      "licenseUrl": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/atkinsonhyperlegible/OFL.txt",
+      "reservedFontName": null,
+      "internalFamily": "Atkinson Hyperlegible",
+      "repository": "https://github.com/google/fonts",
+      "commit": "5bb28733cec313b63fbd415b574b5ae35c8aa8b8",
+      "files": [
+        {
+          "id": "atkinson-hyperlegible",
+          "weight": 400,
+          "file": "atkinson-hyperlegible/atkinson-hyperlegible.woff2",
+          "bytes": 9936,
+          "sha256": "5f484b7258727b9e238599a748ffd84e9fe56aa7e43dabacae9e121fff4cbf48",
+          "source": {
+            "path": "ofl/atkinsonhyperlegible/AtkinsonHyperlegible-Regular.ttf",
+            "url": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/atkinsonhyperlegible/AtkinsonHyperlegible-Regular.ttf",
+            "sha256": "7fb917c89019896d0b52ee84b7cbb3304c18cb90b19a62f5e32712bd23e97669",
+            "version": "Version 1.006; ttfautohint (v1.8.3)",
+            "instance": {}
+          }
+        },
+        {
+          "id": "atkinson-hyperlegible",
+          "weight": 700,
+          "file": "atkinson-hyperlegible/atkinson-hyperlegible-700.woff2",
+          "bytes": 10220,
+          "sha256": "56f3211452be368046e0a5f8e6bda7986b98af63a76b1faa30a1281f352770b8",
+          "source": {
+            "path": "ofl/atkinsonhyperlegible/AtkinsonHyperlegible-Bold.ttf",
+            "url": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/atkinsonhyperlegible/AtkinsonHyperlegible-Bold.ttf",
+            "sha256": "5a3b0c8cc8ca545155150b4512a1fa248298df121c50d6557e651e61fbdab92f",
+            "version": "Version 1.006; ttfautohint (v1.8.3)",
+            "instance": {}
+          }
+        }
+      ]
+    },
+    {
+      "id": "roboto-condensed",
+      "weights": [
+        600,
+        700
+      ],
+      "bytes": 24908,
+      "license": "OFL-1.1",
+      "licenseFile": "roboto-condensed/OFL.txt",
+      "licenseSha256": "0e4cc6ece88573545be2ed25835363662a6182ba4a4c1b5c8feda52add30e8a6",
+      "licenseUrl": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/robotocondensed/OFL.txt",
+      "reservedFontName": null,
+      "internalFamily": "Roboto Condensed",
+      "repository": "https://github.com/google/fonts",
+      "commit": "5bb28733cec313b63fbd415b574b5ae35c8aa8b8",
+      "files": [
+        {
+          "id": "roboto-condensed",
+          "weight": 600,
+          "file": "roboto-condensed/roboto-condensed.woff2",
+          "bytes": 12456,
+          "sha256": "fdc69cb8fe63e05d38b0f8a5ac9b0adc178da1d4895933d807c2a02ec0f20bf3",
+          "source": {
+            "path": "ofl/robotocondensed/RobotoCondensed[wght].ttf",
+            "url": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/robotocondensed/RobotoCondensed[wght].ttf",
+            "sha256": "dace262afcee68a5276f200d8026c57221735c0118ab5fda8c2c0d3dc409a8d0",
+            "version": "Version 3.008; 2023",
+            "instance": {
+              "wght": 600
+            }
+          }
+        },
+        {
+          "id": "roboto-condensed",
+          "weight": 700,
+          "file": "roboto-condensed/roboto-condensed-700.woff2",
+          "bytes": 12452,
+          "sha256": "67cc2b80d0d6d86052fb303352c672c3dc86f3e3a097061455c5319f6b72bead",
+          "source": {
+            "path": "ofl/robotocondensed/RobotoCondensed[wght].ttf",
+            "url": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/robotocondensed/RobotoCondensed[wght].ttf",
+            "sha256": "dace262afcee68a5276f200d8026c57221735c0118ab5fda8c2c0d3dc409a8d0",
+            "version": "Version 3.008; 2023",
+            "instance": {
+              "wght": 700
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "barlow",
+      "weights": [
+        400,
+        500,
+        600,
+        700
+      ],
+      "bytes": 51040,
+      "license": "OFL-1.1",
+      "licenseFile": "barlow/OFL.txt",
+      "licenseSha256": "186d750eb496a4c17a76385f82be6aea2ac1cf2de074a811d63786cf374ea73f",
+      "licenseUrl": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/barlow/OFL.txt",
+      "reservedFontName": null,
+      "internalFamily": "Barlow",
+      "repository": "https://github.com/google/fonts",
+      "commit": "5bb28733cec313b63fbd415b574b5ae35c8aa8b8",
+      "files": [
+        {
+          "id": "barlow",
+          "weight": 400,
+          "file": "barlow/barlow.woff2",
+          "bytes": 12748,
+          "sha256": "0a2af41b5ea921824e92519fff3d117c8ed77ffc87de0a2241bbbc27ac2df52d",
+          "source": {
+            "path": "ofl/barlow/Barlow-Regular.ttf",
+            "url": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/barlow/Barlow-Regular.ttf",
+            "sha256": "95aa02c7c43096e0dd44d787ba6216864a67157e402adab59b35572e0c1577ea",
+            "version": "Version 1.408",
+            "instance": {}
+          }
+        },
+        {
+          "id": "barlow",
+          "weight": 500,
+          "file": "barlow/barlow-500.woff2",
+          "bytes": 12696,
+          "sha256": "73b92e4a2a318f83d496d0bbb61b0e49022f68484df570758cfe4d345b4907ba",
+          "source": {
+            "path": "ofl/barlow/Barlow-Medium.ttf",
+            "url": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/barlow/Barlow-Medium.ttf",
+            "sha256": "f8906f762cb73dca441da034bc363b2d8e2e68bc10d5c05e58717646c20cc4b4",
+            "version": "Version 1.408",
+            "instance": {}
+          }
+        },
+        {
+          "id": "barlow",
+          "weight": 600,
+          "file": "barlow/barlow-600.woff2",
+          "bytes": 12836,
+          "sha256": "7fa380b6c48cdf09efa19c0249e9c202353921b36823ff26095fa499bcafc370",
+          "source": {
+            "path": "ofl/barlow/Barlow-SemiBold.ttf",
+            "url": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/barlow/Barlow-SemiBold.ttf",
+            "sha256": "86577cb32f8abe3673db53ca0f4221e6856751a4f6730c867e00f720f8bb1fc5",
+            "version": "Version 1.408",
+            "instance": {}
+          }
+        },
+        {
+          "id": "barlow",
+          "weight": 700,
+          "file": "barlow/barlow-700.woff2",
+          "bytes": 12760,
+          "sha256": "fc7a590ef5f990d98ae8da1ec27bfbccc4e1cf25426b3072507de03ee1100290",
+          "source": {
+            "path": "ofl/barlow/Barlow-Bold.ttf",
+            "url": "https://raw.githubusercontent.com/google/fonts/5bb28733cec313b63fbd415b574b5ae35c8aa8b8/ofl/barlow/Barlow-Bold.ttf",
+            "sha256": "84e6a4d61e7c3e21f3c50ea6a4f7e5303a3467864c038be6ea3759bab8d547f9",
+            "version": "Version 1.408",
+            "instance": {}
+          }
+        }
+      ]
     }
   ]
 }

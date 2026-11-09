@@ -9,8 +9,8 @@
 // decoration.
 import { PREVIEW_VIEWS, RENDERER_VERSION } from "../contracts/index.js";
 import { repairTheme, resolveTheme } from "../engine/index.js";
-import { escapeCssForHtml, validateTheme } from "../format/index.js";
-import { FONT_BY_ID, compileAppearance, fontFaceCss, mountAppearance, noResources } from "../appearance/index.js";
+import { escapeCssForHtml, releaseRasters, validateTheme } from "../format/index.js";
+import { FONT_BY_ID, compileAppearance, imageAssets, mountAppearance, noResources, roleFontFaceCss, roleFontIds } from "../appearance/index.js";
 import { motionMs } from "../appearance/effects.js";
 import { THEMED_SWITCH } from "../appearance/paint.js";
 import { LIMITS } from "../appearance/registry.js";
@@ -86,7 +86,8 @@ const SHELL = `<!doctype html><html lang="en"><head><meta charset="utf-8">${LAYE
  * build-time DOM. The document gets the fixture's five style layers in its head and the view as
  * its body. paint(state, options) applies { view, theme, preferences, before, cssAllowed }; it resolves only
  * when the theme or preferences changed, and plays motion only when asked to for an explicit
- * selection. options: { play, omit: layer names left empty, fontUrl: overrides the adapter's,
+ * selection. options: { play, omit: layer names left empty, fontResources: an adapter for the faces
+ * in place of the configured one,
  * layoutOnly: write the style layers only when the body is laid out again }. A paint whose
  * structure (view, base, Before, preferences, flavor, effects, font and width) matches the
  * previous one changes only the style layers and keeps the laid-out body.
@@ -112,10 +113,14 @@ export function createFixtureRenderer(fdoc, rt = runtime) {
   let built = null;
   let cacheKey = null;
   let cached = null;
+  let theme = null;
 
   function resolve(state) {
     const key = JSON.stringify([state.theme, state.preferences]);
     if (key === cacheKey) return cached;
+    // A new theme releases the images only the old one carried before its own are admitted.
+    if (theme && theme !== state.theme) releaseRasters(theme, state.theme);
+    theme = state.theme;
     const { modeIndex: index, primer } = rt;
     const base = state.theme.base;
     const native = { colorMode: base, lightTheme: standardMode(index, "light"), darkTheme: standardMode(index, "dark"), systemDark: base === "dark" };
@@ -132,21 +137,25 @@ export function createFixtureRenderer(fdoc, rt = runtime) {
     return cached;
   }
 
-  /** The bundled face this state shows, or null: { id, url } with the adapter's URL. */
-  function font(state) {
+  /**
+   * The bundled faces this state shows: every reviewed weight of its heading and body families,
+   * as { id, weight, url } with the adapter's URL.
+   */
+  function fonts(state) {
     const { resolved } = resolve(state);
     const prefs = state.preferences;
     const themed = prefs.enabled && !state.before && resolved.policy === "themed";
-    // The heading role applies in Full and Calm alike while Fonts is on.
-    if (!themed || !prefs.fonts || resolved.font === "system") return null;
-    const url = rt.resources.fontUrl(resolved.font);
-    return url ? { id: resolved.font, url } : null;
+    // The heading and body roles apply in Full and Calm alike while Fonts is on.
+    if (!themed || !prefs.fonts) return [];
+    return roleFontIds(resolved)
+      .flatMap((id) => FONT_BY_ID[id].weights.map((weight) => ({ id, weight, url: rt.resources.fontUrl(id, weight) })))
+      .filter((face) => face.url);
   }
 
   return {
     resolve,
-    font,
-    paint(state, { play = false, omit = [], fontUrl, layoutOnly = false } = {}) {
+    fonts,
+    paint(state, { play = false, omit = [], fontResources = rt.resources, layoutOnly = false } = {}) {
       const { native, plan, resolved, sourceRepairs } = resolve(state);
       const prefs = state.preferences;
       const themed = prefs.enabled && !state.before && resolved.policy === "themed";
@@ -155,9 +164,6 @@ export function createFixtureRenderer(fdoc, rt = runtime) {
       root.setAttribute("data-light-theme", native.lightTheme);
       root.setAttribute("data-dark-theme", native.darkTheme);
       const compiled = themed ? rt.primer.compileGitHub(resolved, plan, prefs) : null;
-      // Only the selected face gets a rule, so only that one file can load.
-      const face = font(state);
-      const url = fontUrl === undefined ? face?.url : fontUrl;
       const cssAllowed = Boolean(state.cssAllowed);
       // The same registry the content runtime compiles against, so a theme's CSS that also names
       // GitHub's own elements still compiles here. Those rules need admission markers, which the
@@ -167,8 +173,9 @@ export function createFixtureRenderer(fdoc, rt = runtime) {
         fixture: FIXTURE_CSS,
         native: nativeBaseline(rt.modeIndex, plan.seedMode ?? standardMode(rt.modeIndex, state.theme.base)),
         theme: compiled?.css ?? "",
-        fonts: face && url ? fontFaceCss(face.id, url) : "",
-        appearance: themed ? escapeCssForHtml(compileAppearance(resolved, prefs, "preview", { ...owned, viewport: screen() })) : "",
+        // The heading and body families' faces, as on github.com: only their files can load.
+        fonts: themed && prefs.fonts ? roleFontFaceCss(resolved, fontResources) : "",
+        appearance: themed ? escapeCssForHtml(compileAppearance(resolved, prefs, "preview", { ...owned, viewport: screen(), images: imageAssets(state.theme) })) : "",
       };
       // Colors reach the body only through the style layers, so a color edit keeps the body. The
       // structured appearance can move text (fonts, case, tracking, a banner), so it is structure.
@@ -210,13 +217,15 @@ export function createFixtureRenderer(fdoc, rt = runtime) {
       decoration?.destroy();
       decoration = null;
       built = null;
+      if (theme) releaseRasters(theme);
+      theme = cacheKey = cached = null;
       fdoc.body.replaceChildren();
       for (const name of LAYERS) layer(name).textContent = "";
     },
   };
 }
 
-// Embedded copies of packaged files, by URL: the selected font and the fixture images. The
+// Embedded copies of packaged files, by URL: the selected fonts and the fixture images. The
 // styled frame has an opaque origin and a policy that allows no request at all, so it reads them
 // only as data; the controller reads each packaged file once per page and keeps the copy, since
 // the set is the fixed, packaged one.
@@ -463,20 +472,26 @@ export function mountPreview(container, options) {
 
   async function job(generation, play, started, state) {
     const wait = (promise) => leavable(waits, promise);
-    // An embedded copy of the selected face, read once; until then the frame would fall back.
-    const face = renderer.font(state);
-    const fontUrl = face ? await wait(embedded(win, face.url)) : null;
+    // Embedded copies of the selected faces, read once; until then the frame would fall back. A
+    // face without a copy gets no rule, so its text falls back natively.
+    const faces = renderer.fonts(state);
+    if (faces.length) await wait(Promise.all(faces.map((face) => embedded(win, face.url))));
     if (obsolete(generation)) return false;
-    if (fontUrl) {
-      // Lay out with the face loaded, so decoration is measured as it will be shown.
-      ldoc.head.querySelector('style[data-layer="fonts"]').textContent = fontFaceCss(face.id, fontUrl);
-      const font = FONT_BY_ID[face.id];
-      await wait(ldoc.fonts.load(`${font.weight} ${font.minimumAccentPx}px "${font.cssFamily}"`));
+    const fontResources = { kind: "embedded", fontUrl: (id, weight) => embeddedCopy(rt.resources.fontUrl(id, weight) ?? ""), assetUrl: () => null };
+    const fontCss = faces.length ? roleFontFaceCss(renderer.resolve(state).resolved, fontResources) : "";
+    if (fontCss) {
+      // Lay out with each family's registry face loaded, so decoration is measured as it will be
+      // shown; other weights load as text uses them, and the height follows. Unchanged rules
+      // stay, so their faces are not parsed and loaded again.
+      const layer = ldoc.head.querySelector('style[data-layer="fonts"]');
+      if (layer.textContent !== fontCss) layer.textContent = fontCss;
+      const registry = faces.filter(({ id, weight }) => weight === FONT_BY_ID[id].weight);
+      await wait(Promise.all(registry.map(({ id, weight }) => ldoc.fonts.load(`${weight} ${FONT_BY_ID[id].minimumAccentPx}px "${FONT_BY_ID[id].cssFamily}"`))));
       if (obsolete(generation)) return false;
     }
     endMotion();
     laidWidth = Math.round(host.getBoundingClientRect().width);
-    const painted = renderer.paint(state, { omit: ["theme"], fontUrl, layoutOnly: true });
+    const painted = renderer.paint(state, { omit: ["theme"], fontResources, layoutOnly: true });
     const { resolved, compiled, owned, css, decoration, sourceRepairs, structure, rebuilt } = painted;
     // Height follows the layout document through the ResizeObserver.
     // The view's images, embedded; the first update of a view reads them once.

@@ -3,7 +3,7 @@ import { execFile } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { promisify } from "node:util";
-import { ANSI_ROLES, DEFERRED_EDITOR_ACTION_TYPES, DIFF_ROLES, EDITOR_ACTION_TYPES, ISSUE_CODES, LIMITS, THEME_SYNTAX_ROLES } from "../../packages/contracts/index.js";
+import { ANSI_ROLES, DEFERRED_EDITOR_ACTION_TYPES, DIFF_ROLES, EDITOR_ACTION_TYPES, FONT_INVENTORY, ISSUE_CODES, LIMITS, THEME_SYNTAX_ROLES } from "../../packages/contracts/index.js";
 import { CAPABILITIES, canonicalize, cssProofs, decodeShare, editorActionIssues, encodeShare, exportTheme, normalizeTheme, parseImport, validateTheme } from "../../packages/format/index.js";
 
 const ROOT = new URL("../../", import.meta.url).pathname;
@@ -79,11 +79,13 @@ test("old RS1 framing and golden vectors are unchanged", () => {
   for (const vector of vectors) assert.equal(encodeShare(vector.theme), vector.code, vector.name);
 });
 
-test("deferred fonts import with a warning and keep the request in source", () => {
+test("every bundled heading and body font imports without a note, and none is deferred", () => {
+  assert.deepEqual(FONT_INVENTORY.deferred, []);
   const result = parseImport(JSON.stringify({ ...MINIMAL, fonts: { heading: "orbitron", body: "barlow" } }), "text");
   assert.ok(result.ok);
-  assert.deepEqual(result.notes.filter((n) => n.severity === "warning").map((n) => [n.code, n.path]), [["deferred-capability", "/fonts/heading"], ["deferred-capability", "/fonts/body"]]);
+  assert.deepEqual(result.notes, []);
   assert.deepEqual(result.normalized.fonts, { heading: "orbitron", body: "barlow" });
+  assert.ok(!CAPABILITIES.deferred.some((line) => /^fonts/.test(line)));
   const native = parseImport(JSON.stringify({ ...MINIMAL, fonts: { heading: "roboto-condensed" } }), "text");
   assert.deepEqual(native.notes, []);
 });
@@ -96,7 +98,7 @@ test("deferred editing controls: image upload and the Advanced CSS editor are re
   }
   assert.equal(editorActionIssues({ type: "remix" })[0].code, ISSUE_CODES.invalidValue);
   assert.equal(CAPABILITIES.increment, 1);
-  assert.ok(CAPABILITIES.deferred.length === 4 && CAPABILITIES.admitted.length >= 9);
+  assert.ok(CAPABILITIES.deferred.length === 3 && CAPABILITIES.admitted.length >= 9);
 });
 
 test("the viewer entry fails closed on CSS until build-time proofs for that exact text are registered", async () => {

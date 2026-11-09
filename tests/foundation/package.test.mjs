@@ -96,7 +96,8 @@ test("package writes versioned ZIPs, the userscript, a source archive, checksums
         ...entry.notices.slice(1).map((n) => [n.file, "OFL-1.1", n.covers.map((path) => `extension/${path}`), ["chrome", "firefox", "amo-source"]]),
       ],
     );
-    assert.equal(entry.notices.length, 11);
+    // Primer's, one OFL notice for each of the eighteen font families and the preview images' two.
+    assert.equal(entry.notices.length, 21);
 
     // The checks pass on real output when the toolchain is the pinned one.
     const { problems, checks } = await verifyArtifacts(out);

@@ -343,7 +343,7 @@ export interface AppearanceModule {
   compileAppearance(resolved: ResolvedTheme, prefs: EffectivePreferences, target: "github" | "preview"): string;
   mountAppearance(root: Element, resolved: ResolvedTheme, prefs: EffectivePreferences, anchors: SlotAnchor[]): Disposable;
   /** Only the target's URL adapter supplies resourceUrl. Theme files never do. */
-  fontFaceCss(fontId: FontId, resourceUrl: string): string;
+  fontFaceCss(fontId: FontId, resourceUrl: string, weight?: number): string;
 }
 
 /** Also the contract for C7's temporary site adapter. */
@@ -427,8 +427,8 @@ export interface CssIrDeclaration {
   layers: number;
 }
 export interface CssIrRule {
-  /** Canonical @media preludes, outermost first. */
-  media: string[];
+  /** Canonical heads of the enclosing @media and @supports rules, outermost first. */
+  conditions: string[];
   selectors: CssIrSelector[];
   declarations: CssIrDeclaration[];
 }

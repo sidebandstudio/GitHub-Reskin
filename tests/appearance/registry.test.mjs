@@ -16,12 +16,10 @@ test("registry matches the contracts and the schema's effect and font registries
     assert.deepEqual(EFFECTS[id].colors.map((role) => `tokens.${role}`), effect.resolvedColorSources, id);
     assert.equal(EFFECTS[id].motion, /once on explicit selection/.test(effect.draws), id);
   }
-  // The schema lists every family a theme may name; only the bundled ones (FONT_IDS) ship files
-  // in this increment, and the rest stay deferred until their files land.
-  const bundled = new Set(FONT_IDS);
+  // Every family the schema lets a theme name ships files, one per reviewed weight.
   assert.deepEqual(
-    FONTS.map(({ id, family, weight, minimumAccentPx }) => ({ id, family, weight, minimumAccentPx })),
-    X.fonts.filter(({ id }) => bundled.has(id)).map(({ id, family, weight, minimumAccentPx }) => ({ id, family, weight, minimumAccentPx })),
+    FONTS.map(({ id, family, weight, weights, minimumAccentPx }) => ({ id, family, weight, weights, minimumAccentPx })),
+    X.fonts.map(({ id, family, weight, weights, minimumAccentPx }) => ({ id, family, weight, weights: weights ?? [weight], minimumAccentPx })),
   );
   assert.deepEqual(FONTS.map(({ id }) => id), FONT_IDS.filter((id) => id !== "system"));
 });

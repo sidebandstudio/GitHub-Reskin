@@ -1,10 +1,11 @@
 // Byte and header admission for embedded rasters (THEME-EXPANSION.md, "Images and storage").
 // Nothing here decodes pixels. Before any decoder sees an image: canonical base64 and padding,
 // the decoded size, magic bytes against the declared media type, a bounded header walk for the
-// real dimensions, and detection of animation and metadata. A static, clean image passes; an
-// animated or metadata-bearing one needs the local first-frame conversion, which arrives with the
-// codecs in increment 2, so it is rejected for now. C5 owns browser decoding.
+// real dimensions, and detection of animation and metadata. A static, clean image passes. An
+// animated or metadata-bearing one is refused with image-conversion: a theme stores only still,
+// clean images, and the browser conversion in packages/appearance/raster.js makes one locally.
 import { ISSUE_CODES, LIMITS } from "../contracts/index.js";
+import { sha256 } from "../engine/sha256.js";
 import { crc32 } from "./share.js";
 
 const DATA_URL = /^data:image\/(png|jpeg|webp|gif);base64,([A-Za-z0-9+/]*={0,2})$/;
@@ -44,6 +45,9 @@ const u16le = (b, i) => b[i] | (b[i + 1] << 8);
 const u24le = (b, i) => b[i] | (b[i + 1] << 8) | (b[i + 2] << 16);
 const ascii = (b, i, n) => String.fromCharCode(...b.subarray(i, i + n));
 
+// Whether a frame of w x h at (x, y) is nonempty and lies within a width x height canvas.
+const inside = (x, y, w, h, width, height) => w >= 1 && h >= 1 && x + w <= width && y + h <= height;
+
 const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
 const PNG_METADATA = new Set(["tEXt", "zTXt", "iTXt", "eXIf", "tIME", "iCCP"]);
 
@@ -66,6 +70,8 @@ function png(b) {
       height = u32be(b, i + 12);
     }
     if (type === "acTL" || type === "fcTL") animated = true;
+    // A decoder draws an APNG frame on the header's canvas; one outside it is not the size checked.
+    if (type === "fcTL" && (length < 20 || !inside(u32be(b, i + 20), u32be(b, i + 24), u32be(b, i + 12), u32be(b, i + 16), width, height))) return { error: "a PNG frame lies outside the image" };
     if (PNG_METADATA.has(type)) metadata = true;
     i += 12 + length;
     if (type === "IEND") {
@@ -77,29 +83,46 @@ function png(b) {
   return { width, height, animated, metadata };
 }
 
+// Every segment and scan up to the end marker: metadata may follow the frame header or sit
+// between the scans of a progressive image, and a file that stops before its end is not an image.
 function jpeg(b) {
   if (b.length < 4 || b[0] !== 0xff || b[1] !== 0xd8 || b[2] !== 0xff) return null;
   let i = 2;
   let metadata = false;
-  while (i + 4 <= b.length) {
+  let frame = null;
+  let scanned = false;
+  while (i + 2 <= b.length) {
     if (b[i] !== 0xff) return { error: "the JPEG markers are damaged" };
     const marker = b[i + 1];
-    if (marker === 0xd8 || (marker >= 0xd0 && marker <= 0xd7) || marker === 0x01) {
-      i += 2;
+    if (marker === 0xff || marker === 0xd8 || (marker >= 0xd0 && marker <= 0xd7) || marker === 0x01) {
+      i += marker === 0xff ? 1 : 2;
       continue;
     }
+    if (marker === 0xd9) {
+      if (!frame || !scanned) return { error: "the JPEG has no image data" };
+      // Bytes after the end are not pixels, as with a camera's appended previews: conversion
+      // drops them and an import is refused until it has.
+      return { ...frame, animated: false, metadata: metadata || i + 2 !== b.length };
+    }
+    if (i + 4 > b.length) break;
     const length = u16be(b, i + 2);
     if (length < 2 || i + 2 + length > b.length) return { error: "a JPEG segment runs past the end of the image" };
     if ((marker >= 0xe1 && marker <= 0xef) || marker === 0xfe) metadata = true;
     const sof = marker >= 0xc0 && marker <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(marker);
     if (sof) {
       if (length < 7) return { error: "the JPEG frame header is damaged" };
-      return { height: u16be(b, i + 5), width: u16be(b, i + 7), animated: false, metadata };
+      if (frame) return { error: "the JPEG has more than one frame header" };
+      frame = { height: u16be(b, i + 5), width: u16be(b, i + 7) };
     }
-    if (marker === 0xda) break;
     i += 2 + length;
+    if (marker === 0xda) {
+      if (!frame) return { error: "the JPEG scan comes before its frame header" };
+      scanned = true;
+      // Entropy-coded data runs to the next marker that is neither a stuffed byte nor a restart.
+      while (i < b.length && !(b[i] === 0xff && b[i + 1] !== 0x00 && !(b[i + 1] >= 0xd0 && b[i + 1] <= 0xd7))) i++;
+    }
   }
-  return { error: "the JPEG has no frame header" };
+  return { error: frame ? "the JPEG does not end cleanly" : "the JPEG has no frame header" };
 }
 
 function gif(b) {
@@ -123,6 +146,8 @@ function gif(b) {
       skipBlocks();
     } else if (introducer === 0x2c) {
       if (i + 10 > b.length) break;
+      // Decoders grow the canvas to fit a frame outside the logical screen, past the size checked.
+      if (!inside(u16le(b, i + 1), u16le(b, i + 3), u16le(b, i + 5), u16le(b, i + 7), width, height)) return { error: "a GIF frame lies outside the image" };
       frames++;
       const packed = b[i + 9];
       i += 10 + (packed & 0x80 ? 3 * 2 ** ((packed & 7) + 1) : 0) + 1;
@@ -140,7 +165,8 @@ function webp(b) {
   let height = 0;
   let animated = false;
   let metadata = false;
-  let found = false;
+  let canvas = false;
+  let still = null;
   while (i + 8 <= b.length) {
     const type = ascii(b, i, 4);
     const length = u32be([b[i + 7], b[i + 6], b[i + 5], b[i + 4]], 0);
@@ -152,27 +178,72 @@ function webp(b) {
       if (flags & 0x2c) metadata = true;
       width = u24le(b, start + 4) + 1;
       height = u24le(b, start + 7) + 1;
-      found = true;
-    } else if (type === "VP8 " && length >= 10 && !found) {
+      canvas = true;
+    } else if (type === "VP8 " && length >= 10 && !still) {
       if (b[start + 3] !== 0x9d || b[start + 4] !== 0x01 || b[start + 5] !== 0x2a) return { error: "the WebP frame is damaged" };
-      width = u16le(b, start + 6) & 0x3fff;
-      height = u16le(b, start + 8) & 0x3fff;
-      found = true;
-    } else if (type === "VP8L" && length >= 5 && !found) {
+      still = { width: u16le(b, start + 6) & 0x3fff, height: u16le(b, start + 8) & 0x3fff };
+    } else if (type === "VP8L" && length >= 5 && !still) {
       if (b[start] !== 0x2f) return { error: "the WebP frame is damaged" };
       const bits = b[start + 1] | (b[start + 2] << 8) | (b[start + 3] << 16) | (b[start + 4] << 24);
-      width = (bits & 0x3fff) + 1;
-      height = ((bits >>> 14) & 0x3fff) + 1;
-      found = true;
-    } else if (type === "ANIM" || type === "ANMF") animated = true;
-    else if (type === "EXIF" || type === "XMP " || type === "ICCP") metadata = true;
+      still = { width: (bits & 0x3fff) + 1, height: ((bits >>> 14) & 0x3fff) + 1 };
+    } else if (type === "ANIM" || type === "ANMF") {
+      animated = true;
+      // An animation frame is drawn on the VP8X canvas; one outside it is not the size checked.
+      if (type === "ANMF" && (!canvas || length < 16 || !inside(u24le(b, start) * 2, u24le(b, start + 3) * 2, u24le(b, start + 6) + 1, u24le(b, start + 9) + 1, width, height))) return { error: "a WebP frame lies outside the image" };
+    } else if (type === "EXIF" || type === "XMP " || type === "ICCP") metadata = true;
     i = start + length + (length & 1);
   }
-  return found ? { width, height, animated, metadata } : { error: "the WebP has no image frame" };
+  if (!canvas) return still ? { ...still, animated, metadata } : { error: "the WebP has no image frame" };
+  // A still image's bitstream is the canvas: a decoder that trusted either size would draw the other.
+  if (!animated && (!still || still.width !== width || still.height !== height)) return { error: "the WebP frame does not match its canvas" };
+  return { width, height, animated, metadata };
 }
 
 const READERS = { png, jpeg, gif, webp };
 const MAGIC_ORDER = ["png", "jpeg", "gif", "webp"];
+
+// A local file the builder may convert: at most 2 MiB, and the same dimension and pixel limits as
+// a stored image, checked from its header before anything decodes it.
+export const UPLOAD_SOURCE_BYTES = 2 * 1024 * 1024;
+
+const fits = (info) => info.width <= LIMITS.imageMaxDimension && info.height <= LIMITS.imageMaxDimension && info.width * info.height <= LIMITS.imageMaxPixels;
+
+/**
+ * Header facts for the bytes of a local image file the builder may convert, or why it cannot be
+ * converted. Animation and metadata are allowed here; conversion removes them.
+ * @param {Uint8Array} bytes
+ * @returns {{ok:true, mime:string, width:number, height:number, animated:boolean, metadata:boolean} | {ok:false, code:string, message:string}}
+ */
+export function rasterSourceInfo(bytes) {
+  const fail = (code, message) => ({ ok: false, code, message });
+  if (!(bytes instanceof Uint8Array)) return fail(ISSUE_CODES.imageData, "This is not image data Reskin can read.");
+  if (bytes.length > UPLOAD_SOURCE_BYTES) return fail(ISSUE_CODES.imageLimit, `An image to convert is at most ${UPLOAD_SOURCE_BYTES / 1048576} MiB.`);
+  const type = MAGIC_ORDER.find((t) => READERS[t](bytes) !== null);
+  if (!type) return fail(ISSUE_CODES.imageData, "This is not a PNG, JPEG, WebP or GIF image. SVG and other formats are not accepted.");
+  const info = READERS[type](bytes);
+  if (info.error) return fail(ISSUE_CODES.imageData, `This image cannot be read: ${info.error}.`);
+  if (info.width < 1 || info.height < 1) return fail(ISSUE_CODES.imageData, "This image has no size.");
+  if (!fits(info)) return fail(ISSUE_CODES.imageLimit, `Images are at most ${LIMITS.imageMaxDimension}px a side and ${LIMITS.imageMaxPixels} pixels.`);
+  return { ok: true, mime: `image/${type}`, width: info.width, height: info.height, animated: info.animated, metadata: info.metadata };
+}
+
+/** Decoded bytes of a canonical base64 data URL, or null. */
+export function dataUrlBytes(data) {
+  const match = typeof data === "string" ? DATA_URL.exec(data) : null;
+  return match ? decodeBase64(match[2]) : null;
+}
+
+// Validation, repair and resolution each admit a theme's images again, and a preview resolves on
+// every edit, so recent admitted results are kept by exact data until releaseRasters drops them
+// with their layer or theme. Results are pure and never mutated; a refused string is never kept.
+const recent = new Map();
+const hashes = new Map();
+const RECENT = 16;
+const remember = (cache, key, value) => {
+  if (cache.size >= RECENT) cache.delete(cache.keys().next().value);
+  cache.set(key, value);
+  return value;
+};
 
 /**
  * Header facts for one embedded raster data URL, or a reason it cannot be admitted. Checks length
@@ -180,6 +251,33 @@ const MAGIC_ORDER = ["png", "jpeg", "gif", "webp"];
  * @returns {{ok:true, mime:string, bytes:Uint8Array, width:number, height:number} | {ok:false, code:string, message:string}}
  */
 export function rasterInfo(data) {
+  if (typeof data === "string" && recent.has(data)) return recent.get(data);
+  const info = admit(data);
+  return info.ok ? remember(recent, data, info) : info;
+}
+
+/** SHA-256 of an admitted image's decoded bytes, the asset identity the resolver records, or null. */
+export function rasterHash(data) {
+  if (hashes.has(data)) return hashes.get(data);
+  const info = rasterInfo(data);
+  return info.ok ? remember(hashes, data, sha256(info.bytes)) : null;
+}
+
+/**
+ * Forgets the admission, bytes and hash kept for every image in `theme` that none of the `keep`
+ * documents carries, so a removed or replaced layer or theme leaves no image data behind. A
+ * document elsewhere that shares an image only admits it again.
+ */
+export function releaseRasters(theme, ...keep) {
+  const kept = new Set(keep.flatMap((other) => rasterLayers(other).map(({ image }) => image.data)));
+  for (const { image } of rasterLayers(theme)) {
+    if (kept.has(image.data)) continue;
+    recent.delete(image.data);
+    hashes.delete(image.data);
+  }
+}
+
+function admit(data) {
   const fail = (code, message) => ({ ok: false, code, message });
   const match = typeof data === "string" ? DATA_URL.exec(data) : null;
   if (!match) return fail(ISSUE_CODES.imageData, "Images are PNG, JPEG, WebP or GIF data in canonical base64.");
@@ -194,11 +292,9 @@ export function rasterInfo(data) {
   const info = READERS[declared](bytes);
   if (info.error) return fail(ISSUE_CODES.imageData, `This image cannot be read: ${info.error}.`);
   if (info.width < 1 || info.height < 1) return fail(ISSUE_CODES.imageData, "This image has no size.");
-  if (info.width > LIMITS.imageMaxDimension || info.height > LIMITS.imageMaxDimension || info.width * info.height > LIMITS.imageMaxPixels) {
-    return fail(ISSUE_CODES.imageLimit, `Images are at most ${LIMITS.imageMaxDimension}px a side and ${LIMITS.imageMaxPixels} pixels.`);
-  }
-  if (info.animated) return fail(ISSUE_CODES.deferred, "Animated images need converting to one still frame, which this version of Reskin cannot do yet.");
-  if (info.metadata) return fail(ISSUE_CODES.deferred, "This image carries metadata that must be removed first, which this version of Reskin cannot do yet.");
+  if (!fits(info)) return fail(ISSUE_CODES.imageLimit, `Images are at most ${LIMITS.imageMaxDimension}px a side and ${LIMITS.imageMaxPixels} pixels.`);
+  if (info.animated) return fail(ISSUE_CODES.imageConversion, "Animated images are kept as one still frame. Convert this image in the theme builder, which keeps its first frame, then import again.");
+  if (info.metadata) return fail(ISSUE_CODES.imageConversion, "This image carries metadata such as camera or text data. Convert it in the theme builder, which removes it, then import again.");
   return { ok: true, mime: `image/${declared}`, bytes, width: info.width, height: info.height };
 }
 
@@ -213,6 +309,24 @@ export function rasterLayers(theme) {
     });
   }
   return out;
+}
+
+/**
+ * The decoded bytes and pixels of every raster in a theme, counting repeated occurrences, for the
+ * document caps. Images that fail header admission count nothing; their own issue reports them.
+ * `except` leaves out one layer's pointer, as when the builder replaces that layer.
+ */
+export function rasterTotals(theme, except = null) {
+  let bytes = 0;
+  let pixels = 0;
+  for (const { path, image } of rasterLayers(theme)) {
+    if (path === except) continue;
+    const info = rasterInfo(image.data);
+    if (!info.ok) continue;
+    bytes += info.bytes.length;
+    pixels += info.width * info.height;
+  }
+  return { bytes, pixels };
 }
 
 /**

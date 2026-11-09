@@ -75,7 +75,7 @@ export type EffectParameter =
   | { enum: readonly string[]; default: string };
 export declare const EFFECT_PARAMETERS: Readonly<Record<EffectId, Readonly<Record<string, EffectParameter>>>>;
 /** The bundled families, the ones with files in this build, plus "system". */
-export declare const FONTS: readonly { id: FontId; family: string | null; weight: number | null; minimumAccentPx: number | null }[];
+export declare const FONTS: readonly { id: FontId; family: string | null; weight: number | null; weights: readonly number[]; minimumAccentPx: number | null }[];
 /** Every heading and body font ID: roles, reviewed weights, this increment's source and native fallback list. */
 export declare const FONT_ROLES: readonly {
   id: FontId;
@@ -109,6 +109,20 @@ export declare function rasterInfo(
 ): { ok: true; mime: string; bytes: Uint8Array; width: number; height: number } | { ok: false; code: string; message: string };
 /** Every raster layer of a theme with its JSON pointer, in document order. */
 export declare function rasterLayers(theme: unknown): { path: string; image: ThemeRaster }[];
+/** SHA-256 of an admitted image's decoded bytes, the asset identity the resolver records, or null. */
+export declare function rasterHash(data: unknown): string | null;
+/** Forgets the cached admission, bytes and hash of each image in `theme` that no `keep` document carries. */
+export declare function releaseRasters(theme: unknown, ...keep: unknown[]): void;
+/** Decoded bytes of a canonical base64 data URL, or null. */
+export declare function dataUrlBytes(data: unknown): Uint8Array | null;
+/** The largest local file the builder's conversion accepts, 2 MiB. */
+export declare const UPLOAD_SOURCE_BYTES: number;
+/** Header facts of a local image file the builder may convert; animation and metadata allowed. */
+export declare function rasterSourceInfo(
+  bytes: Uint8Array,
+): { ok: true; mime: string; width: number; height: number; animated: boolean; metadata: boolean } | { ok: false; code: string; message: string };
+/** Decoded bytes and pixels of a theme's images counting repeats, optionally without one layer. */
+export declare function rasterTotals(theme: unknown, except?: string | null): { bytes: number; pixels: number };
 /** This increment's positive capability inventory and its deferred constructs. */
 export declare const CAPABILITIES: Readonly<{ increment: 1; admitted: readonly string[]; deferred: readonly string[] }>;
 /** Warning notes for requests this increment renders another way, such as a deferred font. */

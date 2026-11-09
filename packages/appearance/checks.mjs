@@ -28,7 +28,7 @@ export async function run({ command, args, root, outDir }) {
     const bad = unsupported("check:fonts", args);
     if (bad) return bad;
     const result = await fontAudit(root);
-    console.log(`Bundled fonts: ${result.total} bytes`);
+    console.log(`Bundled fonts: ${result.families} families in ${result.files} files, ${result.total} bytes`);
     return report("check:fonts", result);
   }
   if (command === "effects") {
