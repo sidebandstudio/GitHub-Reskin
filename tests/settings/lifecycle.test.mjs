@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { LEGACY_PAGE_CACHE_KEY, LIMITS, STORAGE_KEYS } from "../../packages/contracts/index.js";
 import { createRepository } from "../../packages/settings/index.js";
+import { authenticationRoute } from "../../extension/content/github/routes.js";
 import { startContent } from "../../extension/content/lifecycle/index.js";
 import { catalog, context, deferred, fakePage, memoryStorage, testRenderer } from "./helpers.mjs";
 
@@ -86,6 +87,45 @@ test("policy comes first: high contrast, unknown modes and forced colors ignore 
     assert.equal(renderer.calls.compile, 0);
     content.destroy();
   }
+});
+
+test("authentication routes stay native before anything compiles, and a navigation into or out of one renders again before the new page paints", async () => {
+  const { storage } = await stored();
+  const nativeRoute = (document) => (authenticationRoute(document) ? "authentication" : null);
+  const at = (pathname) => {
+    const started = start(storage, {}, { nativeRoute });
+    started.page.document.location = { hostname: "github.com", pathname };
+    return started;
+  };
+  const auth = ["/login", "/login/oauth/authorize", "/login/device", "/logout", "/signup", "/join", "/session", "/sessions/two-factor", "/sessions/sudo", "/sessions/verified-device", "/password_reset", "/settings/two_factor_authentication/setup/intro"];
+  for (const pathname of auth) {
+    const { page, renderer, events, content } = at(pathname);
+    assert.equal(await content.ready, "native", pathname);
+    assert.equal(page.style(), null);
+    assert.equal(renderer.calls.compile, 0);
+    assert.ok(events.some((e) => e.type === "native" && e.reason === "authentication"));
+    content.destroy();
+  }
+  for (const pathname of ["/octo-sample", "/loginx", "/octo/sessions", "/settings/profile"]) {
+    const { content } = at(pathname);
+    assert.equal(await content.ready, "ready", pathname);
+    content.destroy();
+  }
+  const { page, content } = at("/octo-sample");
+  await content.ready;
+  page.document.readyState = "interactive";
+  const visit = async (pathname, event) => {
+    page.document.location = { hostname: "github.com", pathname };
+    if (event === "popstate") page.fire("view", "popstate");
+    else page.fire("document", event);
+    await page.frame();
+    return [phase(page), Boolean(page.style())];
+  };
+  assert.deepEqual(await visit("/login", "turbo:render"), ["native", false]);
+  assert.deepEqual(await visit("/octo-sample", "turbo:load"), ["ready", true]);
+  assert.deepEqual(await visit("/signup", "popstate"), ["native", false]);
+  assert.deepEqual(await visit("/octo-sample", "pjax:end"), ["ready", true]);
+  content.destroy();
 });
 
 test("a snapshot mismatch re-resolves the source against the current page", async () => {

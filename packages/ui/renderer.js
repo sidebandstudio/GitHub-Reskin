@@ -21,7 +21,8 @@ const FORCED_COLORS = "(forced-colors: active)";
 /**
  * @param {object} options
  * @param {object} options.github C3's content adapter (extension/content/github): readNativeMode,
- *   forcedColorsActive, reducedMotion, classifyRoute, locateSlots, startAdmission, MODE_ATTRIBUTES
+ *   forcedColorsActive, reducedMotion, authenticationRoute, classifyRoute, locateSlots,
+ *   startAdmission, MODE_ATTRIBUTES
  * @param {object} options.resources a C5 resource adapter (extensionResources, embeddedResources)
  * @param {object} [options.catalog] CatalogSource; a bundled theme's own reviewed CSS applies in
  *   Full. A saved theme's CSS applies in Full only with consent for its sanitized hash.
@@ -43,6 +44,8 @@ export function createRenderer({ github, resources, catalog = null, index = MODE
   };
   return {
     modeAttributes: github.MODE_ATTRIBUTES,
+    // Authentication routes stay native before anything is compiled.
+    nativeRoute: (document) => (github.authenticationRoute(document) ? "authentication" : null),
     readPage: (document, view) => ({
       native: github.readNativeMode(document, view),
       forcedColors: github.forcedColorsActive(view),
