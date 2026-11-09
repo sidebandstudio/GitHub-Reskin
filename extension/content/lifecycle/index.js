@@ -57,7 +57,10 @@ export function startContent({ storage, document, view, catalog, renderer, onEve
   let resolvedNow = null;
   let prefsNow = null;
   let decorations = null;
-  let decorationsDropped = false;
+  let revisionNow = null;
+  // The optional-work budget: what decoration passes have spent since it opened, and whether
+  // they reached the limit.
+  let budgetSpent = false;
   let navigationSpent = 0;
   let frame = 0;
   const pending = new Set();
@@ -133,6 +136,12 @@ export function startContent({ storage, document, view, catalog, renderer, onEve
   function render() {
     const settings = state?.settings;
     if (!settings) return goNative("unreadable");
+    // A change the user makes (a new settings revision: a theme or preference) opens a fresh
+    // budget, so flavor follows it within a frame or two instead of waiting for a reload.
+    if (settings.revision !== revisionNow) {
+      if (revisionNow !== null) openBudget();
+      revisionNow = settings.revision;
+    }
     if (!settings.enabled) return goNative("disabled");
     const source = selectedSource(settings, catalog);
     if (!source) return goNative("missing-source");
@@ -197,15 +206,23 @@ export function startContent({ storage, document, view, catalog, renderer, onEve
     renderSafely();
   }
 
+  // Each page navigation and each change the user makes opens a budget of its own.
+  function openBudget() {
+    navigationSpent = 0;
+    budgetSpent = false;
+  }
+
   function decorate() {
+    // Optional work stops once the passes of one budget together reach it. What they placed
+    // stays: a later pass under a spent budget neither redraws nor removes it.
+    if (budgetSpent) return;
     dropDecorations();
-    if (!renderer.decorate || !resolvedNow || decorationsDropped || document.readyState === "loading") return;
+    if (!renderer.decorate || !resolvedNow || document.readyState === "loading") return;
     const start = now();
     decorations = renderer.decorate(document, resolvedNow, prefsNow) ?? null;
     navigationSpent += now() - start;
-    // Optional work stops for the rest of this navigation once its passes together reach the budget.
     if (navigationSpent >= LIMITS.maxNavigationMs) {
-      decorationsDropped = true;
+      budgetSpent = true;
       onEvent({ type: "budget", spent: navigationSpent });
     }
   }
@@ -266,15 +283,11 @@ export function startContent({ storage, document, view, catalog, renderer, onEve
   // Navigation: owned nodes leave before Turbo caches or swaps the body, and are placed again once
   // the new page is in. Each navigation gets a fresh optional-work budget.
   for (const type of NAVIGATION_START) listen(document, type, dropDecorations);
-  const began = () => {
-    navigationSpent = 0;
-    decorationsDropped = false;
-  };
   const navigated = () => schedule("decorate");
-  for (const type of NAVIGATION_VISIT) listen(document, type, began);
+  for (const type of NAVIGATION_VISIT) listen(document, type, openBudget);
   for (const type of NAVIGATION_END) listen(document, type, navigated);
   listen(view, "popstate", () => {
-    began();
+    openBudget();
     navigated();
   });
   if (document.readyState === "loading") listen(document, "DOMContentLoaded", navigated, { once: true });
@@ -287,7 +300,7 @@ export function startContent({ storage, document, view, catalog, renderer, onEve
   listen(view, "pageshow", (event) => {
     if (event.persisted) {
       schedule("read");
-      began();
+      openBudget();
       navigated();
     } else if (pending.size && !frame) frame = view.requestAnimationFrame(flush);
   });

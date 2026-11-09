@@ -132,14 +132,16 @@ const C3_LAYOUT = "main{padding:20px}.Layout{display:grid;grid-template-columns:
 let real = null;
 window.reskinGithub = {
   available: github.available !== false,
-  apply(theme, prefs) {
+  // A page that brings its own layout (layout: false) gets only GitHub's native mode colors.
+  apply(theme, prefs, { cssAllowed = false, layout = true } = {}) {
     window.reskinGithub.remove();
     let found = [];
     const anchors = () => {
       found = github.locateSlots(document, github.classifyRoute(document));
       return found;
     };
-    const { resolved, style, decoration } = applyTheme(theme, prefs, anchors, { extraCss: FIXTURE_CSS + nativeBaseline(index, standard(theme.base).id) + C3_LAYOUT });
+    const native = nativeBaseline(index, standard(theme.base).id);
+    const { resolved, style, decoration } = applyTheme(theme, prefs, anchors, { extraCss: layout ? FIXTURE_CSS + native + C3_LAYOUT : native, cssAllowed });
     real = { style, decoration };
     return {
       policy: resolved.policy,
@@ -151,6 +153,7 @@ window.reskinGithub = {
   remove() {
     real?.decoration.destroy();
     real?.style.remove();
+    document.documentElement.removeAttribute("data-reskin-css");
     real = null;
   },
 };

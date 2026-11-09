@@ -233,8 +233,8 @@ test("Turbo navigation drops owned nodes before caching and places them after re
   assert.equal(renderer.calls.destroyed, 3);
 });
 
-test("optional decoration stops for the rest of a navigation once it exceeds 10 ms", async () => {
-  const { storage, repository } = await stored();
+test("optional decoration stops for the rest of a navigation once it exceeds 10 ms, keeping what it placed", async () => {
+  const { storage } = await stored();
   const { page, renderer, events, content } = start(storage, {}, { decorateCost: LIMITS.maxNavigationMs + 5 });
   await content.ready;
   page.document.readyState = "interactive";
@@ -242,10 +242,15 @@ test("optional decoration stops for the rest of a navigation once it exceeds 10 
   await page.frame();
   assert.equal(renderer.calls.decorate, 1);
   assert.ok(events.some((e) => e.type === "budget"));
-  await repository.commit({ type: "selectTheme", id: "nord" }, 0);
+  // GitHub's own changes on the same document: the colors follow, the decoration stays as placed.
+  page.setMedia("(prefers-reduced-motion: reduce)", true);
+  await page.settle();
   await page.frame();
+  await page.frame();
+  page.fire("document", "turbo:load");
   await page.frame();
   assert.equal(renderer.calls.decorate, 1, "no more optional work this navigation");
+  assert.equal(renderer.calls.destroyed, 0, "a spent budget never removes what is placed");
   assert.ok(page.style(), "colors still apply");
   page.fire("document", "turbo:visit");
   page.fire("document", "turbo:load");
@@ -255,7 +260,7 @@ test("optional decoration stops for the rest of a navigation once it exceeds 10 
 });
 
 test("the decoration budget adds up every pass of a navigation, not just the latest one", async () => {
-  const { storage, repository } = await stored();
+  const { storage } = await stored();
   const { page, renderer, events, content } = start(storage, {}, { decorateCost: 6 });
   await content.ready;
   page.document.readyState = "interactive";
@@ -263,14 +268,50 @@ test("the decoration budget adds up every pass of a navigation, not just the lat
   await page.frame();
   assert.equal(renderer.calls.decorate, 1);
   assert.equal(events.some((e) => e.type === "budget"), false, "6 ms is under the budget");
-  // Preference updates on the same document: each pass is under 10 ms, their total is not.
-  for (const [revision, value] of [[0, false], [1, true], [2, false]]) {
-    await repository.commit({ type: "setPreference", key: "appearance", value: value ? "full" : "calm" }, revision);
+  // Media changes on the same document: each pass is under 10 ms, their total is not.
+  for (const reduce of [true, false, true]) {
+    page.setMedia("(prefers-reduced-motion: reduce)", reduce);
+    await page.settle();
     await page.frame();
     await page.frame();
   }
   assert.equal(renderer.calls.decorate, 2, "the second pass reaches 12 ms and ends optional work");
   assert.deepEqual(events.filter((e) => e.type === "budget"), [{ type: "budget", spent: 12 }]);
+  content.destroy();
+});
+
+test("a theme or preference change the user makes gets a fresh decoration pass with its own budget", async () => {
+  const { storage, repository } = await stored();
+  const { page, renderer, events, content } = start(storage, {}, { decorateCost: LIMITS.maxNavigationMs + 5 });
+  await content.ready;
+  page.document.readyState = "interactive";
+  page.fire("document", "DOMContentLoaded");
+  await page.frame();
+  assert.equal(renderer.calls.decorate, 1);
+  assert.equal(events.filter((e) => e.type === "budget").length, 1, "the page load spent its budget");
+  // Calm, then Full, Text off and on, and a theme change: each one decorates within two frames,
+  // without a reload or a navigation.
+  const changes = [
+    { type: "setPreference", key: "appearance", value: "calm" },
+    { type: "setPreference", key: "appearance", value: "full" },
+    { type: "setPreference", key: "text", value: false },
+    { type: "setPreference", key: "text", value: true },
+    { type: "selectTheme", id: "nord" },
+  ];
+  for (const [revision, action] of changes.entries()) {
+    await repository.commit(action, revision);
+    await page.frame();
+    await page.frame();
+    assert.equal(renderer.calls.decorate, revision + 2, JSON.stringify(action));
+    assert.equal(renderer.calls.destroyed, revision + 1, "the previous decoration leaves first");
+  }
+  assert.equal(events.filter((e) => e.type === "budget").length, changes.length + 1, "each change spent only its own budget");
+  // GitHub's own changes keep the budget the last change opened.
+  page.setMedia("(prefers-reduced-motion: reduce)", true);
+  await page.settle();
+  await page.frame();
+  await page.frame();
+  assert.equal(renderer.calls.decorate, changes.length + 1);
   content.destroy();
 });
 
