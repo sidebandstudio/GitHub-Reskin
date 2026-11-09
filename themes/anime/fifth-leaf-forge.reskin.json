@@ -1,39 +1,144 @@
 {
   "$schema": "https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json",
   "author": "sidebandstudio",
+  "backgrounds": {
+    "header": {
+      "color": "#25191f"
+    },
+    "page": {
+      "color": "#151314",
+      "layers": [
+        {
+          "gradientCss": {
+            "size": "100% 100%",
+            "value": "linear-gradient(90deg,#7d2338 0 5px,transparent 5px 8px,#574628 8px 9px,transparent 9px 12px,#574628 12px 13px,transparent 13px)"
+          }
+        },
+        {
+          "gradientCss": {
+            "size": "100% 100%",
+            "value": "linear-gradient(270deg,transparent 0 8px,#574628 8px 9px,transparent 9px 12px,#574628 12px 13px,transparent 13px)"
+          }
+        },
+        {
+          "gradientCss": {
+            "size": "auto",
+            "value": "repeating-linear-gradient(0deg,transparent 0 23px,#ddd1ba14 23px 24px)"
+          }
+        },
+        {
+          "gradientCss": {
+            "size": "100% 100vh",
+            "value": "linear-gradient(120deg,#241a1e,#151314 65%)"
+          }
+        }
+      ]
+    }
+  },
   "base": "dark",
+  "code": {
+    "ansi": {
+      "black": "#cfc1bd",
+      "blue": "#c7beea",
+      "brightBlack": "#cec1bb",
+      "brightBlue": "#ddd6ff",
+      "brightCyan": "#c3ece3",
+      "brightGreen": "#c9ffe0",
+      "brightMagenta": "#f0cdef",
+      "brightRed": "#ffb4bc",
+      "brightWhite": "#ffffff",
+      "brightYellow": "#f1ce88",
+      "cyan": "#a6d7cc",
+      "green": "#a4edc2",
+      "magenta": "#dcb9da",
+      "red": "#ffaeb9",
+      "white": "#e5dad0",
+      "yellow": "#e5c177"
+    },
+    "background": "#0d0b0c",
+    "diff": {
+      "addedBackground": "#123529",
+      "addedText": "#c9ffe0",
+      "removedBackground": "#401c2b",
+      "removedText": "#ffd5df",
+      "wordAddedBackground": "#255b42",
+      "wordAddedText": "#c9ffe0",
+      "wordRemovedBackground": "#6b3044",
+      "wordRemovedText": "#ffd5df"
+    },
+    "syntax": {
+      "attribute": "#dcb9da",
+      "comment": "#cfc1bd",
+      "constant": "#ffadc1",
+      "function": "#e5c177",
+      "keyword": "#ffaeb9",
+      "number": "#f1ce88",
+      "punctuation": "#e5dad0",
+      "string": "#d7ddb2",
+      "tag": "#a6d7cc",
+      "type": "#c7beea"
+    },
+    "text": "#f5eedf"
+  },
   "colors": {
-    "accent": "#ff6570",
+    "accent": "#d8b46a",
     "background": "#151314",
-    "contribution": "#ff828c",
+    "contribution": "#ff9ca5",
     "text": "#f5eedf"
   },
   "contributions": {
+    "cellBoundary": "#b19b91",
+    "cellRadius": 1,
+    "cellStyle": "square",
     "levels": [
       "#35282d",
-      "#a7525a",
-      "#bd5762",
-      "#d45b68",
-      "#ff828c"
+      "#954b55",
+      "#b24c58",
+      "#db6672",
+      "#ff9ca5"
     ]
   },
-  "description": "Soot-dark pages, scarlet energy and spare grimoire-gold details give GitHub a determined underdog spirit.",
+  "css": ".AppHeader,.Header,.HeaderMktg,.GlobalNav{border-bottom-color:#d8b46a;box-shadow:0 1px 0#d8b46a,0 4px 0 color-mix(in srgb,#151314 80%,transparent),0 5px 0 color-mix(in srgb,#d8b46a 80%,transparent)}.btn-primary{font-family:var(--reskin-font-heading);font-weight:700;letter-spacing:.02em;box-shadow:3px 0 0 color-mix(in srgb,#ff6570 80%,transparent),4px 4px 0 color-mix(in srgb,#0d0b0c 80%,transparent)}.btn-primary:hover{box-shadow:4px 0 0 color-mix(in srgb,#ff6570 80%,transparent),5px 5px 0 color-mix(in srgb,#0d0b0c 80%,transparent)}.UnderlineNav-item[aria-current=\"page\"],.tabnav-tab[aria-current=\"page\"],a[aria-current=\"page\"]{font-weight:600;box-shadow:0 2px 0 color-mix(in srgb,var(--reskin-accent) 80%,transparent)}a[data-testid=\"repo-name-link\"]{font-family:var(--reskin-font-heading);font-weight:700;letter-spacing:.01em}h2.h4.mb-2,h2[data-component=\"Heading\"]{font-family:var(--reskin-font-heading);font-weight:700;letter-spacing:.01em}[data-reskin-slot=\"profile.tag\"]{width:fit-content;margin:0 0 8px;padding:2px 10px;font-family:ui-monospace,monospace;font-weight:600;font-size:11px;line-height:1.45;letter-spacing:.14em;text-transform:uppercase;color:var(--reskin-link);background-color:var(--reskin-inset);border:1px solid var(--reskin-control-border);border-width:1px 1px 1px 3px;border-color:var(--reskin-control-border) var(--reskin-control-border) var(--reskin-control-border) #ff6570;border-radius:0}[data-reskin-slot=\"profile.pinned.heading\"],[data-reskin-slot=\"profile.activity.heading\"],[data-reskin-slot=\"profile.organizations.heading\"],[data-reskin-slot=\"profile.achievements.heading\"]{font-family:var(--reskin-font-heading);font-weight:700;color:var(--reskin-accent)}[data-reskin-slot=\"footer.signoff\"]{font-family:var(--reskin-font-heading);color:var(--reskin-accent)}[data-reskin-slot=\"contributions.caption\"],[data-reskin-slot=\"empty.pinned.caption\"],[data-reskin-slot=\"empty.issues.caption\"]{margin:8px 0 16px;font-family:var(--reskin-font-heading);font-weight:600;font-size:15px;line-height:1.3;color:var(--reskin-muted-text)}[data-reskin-slot=\"error.notFound.caption\"]{position:absolute;right:6%;bottom:10%;max-width:340px;padding:8px 20px;font-family:var(--reskin-font-heading);font-weight:700;font-size:26px;line-height:1.2;color:var(--reskin-accent);background-color:var(--reskin-inset);border:3px double #d8b46a;border-left-color:#ff6570;border-radius:0;transform:rotate(-3deg);box-shadow:6px 6px 0 color-mix(in srgb,#0d0b0c 80%,transparent)}@media (max-width:799px){[data-reskin-slot=\"error.notFound.caption\"]{font-size:21px}}@media (max-width:599px){[data-reskin-slot=\"error.notFound.caption\"]{font-size:17px}}",
+  "description": "A soot-black grimoire opened flat: gold book-edge rules, a scarlet binding seam, square gold buttons, a scarlet calendar and Cormorant serif headings.",
+  "details": {
+    "headerText": "#f5eedf",
+    "labels": {
+      "fill": "tinted",
+      "style": "sharp"
+    },
+    "scrollbar": {
+      "thumb": "#b19b91",
+      "track": "#0d0b0c",
+      "width": "auto"
+    },
+    "selection": {
+      "background": "#d8b46a",
+      "text": "#20190e"
+    },
+    "topics": {
+      "background": "#3c332c",
+      "border": "#b19b91",
+      "fill": "tinted",
+      "style": "sharp",
+      "text": "#ffe1b1"
+    }
+  },
   "effects": {
     "drift": {
       "count": 2,
       "distance": 8,
       "durationMs": 700,
-      "opacity": 0.06,
-      "shape": "mote"
+      "opacity": 0.16,
+      "shape": "ember"
     },
     "rail": {
-      "opacity": 0.28,
+      "opacity": 0.4,
       "shape": "notch",
       "thickness": 2
     },
     "rules": {
-      "opacity": 0.12,
-      "spacing": 16,
+      "opacity": 0.15,
+      "spacing": 12,
       "style": "ticks"
     }
   },
@@ -45,6 +150,8 @@
       "empty.issues.caption": "A blank page in this view.",
       "empty.pinned.caption": "This grimoire has room for a first pick.",
       "error.notFound.caption": "No page opens at this address.",
+      "footer.signoff": "// ink dry, page closed",
+      "profile.achievements.heading": "Earned marks",
       "profile.activity.heading": "Training log",
       "profile.organizations.heading": "Squad outposts",
       "profile.pinned.heading": "Selected grimoires",
@@ -52,33 +159,67 @@
     }
   },
   "fonts": {
-    "accent": "cormorant-garamond"
+    "body": "ibm-plex-sans",
+    "heading": "cormorant-garamond"
   },
   "inspiredBy": "Black Clover",
   "name": "Fifth Leaf Forge",
   "overrides": {
-    "accentMuted": "#3a2023",
-    "border": "#95817c",
-    "controlBorder": "#95817c",
-    "danger": "#ff8e95",
-    "focus": "#ffe1b1",
-    "hover": "#302d2c",
+    "accentMuted": "#3c332c",
+    "border": "#6b5e59",
+    "controlBorder": "#b19b91",
+    "danger": "#ffb3bb",
+    "focus": "#d8b46a",
+    "hover": "#3b3033",
     "inset": "#0d0b0c",
     "link": "#ffb4bc",
     "mutedText": "#c4b5ad",
     "primaryBackground": "#d8b46a",
     "primaryText": "#20190e",
-    "raised": "#272524",
-    "selectionBackground": "#d8b46a",
-    "selectionText": "#20190e",
-    "success": "#a6d5b3",
+    "raised": "#32282b",
+    "success": "#a4edc2",
     "surface": "#272123",
-    "warning": "#e8c77d"
+    "warning": "#ffe0a0"
   },
   "schemaVersion": 1,
+  "shape": {
+    "avatar": {
+      "frame": {
+        "color": "#d8b46a",
+        "style": "double",
+        "width": 2
+      },
+      "shape": "square"
+    },
+    "borders": {
+      "color": "#b19b91",
+      "style": "solid",
+      "width": 1
+    },
+    "buttons": {
+      "radius": 0,
+      "style": "filled"
+    },
+    "corners": {
+      "radius": 0,
+      "style": "sharp"
+    },
+    "shadows": {
+      "blur": 0,
+      "color": "#0d0b0c",
+      "offset": 4,
+      "opacity": 0.8,
+      "style": "hard"
+    }
+  },
   "tags": [
     "anime",
+    "grimoire",
     "dark"
   ],
-  "version": "1.0.0"
+  "typography": {
+    "headingLetterSpacing": 0.01,
+    "uppercaseHeadings": false
+  },
+  "version": "2.0.0"
 }
