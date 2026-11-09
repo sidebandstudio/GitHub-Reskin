@@ -56,14 +56,18 @@ export async function commitFromPage(page, action) {
   }, action);
 }
 
-// GitHub sometimes answers with a bare 5xx page, which Reskin rightly leaves native; retry.
+// GitHub sometimes answers with a bare 5xx page, which Reskin rightly leaves native. Retry, and
+// report whether GitHub's own page arrived, so an outage page is never saved as a capture.
 async function visit(page, url) {
-  for (let attempt = 0; attempt < 4; attempt++) {
-    const response = await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60000 });
-    if ((response?.status() ?? 200) < 500) break;
-    await page.waitForTimeout(5000);
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const response = await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60000 }).catch(() => null);
+    if (response && response.status() < 500) {
+      await page.waitForLoadState("load", { timeout: 30000 }).catch(() => {});
+      return true;
+    }
+    await page.waitForTimeout(15000);
   }
-  await page.waitForLoadState("load", { timeout: 30000 }).catch(() => {});
+  return false;
 }
 
 const paintedState = (page) =>
@@ -87,7 +91,10 @@ async function captureFirefox(dir, out) {
       const page = await context.newPage();
       await page.setViewportSize(viewport);
       for (const { name, url } of LIVE_PAGES) {
-        await visit(page, url);
+        if (!(await visit(page, url))) {
+          console.log(`firefox ${name} ${viewport.width}: GitHub did not answer, not captured`);
+          continue;
+        }
         await page.waitForTimeout(name === "profile" || name === "404" ? 2000 : 4000);
         const path = join(out, `firefox-${name}-full-${viewport.width}.png`);
         await page.screenshot({ path });
@@ -143,7 +150,10 @@ async function main() {
         const page = await context.newPage();
         await page.setViewportSize(viewport);
         for (const { name, url } of LIVE_PAGES) {
-          await visit(page, url);
+          if (!(await visit(page, url))) {
+            console.log(`${name} ${appearance} ${viewport.width}: GitHub did not answer, not captured`);
+            continue;
+          }
           await page.waitForTimeout(name === "profile" || name === "404" ? 2000 : 4000);
           const path = join(out, `${name}-${appearance}-${viewport.width}.png`);
           await page.screenshot({ path });
