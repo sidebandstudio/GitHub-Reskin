@@ -205,7 +205,12 @@ async function engine(type, launcher, url) {
   const cdp = type === "chromium" ? await page.context().newCDPSession(page) : null;
   if (cdp) await cdp.send("Performance.enable");
   const metrics = async () => (cdp ? Object.fromEntries((await cdp.send("Performance.getMetrics")).metrics.map((m) => [m.name, m.value])) : null);
-  const counters = async (session = cdp) => (session ? session.send("Memory.getDOMCounters") : "not reported by this engine");
+  // After a forced collection, so only what is still reachable counts.
+  const counters = async (session = cdp) => {
+    if (!session) return "not reported by this engine";
+    await session.send("HeapProfiler.collectGarbage");
+    return session.send("Memory.getDOMCounters");
+  };
 
   const run = async (theme) => {
     const before = await metrics();
