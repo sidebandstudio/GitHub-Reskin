@@ -221,6 +221,27 @@ function embedded(win, url) {
 }
 const embeddedCopy = (src) => (src.startsWith("data:") ? src : (embeddedReady.get(src) ?? null));
 
+// A job's wait that the job can leave. Every wait settles with STOPPED as soon as a newer request
+// or destroy stops the job, so the newest job never waits behind an obsolete one. The read
+// itself may continue for other consumers of the shared copy, but holds only an emptied cell,
+// never the job, so a read that never settles keeps nothing of a stopped job or destroyed preview.
+const STOPPED = Symbol("stopped");
+function settle(cell, value) {
+  cell.waits?.delete(cell);
+  cell.resolve?.(value);
+  cell.resolve = cell.waits = null;
+}
+function leavable(waits, promise) {
+  return new Promise((resolve) => {
+    const cell = { resolve, waits };
+    waits.add(cell);
+    Promise.resolve(promise).then((value) => settle(cell, value), () => settle(cell, null));
+  });
+}
+function stopWaits(waits) {
+  for (const cell of [...waits]) settle(cell, STOPPED);
+}
+
 // The part of rect that the page can show: clipped by every scrolling or clipping ancestor of el
 // and by the top-level viewport. Returns null when nothing is visible.
 function visiblePart(rect, el, win) {
@@ -246,7 +267,11 @@ function visiblePart(rect, el, win) {
  * mountPreview throw for an invalid theme and keep the last valid preview. Updates within one
  * animation frame are coalesced into one replacement of the styled frame. The host element
  * carries data-requested and data-completed generations and fires `reskin-preview-complete`
- * (detail { generation, ms }) once a replacement frame has loaded and been shown.
+ * (detail { generation, ms }) once a replacement frame has loaded and been shown. A job renders
+ * the state as it was when the job started; a newer request stops it at once, even while it
+ * waits for a font or image read, and only the newest generation reports completion, with
+ * metadata for the document it rendered. destroy releases the frames, their documents and every
+ * reference the handle held; a destroyed handle's methods do nothing.
  */
 export function mountPreview(container, options) {
   if (!runtime) throw new Error("Call configurePreview before mountPreview");
@@ -258,14 +283,14 @@ export function mountPreview(container, options) {
   const win = doc.defaultView;
   const state = { view: options.view, theme: options.theme, preferences: options.preferences, before: false };
 
-  const host = doc.createElement("div");
+  let host = doc.createElement("div");
   host.className = "reskin-preview";
   host.setAttribute("data-reskin-preview", "");
   host.style.cssText = "display:block;position:relative;width:100%;min-width:0";
   // The layout document: same-origin, scriptless and never shown. It holds only trusted layers
   // (fixture, native, fonts and owned decoration, never the compiled theme), so the controller
   // can measure placement, motion boxes and height without touching the styled frame.
-  const layout = doc.createElement("iframe");
+  let layout = doc.createElement("iframe");
   layout.setAttribute("sandbox", "allow-same-origin");
   layout.setAttribute("aria-hidden", "true");
   layout.setAttribute("tabindex", "-1");
@@ -292,6 +317,8 @@ export function mountPreview(container, options) {
   let motion = null;
   let reported = null;
   let body = null;
+  // The running job's waits; a newer request or destroy stops them.
+  const waits = new Set();
 
   const frameStyle = "display:block;width:100%;border:0;background:transparent";
   const setHeight = (value) => {
@@ -347,7 +374,9 @@ export function mountPreview(container, options) {
     host.setAttribute("data-requested", String(requested));
     wantPlay ||= play;
     since ??= win.performance.now();
-    // A frame still loading for an older state is obsolete: it is removed at once.
+    // A job still waiting for an older state is obsolete: its waits stop and its frame, if one
+    // is loading, is removed at once.
+    stopWaits(waits);
     discardPending();
     if (!scheduled && !running) scheduled = win.requestAnimationFrame(run);
   }
@@ -382,10 +411,14 @@ export function mountPreview(container, options) {
     wantPlay = false;
     const started = since;
     since = null;
+    // The state this job renders and reports, whatever arrives while it waits.
+    const snapshot = { ...state };
     let done = false;
     try {
-      done = await job(generation, play, started);
+      done = await job(generation, play, started, snapshot);
     } catch (error) {
+      // An obsolete job's failure is not reported; the newest request carries on.
+      if (obsolete(generation)) return;
       // The last valid preview stays; nothing partial is shown.
       done = true;
       host.setAttribute("data-error", String(error?.message ?? error));
@@ -401,16 +434,17 @@ export function mountPreview(container, options) {
     }
   }
 
-  async function job(generation, play, started) {
+  async function job(generation, play, started, state) {
+    const wait = (promise) => leavable(waits, promise);
     // An embedded copy of the selected face, read once; until then the frame would fall back.
     const face = renderer.font(state);
-    const fontUrl = face ? await embedded(win, face.url) : null;
+    const fontUrl = face ? await wait(embedded(win, face.url)) : null;
     if (obsolete(generation)) return false;
     if (fontUrl) {
       // Lay out with the face loaded, so decoration is measured as it will be shown.
       ldoc.head.querySelector('style[data-layer="fonts"]').textContent = fontFaceCss(face.id, fontUrl);
       const font = FONT_BY_ID[face.id];
-      await ldoc.fonts.load(`${font.weight} ${font.minimumAccentPx}px "${font.cssFamily}"`).catch(() => null);
+      await wait(ldoc.fonts.load(`${font.weight} ${font.minimumAccentPx}px "${font.cssFamily}"`));
       if (obsolete(generation)) return false;
     }
     endMotion();
@@ -421,7 +455,7 @@ export function mountPreview(container, options) {
     // The view's images, embedded; the first update of a view reads them once.
     const missing = [...new Set([...ldoc.images].map((img) => img.getAttribute("src")))].filter((src) => src && !embeddedCopy(src));
     if (missing.length) {
-      await Promise.all(missing.map((src) => embedded(win, src)));
+      await wait(Promise.all(missing.map((src) => embedded(win, src))));
       if (obsolete(generation)) return false;
     }
     // Motion: the boxes allowed to move whose place in the frame the page can show now.
@@ -479,8 +513,9 @@ export function mountPreview(container, options) {
       shown = frame;
       shownHtml = html;
       old?.remove();
-      await afterPaint();
-      if (destroyed) return true;
+      await wait(afterPaint());
+      // A request during that paint makes this document obsolete before it is reported.
+      if (obsolete(generation)) return false;
     }
     if (playing.length) watchMotion(playing, Math.min(LIMITS.maxAnimationMs, motionMs(resolved.effects)) + 50);
     host.setAttribute("data-view", state.view);
@@ -536,18 +571,21 @@ export function mountPreview(container, options) {
       if (destroyed) return;
       destroyed = true;
       win.cancelAnimationFrame(scheduled);
+      stopWaits(waits);
       endMotion();
       discardPending();
       renderer?.destroy();
       resizes.disconnect();
       ldoc?.removeEventListener("load", measure, true);
       layout.removeEventListener("load", onLayoutLoad);
+      // The frames leave the host first, so clearing their documents navigates nothing.
+      const frames = [...host.querySelectorAll("iframe")];
+      host.replaceChildren();
       host.remove();
-      renderer = null;
-      ldoc = null;
-      shown = null;
+      for (const frame of frames) frame.removeAttribute("srcdoc");
+      host = layout = shown = renderer = ldoc = body = reported = null;
       shownHtml = "";
-      body = null;
+      options = null;
     },
   };
 }

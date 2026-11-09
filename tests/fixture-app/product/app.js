@@ -54,6 +54,8 @@ window.reskinPreview = {
     handle?.destroy();
     handle = null;
   },
+  /** mountPreview itself, for tests that hold their own handles. */
+  mountPreview,
   /** The styled frame's complete srcdoc, as the host page holds it. */
   srcdoc: () => document.querySelector("#preview iframe:not([aria-hidden])")?.srcdoc ?? null,
   /**
