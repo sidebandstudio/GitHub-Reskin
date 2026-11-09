@@ -77,16 +77,17 @@ function ownedRadius(resolved) {
 }
 
 /**
- * The theme's admitted CSS for owned slots, compiled without a GitHub target registry: only owned
- * rules can compile, and a rule for GitHub's own elements fails the whole input closed. The text
- * must be the one the resolution admitted. Returns { css, slots } or null.
+ * The theme's admitted CSS for owned slots. Without a GitHub target registry only owned rules can
+ * compile, and a rule for GitHub's own elements fails the whole input closed; with the host's
+ * registry those rules compile too, behind its admission markers. The text must be the one the
+ * resolution admitted. Returns { css, slots } or null.
  */
-export function ownedThemeCss(resolved, prefs, source, cssAllowed) {
+export function ownedThemeCss(resolved, prefs, source, cssAllowed, registry = null) {
   const identity = resolved?.appearance?.css;
   if (!identity || typeof source !== "string" || !source) return null;
   const admitted = admitCss(source, "/css");
   if (!admitted.ok || admitted.value.hash !== identity.hash) return null;
-  const compiled = compileCss(admitted.value, { registry: null, cssAllowed: Boolean(cssAllowed), preferences: prefs, policy: resolved.policy });
+  const compiled = compileCss(admitted.value, { registry, cssAllowed: Boolean(cssAllowed), preferences: prefs, policy: resolved.policy });
   if (!compiled.ok || !compiled.css) return null;
   const slots = new Set();
   for (const rule of admitted.value.rules) {
@@ -103,15 +104,17 @@ export function ownedThemeCss(resolved, prefs, source, cssAllowed) {
  * shows. Accent type applies only to owned copy at or above the font's recorded minimum size;
  * smaller copy keeps the system face. `options.css` is the theme's own CSS source and
  * `options.cssAllowed` the host's decision (packaged built-in in Full, or consent for this hash).
+ * `options.registry` is the host's GitHub target registry, which lets the theme's CSS reach the
+ * GitHub elements the host admits; that CSS then never applies under forced colors.
  * `options.viewport` ({width, height}) resolves paint sizes in viewport units for the preview,
  * whose frame is as tall as its page.
  */
-export function compileAppearance(resolved, prefs, target, { css: source = null, cssAllowed = false, viewport = null } = {}) {
+export function compileAppearance(resolved, prefs, target, { css: source = null, cssAllowed = false, registry = null, viewport = null } = {}) {
   if (!TARGETS.includes(target)) throw new Error(`Unknown appearance target ${target}`);
   const effective = effectiveAppearance(resolved, prefs);
   const plan = structuredPlan(resolved, prefs);
   const structured = structuredCss(plan, resolved, target, viewport);
-  const owned = effective.text || effective.effects ? ownedThemeCss(resolved, prefs, source, cssAllowed) : null;
+  const owned = effective.text || effective.effects ? ownedThemeCss(resolved, prefs, source, cssAllowed, registry) : null;
   if (!effective.text && !effective.effects && !plan.banner) return structured ? `/* GitHub Reskin appearance, renderer 1 */\n${structured}\n` : "";
   const t = colors(resolved.tokens);
   const font = effective.fonts ? FONT_BY_ID[resolved.font] : null;
@@ -139,7 +142,7 @@ export function compileAppearance(resolved, prefs, target, { css: source = null,
     // The audited scalar variables, set only on owned nodes so they never reach GitHub's elements.
     const face = font ? FONT_BY_ID[resolved.font].cssFamily : undefined;
     const variables = Object.entries(cssVariables(resolved, { headingFamily: face })).map(([name, value]) => `${name}:${value}`);
-    rules.push(`[data-reskin-owned]{${variables.join(";")}}`, owned.css);
+    rules.push(`[data-reskin-owned]{${variables.join(";")}}`, registry ? `@media not (forced-colors:active){${owned.css}}` : owned.css);
   }
   rules.push(
     "@media (prefers-reduced-motion:reduce){.rs-fx{animation:none!important}}",

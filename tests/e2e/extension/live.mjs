@@ -71,7 +71,15 @@ async function visit(page, url) {
 }
 
 const paintedState = (page) =>
-  page.evaluate(() => ({ boot: document.documentElement.getAttribute("data-reskin-boot"), styled: Boolean(document.getElementById("reskin-style")?.textContent), owned: document.querySelectorAll("[data-reskin-owned]").length - 1 }));
+  page.evaluate(() => ({
+    boot: document.documentElement.getAttribute("data-reskin-boot"),
+    styled: Boolean(document.getElementById("reskin-style")?.textContent),
+    owned: document.querySelectorAll("[data-reskin-owned]").length - 1,
+    // C3b's admission: the theme CSS scope, the native gate and the GitHub elements it marked.
+    scope: document.documentElement.getAttribute("data-reskin-css"),
+    gate: document.documentElement.getAttribute("data-reskin-css-native"),
+    admitted: Object.entries([...document.querySelectorAll("[data-reskin-css-kind]")].reduce((n, el) => ({ ...n, [el.getAttribute("data-reskin-css-kind")]: (n[el.getAttribute("data-reskin-css-kind")] ?? 0) + 1 }), {})).map(([k, v]) => `${k}:${v}`).join(" "),
+  }));
 
 async function captureFirefox(dir, out) {
   const { connectWithMaxRetries } = await import(new URL("../../../node_modules/web-ext/lib/firefox/remote.js", import.meta.url).href);

@@ -1,13 +1,13 @@
 // Fixtures for the installed-extension surface. Each test gets the real Chrome package, built once
 // per worker, installed into a fresh persistent Chromium profile, so first run, settings and
-// storage start clean. GitHub pages are C3's guarded profile fixture served as github.com through
-// request routing; nothing reaches the network.
+// storage start clean. GitHub pages are C3's guarded profile fixture, or a page a test serves at a
+// path, served as github.com through request routing; nothing reaches the network.
 import { readFileSync } from "node:fs";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { chromium } from "@playwright/test";
+import { chromium, firefox } from "@playwright/test";
 import { build } from "../../../scripts/build.mjs";
 import { requireBrowser } from "../../helpers/browsers.mjs";
 import { expect, test as base } from "../../helpers/e2e.mjs";
@@ -38,20 +38,95 @@ export const test = base.extend({
     });
     // GitHub is the routed fixture; any other request fails, so an extension network call would too.
     const requests = [];
+    const pages = new Map();
     await context.route("https://github.com/**", (route) => {
       requests.push(route.request().url());
-      if (route.request().resourceType() === "document") return route.fulfill({ contentType: "text/html", body: PROFILE_HTML });
+      if (route.request().resourceType() === "document") return route.fulfill({ contentType: "text/html", body: pageAt(pages, route.request().url()) });
       return route.abort();
     });
     let [worker] = context.serviceWorkers();
     worker ??= await context.waitForEvent("serviceworker");
     const id = new URL(worker.url()).host;
     const url = (page) => `chrome-extension://${id}/pages/${page}.html`;
-    await use({ context, worker, id, url, requests, profile });
+    await use({ context, worker, id, url, requests, profile, serve: (path, html) => pages.set(path, html) });
     await context.close();
     await rm(profile, { recursive: true, force: true });
   },
 });
+
+// The page served at a github.com URL's path, or the profile fixture.
+const pageAt = (pages, url) => pages.get(new URL(url).pathname) ?? PROFILE_HTML;
+
+/**
+ * The Firefox build installed as a temporary add-on through Firefox's remote debugging protocol
+ * (web-ext's client), since Playwright cannot load a Firefox extension itself. The add-on gets a
+ * fixed internal UUID, so its pages have a known address. `pages` maps github.com paths to HTML.
+ */
+export async function firefoxExtension(pages = new Map()) {
+  requireBrowser("firefox");
+  const { connectWithMaxRetries } = await import(new URL("../../../node_modules/web-ext/lib/firefox/remote.js", import.meta.url).href);
+  const out = await mkdtemp(join(tmpdir(), "reskin-e2e-firefox-package-"));
+  const profile = await mkdtemp(join(tmpdir(), "reskin-e2e-firefox-"));
+  const port = 6000 + Math.floor(Math.random() * 1000);
+  const uuid = "6c0ffee0-5e5e-4e5e-8e5e-c6c6c6c6c6c6";
+  const built = await build({ target: "firefox", outDir: out });
+  const context = await firefox.launchPersistentContext(profile, {
+    headless: true,
+    args: ["-start-debugger-server", String(port)],
+    firefoxUserPrefs: {
+      "devtools.debugger.remote-enabled": true,
+      "devtools.chrome.enabled": true,
+      "devtools.debugger.prompt-connection": false,
+      "extensions.webextensions.uuids": JSON.stringify({ "github-reskin@sideband.studio": uuid }),
+    },
+  });
+  const close = async () => {
+    await context.close();
+    await rm(profile, { recursive: true, force: true });
+    await rm(out, { recursive: true, force: true });
+  };
+  try {
+    await context.route("https://github.com/**", (route) =>
+      route.request().resourceType() === "document" ? route.fulfill({ contentType: "text/html", body: pageAt(pages, route.request().url()) }) : route.abort(),
+    );
+    const remote = await connectWithMaxRetries({ port, maxRetries: 50, retryInterval: 200 });
+    try {
+      await remote.installTemporaryAddon(built.dir);
+    } finally {
+      remote.disconnect();
+    }
+    // The install opens the welcome tab; a page opened before it settles can land in a window
+    // Playwright's Firefox cannot address.
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+  } catch (error) {
+    await close();
+    throw error;
+  }
+  return { context, url: (page) => `moz-extension://${uuid}/pages/${page}.html`, close };
+}
+
+/**
+ * Opens a GitHub page in a Firefox add-on context once the lifecycle has painted it. The add-on's
+ * first storage write may land after the first load; a reload reads it.
+ */
+export async function openFirefoxGitHub(context, url) {
+  const page = await context.newPage();
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await expect.poll(async () => {
+    await page.goto(url);
+    await page.waitForTimeout(500);
+    return page.evaluate(() => document.documentElement.getAttribute("data-reskin-boot"));
+  }, { timeout: 20000 }).toBe("ready");
+  return page;
+}
+
+/** Commits a settings action from an extension page, as the popup does, and returns the reply. */
+export const commit = (page, action) =>
+  page.evaluate(async (action) => {
+    const api = globalThis.browser ?? globalThis.chrome;
+    const got = await api.runtime.sendMessage({ type: "get", requestId: "e2e-get" });
+    return api.runtime.sendMessage({ type: "commit", requestId: "e2e-commit", expectedRevision: got.settings.revision, action });
+  }, action);
 
 /** The settings record and lastGood, read from the service worker. */
 export const storage = (worker) => worker.evaluate(() => chrome.storage.local.get(null));

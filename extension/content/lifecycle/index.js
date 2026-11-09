@@ -8,8 +8,9 @@
 //   readPage(document, view) -> {native, forcedColors, reducedMotion}
 //   plan(page, base) -> {plan: ModePlan, seed: ModeSeed | null}
 //   resolve(theme, context) -> ResolvedTheme
-//   compile(resolved, plan, prefs) -> {css, fingerprint}
-//   decorate?(document, resolved, prefs) -> {destroy()} | null    owned flavor/effect nodes
+//   compile(resolved, plan, prefs, {source, consent}) -> {css, fingerprint}
+//   decorate?(document, resolved, prefs, {plan, source, consent}) -> {destroy()} | null
+//                                                                   owned nodes, CSS admission
 //   modeAttributes?: string[]                                       root attributes to observe
 import { LEGACY_PAGE_CACHE_KEY, LIMITS, LOCAL_THEME_ID_PREFIX, STORAGE_KEYS } from "../../../packages/contracts/index.js";
 import { sourceHash } from "../../../packages/engine/index.js";
@@ -56,6 +57,7 @@ export function startContent({ storage, document, view, catalog, renderer, onEve
   let fingerprint = null;
   let resolvedNow = null;
   let prefsNow = null;
+  let contextNow = null;
   let decorations = null;
   let revisionNow = null;
   // The optional-work budget: what decoration passes have spent since it opened, and whether
@@ -168,7 +170,8 @@ export function startContent({ storage, document, view, catalog, renderer, onEve
     const snapshot = usableSnapshot(state.boot, current);
     const resolved = snapshot ?? renderer.resolve(source, { seed, policy, reducedMotion: page.reducedMotion, forcedColors: page.forcedColors });
     onEvent({ type: "resolved", from: snapshot ? "snapshot" : "source" });
-    const compiled = renderer.compile(resolved, plan, prefs);
+    const context = { plan, source, consent: current.cssConsent };
+    const compiled = renderer.compile(resolved, plan, prefs, context);
     if (compiled.fingerprint !== fingerprint || !style.isConnected) {
       if (compiled.fingerprint !== fingerprint) style.textContent = compiled.css;
       fingerprint = compiled.fingerprint;
@@ -177,6 +180,7 @@ export function startContent({ storage, document, view, catalog, renderer, onEve
     }
     resolvedNow = resolved;
     prefsNow = prefs;
+    contextNow = context;
     setPhase("ready");
     settle("ready");
   }
@@ -222,7 +226,7 @@ export function startContent({ storage, document, view, catalog, renderer, onEve
     dropDecorations();
     if (!renderer.decorate || !resolvedNow || document.readyState === "loading") return;
     const start = now();
-    decorations = renderer.decorate(document, resolvedNow, prefsNow) ?? null;
+    decorations = renderer.decorate(document, resolvedNow, prefsNow, contextNow) ?? null;
     navigationSpent += now() - start;
     if (navigationSpent >= LIMITS.maxNavigationMs) {
       budgetSpent = true;

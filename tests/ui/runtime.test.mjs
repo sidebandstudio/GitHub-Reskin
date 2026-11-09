@@ -2,13 +2,14 @@
 // background's boot callbacks, against the real catalog, engine, Primer data and appearance.
 import assert from "node:assert/strict";
 import test from "node:test";
-import { DEFAULT_THEME_ID } from "../../packages/contracts/index.js";
+import { DEFAULT_THEME_ID, SANITIZER_VERSION } from "../../packages/contracts/index.js";
 import { resolveTheme } from "../../packages/engine/index.js";
-import { MODE_INDEX, selectMode, standardSeed } from "../../packages/primer/index.js";
+import { admitCss } from "../../packages/format/index.js";
+import { coveredModes, MODE_INDEX, selectMode, standardSeed } from "../../packages/primer/index.js";
 import { bootRecordProblems, buildBootRecord, createCatalogSource, defaultSettings, effectivePreferences, usableSnapshot } from "../../packages/settings/index.js";
 import { catalogCards, catalogData, readCatalogEntries } from "../../packages/ui/bundle.mjs";
 import { catalogFromData } from "../../packages/ui/catalog.js";
-import { backgroundRendering, createRenderer, standardCard } from "../../packages/ui/renderer.js";
+import { backgroundRendering, createRenderer, CSS_ADMISSION, standardCard } from "../../packages/ui/renderer.js";
 import { ROOT } from "../../scripts/build.mjs";
 
 const entries = await readCatalogEntries(ROOT);
@@ -25,6 +26,7 @@ const github = {
   reducedMotion: () => false,
   classifyRoute: () => "profile",
   locateSlots: () => [],
+  startAdmission: () => ({ dispose() {} }),
 };
 const renderer = createRenderer({ github, resources, catalog });
 const prefs = (patch = {}) => ({ enabled: true, appearance: "full", extras: true, text: true, motion: true, fonts: true, effects: true, ...patch });
@@ -88,10 +90,17 @@ test("the renderer paints Choom Circuit through C3's Primer compiler and C5's ap
   assert.match(full.css, /linear-gradient/);
   assert.match(full.css, /rs-slot--overlay/);
   assert.match(full.css, /\[data-reskin-css="active"\][^{]*\[data-reskin-slot="profile\.tag"\]/);
+  // Its rules for GitHub's own elements compile against C3b's registry: each needs the native gate
+  // and the kind marker admission writes, and none applies under forced colors.
+  assert.match(full.css, /\[data-reskin-css="active"\]\[data-reskin-css-native="active"\]\) \.HeaderMktg\[data-reskin-css-kind="header-chrome"\]/);
+  assert.match(full.css, /h2\.h4\.mb-2\[data-reskin-css-kind="heading-chrome"\]:not\(\[data-reskin-native\],\[data-reskin-native\] \*,\[data-reskin-protected\],\[data-reskin-protected\] \*\)/);
+  const theme = full.css.slice(full.css.indexOf("@media not (forced-colors:active){"));
+  assert.ok(theme.includes("data-reskin-css-kind") && theme.includes('[data-reskin-slot="profile.tag"]'), "the theme's CSS sits inside the forced-colors guard");
+  assert.doesNotMatch(full.css.slice(0, full.css.indexOf("@media not (forced-colors:active){")), /data-reskin-css-kind/);
   // Calm keeps colors and drops layers, decoration and the theme's CSS; disabled leaves GitHub native.
   const calm = renderer.compile(resolved, plan, prefs({ appearance: "calm", extras: false }));
   assert.match(calm.css, /--bgColor-default:#0a0a17 !important/);
-  assert.doesNotMatch(calm.css, /linear-gradient|rs-slot--overlay|data-reskin-css=/);
+  assert.doesNotMatch(calm.css, /linear-gradient|rs-slot--overlay|data-reskin-css=|data-reskin-css-kind/);
   assert.notEqual(calm.fingerprint, full.fingerprint);
   assert.equal(renderer.compile(resolved, plan, prefs({ enabled: false })).css, "");
   // High contrast stays native.
@@ -206,30 +215,70 @@ test("a slot search that gave up on its time limit is tried once more on the nex
   assert.equal(frames.size, 0);
 });
 
-test("the theme's CSS scope marker is set only while forced colors are off, and follows them as they change", () => {
-  const gated = createRenderer({ github: { ...github, forcedColorsActive: (view) => view.matchMedia("(forced-colors: active)").matches }, resources, catalog });
+// A saved copy of Choom: its CSS applies only with consent for its exact sanitized hash.
+const SAVED = { ...structuredClone(catalog.document(DEFAULT_THEME_ID)), name: "My Choom" };
+const SAVED_HASH = admitCss(SAVED.css, "/css").value.hash;
+
+test("a saved theme's CSS compiles only with consent for its sanitized hash under this sanitizer", () => {
+  const { plan, seed } = renderer.plan(renderer.readPage(null, null), "dark");
+  const resolved = renderer.resolve(SAVED, { seed, policy: plan.policy, reducedMotion: false, forcedColors: false });
+  const css = (consent) => renderer.compile(resolved, plan, prefs(), { source: SAVED, consent });
+  assert.doesNotMatch(css(null).css, /data-reskin-css=/);
+  assert.doesNotMatch(css({ hash: SAVED_HASH.replace(/^./, (c) => (c === "0" ? "1" : "0")), sanitizerVersion: SANITIZER_VERSION }).css, /data-reskin-css=/);
+  assert.doesNotMatch(css({ hash: SAVED_HASH, sanitizerVersion: SANITIZER_VERSION + 1 }).css, /data-reskin-css=/);
+  const allowed = css({ hash: SAVED_HASH, sanitizerVersion: SANITIZER_VERSION });
+  assert.match(allowed.css, /data-reskin-css-kind="header-chrome"/);
+  assert.notEqual(allowed.fingerprint, css(null).fingerprint, "revoking consent rewrites the stylesheet");
+  assert.doesNotMatch(renderer.compile(resolved, plan, prefs({ appearance: "calm", extras: false }), { source: SAVED, consent: { hash: SAVED_HASH, sanitizerVersion: SANITIZER_VERSION } }).css, /data-reskin-css=/);
+  // The background stores saved CSS only when it sanitizes, and consent names that hash.
+  assert.deepEqual(CSS_ADMISSION.inspect({}), { css: null });
+  assert.deepEqual(CSS_ADMISSION.inspect(SAVED), { css: { ok: true, hash: SAVED_HASH, sanitizerVersion: SANITIZER_VERSION } });
+  assert.equal(CSS_ADMISSION.inspect({ css: "@import url(x);" }).css.ok, false);
+  assert.equal(backgroundRendering().css, CSS_ADMISSION);
+});
+
+test("admission runs while the theme's CSS may apply, with the plan's covered modes, and the scope marker leaves under forced colors", () => {
+  const started = [];
+  const gated = createRenderer({
+    github: {
+      ...github,
+      forcedColorsActive: (view) => view.matchMedia("(forced-colors: active)").matches,
+      // A stand-in for C3b's admission, which writes the scope marker on a reviewed route.
+      startAdmission: (document, options) => {
+        const run = { options, disposed: false, dispose: () => ((run.disposed = true), document.documentElement.removeAttribute("data-reskin-css")) };
+        document.documentElement.setAttribute("data-reskin-css", "active");
+        started.push(run);
+        return run;
+      },
+    },
+    resources,
+    catalog,
+  });
   const { plan, seed } = gated.plan(renderer.readPage(null, null), "dark");
   const resolved = gated.resolve(catalog.document(DEFAULT_THEME_ID), { seed, policy: plan.policy, reducedMotion: false, forcedColors: false });
 
   const page = forcedColorsPage(false);
-  const decoration = gated.decorate(page.doc, resolved, prefs());
+  const decoration = gated.decorate(page.doc, resolved, prefs(), { plan });
+  assert.equal(started.length, 1);
+  assert.deepEqual(started[0].options, { modes: coveredModes(MODE_INDEX, plan.seedMode) });
   assert.equal(page.scope(), "active");
   page.flip(true);
   assert.equal(page.scope(), null, "forced colors remove it at once");
-  page.flip(false);
-  assert.equal(page.scope(), "active", "and it returns with them off");
   decoration.destroy();
-  assert.equal(page.scope(), null);
+  assert.equal(started[0].disposed, true, "destroy ends admission, which strips every marker");
   assert.equal(page.listeners.size, 0, "destroy stops following the mode");
 
-  const forced = forcedColorsPage(true);
-  gated.decorate(forced.doc, resolved, prefs()).destroy();
-  assert.equal(forced.scope(), null, "never set under forced colors");
+  // No admission and no marker in Calm, without a themed plan, or for a saved theme without consent.
+  started.length = 0;
   const calm = forcedColorsPage(false);
-  gated.decorate(calm.doc, resolved, prefs({ appearance: "calm", extras: false }));
-  calm.flip(true);
-  calm.flip(false);
-  assert.equal(calm.scope(), null, "Calm has no theme CSS to scope");
+  gated.decorate(calm.doc, resolved, prefs({ appearance: "calm", extras: false }), { plan }).destroy();
+  gated.decorate(calm.doc, resolved, prefs()).destroy();
+  const saved = gated.resolve(SAVED, { seed, policy: plan.policy, reducedMotion: false, forcedColors: false });
+  gated.decorate(calm.doc, saved, prefs(), { plan, source: SAVED, consent: null }).destroy();
+  assert.equal(started.length, 0);
+  assert.equal(calm.scope(), null);
+  gated.decorate(calm.doc, saved, prefs(), { plan, source: SAVED, consent: { hash: SAVED_HASH, sanitizerVersion: SANITIZER_VERSION } }).destroy();
+  assert.equal(started.length, 1, "consent lets a saved theme's CSS in");
 });
 
 test("the background's boot snapshot is reused by the content script on the common page", () => {
