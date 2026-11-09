@@ -4,13 +4,40 @@
     "root": "extension",
     "builder": "packages/ui/bundle.mjs",
     "generated": [
+      "assets/fonts/alegreya/alegreya-700.woff2",
       "assets/fonts/alegreya/alegreya.woff2",
+      "assets/fonts/atkinson-hyperlegible/atkinson-hyperlegible-700.woff2",
+      "assets/fonts/atkinson-hyperlegible/atkinson-hyperlegible.woff2",
+      "assets/fonts/barlow-condensed/barlow-condensed-700.woff2",
       "assets/fonts/barlow-condensed/barlow-condensed.woff2",
+      "assets/fonts/barlow/barlow-500.woff2",
+      "assets/fonts/barlow/barlow-600.woff2",
+      "assets/fonts/barlow/barlow-700.woff2",
+      "assets/fonts/barlow/barlow.woff2",
+      "assets/fonts/bebas-neue/bebas-neue.woff2",
       "assets/fonts/bungee/bungee.woff2",
+      "assets/fonts/cinzel/cinzel.woff2",
+      "assets/fonts/cormorant-garamond/cormorant-garamond-600.woff2",
       "assets/fonts/cormorant-garamond/cormorant-garamond.woff2",
+      "assets/fonts/fraunces/fraunces-700.woff2",
       "assets/fonts/fraunces/fraunces.woff2",
+      "assets/fonts/ibm-plex-sans/ibm-plex-sans-500.woff2",
+      "assets/fonts/ibm-plex-sans/ibm-plex-sans-600.woff2",
+      "assets/fonts/ibm-plex-sans/ibm-plex-sans-700.woff2",
+      "assets/fonts/ibm-plex-sans/ibm-plex-sans.woff2",
+      "assets/fonts/josefin-sans/josefin-sans-700.woff2",
       "assets/fonts/josefin-sans/josefin-sans.woff2",
+      "assets/fonts/nunito-sans/nunito-sans-700.woff2",
+      "assets/fonts/nunito-sans/nunito-sans.woff2",
+      "assets/fonts/orbitron/orbitron.woff2",
+      "assets/fonts/oxanium/oxanium.woff2",
+      "assets/fonts/rajdhani/rajdhani-700.woff2",
       "assets/fonts/rajdhani/rajdhani.woff2",
+      "assets/fonts/roboto-condensed/roboto-condensed-700.woff2",
+      "assets/fonts/roboto-condensed/roboto-condensed.woff2",
+      "assets/fonts/source-sans-3/source-sans-3-600.woff2",
+      "assets/fonts/source-sans-3/source-sans-3-700.woff2",
+      "assets/fonts/source-sans-3/source-sans-3.woff2",
       "assets/fonts/space-grotesk/space-grotesk.woff2",
       "background.js",
       "content.js",
@@ -30,13 +57,40 @@
       "pages/pages.js"
     ],
     "files": [
+      "assets/fonts/alegreya/alegreya-700.woff2",
       "assets/fonts/alegreya/alegreya.woff2",
+      "assets/fonts/atkinson-hyperlegible/atkinson-hyperlegible-700.woff2",
+      "assets/fonts/atkinson-hyperlegible/atkinson-hyperlegible.woff2",
+      "assets/fonts/barlow-condensed/barlow-condensed-700.woff2",
       "assets/fonts/barlow-condensed/barlow-condensed.woff2",
+      "assets/fonts/barlow/barlow-500.woff2",
+      "assets/fonts/barlow/barlow-600.woff2",
+      "assets/fonts/barlow/barlow-700.woff2",
+      "assets/fonts/barlow/barlow.woff2",
+      "assets/fonts/bebas-neue/bebas-neue.woff2",
       "assets/fonts/bungee/bungee.woff2",
+      "assets/fonts/cinzel/cinzel.woff2",
+      "assets/fonts/cormorant-garamond/cormorant-garamond-600.woff2",
       "assets/fonts/cormorant-garamond/cormorant-garamond.woff2",
+      "assets/fonts/fraunces/fraunces-700.woff2",
       "assets/fonts/fraunces/fraunces.woff2",
+      "assets/fonts/ibm-plex-sans/ibm-plex-sans-500.woff2",
+      "assets/fonts/ibm-plex-sans/ibm-plex-sans-600.woff2",
+      "assets/fonts/ibm-plex-sans/ibm-plex-sans-700.woff2",
+      "assets/fonts/ibm-plex-sans/ibm-plex-sans.woff2",
+      "assets/fonts/josefin-sans/josefin-sans-700.woff2",
       "assets/fonts/josefin-sans/josefin-sans.woff2",
+      "assets/fonts/nunito-sans/nunito-sans-700.woff2",
+      "assets/fonts/nunito-sans/nunito-sans.woff2",
+      "assets/fonts/orbitron/orbitron.woff2",
+      "assets/fonts/oxanium/oxanium.woff2",
+      "assets/fonts/rajdhani/rajdhani-700.woff2",
       "assets/fonts/rajdhani/rajdhani.woff2",
+      "assets/fonts/roboto-condensed/roboto-condensed-700.woff2",
+      "assets/fonts/roboto-condensed/roboto-condensed.woff2",
+      "assets/fonts/source-sans-3/source-sans-3-600.woff2",
+      "assets/fonts/source-sans-3/source-sans-3-700.woff2",
+      "assets/fonts/source-sans-3/source-sans-3.woff2",
       "assets/fonts/space-grotesk/space-grotesk.woff2",
       "background.js",
       "content.js",
@@ -83,7 +137,18 @@
         "file": "assets/fonts/alegreya/OFL.txt",
         "license": "OFL-1.1",
         "covers": [
-          "assets/fonts/alegreya/alegreya.woff2"
+          "assets/fonts/alegreya/alegreya.woff2",
+          "assets/fonts/alegreya/alegreya-700.woff2"
+        ],
+        "upstream": "https://github.com/google/fonts",
+        "userscript": false
+      },
+      {
+        "file": "assets/fonts/atkinson-hyperlegible/OFL.txt",
+        "license": "OFL-1.1",
+        "covers": [
+          "assets/fonts/atkinson-hyperlegible/atkinson-hyperlegible.woff2",
+          "assets/fonts/atkinson-hyperlegible/atkinson-hyperlegible-700.woff2"
         ],
         "upstream": "https://github.com/google/fonts",
         "userscript": false
@@ -92,7 +157,29 @@
         "file": "assets/fonts/barlow-condensed/OFL.txt",
         "license": "OFL-1.1",
         "covers": [
-          "assets/fonts/barlow-condensed/barlow-condensed.woff2"
+          "assets/fonts/barlow-condensed/barlow-condensed.woff2",
+          "assets/fonts/barlow-condensed/barlow-condensed-700.woff2"
+        ],
+        "upstream": "https://github.com/google/fonts",
+        "userscript": false
+      },
+      {
+        "file": "assets/fonts/barlow/OFL.txt",
+        "license": "OFL-1.1",
+        "covers": [
+          "assets/fonts/barlow/barlow.woff2",
+          "assets/fonts/barlow/barlow-500.woff2",
+          "assets/fonts/barlow/barlow-600.woff2",
+          "assets/fonts/barlow/barlow-700.woff2"
+        ],
+        "upstream": "https://github.com/google/fonts",
+        "userscript": false
+      },
+      {
+        "file": "assets/fonts/bebas-neue/OFL.txt",
+        "license": "OFL-1.1",
+        "covers": [
+          "assets/fonts/bebas-neue/bebas-neue.woff2"
         ],
         "upstream": "https://github.com/google/fonts",
         "userscript": false
@@ -107,9 +194,19 @@
         "userscript": false
       },
       {
+        "file": "assets/fonts/cinzel/OFL.txt",
+        "license": "OFL-1.1",
+        "covers": [
+          "assets/fonts/cinzel/cinzel.woff2"
+        ],
+        "upstream": "https://github.com/google/fonts",
+        "userscript": false
+      },
+      {
         "file": "assets/fonts/cormorant-garamond/OFL.txt",
         "license": "OFL-1.1",
         "covers": [
+          "assets/fonts/cormorant-garamond/cormorant-garamond-600.woff2",
           "assets/fonts/cormorant-garamond/cormorant-garamond.woff2"
         ],
         "upstream": "https://github.com/google/fonts",
@@ -119,7 +216,20 @@
         "file": "assets/fonts/fraunces/OFL.txt",
         "license": "OFL-1.1",
         "covers": [
-          "assets/fonts/fraunces/fraunces.woff2"
+          "assets/fonts/fraunces/fraunces.woff2",
+          "assets/fonts/fraunces/fraunces-700.woff2"
+        ],
+        "upstream": "https://github.com/google/fonts",
+        "userscript": false
+      },
+      {
+        "file": "assets/fonts/ibm-plex-sans/OFL.txt",
+        "license": "OFL-1.1",
+        "covers": [
+          "assets/fonts/ibm-plex-sans/ibm-plex-sans.woff2",
+          "assets/fonts/ibm-plex-sans/ibm-plex-sans-500.woff2",
+          "assets/fonts/ibm-plex-sans/ibm-plex-sans-600.woff2",
+          "assets/fonts/ibm-plex-sans/ibm-plex-sans-700.woff2"
         ],
         "upstream": "https://github.com/google/fonts",
         "userscript": false
@@ -128,7 +238,36 @@
         "file": "assets/fonts/josefin-sans/OFL.txt",
         "license": "OFL-1.1",
         "covers": [
-          "assets/fonts/josefin-sans/josefin-sans.woff2"
+          "assets/fonts/josefin-sans/josefin-sans.woff2",
+          "assets/fonts/josefin-sans/josefin-sans-700.woff2"
+        ],
+        "upstream": "https://github.com/google/fonts",
+        "userscript": false
+      },
+      {
+        "file": "assets/fonts/nunito-sans/OFL.txt",
+        "license": "OFL-1.1",
+        "covers": [
+          "assets/fonts/nunito-sans/nunito-sans.woff2",
+          "assets/fonts/nunito-sans/nunito-sans-700.woff2"
+        ],
+        "upstream": "https://github.com/google/fonts",
+        "userscript": false
+      },
+      {
+        "file": "assets/fonts/orbitron/OFL.txt",
+        "license": "OFL-1.1",
+        "covers": [
+          "assets/fonts/orbitron/orbitron.woff2"
+        ],
+        "upstream": "https://github.com/google/fonts",
+        "userscript": false
+      },
+      {
+        "file": "assets/fonts/oxanium/OFL.txt",
+        "license": "OFL-1.1",
+        "covers": [
+          "assets/fonts/oxanium/oxanium.woff2"
         ],
         "upstream": "https://github.com/google/fonts",
         "userscript": false
@@ -137,7 +276,29 @@
         "file": "assets/fonts/rajdhani/OFL.txt",
         "license": "OFL-1.1",
         "covers": [
-          "assets/fonts/rajdhani/rajdhani.woff2"
+          "assets/fonts/rajdhani/rajdhani.woff2",
+          "assets/fonts/rajdhani/rajdhani-700.woff2"
+        ],
+        "upstream": "https://github.com/google/fonts",
+        "userscript": false
+      },
+      {
+        "file": "assets/fonts/roboto-condensed/OFL.txt",
+        "license": "OFL-1.1",
+        "covers": [
+          "assets/fonts/roboto-condensed/roboto-condensed.woff2",
+          "assets/fonts/roboto-condensed/roboto-condensed-700.woff2"
+        ],
+        "upstream": "https://github.com/google/fonts",
+        "userscript": false
+      },
+      {
+        "file": "assets/fonts/source-sans-3/OFL.txt",
+        "license": "OFL-1.1",
+        "covers": [
+          "assets/fonts/source-sans-3/source-sans-3.woff2",
+          "assets/fonts/source-sans-3/source-sans-3-600.woff2",
+          "assets/fonts/source-sans-3/source-sans-3-700.woff2"
         ],
         "upstream": "https://github.com/google/fonts",
         "userscript": false

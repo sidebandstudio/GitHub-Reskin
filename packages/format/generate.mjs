@@ -105,14 +105,14 @@ const SHAPES = {
   "cormorant-garamond": "serif",
   cinzel: "serif",
 };
-// The owner's original Cyberpunk display stack. Choom keeps it first; this increment ships no
-// Roboto Condensed file, so the stack is all native faces.
+// The owner's original Cyberpunk display stack. Choom keeps it first: its "Roboto Condensed" is
+// the bundled face where the owner's native faces are missing (appearance/registry.js).
 const NATIVE_STACKS = { "roboto-condensed": 'Bahnschrift, "DIN Alternate", "Roboto Condensed", "Arial Narrow", ui-monospace, monospace' };
 function fontRoles(schema) {
   // "system" keeps GitHub's own font, so it has no list at all.
   const roles = [{ id: "system", family: null, roles: ["heading", "body"], weights: [], source: "system", fallback: null }];
   for (const font of schema["x-reskin"].fonts) {
-    const source = FONT_INVENTORY.bundled.includes(font.id) ? "bundled" : FONT_INVENTORY.nativeStack.includes(font.id) ? "native-stack" : "deferred";
+    const source = FONT_INVENTORY.nativeStack.includes(font.id) ? "native-stack" : FONT_INVENTORY.bundled.includes(font.id) ? "bundled" : "deferred";
     const fallback = NATIVE_STACKS[font.id] ?? STACKS[SHAPES[font.id] ?? "sans"];
     roles.push({ id: font.id, family: font.family, roles: font.roles, weights: font.weights ?? [font.weight], source, fallback });
   }
@@ -131,8 +131,8 @@ export function generateRegistry() {
     effects[id] = params;
   }
   // FONTS stays the bundled inventory, the families with files; FONT_ROLES covers every ID.
-  const fonts = [{ id: "system", family: null, weight: null, minimumAccentPx: null }].concat(
-    x.fonts.filter(({ id }) => FONT_IDS.includes(id)).map(({ id, family, weight, minimumAccentPx }) => ({ id, family, weight, minimumAccentPx })),
+  const fonts = [{ id: "system", family: null, weight: null, weights: [], minimumAccentPx: null }].concat(
+    x.fonts.filter(({ id }) => FONT_IDS.includes(id)).map(({ id, family, weight, weights, minimumAccentPx }) => ({ id, family, weight, weights: weights ?? [weight], minimumAccentPx })),
   );
   const slots = Object.fromEntries(Object.entries(schema.properties.flavor.properties.slots.properties).map(([id, def]) => [id, { maxLength: def.maxLength }]));
   const text = Object.fromEntries(["name", "author", "description", "inspiredBy"].map((key) => [key, { maxLength: schema.properties[key].maxLength }]));
@@ -162,7 +162,8 @@ export const SCHEMA_ID = ${JSON.stringify(schema.$id)};
 // Effect parameters in schema order, with bounds and the engine default for an omitted value.
 export const EFFECT_PARAMETERS = ${round(effects)};
 
-// The bundled families, the ones with files. "system" ships no file and has no family.
+// The bundled families, the ones with files, with the registry weight and every reviewed weight.
+// "system" ships no file and has no family.
 export const FONTS = ${round(fonts)};
 
 // Every heading and body font ID with its roles, reviewed weights, this increment's source

@@ -43,9 +43,9 @@ export async function buildFixtureApp({ root, outDir }) {
     plugins: [{ name: "reskin-adapters", setup: (b) => b.onResolve({ filter: /^reskin:(primer|github)$/ }, (args) => ({ path: adapters[args.path.slice(7)] })) }],
   });
   for (const page of PAGES) await copyFile(join(HERE, page), join(dir, page));
-  for (const font of FONTS) {
-    await mkdir(join(dir, dirname(font.path)), { recursive: true });
-    await copyFile(join(root, font.path), join(dir, font.path));
+  for (const { path } of FONTS.flatMap((font) => font.files)) {
+    await mkdir(join(dir, dirname(path)), { recursive: true });
+    await copyFile(join(root, path), join(dir, path));
   }
   const assets = join(root, "packages/preview/fixture/assets");
   await mkdir(join(dir, "packages/preview/fixture/assets"), { recursive: true });

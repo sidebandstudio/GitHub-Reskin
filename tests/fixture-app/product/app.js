@@ -7,7 +7,7 @@
 //                     slot anchors, on a page full of authored text and native controls.
 //   C3's profile page window.reskinGithub does the same with C3's real locateSlots, when the
 //                     tests serve C3's fixture as github.com and C3 is in the checkout.
-import { compileAppearance, convertRaster, createRasterQueue, fontFaceCss, imageAssets, mountAppearance, siteResources } from "../../../packages/appearance/index.js";
+import { compileAppearance, convertRaster, createRasterQueue, imageAssets, mountAppearance, roleFontFaceCss, siteResources } from "../../../packages/appearance/index.js";
 import { rasterInfo, rasterSourceInfo } from "../../../packages/format/viewer.js";
 import { repairTheme, resolveTheme } from "../../../packages/engine/index.js";
 import { FIXTURE_CSS, PREVIEW_VARIABLES, colorAt, configurePreview, createFixtureRenderer, mountPreview, nativeBaseline, serializeFixture } from "../../../packages/preview/index.js";
@@ -93,10 +93,10 @@ function applyTheme(theme, prefs, anchors, { play = false, extraCss = "", cssAll
   const { plan, resolved } = resolveFor(theme);
   const style = document.createElement("style");
   style.setAttribute("data-reskin-style", "");
-  const fontUrl = prefs.enabled && prefs.fonts && resolved.policy === "themed" ? resources.fontUrl(resolved.font) : null;
+  const faces = prefs.enabled && prefs.fonts && resolved.policy === "themed" ? roleFontFaceCss(resolved, resources) : "";
   const owned = { css: theme.css ?? null, cssAllowed };
   const images = imageAssets(theme);
-  style.textContent = [extraCss, primer.compileGitHub(resolved, plan, prefs).css, fontUrl ? fontFaceCss(resolved.font, fontUrl) : "", compileAppearance(resolved, prefs, "github", { ...owned, images })].join("\n");
+  style.textContent = [extraCss, primer.compileGitHub(resolved, plan, prefs).css, faces, compileAppearance(resolved, prefs, "github", { ...owned, images })].join("\n");
   document.head.append(style);
   if (cssAllowed && resolved.policy === "themed") document.documentElement.setAttribute("data-reskin-css", "active");
   const decoration = mountAppearance(document.body, resolved, prefs, anchors(), owned);

@@ -75,7 +75,7 @@ export type EffectParameter =
   | { enum: readonly string[]; default: string };
 export declare const EFFECT_PARAMETERS: Readonly<Record<EffectId, Readonly<Record<string, EffectParameter>>>>;
 /** The bundled families, the ones with files in this build, plus "system". */
-export declare const FONTS: readonly { id: FontId; family: string | null; weight: number | null; minimumAccentPx: number | null }[];
+export declare const FONTS: readonly { id: FontId; family: string | null; weight: number | null; weights: readonly number[]; minimumAccentPx: number | null }[];
 /** Every heading and body font ID: roles, reviewed weights, this increment's source and native fallback list. */
 export declare const FONT_ROLES: readonly {
   id: FontId;
