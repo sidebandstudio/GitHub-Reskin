@@ -276,4 +276,11 @@ describe("production gate", () => {
       assert.ok(!/rel="modulepreload"[^>]*(engine|authoring)\./.test(html), `${route} preloads the engine`);
     }
   });
+
+  test("no script preloads the preview or parser chunk, which WebKit would then keep failed after a dropped connection", async () => {
+    for (const file of files.filter((f) => /^_assets\/.*\.js$/.test(f))) {
+      const code = await read(dir, file);
+      assert.ok(!/__vite__mapDeps[^;]*_assets\/(engine|authoring)\./.test(code), `${file} preloads a lazily loaded chunk`);
+    }
+  });
 });

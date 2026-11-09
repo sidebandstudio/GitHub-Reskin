@@ -17,7 +17,11 @@ export default defineConfig({
   devToolbar: { enabled: false },
   server: { host: "0.0.0.0", port: 4321 },
   vite: {
-    plugins: [vitePlugin()],
+    // No modulepreload links for the lazily loaded chunks (Astro sets modulePreload itself, so only
+    // the client environment can turn it off). In WebKit, a chunk whose modulepreload and import()
+    // fail together stays failed for the life of the page, so Try again could never load the live
+    // preview or the importer; a plain import() that fails is fetched again on the next import().
+    plugins: [vitePlugin(), { name: "reskin-no-modulepreload", configEnvironment: (name) => (name === "client" ? { build: { modulePreload: false } } : undefined) }],
     // The live preview chunk carries the full Primer ModeIndex; it loads only on intent.
     build: { sourcemap: false, modulePreload: { polyfill: false }, chunkSizeWarningLimit: 1024 },
   },
