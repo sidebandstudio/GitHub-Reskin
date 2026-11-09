@@ -41,21 +41,31 @@ export function scopeSelectors(modes, baseOf = (mode) => POLICY.modes[mode]?.bas
 
 // GitHub's selectors need a color mode and the theme attribute it reads. An island without theme
 // attributes matches none of them, so it inherits its parent's mode.
-const ATTRIBUTED = "[data-color-mode]:is([data-light-theme],[data-dark-theme])";
+export const ATTRIBUTED = "[data-color-mode]:is([data-light-theme],[data-dark-theme])";
 const LOOSE = "[data-color-mode]:not([data-light-theme],[data-dark-theme])";
 const CONTENTINFO = 'footer[role="contentinfo"]';
+// The marketing footer partial's island without theme attributes, as GitHub renders it on its
+// home, 404 and marketing pages (github.com, 2026-11-08).
+const BRAND_WRAPPER = `react-partial[partial-name="marketing-footer"] > div > ${LOOSE}`;
 
 /**
- * The Primer Brand marketing footer: a color-mode island without GitHub theme attributes whose
- * direct child is the page's contentinfo footer. Structural only; no hashed class names. That
- * island, and islands without theme attributes nested in the footer (its language menu), are
- * recognized and pass their parent's mode through, as they do natively.
+ * The Primer Brand marketing footer: the contentinfo footer directly inside the marketing-footer
+ * partial's island without theme attributes. Structural only; no hashed class names. That island,
+ * and islands without theme attributes nested in the footer (its language menu), are recognized
+ * and pass their parent's mode through, as they do natively.
  */
-export const BRAND_FOOTER = `:is(${LOOSE} > ${CONTENTINFO})`;
+export const BRAND_FOOTER = `:is(${BRAND_WRAPPER} > ${CONTENTINFO})`;
 
-// How many themed and native islands, counted from the root, may enclose a target: themed, native,
-// themed. Deeper alternation fails closed and keeps GitHub's styles.
+// How many islands with theme attributes, counted from the root, may enclose an element for its
+// nearest one to be found. A deeper island is suppressed by any unsafe island inside it, and
+// `within` keeps GitHub's styles below it.
 const NESTING = 3;
+
+// Elements with at least `n` islands with theme attributes among their ancestors.
+const below = (n) => `${`${ATTRIBUTED} `.repeat(n)}*`;
+// An island with theme attributes that is the `depth`th, counted from the root, on its path. One
+// compound, so an engine tests the depth before any :has() that follows it.
+const atDepth = (depth) => `${ATTRIBUTED}${depth > 1 ? `:is(${below(depth - 1)})` : ""}:not(${below(depth)})`;
 
 // The elements of scopeSelectors(modes)[branch], grouped by attribute into one shorter selector.
 function grouped(modes, baseOf, branch) {
@@ -72,43 +82,52 @@ function grouped(modes, baseOf, branch) {
  * Selectors for one color-scheme branch of a themed stylesheet. `covered` are the plan's modes,
  * `known` every mode of the ModeIndex.
  *
- * - `gate` matches the root only while every island in the document is recognized: a known mode
- *   combination, the Brand footer's island without theme attributes, or one inside that footer.
- *   An island of an unknown mode, a color mode without the theme attribute it reads, a stray value
- *   or any other island without theme attributes leaves the whole document native, because its
- *   native reset cannot be proved and the root is its ancestor. An island without theme
- *   attributes that has no element children is not detected; nothing below it can hold another
- *   mode. Browsers without :has() drop every gated rule, which also leaves GitHub native.
- * - `themed` matches the plan's islands; `islands` matches them behind the gate, for the inherited
- *   custom properties.
- * - `native` matches islands of the other known modes, all that remain while the gate is open, and
- *   `nativeModes` lists the same islands by mode.
- * - `within(target)` matches `target`, a compound selector, when its nearest island with theme
- *   attributes, itself included, is themed. A native island is its own boundary, and a themed
- *   island nested in it starts a fresh scope. For rules that are not inherited custom properties.
+ * - `unsafe` matches a boundary whose native reset cannot be proved: an island of an unknown
+ *   mode, a color mode without the theme attribute it reads, a stray value, any island without
+ *   theme attributes outside the Brand footer, empty and text-only ones included, and a stray
+ *   child of the footer's island. Only the Brand footer's island passes its parent's mode through.
+ * - `eligible` matches the plan's islands that no unsafe boundary depends on. An unsafe boundary
+ *   inherits from its nearest island with theme attributes; when that island is themed it is
+ *   suppressed and keeps GitHub's own declarations for its mode, and when it is a native island
+ *   its reset already protects the boundary and nothing above it is suppressed. Other islands
+ *   stay themed. Browsers without :has() drop every rule that names `eligible`, which leaves
+ *   GitHub native.
+ * - `themed` matches the plan's islands, suppressed or not.
+ * - `native` matches islands of the other known modes and unknown attributed islands.
+ * - `others` matches every island but the plan's and the Brand footer's, in one compound that
+ *   starts with the color-mode attribute, so a :has() of it is one cheap walk.
+ * - `brand` matches the Brand footer and the islands without theme attributes inside it while
+ *   no island of an unknown mode is in the footer, the only unsafe boundary it can hold: GitHub's
+ *   mode files do not reset Brand properties.
+ * - `within(target)` matches `target`, a compound selector without theme attributes of its own,
+ *   when its nearest island with theme attributes is eligible. A native island is its own
+ *   boundary, and a themed island nested in it starts a fresh scope. For rules that are not
+ *   inherited custom properties, in engines without container style queries.
  *
- * Chromium re-runs the gate's :has() after any DOM change for every rule whose matched elements
- * depend on it, so the compiler keeps gated rules few and their targets specific.
+ * Chromium re-runs each :has() after a DOM change below the element it is anchored on, walking
+ * that subtree, so the compiler anchors them only on islands and the body, and keeps them few.
  */
 export function islandScope(covered, known, baseOf, branch) {
   const themed = grouped(covered, baseOf, branch);
-  const loose = `${LOOSE}:not(${BRAND_FOOTER} *)`;
-  const gate = `:root:not(:has(${ATTRIBUTED}:not(${grouped(known, baseOf, branch)}),${loose} > :not(${CONTENTINFO})))`;
-  const native = `${ATTRIBUTED}:not(${themed})`;
-  // The same islands listed by mode, without negation, for :has() arguments: Chromium re-checks a
-  // :has() whose argument holds :not() after any DOM change, but keys a positive one to attributes.
-  const nativeModes = grouped(known.filter((m) => !covered.includes(m)), baseOf, branch);
-  // A target's attributed islands, innermost last, alternate between themed and native runs. The
-  // innermost is themed exactly when an alternating chain ending in a themed island encloses the
-  // target and the same chain followed by a native island does not.
-  const chains = [];
-  for (let k = 1; k < NESTING; k++) chains.push(Array.from({ length: k }, (_, i) => ((k - i) % 2 ? themed : `:is(${native})`)).join(" "));
+  const unknown = `${ATTRIBUTED}:not(${grouped(known, baseOf, branch)})`;
+  const unsafe = `:is(${unknown},${LOOSE}:not(${BRAND_WRAPPER},${BRAND_FOOTER} *))`;
+  // An island is suppressed when an unsafe boundary below it has no other island with theme
+  // attributes in between: both are at the same depth.
+  const sameDepth = (depth) => `:has(${unsafe}:not(${below(depth + 1)}))`;
+  const suppressed = [];
+  for (let depth = 1; depth <= NESTING; depth++) suppressed.push(`${atDepth(depth)}${sameDepth(depth)}`);
+  suppressed.push(`${ATTRIBUTED}:is(${below(NESTING)}):has(${unsafe})`);
+  // A target with exactly `depth` islands with theme attributes above it, the innermost themed
+  // and not suppressed.
+  const nearest = [];
+  for (let depth = 1; depth <= NESTING; depth++) nearest.push((target) => `${atDepth(depth)}${themed}:not(${sameDepth(depth)}) ${target}:not(${ATTRIBUTED}):not(${below(depth + 1)})`);
   return {
-    gate,
     themed,
-    islands: `${gate}${themed},${gate} ${themed}`,
-    native,
-    nativeModes,
-    within: (target) => `${gate} :is(${[`${target}${themed}`, ...chains.map((c) => `${c} ${target}:not(${ATTRIBUTED}):not(${c} :is(${native}) ${target})`)].join(",")})`,
+    eligible: `${themed}:not(${suppressed.join(",")})`,
+    unsafe,
+    native: `${ATTRIBUTED}:not(${themed})`,
+    others: `[data-color-mode]:not(${themed},${BRAND_WRAPPER},${BRAND_FOOTER} ${LOOSE})`,
+    brand: `:is(${BRAND_FOOTER},${LOOSE}:is(${BRAND_FOOTER} *)):not(:is(${BRAND_WRAPPER}:has(${unknown})) *)`,
+    within: (target) => `:is(${nearest.map((at) => at(target)).join(",")})`,
   };
 }

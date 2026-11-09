@@ -5,15 +5,12 @@ import { ENGINE_VERSION, PAIR_MATRIX_VERSION, RENDERER_VERSION } from "../contra
 import { MODE_INDEX } from "./data.js";
 import MAPPINGS from "./mappings.json" with { type: "json" };
 import { coveredModes } from "./modes.js";
-import { BRAND_FOOTER, islandScope } from "./selectors.js";
+import { ATTRIBUTED, islandScope } from "./selectors.js";
 
 export const COMPILER_VERSION = 1;
 const HEX6 = /^#[0-9a-f]{6}$/;
 const NATIVE_DECLARATION = /^--[A-Za-z0-9_-]+:[^;{}<>\\@]+$/;
 const PREFERENCE_KEYS = ["enabled", "extras", "text", "motion", "fonts", "effects"];
-// The Primer Brand footer and the islands without theme attributes nested in it (its language
-// menu). An island with theme attributes there follows its own mode.
-const BRAND_TARGET = `:is(${BRAND_FOOTER},[data-color-mode]:not([data-light-theme],[data-dark-theme]):is(${BRAND_FOOTER} *))`;
 // The activity overview's highlight shape, whose seasonal color is an attribute, and the profile
 // timeline's commit-share bars, which GitHub paints with an inline green. Only an explicit rule
 // recolors them. Widths, labels and content stay GitHub's.
@@ -161,28 +158,45 @@ export function compileGitHub(resolved, modePlan, prefs, index = MODE_INDEX) {
 
   const covered = coveredModes(index, seed.id);
   const baseOf = (mode) => index.modes[mode]?.base;
-  // Rules that are not inherited custom properties, for elements whose nearest island is themed.
-  const component = (target) => [
-    // Fill and stroke paint the blob, background-color the bar.
-    [GRAPH_TARGET, `fill:${blob} !important;stroke:${blob} !important;background-color:${bar} !important`],
-    [".hx_IssueLabel", important(ISSUE_LABEL[seed.base])],
-    [BRAND_TARGET, brandDeclarations],
-  ].map(([selector, body]) => `${target(selector)}{${body}}`).join("\n");
+  // Fill and stroke paint the blob, background-color the bar.
+  const graph = `fill:${blob} !important;stroke:${blob} !important;background-color:${bar} !important`;
+  const label = important(ISSUE_LABEL[seed.base]);
   const branch = (name) => {
     const scope = islandScope(covered, Object.keys(index.modes), baseOf, name);
+    // Rules that are not inherited custom properties, for elements whose nearest island is
+    // eligible. A graph or label that is itself an island follows its own mode, below.
+    const component = (target) => [
+      [`${GRAPH_TARGET}:not([data-color-mode])`, graph],
+      [".hx_IssueLabel:not([data-color-mode])", label],
+      [scope.brand, brandDeclarations],
+    ].map(([selector, body]) => `${target(selector)}{${body}}`).join("\n");
     return [
-      `${scope.islands}{${declarations}}`,
-      `:is(${scope.native}){${ON}:initial !important;${SELECTION_TEXT}:initial !important;${SELECTION_BACKGROUND}:initial !important}`,
+      // Every island with theme attributes clears the Reskin switches, at no specificity, and
+      // eligible islands raise them again: native, unknown and suppressed islands stay cleared.
+      `:where(${ATTRIBUTED}){${ON}:initial !important;${SELECTION_TEXT}:initial !important;${SELECTION_BACKGROUND}:initial !important}`,
+      `${scope.eligible}{${declarations}}`,
+      // Only a themed island's own descendants can suppress it, and a graph or label holds no
+      // islands, so for these subjects no unsafe descendant at all is the same, shorter test.
+      `${GRAPH_TARGET}${scope.themed}:not(:has(${scope.unsafe})){${graph}}`,
+      `.hx_IssueLabel${scope.themed}:not(:has(${scope.unsafe})){${label}}`,
       `@supports ${GECKO}{`,
       component(scope.within),
+      "}",
+      // Outside Gecko the other component rules read the nearest island's switch with a style
+      // query, which reads the parent's, so it never sees a subject's own island. An engine with
+      // neither keeps GitHub's components.
+      `@supports not ${GECKO}{`,
+      `@container style(${ON}: 1){`,
+      component((selector) => selector),
       "}",
       // Chromium's highlight styles inherit from the parent's, and only an element whose
       // ancestors have no selection rule paints the browser's own selection, whose dark-scheme and
       // inactive-window colors no keyword reproduces. So the themed selection is set once on the
-      // body of a themed root, for the page to inherit, and only while no native island exists.
-      // It is gated by selector: Chromium does not pass a style-queried highlight rule on to
-      // children when the stylesheet changes.
-      `@supports not ${GECKO}{${scope.gate}${scope.themed} > body:not(:has(${scope.nativeModes}))::selection{color:${selectionText};background-color:${selectionBackground}}}`,
+      // body of a themed root, for the page to inherit, and only while every island is the
+      // plan's or the Brand footer's: no native, unknown or unsafe island, so none is suppressed. It is gated by selector: Chromium does not pass a style-queried highlight
+      // rule on to children when the stylesheet changes.
+      `:root${scope.themed} > body:not(:has(${scope.others}))::selection{color:${selectionText};background-color:${selectionBackground}}`,
+      "}",
     ].join("\n");
   };
   const css = [
@@ -193,14 +207,6 @@ export function compileGitHub(resolved, modePlan, prefs, index = MODE_INDEX) {
     "}",
     "@media (prefers-color-scheme: dark){",
     branch("dark"),
-    "}",
-    // Chromium re-runs the island gate's :has() for every gated rule after each DOM change, so
-    // outside Gecko the component rules read the nearest island's switch with a style query,
-    // which reads the parent's. An engine with neither keeps GitHub's components.
-    `@supports not ${GECKO}{`,
-    `@container style(${ON}: 1){`,
-    component((selector) => selector),
-    "}",
     "}",
     // Gecko matches selection per element and paints HighlightText on Highlight by default, which
     // an element outside every themed island keeps.

@@ -36,7 +36,8 @@ const GREEN = "rgb(64, 196, 99)";
 
 const blob = (id) => `<svg><path id="${id}" class="js-highlight-blob" fill="#40c463" stroke="#40c463" d="M0 0h1v1z"/></svg>`;
 const label = (id) => `<span id="${id}" class="hx_IssueLabel" style="--label-r:215;--label-g:58;--label-b:74;--label-h:353;--label-s:66;--label-l:53;--perceived-lightness:0.36;--lightness-switch:1">bug</span>`;
-const footer = (id) => `<div data-color-mode="light"><footer role="contentinfo"><i id="${id}"></i></footer></div>`;
+// The marketing footer as GitHub renders it on github.com and its 404 page, 2026-11-08.
+const footer = (id, inside = "") => `<react-partial partial-name="marketing-footer"><div><div data-color-mode="light"><footer role="contentinfo"><i id="${id}"></i>${inside}</footer></div></div></react-partial>`;
 // The profile timeline's commit bar as GitHub rendered it on github.com/whoisaldo, 2026-11-08.
 const bar = (id, color = "#30a14e") => `<div class="Progress mt-1 color-bg-default" role="img" aria-label="63% of commits in November were made to octo/sample"><span id="${id}" class="Progress-item rounded-2" style="width: 63%;background-color: ${color}"></span></div>`;
 
@@ -60,6 +61,11 @@ const PROFILE = `<main><div id="js-contribution-activity">
   <div data-color-mode="dark" data-light-theme="light_high_contrast" data-dark-theme="dark_high_contrast">${bar("hc-bar")}</div>
 </div>${bar("outside-bar")}</main>
 <span class="Progress position-fixed"><span id="loader" class="Progress-item color-bg-accent-emphasis" style="width: 30%"></span></span>`;
+
+const STD = 'data-color-mode="light" data-light-theme="light" data-dark-theme="dark"';
+const HC = 'data-color-mode="light" data-light-theme="light_high_contrast" data-dark-theme="dark_high_contrast"';
+const UNKNOWN = 'data-color-mode="dark" data-light-theme="light" data-dark-theme="dark_future"';
+const self = (id, attrs) => `<svg><path id="${id}-blob" ${attrs} class="js-highlight-blob" fill="#40c463" stroke="#40c463" d="M0 0h1v1z"/></svg>${label(`${id}-label`).replace("<span ", `<span ${attrs} `)}`;
 
 const page = (root, body, extra = "") => `<!doctype html>
 <html lang="en" ${root}><head>${MODES.map((id) => `<style>${raw[id]}</style>`).join("")}<style>${PRIMER_ISLANDS}</style>${extra}</head>
@@ -102,7 +108,7 @@ for (const [name, engine] of [["Chromium", chromium], ["Firefox", firefox]]) {
       await close();
     });
 
-    test("an island of an unknown mode leaves the whole document native, with or without its own stylesheet", async () => {
+    test("an island of an unknown mode leaves its nearest island native, here the root, with or without its own stylesheet", async () => {
       const body = `<div id="future" data-color-mode="dark" data-light-theme="light" data-dark-theme="dark_future"><i id="future-inner"></i>${blob("future-blob")}</div>${blob("root-blob")}${label("root-label")}${bar("bar")}`;
       for (const extra of ["", `<style>${FUTURE}</style>`]) {
         const { p, read, close } = await open({ body: `<main><div id="js-contribution-activity">${body}</div></main>`, extra });
@@ -117,7 +123,7 @@ for (const [name, engine] of [["Chromium", chromium], ["Firefox", firefox]]) {
       }
     });
 
-    test("malformed islands leave the whole document native: a missing theme attribute, the wrong one, a stray mode", async () => {
+    test("malformed islands leave their nearest island native, here the root: a missing theme attribute, the wrong one, a stray mode", async () => {
       for (const island of ['data-color-mode="dark"', 'data-color-mode="dark" data-light-theme="light"', 'data-color-mode="sepia" data-light-theme="light" data-dark-theme="dark"', 'data-color-mode="light" data-light-theme="Light"']) {
         const { p, read, close } = await open({ body: `<div id="odd" ${island}><span id="odd-inner">words</span>${blob("odd-blob")}</div>${blob("root-blob")}` });
         assert.equal(await read("root", "--bgColor-default"), native("light", "--bgColor-default"), island);
@@ -137,6 +143,103 @@ for (const [name, engine] of [["Chromium", chromium], ["Firefox", firefox]]) {
       assert.equal(await read("root", "--bgColor-default"), native("light", "--bgColor-default"));
       assert.notEqual(await read("brand-inner", "--brand-color-text-default"), "#fafbe0");
       await close();
+    });
+
+    // Everything that decides whether an element looks native: the inherited colors, the Reskin
+    // switch and the element's own paint.
+    const paint = (ids) => (p) => p.evaluate((ids) => Object.fromEntries(ids.map((id) => {
+      const s = getComputedStyle(id === "root" ? document.documentElement : document.getElementById(id));
+      return [id, ["--bgColor-default", "--fgColor-default", "--reskin-on", "background-color", "color", "fill", "stroke", "border-color"].map((prop) => s.getPropertyValue(prop).trim())];
+    })), ids);
+    const themedInk = ["rgb(253, 240, 196)", "rgb(32, 64, 106)"];
+    const selectionOf = (p, id) => p.evaluate((id) => { const s = getComputedStyle(document.getElementById(id), "::selection"); return [s.color, s.backgroundColor]; }, id);
+
+    test("islands without theme attributes keep GitHub's colors when they hold only text, nothing, or lose their children", async () => {
+      for (const [attrs, content] of [['data-color-mode="dark"', "bare leaf text"], ['data-color-mode="dark"', ""], ['data-color-mode="dark" data-light-theme="light"', "malformed leaf"], [UNKNOWN, "unknown leaf"], ['data-color-mode="dark"', '<span id="kid">child</span>']]) {
+        const ids = ["root", "leaf"];
+        const { p, read, earlier, close } = await open({ body: `<div id="leaf" ${attrs}>${content}</div><div id="safe" ${STD}><i id="safe-inner"></i></div>`, beforeTheme: paint(ids) });
+        if (content.startsWith("<span")) await p.evaluate(() => document.getElementById("kid").remove());
+        assert.deepEqual(await paint(ids)(p), earlier, `${attrs} ${content || "empty"}`);
+        assert.notDeepEqual(await selectionOf(p, "leaf"), themedInk);
+        assert.equal(await read("safe-inner", "--bgColor-default"), "#101a2b", "an island the leaf does not inherit from stays themed");
+        await close();
+      }
+    });
+
+    test("a graph or label that is itself an island follows its own mode, not its parent's", async () => {
+      const ids = ["hc-blob", "hc-label"];
+      const { p, earlier, close } = await open({ body: `${blob("root-blob")}${self("hc", HC)}<div ${HC}>${self("reopened", STD)}</div>`, beforeTheme: paint(ids) });
+      const style = (id, prop) => p.evaluate(([id, prop]) => getComputedStyle(document.getElementById(id))[prop], [id, prop]);
+      assert.equal(await style("root-blob", "fill"), "rgb(57, 255, 20)");
+      assert.deepEqual(await paint(ids)(p), earlier, "a high-contrast graph or label below the themed root keeps GitHub's paint");
+      assert.equal(await style("reopened-blob", "fill"), "rgb(57, 255, 20)", "a standard graph island inside a high-contrast island is themed");
+      assert.equal(await style("reopened-label", "backgroundColor"), "rgba(215, 58, 74, 0.18)");
+      await close();
+      for (const attrs of ['data-color-mode="dark"', UNKNOWN]) {
+        const own = ["root", "odd-blob", "odd-label"];
+        const odd = await open({ body: self("odd", attrs), beforeTheme: paint(own) });
+        assert.deepEqual(await paint(own)(odd.p), odd.earlier, attrs);
+        await odd.close();
+      }
+    });
+
+    test("an unsafe island suppresses only its nearest island with theme attributes", async () => {
+      const style = (p, id) => p.evaluate((id) => getComputedStyle(document.getElementById(id)).fill, id);
+      // An unrelated unknown island: the root is its nearest island, a sibling island stays themed.
+      let ids = ["root", "unknown"];
+      let t = await open({ body: `<div id="unknown" ${UNKNOWN}>unknown</div><div id="safe" ${STD}><i id="safe-inner"></i>${blob("safe-blob")}</div>`, beforeTheme: paint(ids) });
+      assert.deepEqual(await paint(ids)(t.p), t.earlier);
+      assert.equal(await t.read("safe-inner", "--bgColor-default"), "#101a2b");
+      assert.equal(await style(t.p, "safe-blob"), "rgb(57, 255, 20)");
+      await t.close();
+      // Behind a high-contrast island, whose reset already protects it: nothing is suppressed.
+      ids = ["unknown"];
+      t = await open({ body: `<section ${HC}><div id="unknown" ${UNKNOWN}>unknown</div></section><div ${STD}><i id="safe-inner"></i></div>`, beforeTheme: paint(ids) });
+      assert.deepEqual(await paint(ids)(t.p), t.earlier);
+      assert.equal(await t.read("root", "--bgColor-default"), "#101a2b");
+      assert.equal(await t.read("safe-inner", "--bgColor-default"), "#101a2b");
+      await t.close();
+      // Inside a nested standard island: that island keeps GitHub's light mode, the root stays themed.
+      ids = ["std", "std-inner", "loose"];
+      t = await open({ body: `<div id="std" ${STD}><i id="std-inner"></i><div id="loose" data-color-mode="dark">bare</div>${blob("std-blob")}</div>${blob("root-blob")}`, beforeTheme: paint(ids) });
+      assert.deepEqual(await paint(ids)(t.p), t.earlier);
+      assert.equal(await t.read("std-inner", "--bgColor-default"), native("light", "--bgColor-default"));
+      assert.equal(await t.read("root", "--bgColor-default"), "#101a2b");
+      assert.equal(await style(t.p, "std-blob"), GREEN);
+      assert.equal(await style(t.p, "root-blob"), "rgb(57, 255, 20)");
+      await t.close();
+      // Four islands deep: the fourth is suppressed, the islands above it stay themed.
+      ids = ["deep", "deep-inner"];
+      t = await open({ body: `<div ${STD}><i id="second-inner"></i>${blob("second-blob")}<div ${HC}><div id="deep" ${STD}><i id="deep-inner"></i>${blob("deep-blob")}<span data-color-mode="dark">bare</span></div></div></div>`, beforeTheme: paint(ids) });
+      assert.deepEqual(await paint(ids)(t.p), t.earlier);
+      assert.equal(await style(t.p, "deep-blob"), GREEN);
+      assert.equal(await t.read("second-inner", "--bgColor-default"), "#101a2b");
+      assert.equal(await style(t.p, "second-blob"), "rgb(57, 255, 20)");
+      assert.equal(await t.read("root", "--bgColor-default"), "#101a2b");
+      await t.close();
+    });
+
+    test("the Brand footer is recognized only in GitHub's structure, and keeps GitHub's Brand colors around an unsafe island", async () => {
+      // The partial's island passes its parent's mode through to plain content beside the footer.
+      let t = await open({ body: footer("brand-inner").replace("</footer>", '</footer><div id="beside"></div>') });
+      assert.equal(await t.read("beside", "--bgColor-default"), "#101a2b");
+      assert.equal(await t.read("brand-inner", "--brand-color-text-default"), "#fafbe0");
+      await t.close();
+      // An island without theme attributes beside the footer, and a bare footer island outside the
+      // marketing partial, are not the Brand footer.
+      for (const body of [footer("brand-inner").replace("</footer>", '</footer><div data-color-mode="dark">section</div>'), '<div data-color-mode="light"><footer role="contentinfo"><i id="brand-inner"></i></footer></div>']) {
+        const { read, close } = await open({ body });
+        assert.equal(await read("root", "--bgColor-default"), native("light", "--bgColor-default"), body);
+        assert.notEqual(await read("brand-inner", "--brand-color-text-default"), "#fafbe0", body);
+        await close();
+      }
+      // A high-contrast island in the footer protects an unknown island from the root's colors,
+      // but not from Brand properties set on the footer, so those stay GitHub's.
+      t = await open({ body: footer("brand-inner", `<div ${HC}><div ${UNKNOWN}><i id="deep-inner"></i></div></div>`) });
+      assert.equal(await t.read("root", "--bgColor-default"), "#101a2b");
+      assert.notEqual(await t.read("brand-inner", "--brand-color-text-default"), "#fafbe0");
+      assert.notEqual(await t.read("deep-inner", "--brand-color-text-default"), "#fafbe0");
+      await t.close();
     });
 
     test("graph, label and footer rules follow the nearest island: standard, then high contrast, then standard again", async () => {
