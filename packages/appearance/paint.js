@@ -72,8 +72,9 @@ export function layerCss(layer) {
         const r = Math.max(1, Math.round(s / 8));
         return { image: `radial-gradient(circle,${c} 0 ${r}px,transparent ${num(r + 0.5)}px)`, size: `${s}px ${s}px`, repeat: "repeat", position: "0 0" };
       }
+      // One corner-to-corner line per tile; neighboring tiles continue it into long diagonals.
       case "diagonal":
-        return { image: `repeating-linear-gradient(45deg,${c} 0 1px,transparent 1px ${s}px)`, size: "auto", repeat: "no-repeat", position: "0 0" };
+        return { image: `linear-gradient(45deg,transparent calc(50% - .5px),${c} calc(50% - .5px) calc(50% + .5px),transparent calc(50% + .5px))`, size: `${s}px ${s}px`, repeat: "repeat", position: "0 0" };
       // One fleck in an oblong tile, so rows and columns do not line up into a grid.
       case "grain":
         return { image: `radial-gradient(circle at 31% 67%,${c} 0 .7px,transparent 1.2px)`, size: `${s}px ${Math.round(s * 1.37)}px`, repeat: "repeat", position: "0 0" };
@@ -81,7 +82,13 @@ export function layerCss(layer) {
         return null;
     }
   }
-  if (layer.kind === "gradientCss") return { image: layer.value, size: layer.size ?? "auto", repeat: tiled(layer.size) ? "repeat" : "no-repeat", position: "0 0" };
+  if (layer.kind === "gradientCss") {
+    // An auto-sized vertical or horizontal repeating gradient paints the same pixels as one period
+    // tiled, and a tile costs far less to draw than one image as tall as a long page.
+    const period = (layer.size ?? "auto") === "auto" ? repeatPeriod(layer.value) : null;
+    if (period) return { image: layer.value, size: period.axis === "y" ? `100% ${num(period.px)}px` : `${num(period.px)}px 100%`, repeat: "repeat", position: "0 0" };
+    return { image: layer.value, size: layer.size ?? "auto", repeat: tiled(layer.size) ? "repeat" : "no-repeat", position: "0 0" };
+  }
   // Raster layers need the browser decode and conversion path, which arrives after this increment.
   return null;
 }
@@ -166,32 +173,71 @@ function color(token) {
 
 // Splits one color stop into its color and positions, or null for a direction or shape argument.
 function stop(text) {
+  // Tokens split at top-level whitespace and after each top-level function, since canonical CSS
+  // writes "color-mix(...)0 1px" with no space before a position.
   const tokens = [];
   let depth = 0;
   let current = "";
   for (const c of text) {
-    if (c === "(") depth++;
-    if (c === ")") depth--;
     if (/\s/.test(c) && depth === 0) {
       if (current) tokens.push(current);
       current = "";
-    } else current += c;
+      continue;
+    }
+    current += c;
+    if (c === "(") depth++;
+    if (c === ")" && --depth === 0) {
+      tokens.push(current);
+      current = "";
+    }
   }
   if (current) tokens.push(current);
   const positions = [];
-  let found;
+  let found = null;
   for (const token of tokens) {
     const lower = token.toLowerCase();
+    if (KEYWORDS.has(lower) || /^-?[\d.]+(?:deg|turn|rad|grad)$/.test(lower)) return null;
     if (/^-?\d/.test(lower) || MATH.has(args(lower)?.name)) positions.push(lower);
-    else if (KEYWORDS.has(lower) || /deg$|turn$|rad$/.test(lower)) return null;
-    else if (found === undefined) found = color(lower);
+    else if (found === null) found = lower;
     else return { color: undefined, positions };
   }
-  if (found === undefined && !positions.length) return { color: undefined, positions };
-  return found === undefined ? null : { color: found, positions };
+  // Positions alone are not a color stop; a color that cannot be evaluated fails the paint closed.
+  if (found === null) return positions.length ? null : { color: undefined, positions };
+  return { color: color(found), positions };
 }
 
-const px = (position) => (/^-?\d+(?:\.\d+)?px$/.test(position ?? "") ? parseFloat(position) : null);
+const AXIS = { "to bottom": "y", "180deg": "y", "to right": "x", "90deg": "x" };
+
+/**
+ * The period of a repeating-linear-gradient that runs straight down or across with every stop
+ * position in px from 0, as { axis, px }, or null. Its pixels repeat exactly at that period.
+ */
+export function repeatPeriod(value) {
+  const fn = args(value);
+  if (!fn || fn.name !== "repeating-linear-gradient" || fn.rest.trim()) return null;
+  let axis = "y";
+  let list = fn.args;
+  if (stop(list[0]) === null) {
+    axis = AXIS[list[0].toLowerCase().replace(/\s+/g, " ")];
+    if (!axis) return null;
+    list = list.slice(1);
+  }
+  const positions = [];
+  for (const [i, arg] of list.entries()) {
+    const s = stop(arg);
+    if (!s || s.color === undefined) return null;
+    if (!s.positions.length && i === 0) positions.push(0);
+    else if (!s.positions.length) return null;
+    for (const position of s.positions) {
+      const value = px(position);
+      if (value === null || value < (positions.at(-1) ?? 0)) return null;
+      positions.push(value);
+    }
+  }
+  return positions[0] === 0 && positions.at(-1) > 0 ? { axis, px: positions.at(-1) } : null;
+}
+
+const px = (position) => (position === "0" ? 0 : /^-?\d+(?:\.\d+)?px$/.test(position ?? "") ? parseFloat(position) : null);
 
 /**
  * The colors one gradient value paints over an area, as [{hex, alpha}], or null when a color

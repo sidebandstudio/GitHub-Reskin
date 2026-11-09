@@ -87,9 +87,9 @@ export function mountAppearance(root, resolved, prefs, anchors, { css = null, cs
   const view = doc?.defaultView;
   if (!doc?.createElement || view?.matchMedia?.("(forced-colors: active)").matches) return noop;
   const usable = usableAnchors(root, anchors);
-  const plan = planAppearance(resolved, prefs, usable.map((anchor) => anchor.slot));
+  const styled = new Set(usable.length ? (ownedThemeCss(resolved, prefs, css, cssAllowed)?.slots ?? []) : []);
+  const plan = planAppearance(resolved, prefs, usable.map((anchor) => anchor.slot), { styled: [...styled] });
   if (!plan.slots.length && !plan.banner) return noop;
-  const styled = new Set(plan.slots.length ? (ownedThemeCss(resolved, prefs, css, cssAllowed)?.slots ?? []) : []);
 
   const created = [];
   const moving = [];

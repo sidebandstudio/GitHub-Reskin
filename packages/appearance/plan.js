@@ -47,9 +47,11 @@ export function effectiveAppearance(resolved, prefs) {
 /**
  * The owned-node plan for the given slots, in registry order. Each entry is
  * { slot, kind, box, copy, effects: [{ id, nodes }] }, and the totals are counted the way the
- * DOM will be: the slot wrapper, its box, the copy span and every effect node.
+ * DOM will be: the slot wrapper, its box, the copy span and every effect node. `styled` lists the
+ * slots the theme's admitted CSS styles: that CSS is the whole treatment of a styled tag badge, so
+ * packaged effects stay out of it rather than drawing over its copy.
  */
-export function planAppearance(resolved, prefs, slots) {
+export function planAppearance(resolved, prefs, slots, { styled = [] } = {}) {
   const effective = effectiveAppearance(resolved, prefs);
   const wanted = new Set(slots);
   const requested = effective.effects ? Object.keys(resolved.effects) : [];
@@ -74,6 +76,7 @@ export function planAppearance(resolved, prefs, slots) {
   const moved = new Set();
   let animated = 0;
   for (const entry of entries) {
+    if (entry.box === "badge" && styled.includes(entry.slot)) continue;
     const effects = BOX_EFFECTS[entry.box]
       .filter((id) => requested.includes(id))
       .map((id) => {
@@ -96,9 +99,9 @@ export function planAppearance(resolved, prefs, slots) {
 }
 
 /** CompiledStyle.ownedNodePlan entries for the given slots: one { slot, animated } per owned node. */
-export function ownedNodePlan(resolved, prefs, slots) {
+export function ownedNodePlan(resolved, prefs, slots, options) {
   const out = [];
-  const plan = planAppearance(resolved, prefs, slots);
+  const plan = planAppearance(resolved, prefs, slots, options);
   if (plan.banner) out.push({ slot: BANNER_SLOT, animated: false });
   for (const entry of plan.slots) {
     for (let i = 0; i < structural(entry.kind, entry.copy, entry.effects.length); i++) out.push({ slot: entry.slot, animated: false });

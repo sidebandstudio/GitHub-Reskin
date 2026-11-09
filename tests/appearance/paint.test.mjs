@@ -7,7 +7,7 @@ import { test } from "node:test";
 import { repairTheme, resolveTheme } from "../../packages/engine/index.js";
 import { compileAppearance, ownedNodePlan, planAppearance } from "../../packages/appearance/index.js";
 import { ownedThemeCss } from "../../packages/appearance/compile.js";
-import { gradientFills, layerCss, structuredCss, structuredPlan } from "../../packages/appearance/paint.js";
+import { gradientFills, layerCss, repeatPeriod, structuredCss, structuredPlan } from "../../packages/appearance/paint.js";
 
 const ROOT = new URL("../../", import.meta.url).pathname;
 const read = (path) => JSON.parse(readFileSync(`${ROOT}${path}`, "utf8"));
@@ -21,7 +21,7 @@ const r = resolve(choom);
 test("Choom Full draws its four page layers, header rule, circle avatar frame and condensed headings", () => {
   const plan = structuredPlan(r, FULL);
   assert.equal(plan.page.color, "#0a0a17");
-  assert.deepEqual(plan.page.layers.map((l) => [l.size, l.repeat]), [["100% 100vh", "no-repeat"], ["48px 48px", "repeat"], ["48px 48px", "repeat"], ["auto", "no-repeat"]]);
+  assert.deepEqual(plan.page.layers.map((l) => [l.size, l.repeat]), [["100% 100vh", "no-repeat"], ["48px 48px", "repeat"], ["48px 48px", "repeat"], ["100% 3px", "repeat"]]);
   assert.equal(plan.header.color, "#070710");
   assert.deepEqual(plan.header.layers.map((l) => l.image), ["linear-gradient(0deg,#fcee0a 1px,transparent 1px)"]);
   assert.deepEqual(plan.avatar, { shape: "circle", frame: { style: "solid", width: 1, color: "#2d2a52" } });
@@ -139,4 +139,27 @@ test("the banner is one owned node, planned only in Full with a reserved anchor"
   assert.equal(planAppearance(banner, CALM, ["profile.banner"]).banner, false);
   assert.deepEqual(ownedNodePlan(banner, FULL, ["profile.banner"]), [{ slot: "profile.banner", animated: false }]);
   assert.match(compileAppearance(banner, FULL, "preview"), /\.rs-banner\[data-reskin-owned\]\{background-color:#11112a;background-image:none\}/);
+});
+
+test("a tag badge the theme's CSS styles carries no packaged effects over its copy", () => {
+  const slots = ["profile.tag", "profile.pinned.heading"];
+  const plain = planAppearance(r, FULL, slots);
+  assert.ok(plain.slots.find((e) => e.slot === "profile.tag").effects.length);
+  const styled = planAppearance(r, FULL, slots, { styled: ownedThemeCss(r, FULL, choom.css, true).slots });
+  assert.deepEqual(styled.slots.find((e) => e.slot === "profile.tag").effects, []);
+  // Heading strips keep their effects beside the styled copy.
+  assert.ok(styled.slots.find((e) => e.slot === "profile.pinned.heading").effects.length);
+  assert.ok(styled.owned < plain.owned);
+});
+
+test("an auto-sized straight repeating gradient is drawn as one tiled period, which paints the same pixels", () => {
+  assert.deepEqual(repeatPeriod("repeating-linear-gradient(color-mix(in srgb,#e4f3ff 2%,transparent)0 1px,transparent 1px 3px)"), { axis: "y", px: 3 });
+  assert.deepEqual(repeatPeriod("repeating-linear-gradient(to right,#000 0 2px,transparent 2px 6px)"), { axis: "x", px: 6 });
+  // Angled, percentage and plain gradients keep their own size.
+  for (const value of ["repeating-linear-gradient(45deg,#000 0 2px,transparent 2px 6px)", "repeating-linear-gradient(#000 0 2px,transparent 2px 50%)", "repeating-linear-gradient(#000 1px 2px,transparent 2px 6px)", "linear-gradient(#000 0 2px,transparent 2px)"]) assert.equal(repeatPeriod(value), null, value);
+  const value = "repeating-linear-gradient(90deg,#000 0 2px,transparent 2px 6px)";
+  assert.deepEqual(layerCss({ kind: "gradientCss", value }), { image: value, size: "6px 100%", repeat: "repeat", position: "0 0" });
+  assert.equal(layerCss({ kind: "gradientCss", value, size: "50% 50%" }).size, "50% 50%");
+  // The diagonal pattern is a tile too, never one image as large as the page.
+  assert.equal(layerCss({ kind: "pattern", pattern: "diagonal", color: "#00f0ff", opacity: 0.1, size: 24 }).size, "24px 24px");
 });

@@ -42,8 +42,9 @@ test("Choom Full paints the wallpaper, header rule, avatar frame, condensed head
   expect(f.body.backgroundColor).toBe(rgb("#0a0a17"));
   expect(f.body.backgroundImage.match(/gradient\(/g)).toHaveLength(4);
   // 100vh is the screen's height, not the height of the frame, which fits the whole page.
-  expect(f.body.backgroundSize).toBe("100% 900px, 48px 48px, 48px 48px, auto");
-  expect(f.body.backgroundRepeat).toMatch(/^no-repeat, repeat, repeat, no-repeat$/);
+  // The scanlines repeat every 3px, so they are drawn as one tiled period.
+  expect(f.body.backgroundSize).toBe("100% 900px, 48px 48px, 48px 48px, 100% 3px");
+  expect(f.body.backgroundRepeat).toMatch(/^no-repeat, repeat, repeat, repeat$/);
   expect(f.header.backgroundColor).toBe(rgb("#070710"));
   expect(f.header.backgroundImage).toMatch(/^linear-gradient\(0deg, rgb\(252, 238, 10\) 1px, (?:transparent|rgba\(0, 0, 0, 0\)) 1px\)$/);
   expect(f.avatar).toEqual({ borderTopLeftRadius: "50%", boxShadow: `${rgb("#2d2a52")} 0px 0px 0px 1px` });
