@@ -14,15 +14,22 @@ The extension isn't in the Chrome Web Store or on Firefox Add-ons yet. To load i
 
 ### Firefox, Safari and other browsers
 
-Firefox only keeps an unsigned extension until it restarts, and Safari can't load one at all. For those browsers, GitHub Reskin also comes as a userscript with the same themes and color card, and it stays installed.
+Firefox only keeps an unsigned extension until it restarts, and Safari can't load one at all. For those browsers, GitHub Reskin also comes as a userscript built from the same code as the extension: the same themes, Full and Calm, and the same picker card. It stays installed.
 
 1. Install a userscript manager. In Firefox, use [Violentmonkey](https://violentmonkey.github.io) or [Tampermonkey](https://www.tampermonkey.net). In Safari on a Mac, iPhone or iPad, use [Userscripts](https://github.com/quoid/userscripts) or Tampermonkey. Safari asks you to turn the extension on in its settings and allow it on github.com.
 2. Open [github-reskin.user.js](https://raw.githubusercontent.com/sidebandstudio/GitHub-Reskin/main/userscript/github-reskin.user.js) and install it from your manager's prompt. In Userscripts, the prompt is under its toolbar button.
 3. Reload any GitHub or Gist tabs you already had open.
 
-To pick a theme, choose Theme and colors from your manager's menu. Userscripts has no menu, so open `https://github.com/#reskin` instead. Click outside the card or press Escape to close it. Other GitHub tabs pick up your change when you switch back to them.
+To pick a theme, choose Open GitHub Reskin from your manager's menu. Userscripts has no menu, so open `https://github.com/#reskin` instead. A theme applies as soon as you click it, and Undo puts the previous one back. Press Escape, click Close or click the page to close the card.
 
-You can also try the extension itself in Firefox 140 or newer. Open `about:debugging#/runtime/this-firefox`, click Load Temporary Add-on and pick `extension/manifest.json`. Firefox removes it when it restarts.
+What differs by manager:
+
+- Tampermonkey and Violentmonkey save your choice in the manager's storage, and other GitHub tabs follow a change at once. Managers with only `GM.getValue`, like Userscripts, save it too, and other tabs pick it up when you switch back to them.
+- A manager that gives the script no storage gets a labeled session preview: themes apply until you reload, and Export theme file saves the theme you chose.
+- GitHub's page only allows its own fonts, so on github.com the themes' fonts fall back to your system's. The picker's previews show the same fallback.
+- These settings are separate from the extension's. Export theme file is the way to carry a theme between them. The theme builder and import come to the userscript after the extension's builder is finished.
+
+You can also try the extension itself in Firefox 140 or newer. Run `npm ci` and `npm run build:firefox`, then open `about:debugging#/runtime/this-firefox`, click Load Temporary Add-on and pick `dist/firefox/manifest.json`. Firefox removes it when it restarts.
 
 ## Themes and colors
 
@@ -39,7 +46,7 @@ Cyberpunk is electric yellow and cyan on a near-black blue-violet, and it change
 
 The effects use whatever colors you set, so editing Cyberpunk's colors keeps the effects in your colors.
 
-Cyberpunk also swaps some of GitHub's own labels for street slang, set in [`extension/slang.js`](extension/slang.js). Profiles get a "choom" tag over the name, Pinned becomes Preem picks, Achievements becomes Street cred, the Code button says Jack in, Sponsor says Send eddies, Releases become Drops, and a missing page is stamped Flatlined. Names, numbers and anything people wrote stay as they are, and screen readers still hear GitHub's words.
+Cyberpunk also swaps some of GitHub's own labels for street slang. Profiles get a "choom" tag over the name, Pinned becomes Preem picks, Achievements becomes Street cred, the Code button says Jack in, Sponsor says Send eddies, Releases become Drops, and a missing page is stamped Flatlined. Names, numbers and anything people wrote stay as they are, and screen readers still hear GitHub's words.
 
 Under the themes you can change four colors: background, text, accent and the contribution graph. GitHub Reskin works out the rest, like borders, muted text and button colors. "Reset to theme" puts the theme's colors back, and the switch at the top turns the theme off.
 
@@ -53,15 +60,15 @@ It adjusts the colors it works out so they stay readable:
 
 The extension recolors github.com and gist.github.com through the color variables GitHub's own CSS uses. A dark theme also brings in GitHub's standard dark colors for code, diffs and labels, and a light theme brings the light ones. These replace whatever palette your GitHub account uses, including dimmed, high contrast, colorblind and tritanopia, so code stays readable under any theme. If you use a colorblind palette, diffs go back to GitHub's standard red and green while a theme is on.
 
-Cyberpunk's effects come out of the same generated CSS, using only system fonts and CSS gradients. Your settings stay in the browser, and the extension makes no network requests. The userscript runs the same code and keeps your settings in the userscript manager's storage. The manager checks this repo for userscript updates. Both cache the generated CSS in github.com's local storage, so a full page load doesn't flash GitHub's own colors first.
+Cyberpunk's effects come out of the same generated CSS, using only system fonts and CSS gradients. Your settings stay in the browser, and the extension makes no network requests. The userscript runs the same code and keeps your settings in the userscript manager's storage, never in github.com's. It makes no requests; only the manager checks for updates.
 
 ## Add a theme
 
-Themes live in [`extension/themes.js`](extension/themes.js). A theme needs an `id`, a `name` and four colors: `bg`, `text`, `accent` and `graph`. You can also give `surface`, `border` and `muted` if the original palette has them, and `effects: "cyberpunk"` to add Cyberpunk's effects. Run `node --test` to check that every theme keeps its text, links and button text readable, and that themes without effects produce the same CSS as before.
+Themes live in `themes/anime` and `themes/classics` as `.reskin.json` files, listed in `themes/catalog.json`. Run `npm test` to check them.
 
-GitHub's standard light and dark colors live in `extension/github-modes.js`, which is generated. If GitHub changes its colors, `node scripts/github-modes.mjs` rebuilds that file from github.com's current CSS.
+GitHub's standard mode colors live in `vendor/primer`, a frozen snapshot. `node scripts/refresh-primer.mjs` fetches a newer one for review.
 
-The userscript in `userscript/github-reskin.user.js` is generated too, from the extension and `userscript/main.js`. After changing either, run `node scripts/userscript.mjs`. `node --test` fails while the userscript is out of date. Userscript managers only install an update when its version goes up, so raise `version` in `extension/manifest.json` when you change what users see.
+The userscript in `userscript/github-reskin.user.js` is generated from the same packages by `userscript/build.mjs`. After changing anything it embeds, run `node userscript/build.mjs`. `npm test` fails while the userscript is out of date. Userscript managers only install an update when its version goes up, so raise `version` in `release.config.json` when you change what users see.
 
 ## Contribution graph for your profile
 

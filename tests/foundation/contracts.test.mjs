@@ -5,7 +5,6 @@ import { join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
-import vm from "node:vm";
 import * as contracts from "../../packages/contracts/index.js";
 
 const ROOT = fileURLToPath(new URL("../..", import.meta.url));
@@ -79,17 +78,15 @@ test("the default theme is Choom Circuit's stable ID, and 1.x Cyberpunk is an al
   assert.equal(contracts.LEGACY_EDITED_COLORS_THEME_ID, "editing-suite");
 });
 
-// The legacy names in the contracts must be the ones 1.1.0 actually saved.
+// The legacy names in the contracts must be the ones 1.1.0 actually saved, as recorded from its
+// themes.js and content.js before they were removed.
 test("legacy IDs and keys match what 1.1.0 stores", async () => {
-  const context = { globalThis: {} };
-  context.globalThis = context;
-  vm.runInNewContext(await readFile(join(ROOT, "extension/themes.js"), "utf8"), context);
-  const ids = Array.from(context.GitHubReskin.THEMES, (theme) => theme.id);
+  const legacy = JSON.parse(await readFile(join(ROOT, "tests/fixtures/legacy/1.1.0.json"), "utf8"));
+  const ids = legacy.themeIds;
   assert.deepEqual(ids.filter((id) => id !== "cyberpunk"), [...contracts.LEGACY_CLASSIC_THEME_IDS]);
   assert.ok(ids.includes("cyberpunk"));
-  assert.deepEqual([...Object.keys(context.GitHubReskin.DEFAULTS)].sort(), [...contracts.LEGACY_STORAGE_KEYS].sort());
-  const content = await readFile(join(ROOT, "extension/content.js"), "utf8");
-  assert.match(content, new RegExp(`const CACHE = "${contracts.LEGACY_PAGE_CACHE_KEY}"`));
+  assert.deepEqual(legacy.storageKeys, [...contracts.LEGACY_STORAGE_KEYS].sort());
+  assert.equal(legacy.pageCacheKey, contracts.LEGACY_PAGE_CACHE_KEY);
 });
 
 test("registries match the theme format's IDs and limits", () => {

@@ -140,8 +140,7 @@
           "assets/fonts/alegreya/alegreya.woff2",
           "assets/fonts/alegreya/alegreya-700.woff2"
         ],
-        "upstream": "https://github.com/google/fonts",
-        "userscript": false
+        "upstream": "https://github.com/google/fonts"
       },
       {
         "file": "assets/fonts/atkinson-hyperlegible/OFL.txt",
@@ -150,8 +149,7 @@
           "assets/fonts/atkinson-hyperlegible/atkinson-hyperlegible.woff2",
           "assets/fonts/atkinson-hyperlegible/atkinson-hyperlegible-700.woff2"
         ],
-        "upstream": "https://github.com/google/fonts",
-        "userscript": false
+        "upstream": "https://github.com/google/fonts"
       },
       {
         "file": "assets/fonts/barlow-condensed/OFL.txt",
@@ -160,8 +158,7 @@
           "assets/fonts/barlow-condensed/barlow-condensed.woff2",
           "assets/fonts/barlow-condensed/barlow-condensed-700.woff2"
         ],
-        "upstream": "https://github.com/google/fonts",
-        "userscript": false
+        "upstream": "https://github.com/google/fonts"
       },
       {
         "file": "assets/fonts/barlow/OFL.txt",
@@ -172,8 +169,7 @@
           "assets/fonts/barlow/barlow-600.woff2",
           "assets/fonts/barlow/barlow-700.woff2"
         ],
-        "upstream": "https://github.com/google/fonts",
-        "userscript": false
+        "upstream": "https://github.com/google/fonts"
       },
       {
         "file": "assets/fonts/bebas-neue/OFL.txt",
@@ -181,8 +177,7 @@
         "covers": [
           "assets/fonts/bebas-neue/bebas-neue.woff2"
         ],
-        "upstream": "https://github.com/google/fonts",
-        "userscript": false
+        "upstream": "https://github.com/google/fonts"
       },
       {
         "file": "assets/fonts/bungee/OFL.txt",
@@ -190,8 +185,7 @@
         "covers": [
           "assets/fonts/bungee/bungee.woff2"
         ],
-        "upstream": "https://github.com/google/fonts",
-        "userscript": false
+        "upstream": "https://github.com/google/fonts"
       },
       {
         "file": "assets/fonts/cinzel/OFL.txt",
@@ -199,8 +193,7 @@
         "covers": [
           "assets/fonts/cinzel/cinzel.woff2"
         ],
-        "upstream": "https://github.com/google/fonts",
-        "userscript": false
+        "upstream": "https://github.com/google/fonts"
       },
       {
         "file": "assets/fonts/cormorant-garamond/OFL.txt",
@@ -209,8 +202,7 @@
           "assets/fonts/cormorant-garamond/cormorant-garamond-600.woff2",
           "assets/fonts/cormorant-garamond/cormorant-garamond.woff2"
         ],
-        "upstream": "https://github.com/google/fonts",
-        "userscript": false
+        "upstream": "https://github.com/google/fonts"
       },
       {
         "file": "assets/fonts/fraunces/OFL.txt",
@@ -219,8 +211,7 @@
           "assets/fonts/fraunces/fraunces.woff2",
           "assets/fonts/fraunces/fraunces-700.woff2"
         ],
-        "upstream": "https://github.com/google/fonts",
-        "userscript": false
+        "upstream": "https://github.com/google/fonts"
       },
       {
         "file": "assets/fonts/ibm-plex-sans/OFL.txt",
@@ -231,8 +222,7 @@
           "assets/fonts/ibm-plex-sans/ibm-plex-sans-600.woff2",
           "assets/fonts/ibm-plex-sans/ibm-plex-sans-700.woff2"
         ],
-        "upstream": "https://github.com/google/fonts",
-        "userscript": false
+        "upstream": "https://github.com/google/fonts"
       },
       {
         "file": "assets/fonts/josefin-sans/OFL.txt",
@@ -241,8 +231,7 @@
           "assets/fonts/josefin-sans/josefin-sans.woff2",
           "assets/fonts/josefin-sans/josefin-sans-700.woff2"
         ],
-        "upstream": "https://github.com/google/fonts",
-        "userscript": false
+        "upstream": "https://github.com/google/fonts"
       },
       {
         "file": "assets/fonts/nunito-sans/OFL.txt",
@@ -251,8 +240,7 @@
           "assets/fonts/nunito-sans/nunito-sans.woff2",
           "assets/fonts/nunito-sans/nunito-sans-700.woff2"
         ],
-        "upstream": "https://github.com/google/fonts",
-        "userscript": false
+        "upstream": "https://github.com/google/fonts"
       },
       {
         "file": "assets/fonts/orbitron/OFL.txt",
@@ -260,8 +248,7 @@
         "covers": [
           "assets/fonts/orbitron/orbitron.woff2"
         ],
-        "upstream": "https://github.com/google/fonts",
-        "userscript": false
+        "upstream": "https://github.com/google/fonts"
       },
       {
         "file": "assets/fonts/oxanium/OFL.txt",
@@ -269,8 +256,7 @@
         "covers": [
           "assets/fonts/oxanium/oxanium.woff2"
         ],
-        "upstream": "https://github.com/google/fonts",
-        "userscript": false
+        "upstream": "https://github.com/google/fonts"
       },
       {
         "file": "assets/fonts/rajdhani/OFL.txt",
@@ -279,8 +265,7 @@
           "assets/fonts/rajdhani/rajdhani.woff2",
           "assets/fonts/rajdhani/rajdhani-700.woff2"
         ],
-        "upstream": "https://github.com/google/fonts",
-        "userscript": false
+        "upstream": "https://github.com/google/fonts"
       },
       {
         "file": "assets/fonts/roboto-condensed/OFL.txt",
@@ -289,8 +274,7 @@
           "assets/fonts/roboto-condensed/roboto-condensed.woff2",
           "assets/fonts/roboto-condensed/roboto-condensed-700.woff2"
         ],
-        "upstream": "https://github.com/google/fonts",
-        "userscript": false
+        "upstream": "https://github.com/google/fonts"
       },
       {
         "file": "assets/fonts/source-sans-3/OFL.txt",
@@ -300,8 +284,7 @@
           "assets/fonts/source-sans-3/source-sans-3-600.woff2",
           "assets/fonts/source-sans-3/source-sans-3-700.woff2"
         ],
-        "upstream": "https://github.com/google/fonts",
-        "userscript": false
+        "upstream": "https://github.com/google/fonts"
       },
       {
         "file": "assets/fonts/space-grotesk/OFL.txt",
@@ -309,8 +292,7 @@
         "covers": [
           "assets/fonts/space-grotesk/space-grotesk.woff2"
         ],
-        "upstream": "https://github.com/google/fonts",
-        "userscript": false
+        "upstream": "https://github.com/google/fonts"
       },
       {
         "file": "packages/preview/fixture/OFL-Chakra-Petch.txt",

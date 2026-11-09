@@ -20,14 +20,14 @@ its `build({root, entry})` and packages exactly those paths from its output; eve
 from the entry's root. The current entry, `reskin-2`, uses `packages/ui/bundle.mjs` to bundle the
 content script, background and page script with esbuild and to copy the bundled fonts and preview
 images from their repository paths. A notice marked `"userscript": false` covers material only the
-browser packages carry.
+browser packages carry; the userscript embeds the fonts, so their notices travel with it too.
 
 ## The 1.1.0 files
 
 The 1.1.0 product (`extension/manifest.json`, `popup.*`, `themes.js`, `slang.js`, `content.js`,
-`github-modes.js`, `icons/`) is no longer packaged. It stays in the repository because
-`scripts/userscript.mjs` still builds the userscript from it; C8 removes it when the userscript
-moves to the new runtime.
+`github-modes.js`, `icons/`) was removed once the userscript moved to the new runtime (C8). What
+the migration and mapping tests needed from it (theme IDs, storage keys, the page cache key and the
+forced mode variables) is recorded in `tests/fixtures/legacy/1.1.0.json` with each file's git blob.
 
 `manifestProblems()` in `scripts/build.mjs` stays the gate: the permissions and host matches in
 `release.config.json`, top frame only, no Gecko keys in Chrome, the studio Gecko ID with minimum
