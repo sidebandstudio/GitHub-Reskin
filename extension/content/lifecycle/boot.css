@@ -1,0 +1,20 @@
+/* GitHub Reskin boot gate. Packaged with the content script at document_start, before any script
+   runs. While the root has no data-reskin-boot attribute, GitHub stays hidden for at most 120 ms.
+   The gate is a finite CSS animation with no fill, so it ends on its own even if every script
+   throws or storage never answers; the lifecycle sets the attribute to end it sooner, in the same
+   turn its stylesheet lands. Forced colors bypass it. It is not a fade and ignores Motion.
+   Opacity hides the whole page as one group, so a descendant that declares visibility:visible
+   (Primer's .v-visible) cannot paint through; visibility still keeps ordinary content from taking clicks or focus. */
+@media not (forced-colors: active) {
+  html:not([data-reskin-boot]) {
+    animation: reskin-boot-gate 120ms step-end 0s 1 normal none running !important;
+  }
+}
+
+@keyframes reskin-boot-gate {
+  from,
+  to {
+    visibility: hidden;
+    opacity: 0;
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "$schema": "https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json",
+  "base": "dark",
+  "colors": {
+    "accent": "#fcee0a",
+    "background": "#0a0a17",
+    "contribution": "#00f0ff",
+    "text": "#e4f3ff"
+  },
+  "description": "Settings test stand-in for the Choom Circuit catalog entry. S1 owns the real document.",
+  "effects": {
+    "glow": {},
+    "scanlines": {}
+  },
+  "flavor": {
+    "slots": {
+      "profile.tag": "//choom"
+    }
+  },
+  "name": "Choom Circuit",
+  "overrides": {
+    "border": "#2d2a52",
+    "mutedText": "#9a9ccc",
+    "surface": "#11112a"
+  },
+  "schemaVersion": 1
+}
