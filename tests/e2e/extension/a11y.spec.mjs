@@ -99,6 +99,8 @@ test("settings reach Preferences directly, and its switches explain what they ch
 async function openMake(extension, viewport) {
   const page = await openPage(extension, "settings", viewport);
   await page.getByRole("link", { name: "Make a theme" }).click();
+  // The link shows its section on hashchange; the draft's origin line fills in separately.
+  await expect(page.locator("#make")).toBeVisible();
   await expect(page.locator('[data-rb="based-on"]')).not.toBeEmpty();
   return page;
 }
