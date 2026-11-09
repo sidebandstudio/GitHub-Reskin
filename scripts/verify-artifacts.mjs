@@ -9,7 +9,7 @@ import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { unzipSync } from "fflate";
-import { ROOT, extensionManifest, licenseFiles, licenseTargets, loadEntry, loadReleaseConfig, manifestPaths, manifestProblems, noticeProblems, readSource, sha256 } from "./build.mjs";
+import { ROOT, entrySourcePaths, extensionManifest, licenseFiles, licenseTargets, loadEntry, loadReleaseConfig, manifestPaths, manifestProblems, noticeProblems, readSource, sha256 } from "./build.mjs";
 import { artifactName } from "./package.mjs";
 
 const DOS_1980_01_01 = (0 << 9) | (1 << 5) | 1;
@@ -20,17 +20,27 @@ const SECRET = /-----BEGIN [A-Z ]*PRIVATE KEY-----|\bgh[pousr]_[A-Za-z0-9]{36}\b
 // Ways a runtime file could load code or data from the network. A plain link a person clicks is allowed.
 const REMOTE = [
   [/<(script|link|img|iframe|source|video|audio)\b[^>]*\b(src|href)\s*=\s*["']?(https?:)?\/\//i, "remote element resource"],
-  [/@import|url\(\s*["']?(https?:)?\/\//i, "remote CSS resource"],
+  [/@import\s*(url\(\s*)?["']?(https?:)?\/\/|url\(\s*["']?(https?:)?\/\//i, "remote CSS resource"],
   [/\b(fetch|importScripts|XMLHttpRequest|WebSocket|EventSource|sendBeacon)\s*\(/, "network call"],
   [/\beval\s*\(|\bnew Function\s*\(/, "runtime code evaluation"],
 ];
+// Reviewed calls that read the extension's own packaged files, as exact source text. They are
+// removed before the scan, so any other call, or this one changed, still fails. (\u0028 is "(",
+// spelled out so this script's own source never contains a call.)
+export const REVIEWED_PACKAGED_READS = Object.freeze([
+  // C5's preview (packages/preview/mount.js): reads one packaged font or image by the resource
+  // adapter's runtime.getURL path, only for .woff2/.webp/.svg, to embed it as data in the
+  // scriptless preview frame.
+  'win.fetch\u0028url, { credentials: "omit" })',
+]);
 
 // Runtime files that could load code or data from the network, as messages.
 export function remoteResourceProblems(files) {
   const problems = [];
   for (const [path, data] of Object.entries(files)) {
     if (!/\.(js|html|css|json)$/.test(path)) continue;
-    const text = Buffer.from(data).toString("utf8");
+    let text = Buffer.from(data).toString("utf8");
+    for (const reviewed of REVIEWED_PACKAGED_READS) text = text.replaceAll(reviewed, "");
     for (const [pattern, what] of REMOTE) if (pattern.test(text)) problems.push(`${path} has a ${what}`);
   }
   return problems;
@@ -167,7 +177,7 @@ export async function verifyArtifacts(dir = "artifacts") {
     expect(new RegExp(`^// @version +${version.replaceAll(".", "\\.")}$`, "m").test(header), `the userscript @version is not ${version}`);
     expect(!/^\/\/ @require/m.test(header), "the userscript must not @require remote code");
     // It carries the extension's frozen upstream material, so it carries each notice too.
-    for (const notice of entry.notices) {
+    for (const notice of entry.notices.filter((n) => licenseTargets(entry, n.file).includes("userscript"))) {
       expect(userscript.includes((await readSource(notice.file)).toString("utf8")), `the userscript lacks the ${notice.file} notice`);
     }
   }
@@ -177,7 +187,7 @@ export async function verifyArtifacts(dir = "artifacts") {
   if (source) {
     const required = ["BUILDING.md", "LICENSE", "package.json", "package-lock.json", "release.config.json", ".node-version", "scripts/build.mjs", "scripts/package.mjs"];
     required.push(...["base.json", "chrome.json", "firefox.json", "entries.json"].map((f) => `extension/manifests/${f}`));
-    required.push(...entry.files.map((f) => `${entry.root}/${f}`), config.userscript.builder);
+    required.push(...entrySourcePaths(entry), config.userscript.builder);
     for (const path of required) expect(source[path], `the source archive lacks ${path}`);
     for (const [path, hash] of Object.entries(entry.frozen)) {
       const file = source[`${entry.root}/${path}`];

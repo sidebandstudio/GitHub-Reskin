@@ -3,7 +3,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import test from "node:test";
 import { strToU8, unzipSync, zipSync } from "fflate";
-import { ROOT, loadReleaseConfig, sha256 } from "../../scripts/build.mjs";
+import { ROOT, loadEntry, loadReleaseConfig, sha256 } from "../../scripts/build.mjs";
 import { artifactName, packageRelease, zip } from "../../scripts/package.mjs";
 import { verifyArtifacts, zipEntries } from "../../scripts/verify-artifacts.mjs";
 import { withTempDir } from "../helpers/tmp.mjs";
@@ -69,8 +69,8 @@ test("package writes versioned ZIPs, the userscript, a source archive, checksums
       artifactName(version, "userscript"),
     ]);
     assert.equal(info.version, version);
-    assert.equal(info.extensionEntry, "legacy-1.1.0");
-    assert.deepEqual(info.manifestDifferences, ["/browser_specific_settings"]);
+    assert.equal(info.extensionEntry, "reskin-2");
+    assert.deepEqual(info.manifestDifferences, ["/background/scripts", "/background/service_worker", "/browser_specific_settings"]);
     assert.match(info.commit ?? "", /^[0-9a-f]{40}$/);
     const source = unzipSync(await readFile(join(out, artifactName(version, "amo-source"))));
     for (const path of ["BUILDING.md", "package-lock.json", "extension/github-modes.js", "scripts/build.mjs"]) assert.ok(source[path], path);
@@ -85,13 +85,18 @@ test("package writes versioned ZIPs, the userscript, a source archive, checksums
     // The single-file userscript embeds the same notice, byte for byte, in a comment.
     const userscript = await readFile(join(out, artifactName(version, "userscript")), "utf8");
     assert.ok(userscript.includes(`\n/*\n${notice.toString("utf8")}*/\n(function () {`));
+    // The Primer notice covers every bundle that embeds the mode data and travels in the
+    // userscript too; font and preview-image notices ship only in the browser packages.
+    const entry = await loadEntry(await loadReleaseConfig());
     assert.deepEqual(
       info.licenses.map((item) => [item.file, item.license, item.covers, item.in]),
       [
         ["LICENSE", "MIT", ["GitHub Reskin"], ["chrome", "firefox", "amo-source"]],
-        ["licenses/primer-primitives.txt", "MIT", ["extension/github-modes.js"], ["chrome", "firefox", "userscript", "amo-source"]],
+        ["licenses/primer-primitives.txt", "MIT", ["extension/background.js", "extension/content.js", "extension/pages/pages.js"], ["chrome", "firefox", "userscript", "amo-source"]],
+        ...entry.notices.slice(1).map((n) => [n.file, "OFL-1.1", n.covers.map((path) => `extension/${path}`), ["chrome", "firefox", "amo-source"]]),
       ],
     );
+    assert.equal(entry.notices.length, 11);
 
     // The checks pass on real output when the toolchain is the pinned one.
     const { problems, checks } = await verifyArtifacts(out);

@@ -7,7 +7,7 @@ import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
 import { chromium, firefox } from "playwright";
 import { compileCss, sanitizeCss } from "../../packages/format/index.js";
-import { compileGitHub, MODE_INDEX } from "../../packages/primer/index.js";
+import { compileGitHub, contrast, MODE_INDEX } from "../../packages/primer/index.js";
 import { CSS_TARGET_REGISTRY } from "../../packages/primer/registry.js";
 import { adapterBundle, PREFS, readText, resolvedFromSeed, stripStyleQueries } from "./helpers.mjs";
 
@@ -69,6 +69,63 @@ ${`<div ${ISLAND}>`.repeat(7)}<div class="flash">${parts("deep")}</div>${"</div>
 <div ${ISLAND}>${parts("free")}</div>
 </main></body></html>`;
 const FRAGMENT_IDS = ["plain", "nested", "self", "query", "permission", "light", "dimmed", "deep", "within"];
+
+// GitHub's logged-out pages, modeled on github.com/login, /signup and the 404 on 2026-11-09: the
+// Primer Brand marketing header, its own dark island, whose sign-in and sign-up links read Brand
+// variables that Primer Brand declares on every color-mode element and the header partly
+// redeclares on itself; a Brand page section holding the sign-up email form beside one without;
+// the sign-in form; and the 404 search form, whose label is GitHub's muted text, in the light root
+// island under a dark theme. The Brand rules are reduced copies of Primer Brand's and the marketing
+// header's (github.githubassets.com, primer-react-brand-css and marketing-header modules).
+const BRAND_ISLAND = 'data-color-mode="dark"';
+const AUTH = `<!doctype html><html lang="en" data-color-mode="auto" data-light-theme="light" data-dark-theme="dark"><head><title>Sign in to GitHub · GitHub</title>
+<meta name="route-controller" content="sessions"><meta name="route-action" content="new">
+<style>${["light", "dark", "dark_dimmed"].map((id) => readText(`vendor/primer/source/${id}.css`)).join("\n")}</style>
+<style>:root,[data-color-mode=light][data-light-theme*=light]{color-scheme:light}
+[data-color-mode=dark][data-dark-theme*=dark]{color-scheme:dark}
+:root,[data-color-mode="light"],[data-color-mode="auto"]{--brand-color-text-default:#000;--brand-color-canvas-default:#fff;--brand-button-primary-bgColor-rest:#08872b;--brand-button-primary-fgColor-rest:#fff;--brand-color-focus:#0969da}
+[data-color-mode="dark"]{--brand-color-text-default:#fff;--brand-color-canvas-default:#000;--brand-button-primary-bgColor-rest:#29903b;--brand-button-primary-fgColor-rest:#fff;--brand-color-focus:#4493f8}
+header.HeaderMktg[data-marketing-header]{--brand-button-primary-bgColor-rest:var(--brand-color-text-default);--brand-button-primary-fgColor-rest:var(--brand-color-canvas-default);background:var(--brand-color-canvas-default);color:var(--brand-color-text-default)}
+body{color:var(--fgColor-default);background:var(--bgColor-default)}
+.Button{display:inline-block;padding:4px 8px;border-radius:6px;color:var(--brand-color-text-default);outline-color:var(--brand-color-focus)}
+.Button--primary{background:var(--brand-button-primary-bgColor-rest);color:var(--brand-button-primary-fgColor-rest)}
+a{color:var(--fgColor-accent)}.color-fg-muted{color:var(--fgColor-muted)}
+.btn{color:var(--button-primary-fgColor-rest);background:var(--button-primary-bgColor-rest);border:1px solid var(--button-primary-borderColor-rest);border-radius:6px}
+input{color:var(--fgColor-default);background:var(--bgColor-default);border:1px solid var(--borderColor-default)}</style></head>
+<body><div class="logged-out env-production page-responsive">
+<header class="HeaderMktg" role="banner" data-marketing-header="true" ${BRAND_ISLAND} data-light-theme="light" data-dark-theme="dark">
+<a id="nav" class="Button" href="/features">Product</a>
+<div><a id="signin" class="Button Button--subtle" href="/login?return_to=https%3A%2F%2Fgithub.com%2F">Sign in</a>
+<a id="signup" class="Button Button--primary" href="/signup?ref_cta=Sign+up&amp;ref_loc=header+logged+out&amp;source=header"><span id="signup-text">Sign up</span></a></div>
+</header>
+<main class="font-mktg"><react-app><div>
+<section id="hero" ${BRAND_ISLAND}><form id="hero-form" action="/signup" method="get"><input id="hero-email" name="user_email"><button id="hero-submit" class="Button Button--primary" type="submit">Sign up for GitHub</button></form></section>
+<section id="features" ${BRAND_ISLAND}><a id="features-link" class="Button Button--primary" href="/features">Explore</a></section>
+</div></react-app>
+<form id="session" action="/session" method="post"><label id="login-label" for="login_field">Username or email address</label><input id="login_field" name="login"><input id="login-submit" class="btn btn-primary" type="submit" value="Sign in"></form>
+<p>New to GitHub? <a id="create" href="/signup?source=login">Create an account</a></p>
+<form id="search" role="search" action="/search" method="get"><label id="search-label" for="q" class="color-fg-muted">Find code, projects, and people on GitHub:</label><input id="q" name="q"><button id="search-submit" class="btn" type="submit">Search</button></form>
+</main></div></body></html>`;
+const AUTH_IDS = ["signin", "signup", "signup-text", "hero-form", "hero-email", "hero-submit", "session", "login-label", "login_field", "login-submit", "create", "search", "search-label", "q", "search-submit"];
+// The outermost protected UI in the light root, whose nearest island is of the other base.
+const OTHER_BASE_OUTER = ["hero-form", "session", "create", "search"];
+const BRAND_VARIABLES = ["--brand-color-text-default", "--brand-color-canvas-default", "--brand-button-primary-bgColor-rest", "--brand-button-primary-fgColor-rest", "--brand-color-focus"];
+
+// The profile timeline's pagination, modeled on github.com/whoisaldo on 2026-11-09: the activity
+// listing floats left at full width, and the Show more activity form follows it in normal flow, so
+// the form's block box extends under the whole listing, whose text is themed. A strip of the page
+// canvas above it is the on-screen reference for what the listing should have behind it.
+const TIMELINE = `<!doctype html><html lang="en" data-color-mode="auto" data-light-theme="light" data-dark-theme="dark"><head><title>octo-sample · GitHub</title>
+<meta name="route-controller" content="profiles"><meta name="route-action" content="show">
+<style>${["light", "dark"].map((id) => readText(`vendor/primer/source/${id}.css`)).join("\n")}</style>
+<style>:root{color-scheme:light}body{margin:0;color:var(--fgColor-default);background:var(--bgColor-default)}main{width:748px;padding:16px}
+.float-left{float:left}.col-12{width:100%}.width-full{width:100%}a{color:var(--fgColor-accent)}.color-fg-default{color:var(--fgColor-default)}.color-fg-muted{color:var(--fgColor-muted)}
+.btn{display:inline-block;padding:5px 16px;color:var(--button-default-fgColor-rest);background:var(--button-default-bgColor-rest);border:1px solid var(--button-default-borderColor-rest);border-radius:6px}
+#canvas-sample,#gap{width:748px;height:48px}</style></head>
+<body><main><div id="canvas-sample"></div>
+<div class="contribution-activity-listing float-left col-12"><h4 id="event" class="color-fg-default">Created 191 commits in 6 repositories</h4><a id="event-link" href="/octo-sample/sample">octo-sample/sample</a> <span id="event-time" class="color-fg-muted">Nov 9</span><div id="gap"></div></div>
+<form id="more" class="ajax-pagination-form js-ajax-pagination js-show-more-timeline-form" action="/octo-sample?tab=overview&amp;from=2026-10-01&amp;to=2026-10-31" method="get"><button id="more-btn" type="submit" class="ajax-pagination-btn btn width-full">Show more activity</button></form>
+</main></body></html>`;
 
 // In-page helpers, installed once per page.
 function install({ css, modes, pace }) {
@@ -414,9 +471,10 @@ for (const [name, engine] of [["Chromium", chromium], ["Firefox", firefox]]) {
 
       // Every protected fragment and everything in it keeps GitHub's own computed colors for its
       // nearest island's mode, and no island inside or on it reopens structured styling, also in
-      // the first frame after an ordinary wrapper becomes a warning. Firefox also runs the
-      // selector fallback Gecko uses before Firefox 151, which gives a warning inside the plan's
-      // light or dimmed island GitHub's own colors of the seed's mode, dark, as the root has.
+      // the first frame after an ordinary wrapper becomes a warning. GitHub's light text does not
+      // read on the theme's dark canvas, so a warning inside the plan's light island takes GitHub's
+      // own colors of the seed's mode, dark, as the root has. Firefox also runs the selector
+      // fallback Gecko uses before Firefox 151, which does the same for the dimmed island.
       for (const fallback of name === "Firefox" ? [false, true] : [false]) {
         test(`protected fragments and forms keep their nearest island's native colors and components in ${appearance === "full" ? "Full" : "Calm"}${fallback ? " through the selector fallback" : ""}`, async () => {
           const resolved = resolvedFromSeed(MODE_INDEX.modes.dark, { "/tokens/canvas": "#101a2b", "/tokens/text": "#fafbe0", "/tokens/border": "#ff00aa" });
@@ -438,7 +496,7 @@ for (const [name, engine] of [["Chromium", chromium], ["Firefox", firefox]]) {
           assert.notDeepEqual(themed["free-box"], native["free-box"]);
           assert.notDeepEqual(themed["later-btn"], native["later-btn"]);
           for (const id of FRAGMENT_IDS) {
-            const own = fallback && (id === "light" || id === "dimmed") ? "plain" : id;
+            const own = id === "light" || (fallback && id === "dimmed") ? "plain" : id;
             for (const part of ["box", "btn"]) assert.deepEqual(themed[`${id}-${part}`], native[`${own}-${part}`], `${appearance} ${id}-${part} keeps GitHub's own colors and components`);
           }
           // The light and dimmed warnings take their own island's values, not the dark root's.
@@ -453,6 +511,106 @@ for (const [name, engine] of [["Chromium", chromium], ["Firefox", firefox]]) {
             })));
           }));
           assert.deepEqual(late, [native["later-box"], native["later-btn"]]);
+          await context.close();
+        });
+      }
+
+      // No Brand variable a theme maps reaches sign-in, sign-up or any form: a Brand subject that
+      // holds protected UI keeps GitHub's own, initially and after a link is inserted, and takes
+      // the mapping again once it holds none. Protected UI in the light root island takes GitHub's
+      // own colors of the seed's mode, dark, paints no canvas and reads at 4.5:1.
+      for (const fallback of name === "Firefox" ? [false, true] : [false]) {
+        test(`sign-in, sign-up and form UI under Primer Brand keeps GitHub's own Brand values and reads at 4.5:1 in ${appearance === "full" ? "Full" : "Calm"}${fallback ? " through the selector fallback" : ""}`, async () => {
+          const resolved = resolvedFromSeed(MODE_INDEX.modes.dark, { "/tokens/canvas": "#0a0a17", "/tokens/text": "#e4f3ff", "/tokens/primaryBackground": "#fcee0a", "/tokens/primaryText": "#000000" });
+          const primer = compileGitHub(resolved, { seedMode: "dark", policy: "themed" }, { ...PREFS, appearance });
+          const css = fallback ? stripStyleQueries(primer.css) : primer.css;
+          const { page, context } = await open(AUTH, "https://github.com/login", { colorScheme: "light" });
+          const snapshot = (ids) =>
+            page.evaluate(([ids, names]) => Object.fromEntries(ids.map((id) => {
+              const cs = getComputedStyle(document.getElementById(id));
+              return [id, [cs.color, cs.backgroundColor, cs.outlineColor, ...names.map((n) => cs.getPropertyValue(n))]];
+            })), [ids, BRAND_VARIABLES]);
+          const all = [...AUTH_IDS, "nav", "features", "features-link"];
+          const native = await snapshot(all);
+          await page.evaluate((css) => document.head.append(Object.assign(document.createElement("style"), { textContent: css })), css);
+          const themed = await snapshot(all);
+          // Protected UI in the light root island takes the seed's dark colors, as for the
+          // fragments above, so there only its Brand values and its outermost canvas, none, are
+          // compared, but in the header's own dark island everything is.
+          for (const id of AUTH_IDS) {
+            if (id.startsWith("sign")) assert.deepEqual(themed[id], native[id], `${appearance} ${id} keeps GitHub's own colors and Brand values`);
+            else assert.deepEqual(themed[id].slice(3), native[id].slice(3), `${appearance} ${id} keeps GitHub's own Brand values`);
+          }
+          for (const id of OTHER_BASE_OUTER) assert.equal(themed[id][1], native[id][1], `${appearance} ${id} paints no canvas`);
+          // The header holds sign-in and sign-up, so it keeps GitHub's Brand values; the Brand page
+          // section without a form takes the theme's.
+          assert.deepEqual(themed.nav, native.nav);
+          assert.notDeepEqual(themed["features-link"], native["features-link"]);
+          assert.deepEqual(themed["features-link"].slice(4, 6), ["#0a0a17", "#fcee0a"]);
+          // A sign-up link inserted into a themed Brand section is GitHub's own in its next frame.
+          const inserted = await page.evaluate((names) => new Promise((resolve) => {
+            document.getElementById("features").append(Object.assign(document.createElement("a"), { id: "late-signup", className: "Button Button--primary", href: "/signup?source=features", textContent: "Sign up" }));
+            requestAnimationFrame(() => {
+              const read = (id) => { const cs = getComputedStyle(document.getElementById(id)); return [cs.color, cs.backgroundColor, ...names.map((n) => cs.getPropertyValue(n))]; };
+              resolve({ late: read("late-signup"), hero: read("hero-submit") });
+            });
+          }), BRAND_VARIABLES);
+          assert.deepEqual(inserted.late, inserted.hero, `${appearance} an inserted sign-up link keeps GitHub's own Brand values`);
+          // With its sign-in and sign-up links gone, the header takes the theme's Brand mapping.
+          const header = await page.evaluate(() => new Promise((resolve) => {
+            for (const id of ["signin", "signup"]) document.getElementById(id).remove();
+            requestAnimationFrame(() => resolve(getComputedStyle(document.getElementById("nav")).getPropertyValue("--brand-color-text-default")));
+          }));
+          assert.equal(header, "#e4f3ff");
+          // Text in the search and sign-in forms reads at 4.5:1 on what is behind it.
+          const ratios = await page.evaluate((ids) => {
+            const rgb = (text) => text.match(/[\d.]+/g).map(Number);
+            const lum = ([r, g, b]) => [r, g, b].map((c) => (c /= 255) <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4).reduce((sum, c, i) => sum + c * [0.2126, 0.7152, 0.0722][i], 0);
+            const backdrop = (el) => { for (; el; el = el.parentElement) { const c = rgb(getComputedStyle(el).backgroundColor); if (c.length < 4 || c[3] === 1) return c; } return [255, 255, 255]; };
+            return Object.fromEntries(ids.map((id) => {
+              const el = document.getElementById(id);
+              const [a, b] = [lum(rgb(getComputedStyle(el).color)), lum(backdrop(el))].sort((x, y) => y - x);
+              return [id, (a + 0.05) / (b + 0.05)];
+            }));
+          }, ["search-label", "login-label", "create"]);
+          for (const [id, ratio] of Object.entries(ratios)) assert.ok(ratio >= 4.5, `${appearance} ${id} reads at ${ratio.toFixed(2)}:1`);
+          await context.close();
+        });
+      }
+
+      // The form after the floated profile timeline is protected UI whose block box lies under the
+      // timeline. It paints no canvas there, so the timeline's themed text keeps the theme's canvas,
+      // by computed style and on screen, and the form and its button keep GitHub's geometry.
+      for (const fallback of name === "Firefox" ? [false, true] : [false]) {
+        test(`the pagination form after the floated profile timeline paints nothing under the timeline in ${appearance === "full" ? "Full" : "Calm"}${fallback ? " through the selector fallback" : ""}`, async () => {
+          const resolved = resolvedFromSeed(MODE_INDEX.modes.dark, { "/tokens/canvas": "#0a0a17", "/tokens/text": "#e4f3ff", "/tokens/primaryBackground": "#fcee0a", "/tokens/primaryText": "#000000" });
+          const primer = compileGitHub(resolved, { seedMode: "dark", policy: "themed" }, { ...PREFS, appearance });
+          const css = fallback ? stripStyleQueries(primer.css) : primer.css;
+          const { page, context } = await open(TIMELINE, "https://github.com/octo-sample", { colorScheme: "light" });
+          const boxes = () => page.evaluate(() => ["more", "more-btn"].map((id) => document.getElementById(id).getBoundingClientRect().toJSON()));
+          const native = await boxes();
+          await page.evaluate((css) => document.head.append(Object.assign(document.createElement("style"), { textContent: css })), css);
+          assert.deepEqual(await boxes(), native, `${appearance} the form and its button keep GitHub's geometry`);
+          const facts = await page.evaluate(() => {
+            const box = (id) => document.getElementById(id).getBoundingClientRect();
+            return {
+              form: getComputedStyle(document.getElementById("more")).backgroundColor,
+              canvas: getComputedStyle(document.body).backgroundColor,
+              under: box("gap").top >= box("more").top && box("gap").bottom <= box("more").bottom,
+              text: Object.fromEntries(["event", "event-link", "event-time"].map((id) => [id, getComputedStyle(document.getElementById(id)).color])),
+            };
+          });
+          assert.ok(facts.under, "the form's box lies under the timeline");
+          assert.equal(facts.form, "rgba(0, 0, 0, 0)");
+          assert.equal(facts.canvas, "rgb(10, 10, 23)");
+          const hex = (rgb) => `#${rgb.match(/\d+/g).slice(0, 3).map((c) => Number(c).toString(16).padStart(2, "0")).join("")}`;
+          for (const [id, color] of Object.entries(facts.text)) assert.ok(contrast(hex(color), "#0a0a17") >= 4.5, `${appearance} ${id} ${color} reads on the canvas`);
+          // On screen, the timeline over the form is the same canvas as the page above it.
+          const shot = async (id) => {
+            const r = await page.evaluate((id) => document.getElementById(id).getBoundingClientRect().toJSON(), id);
+            return page.screenshot({ clip: { x: Math.ceil(r.x) + 1, y: Math.ceil(r.y) + 1, width: Math.floor(r.width) - 3, height: Math.floor(r.height) - 3 } });
+          };
+          assert.ok((await shot("gap")).equals(await shot("canvas-sample")), `${appearance} the timeline keeps the theme's canvas on screen`);
           await context.close();
         });
       }

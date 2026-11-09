@@ -15,24 +15,19 @@ frozen input must be covered by a notice. The build copies exactly those files p
 each notice file at its repository path, and the manifest. It does not discover files, so a file missing from the list is missing from the
 package, and the build fails when the manifest names a file the entry lacks.
 
-## Moving to the new extension (C6)
+An entry may also name a `builder` module and the `generated` files it produces. The build calls
+its `build({root, entry})` and packages exactly those paths from its output; every other file is read
+from the entry's root. The current entry, `reskin-2`, uses `packages/ui/bundle.mjs` to bundle the
+content script, background and page script with esbuild and to copy the bundled fonts and preview
+images from their repository paths. A notice marked `"userscript": false` covers material only the
+browser packages carry.
 
-The current entry, `legacy-1.1.0`, packages the 1.1.0 product from `extension/` as merged.
-`extension/manifest.json` stays so `extension/` can still be loaded unpacked and
-`scripts/userscript.mjs` can read it; `tests/foundation/manifests.test.mjs` keeps the generated
-manifests equal to it while that entry is selected.
+## The 1.1.0 files
 
-To switch:
-
-1. Add a new entry to `entries.json` whose files are the built outputs C4 to C6 provide (background
-   script, content entry, pages, fonts, icons), with notices for the frozen Primer data (C3's
-   `vendor/primer/` licenses) and the font OFL files.
-2. Update `base.json` to reference them, and the overlays for the background: Chrome
-   `{"background": {"service_worker": ...}}`, Firefox `{"background": {"scripts": [...]}}`.
-   Font files go in `web_accessible_resources` for the two GitHub origins only.
-3. Change `release.config.json` `extension.entry` to the new entry.
-4. Remove `legacy-1.1.0`, `extension/manifest.json` and the legacy-equality test together with the
-   old files, after porting their behavioral tests.
+The 1.1.0 product (`extension/manifest.json`, `popup.*`, `themes.js`, `slang.js`, `content.js`,
+`github-modes.js`, `icons/`) is no longer packaged. It stays in the repository because
+`scripts/userscript.mjs` still builds the userscript from it; C8 removes it when the userscript
+moves to the new runtime.
 
 `manifestProblems()` in `scripts/build.mjs` stays the gate: the permissions and host matches in
 `release.config.json`, top frame only, no Gecko keys in Chrome, the studio Gecko ID with minimum

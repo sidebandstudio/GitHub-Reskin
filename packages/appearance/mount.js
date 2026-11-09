@@ -149,15 +149,15 @@ function nativeAfter(node) {
  * animated }. play() runs the theme's one finite pass of motion, for an explicit theme selection
  * only; it returns false and leaves the static state when motion is off, reduced, hidden or
  * offscreen, and stops a box's pass when the box leaves the viewport. `options` carries the same
- * { css, cssAllowed } as compileAppearance, so a corner caption is framed only when the theme's
- * CSS will place it.
+ * { css, cssAllowed, registry } as compileAppearance, so a corner caption is framed only when the
+ * theme's CSS will place it.
  */
-export function mountAppearance(root, resolved, prefs, anchors, { css = null, cssAllowed = false } = {}) {
+export function mountAppearance(root, resolved, prefs, anchors, { css = null, cssAllowed = false, registry = null } = {}) {
   const doc = root?.ownerDocument ?? root;
   const view = doc?.defaultView;
   if (!doc?.createElement || view?.matchMedia?.("(forced-colors: active)").matches) return noop;
   const usable = usableAnchors(root, anchors);
-  const styled = new Set(usable.length ? (ownedThemeCss(resolved, prefs, css, cssAllowed)?.slots ?? []) : []);
+  const styled = new Set(usable.length ? (ownedThemeCss(resolved, prefs, css, cssAllowed, registry)?.slots ?? []) : []);
   const plan = planAppearance(resolved, prefs, usable.map((anchor) => anchor.slot), { styled: [...styled] });
   if (!plan.slots.length && !plan.banner) return noop;
 

@@ -8,9 +8,11 @@
 //   readPage(document, view) -> {native, forcedColors, reducedMotion}
 //   plan(page, base) -> {plan: ModePlan, seed: ModeSeed | null}
 //   resolve(theme, context) -> ResolvedTheme
-//   compile(resolved, plan, prefs) -> {css, fingerprint}
-//   decorate?(document, resolved, prefs) -> {destroy()} | null    owned flavor/effect nodes
+//   compile(resolved, plan, prefs, {source, consent}) -> {css, fingerprint}
+//   decorate?(document, resolved, prefs, {plan, source, consent}) -> {destroy()} | null
+//                                                                   owned nodes, CSS admission
 //   modeAttributes?: string[]                                       root attributes to observe
+//   nativeRoute?(document) -> string | null                         why the route stays native
 import { LEGACY_PAGE_CACHE_KEY, LIMITS, LOCAL_THEME_ID_PREFIX, STORAGE_KEYS } from "../../../packages/contracts/index.js";
 import { sourceHash } from "../../../packages/engine/index.js";
 import {
@@ -56,8 +58,10 @@ export function startContent({ storage, document, view, catalog, renderer, onEve
   let fingerprint = null;
   let resolvedNow = null;
   let prefsNow = null;
+  let contextNow = null;
   let decorations = null;
   let revisionNow = null;
+  let routeNow = null; // why the route stays native, as the latest render saw it
   // The optional-work budget: what decoration passes have spent since it opened, and whether
   // they reached the limit.
   let budgetSpent = false;
@@ -122,9 +126,12 @@ export function startContent({ storage, document, view, catalog, renderer, onEve
     }
   }
 
+  // Native leaves nothing placed, so the themed page that follows (forced colors or GitHub's own
+  // mode switching back) gets a pass of its own instead of keeping an empty spent budget.
   function goNative(reason) {
     clearStyle();
     dropDecorations();
+    openBudget();
     resolvedNow = null;
     setPhase("native");
     onEvent({ type: "native", reason });
@@ -134,6 +141,9 @@ export function startContent({ storage, document, view, catalog, renderer, onEve
   // Policy first, then the snapshot rule, then resolution. All synchronous, so the stylesheet and
   // the end of the gate land in one turn.
   function render() {
+    // A route that stays native, such as sign-in, gets no stylesheet whatever the settings.
+    routeNow = renderer.nativeRoute?.(document) ?? null;
+    if (routeNow) return goNative(routeNow);
     const settings = state?.settings;
     if (!settings) return goNative("unreadable");
     // A change the user makes (a new settings revision: a theme or preference) opens a fresh
@@ -165,7 +175,8 @@ export function startContent({ storage, document, view, catalog, renderer, onEve
     const snapshot = usableSnapshot(state.boot, current);
     const resolved = snapshot ?? renderer.resolve(source, { seed, policy, reducedMotion: page.reducedMotion, forcedColors: page.forcedColors });
     onEvent({ type: "resolved", from: snapshot ? "snapshot" : "source" });
-    const compiled = renderer.compile(resolved, plan, prefs);
+    const context = { plan, source, consent: current.cssConsent };
+    const compiled = renderer.compile(resolved, plan, prefs, context);
     if (compiled.fingerprint !== fingerprint || !style.isConnected) {
       if (compiled.fingerprint !== fingerprint) style.textContent = compiled.css;
       fingerprint = compiled.fingerprint;
@@ -174,6 +185,7 @@ export function startContent({ storage, document, view, catalog, renderer, onEve
     }
     resolvedNow = resolved;
     prefsNow = prefs;
+    contextNow = context;
     setPhase("ready");
     settle("ready");
   }
@@ -219,7 +231,7 @@ export function startContent({ storage, document, view, catalog, renderer, onEve
     dropDecorations();
     if (!renderer.decorate || !resolvedNow || document.readyState === "loading") return;
     const start = now();
-    decorations = renderer.decorate(document, resolvedNow, prefsNow) ?? null;
+    decorations = renderer.decorate(document, resolvedNow, prefsNow, contextNow) ?? null;
     navigationSpent += now() - start;
     if (navigationSpent >= LIMITS.maxNavigationMs) {
       budgetSpent = true;
@@ -283,7 +295,12 @@ export function startContent({ storage, document, view, catalog, renderer, onEve
   // Navigation: owned nodes leave before Turbo caches or swaps the body, and are placed again once
   // the new page is in. Each navigation gets a fresh optional-work budget.
   for (const type of NAVIGATION_START) listen(document, type, dropDecorations);
-  const navigated = () => schedule("decorate");
+  // A navigation into or out of a route that stays native renders again, in the frame before the
+  // new page paints.
+  const navigated = () => {
+    if ((renderer.nativeRoute?.(document) ?? null) !== routeNow) schedule("recompute");
+    schedule("decorate");
+  };
   for (const type of NAVIGATION_VISIT) listen(document, type, openBudget);
   for (const type of NAVIGATION_END) listen(document, type, navigated);
   listen(view, "popstate", () => {

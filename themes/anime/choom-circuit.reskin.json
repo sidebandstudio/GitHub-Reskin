@@ -1,0 +1,232 @@
+{
+  "$schema": "https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json",
+  "author": "sidebandstudio",
+  "backgrounds": {
+    "header": {
+      "color": "#070710",
+      "layers": [
+        {
+          "gradientCss": {
+            "size": "auto",
+            "value": "linear-gradient(0deg,#fcee0a 1px,transparent 1px)"
+          }
+        }
+      ]
+    },
+    "page": {
+      "color": "#0a0a17",
+      "layers": [
+        {
+          "gradientCss": {
+            "size": "100% 100vh",
+            "value": "radial-gradient(ellipse 80% 50%at 50% -10%,color-mix(in srgb,#00f0ff 10%,transparent),transparent 70%)"
+          }
+        },
+        {
+          "gradientCss": {
+            "size": "48px 48px",
+            "value": "linear-gradient(color-mix(in srgb,#00f0ff 5%,transparent) 1px,transparent 1px)"
+          }
+        },
+        {
+          "gradientCss": {
+            "size": "48px 48px",
+            "value": "linear-gradient(90deg,color-mix(in srgb,#00f0ff 5%,transparent) 1px,transparent 1px)"
+          }
+        },
+        {
+          "gradientCss": {
+            "size": "auto",
+            "value": "repeating-linear-gradient(color-mix(in srgb,#e4f3ff 2%,transparent)0 1px,transparent 1px 3px)"
+          }
+        }
+      ]
+    }
+  },
+  "base": "dark",
+  "code": {
+    "ansi": {
+      "black": "#b7b5cc",
+      "blue": "#7fbbff",
+      "brightBlack": "#b3b5d9",
+      "brightBlue": "#a4cfff",
+      "brightCyan": "#97edfa",
+      "brightGreen": "#a4edc2",
+      "brightMagenta": "#c5b3ff",
+      "brightRed": "#ffb3bb",
+      "brightWhite": "#ffffff",
+      "brightYellow": "#fff27a",
+      "cyan": "#00f0ff",
+      "green": "#3fe0a0",
+      "magenta": "#ff97c2",
+      "red": "#ff9aad",
+      "white": "#d1dcea",
+      "yellow": "#fcee0a"
+    },
+    "background": "#070710",
+    "diff": {
+      "addedBackground": "#0f201e",
+      "addedText": "#e4f3ff",
+      "removedBackground": "#22111c",
+      "removedText": "#e4f3ff",
+      "wordAddedBackground": "#1b532d",
+      "wordAddedText": "#e4f3ff",
+      "wordRemovedBackground": "#782b2e",
+      "wordRemovedText": "#e4f3ff"
+    },
+    "syntax": {
+      "attribute": "#a4cfff",
+      "comment": "#b3b5d9",
+      "constant": "#67eaff",
+      "function": "#fcee0a",
+      "keyword": "#ff97c2",
+      "number": "#ffd48a",
+      "punctuation": "#d1dcea",
+      "string": "#97edfa",
+      "tag": "#67e8cf",
+      "type": "#c5b3ff"
+    },
+    "text": "#e4f3ff"
+  },
+  "colors": {
+    "accent": "#fcee0a",
+    "background": "#0a0a17",
+    "contribution": "#00f0ff",
+    "text": "#e4f3ff"
+  },
+  "contributions": {
+    "cellRadius": 1,
+    "cellStyle": "glow",
+    "glow": {
+      "levels": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "opacity": 0.85,
+      "radius": 9
+    },
+    "levels": [
+      "#1e1f2c",
+      "#066876",
+      "#058997",
+      "#02bdcc",
+      "#00f0ff"
+    ]
+  },
+  "css": ".AppHeader,.Header,.HeaderMktg,.GlobalNav{box-shadow:0 4px 24px -6px color-mix(in srgb,var(--reskin-accent) 55%,transparent)}.btn-primary{box-shadow:0 0 14px color-mix(in srgb,var(--reskin-accent) 55%,transparent)}.btn-primary:hover{box-shadow:0 0 22px color-mix(in srgb,var(--reskin-accent) 80%,transparent)}.btn-primary:focus-visible{box-shadow:0 0 16px color-mix(in srgb,var(--reskin-accent) 60%,transparent)}.UnderlineNav-item[aria-current=\"page\"],.tabnav-tab[aria-current=\"page\"],a[aria-current=\"page\"]{box-shadow:0 8px 10px -8px color-mix(in srgb,var(--reskin-accent) 80%,transparent)}a[data-testid=\"repo-name-link\"]{text-shadow:0 0 8px color-mix(in srgb,var(--reskin-graph-4) 55%,transparent)}a[data-testid=\"repo-name-link\"]:hover{color:var(--reskin-link);text-shadow:-1px 0 color-mix(in srgb,var(--reskin-graph-4) 70%,transparent),1px 0 color-mix(in srgb,var(--reskin-accent) 60%,transparent)}h2.h4.mb-2,h2[data-component=\"Heading\"]{letter-spacing:.02em;text-shadow:0 0 12px color-mix(in srgb,var(--reskin-accent) 35%,transparent)}[data-reskin-slot=\"profile.tag\"]{width:fit-content;margin:0 0 8px;padding:3px 8px 2px;font-family:ui-monospace,monospace;font-weight:600;font-size:11px;line-height:1.45;letter-spacing:.2em;text-transform:uppercase;color:var(--reskin-link);border:1px solid var(--reskin-link);box-shadow:0 0 10px color-mix(in srgb,var(--reskin-accent) 35%,transparent),inset 0 0 8px color-mix(in srgb,var(--reskin-accent) 15%,transparent);text-shadow:0 0 6px color-mix(in srgb,var(--reskin-accent) 60%,transparent)}[data-reskin-slot=\"profile.pinned.heading\"],[data-reskin-slot=\"profile.activity.heading\"],[data-reskin-slot=\"profile.organizations.heading\"]{font-family:var(--reskin-font-heading);letter-spacing:.02em;text-shadow:0 0 12px color-mix(in srgb,var(--reskin-accent) 35%,transparent)}[data-reskin-slot=\"error.notFound.caption\"]{position:absolute;right:6%;bottom:10%;padding:4px 16px;font-family:var(--reskin-font-heading);font-weight:700;font-size:44px;line-height:1.1;letter-spacing:.14em;text-transform:uppercase;color:var(--reskin-link);background-color:color-mix(in srgb,var(--reskin-canvas) 88%,transparent);border:2px solid var(--reskin-link);transform:rotate(-6deg);box-shadow:0 0 18px color-mix(in srgb,var(--reskin-accent) 55%,transparent);text-shadow:-2px 0 color-mix(in srgb,var(--reskin-graph-4) 70%,transparent),2px 0 color-mix(in srgb,var(--reskin-accent) 50%,transparent),0 0 12px color-mix(in srgb,var(--reskin-accent) 60%,transparent)}@media (max-width:1099px){[data-reskin-slot=\"error.notFound.caption\"]{font-size:36px}}@media (max-width:799px){[data-reskin-slot=\"error.notFound.caption\"]{font-size:28px}}@media (max-width:599px){[data-reskin-slot=\"error.notFound.caption\"]{font-size:22px}}",
+  "description": "Indigo-black panels, electric yellow controls, a cyan contribution graph, a faint 48px grid, beveled corners and static neon glow.",
+  "details": {
+    "headerText": "#9a9ccc",
+    "labels": {
+      "fill": "tinted",
+      "style": "bevel"
+    },
+    "scrollbar": {
+      "thumb": "#8f8710",
+      "track": "#070710",
+      "width": "auto"
+    },
+    "selection": {
+      "background": "#fcee0a",
+      "text": "#000000"
+    },
+    "topics": {
+      "background": "#092633",
+      "fill": "tinted",
+      "style": "bevel",
+      "text": "#fcee0a"
+    }
+  },
+  "effects": {
+    "echo": {
+      "durationMs": 200,
+      "offset": 2,
+      "opacity": 0.24
+    },
+    "glow": {
+      "strength": 0.35
+    },
+    "rail": {
+      "opacity": 0.4,
+      "shape": "notch",
+      "thickness": 3
+    }
+  },
+  "flavor": {
+    "enabled": true,
+    "locale": "en",
+    "slots": {
+      "error.notFound.caption": "Flatlined",
+      "footer.signoff": "// stay preem, choom",
+      "profile.achievements.heading": "Street cred",
+      "profile.activity.heading": "Gig log",
+      "profile.organizations.heading": "Crews",
+      "profile.pinned.heading": "Preem picks",
+      "profile.tag": "// choom"
+    }
+  },
+  "fonts": {
+    "body": "system",
+    "heading": "roboto-condensed"
+  },
+  "inspiredBy": "Cyberpunk: Edgerunners",
+  "name": "Choom Circuit",
+  "overrides": {
+    "accentEmphasis": "#007880",
+    "accentMuted": "#092633",
+    "border": "#2d2a52",
+    "controlBorder": "#787690",
+    "focus": "#fcee0a",
+    "hover": "#242633",
+    "inset": "#070710",
+    "link": "#fcee0a",
+    "mutedText": "#9a9ccc",
+    "primaryBackground": "#fcee0a",
+    "primaryText": "#000000",
+    "raised": "#1b1d2a",
+    "surface": "#11112a"
+  },
+  "schemaVersion": 1,
+  "shape": {
+    "avatar": {
+      "frame": {
+        "color": "#2d2a52",
+        "style": "solid",
+        "width": 1
+      },
+      "shape": "circle"
+    },
+    "borders": {
+      "color": "#2d2a52",
+      "style": "solid",
+      "width": 1
+    },
+    "buttons": {
+      "radius": 8,
+      "style": "bevel"
+    },
+    "corners": {
+      "radius": 12,
+      "style": "bevel"
+    },
+    "shadows": {
+      "blur": 14,
+      "color": "#fcee0a",
+      "offset": 0,
+      "opacity": 0.55,
+      "style": "neon"
+    }
+  },
+  "tags": [
+    "anime",
+    "neon",
+    "dark"
+  ],
+  "typography": {
+    "headingLetterSpacing": 0.02,
+    "uppercaseHeadings": false
+  },
+  "version": "2.0.0"
+}

@@ -6,7 +6,7 @@ import { join } from "node:path";
 import test from "node:test";
 import { promisify } from "node:util";
 import { SHARED_BUILD_SCOPES } from "../../packages/contracts/index.js";
-import { FONT_INPUTS, NotImplementedError, ROOT, SHARED_SCOPES, build, buildSharedFrom, buildSiteFrom, buildUserscriptFrom, bundlePackages, sharedPrerequisites, treeHash } from "../../scripts/build.mjs";
+import { FONT_INPUTS, NotImplementedError, ROOT, SHARED_SCOPES, build, buildSharedFrom, buildSiteFrom, buildUserscriptFrom, bundlePackages, licenseFiles, loadEntry, loadReleaseConfig, sharedPrerequisites, treeHash } from "../../scripts/build.mjs";
 import { withTempDir } from "../helpers/tmp.mjs";
 
 const node = (args, options = {}) => promisify(execFile)(process.execPath, args, { cwd: ROOT, ...options });
@@ -25,12 +25,14 @@ test("two builds of each target write the same files", async () => {
   });
 });
 
-test("the browser packages carry the 1.1.0 files unchanged", async () => {
+test("the browser packages carry their source files unchanged", async () => {
   await withTempDir(async (tmp) => {
     const { dir, files } = await build({ target: "firefox", outDir: tmp });
-    const licenses = ["LICENSE", "licenses/primer-primitives.txt"];
-    for (const path of Object.keys(files).filter((p) => p !== "manifest.json" && !licenses.includes(p))) {
-      assert.deepEqual(await readFile(join(dir, path)), await readFile(join(ROOT, "extension", path)), path);
+    const entry = await loadEntry(await loadReleaseConfig());
+    const licenses = licenseFiles(entry);
+    const generated = entry.generated || [];
+    for (const path of Object.keys(files).filter((p) => p !== "manifest.json" && !licenses.includes(p) && !generated.includes(p))) {
+      assert.deepEqual(await readFile(join(dir, path)), await readFile(join(ROOT, entry.root, path)), path);
     }
     for (const path of licenses) assert.deepEqual(await readFile(join(dir, path)), await readFile(join(ROOT, path)), path);
   });
@@ -167,7 +169,7 @@ test("the site target delegates to site/build.mjs, and a full build fails instea
   await assert.rejects(build({ target: "site", outDir: "dist" }), (error) => error instanceof NotImplementedError && /^site \(owner C7\): site\/build\.mjs does not exist/.test(error.message));
   await withTempDir(async (tmp) => {
     const run = node(["scripts/build.mjs", "--target", "all", "--out", tmp]);
-    await assert.rejects(run, (error) => error.code === 2 && /NOT IMPLEMENTED: site \(owner C7\)/.test(error.stderr) && /NOT IMPLEMENTED: shared \(owner/.test(error.stderr));
+    await assert.rejects(run, (error) => error.code === 2 && /NOT IMPLEMENTED: site \(owner C7\)/.test(error.stderr) && /built .*shared/.test(error.stdout ?? ""));
   });
 });
 

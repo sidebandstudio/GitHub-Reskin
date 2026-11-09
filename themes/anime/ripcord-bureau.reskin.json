@@ -1,0 +1,82 @@
+{
+  "$schema": "https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json",
+  "author": "sidebandstudio",
+  "base": "light",
+  "colors": {
+    "accent": "#a33f12",
+    "background": "#f5f0e5",
+    "contribution": "#8f3d17",
+    "text": "#24221e"
+  },
+  "contributions": {
+    "levels": [
+      "#e3dccf",
+      "#b37046",
+      "#ad5f2d",
+      "#a34f1f",
+      "#8f3d17"
+    ]
+  },
+  "description": "Bone paper, charcoal ink and rust-colored activity give GitHub the feel of an industrial case-file desk.",
+  "effects": {
+    "echo": {
+      "durationMs": 140,
+      "offset": 2,
+      "opacity": 0.1
+    },
+    "paper": {
+      "opacity": 0.04,
+      "scale": 6,
+      "texture": "grain"
+    },
+    "rail": {
+      "opacity": 0.2,
+      "shape": "tooth",
+      "thickness": 2
+    }
+  },
+  "flavor": {
+    "enabled": true,
+    "locale": "en",
+    "slots": {
+      "contributions.caption": "A year of casework, one contribution at a time.",
+      "empty.issues.caption": "No case files in this view.",
+      "empty.pinned.caption": "Room for a first case file.",
+      "error.notFound.caption": "No case file at this address.",
+      "profile.activity.heading": "Case log",
+      "profile.organizations.heading": "Bureau outposts",
+      "profile.pinned.heading": "Selected case files",
+      "profile.tag": "// casework desk"
+    }
+  },
+  "fonts": {
+    "accent": "barlow-condensed"
+  },
+  "inspiredBy": "Chainsaw Man",
+  "name": "Ripcord Bureau",
+  "overrides": {
+    "accentMuted": "#e8d4c3",
+    "border": "#b8a997",
+    "controlBorder": "#6b6053",
+    "danger": "#a7292f",
+    "focus": "#6b6053",
+    "hover": "#dcd7cd",
+    "inset": "#e8e1d3",
+    "link": "#943f1b",
+    "mutedText": "#61574c",
+    "primaryBackground": "#84320f",
+    "primaryText": "#ffffff",
+    "raised": "#e4e0d5",
+    "selectionBackground": "#84320f",
+    "selectionText": "#ffffff",
+    "success": "#356240",
+    "surface": "#fffcf5",
+    "warning": "#75530a"
+  },
+  "schemaVersion": 1,
+  "tags": [
+    "anime",
+    "light"
+  ],
+  "version": "1.0.0"
+}
