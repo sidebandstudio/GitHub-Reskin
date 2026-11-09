@@ -801,8 +801,9 @@ function countNodes(ast, limit) {
   return count;
 }
 
-// Collects rules with their @media chain, validating at-rules and selectors.
-function collectRules(list, ctx, media, depth) {
+// Collects rules with their chain of conditional at-rules (@media and @supports, outermost first,
+// each as its canonical head), validating at-rules and selectors.
+function collectRules(list, ctx, conditions, depth) {
   for (const node of children(list)) {
     if (ctx.problems.full) return;
     if (node.type === "Rule") {
@@ -826,25 +827,66 @@ function collectRules(list, ctx, media, depth) {
         if (ctx.declarations > L.declarations) return ctx.problems.add(`A theme has at most ${L.declarations} declarations`, item.loc);
         declarations.push(item);
       }
-      ctx.list.push({ node, media, selectors, state, declarations });
+      ctx.list.push({ node, conditions, selectors, state, declarations });
     } else if (node.type === "Atrule") {
       const name = lower(node.name);
       node.name = name;
-      if (has(POLICY.deferredAtRules, name)) {
-        ctx.problems.add(`@${name} is not available in this version of Reskin`, node.loc);
-        continue;
-      }
       if (!has(POLICY.atRules, name)) {
         ctx.problems.add(`@${name} is not allowed; themes cannot import, register fonts or properties, or change stylesheet order`, node.loc);
         continue;
       }
       if (depth + 1 > L.nesting) return ctx.problems.add(`At-rules nest at most ${L.nesting} levels`, node.loc);
-      if (!node.block || !checkMedia(node, ctx)) continue;
-      collectRules(node.block, ctx, [...media, css().generate(node.prelude)], depth + 1);
+      if (!node.block || !(name === "media" ? checkMedia(node, ctx) : checkSupports(node, ctx))) continue;
+      collectRules(node.block, ctx, [...conditions, `@${name} ${css().generate(node.prelude)}`], depth + 1);
     } else if (node.type === "Comment") {
       continue;
     } else ctx.problems.add(`This stylesheet part (${node.type}) is not allowed`, node.loc);
   }
+}
+
+// @supports over permitted appearance properties: each test is one (property: value) declaration a
+// theme could write itself, with no resource, variable or vendor syntax, joined by "not", "and" or
+// "or" as CSS allows. Selector, font and other function tests are refused. css-tree 3.1.0 reads a
+// parenthesized group of conditions only by recovering from a parse error, so grouped conditions
+// are already refused as unreadable before this runs.
+function checkSupports(node, ctx) {
+  const conditions = children(node.prelude);
+  if (conditions.length !== 1 || conditions[0].type !== "Condition" || conditions[0].kind !== "supports") return ctx.problems.add("@supports needs a condition", node.loc), false;
+  const parts = children(conditions[0]);
+  let joiner = null;
+  let expectTest = true;
+  for (const [i, part] of parts.entries()) {
+    if (part.type === "Identifier") {
+      const word = lower(part.name);
+      if (!has(POLICY.supportsOperators, word)) return ctx.problems.add(`${part.name} is not an @supports operator`, part.loc ?? node.loc), false;
+      part.name = word;
+      if (word === "not") {
+        if (i !== 0 || parts.length !== 2) return ctx.problems.add("@supports not tests one declaration", part.loc ?? node.loc), false;
+        continue;
+      }
+      if (expectTest || (joiner && joiner !== word)) return ctx.problems.add("@supports joins tests with one of and or or, never both", part.loc ?? node.loc), false;
+      joiner = word;
+      expectTest = true;
+      continue;
+    }
+    if (!expectTest) return ctx.problems.add("@supports tests are joined with and or or", part.loc ?? node.loc), false;
+    if (part.type !== "SupportsDeclaration") return ctx.problems.add("@supports tests only (property: value) declarations, not selectors, fonts or functions", part.loc ?? node.loc), false;
+    const decl = part.declaration;
+    const property = decode(decl.property);
+    const loc = decl.loc ?? node.loc;
+    if (decl.important) return ctx.problems.add("An @supports test has no !important", loc), false;
+    if (property.startsWith("--")) return ctx.problems.add("@supports cannot test a custom property", loc), false;
+    decl.property = property.toLowerCase();
+    if (!has(POLICY.nativeProperties, decl.property) && !has(POLICY.ownedProperties, decl.property)) return ctx.problems.add(`@supports can test only properties a theme may set; ${decl.property} is not one`, loc), false;
+    const nodes = children(decl.value);
+    if (decl.value?.type !== "Value" || !nodes.length) return ctx.problems.add(`The @supports test of ${decl.property} has no value`, loc), false;
+    if (!checkNodes(nodes, ctx, loc)) return false;
+    if (variablesIn(nodes).size) return ctx.problems.add("An @supports test uses literal values, no variables", loc), false;
+    if (!lexerMatches(decl.property, decl.value)) return ctx.problems.add(`This is not a valid ${decl.property} value`, loc), false;
+    expectTest = false;
+  }
+  if (expectTest) return ctx.problems.add("This @supports condition is incomplete", node.loc), false;
+  return true;
 }
 
 // @media over prefers-reduced-motion, hover, pointer and min/max-width, joined by "and" only.
@@ -895,8 +937,8 @@ function resolveVariables(ctx, budgets) {
         ctx.problems.add(`${name} is not a --theme-* variable; themes cannot set GitHub or Primer variables`, decl.loc);
         continue;
       }
-      if (rule.media.length || rule.state) {
-        ctx.problems.add(`${name} cannot change inside @media or a state selector`, decl.loc);
+      if (rule.conditions.length || rule.state) {
+        ctx.problems.add(`${name} cannot change inside @media, @supports or a state selector`, decl.loc);
         continue;
       }
       if (declared.has(name)) {
@@ -1220,7 +1262,7 @@ function validateStylesheet(source, path, budgets) {
       declarations.push({ property: decl.property, value, variables: vars, literalColor: hasLiteralColor(nodes), blur: info.blur, layers: info.layers });
     }
     rule.node.block.children = new csstree.List().fromArray(kept);
-    rules.push({ media: rule.media, selectors: rule.selectors.map(stripRoot), declarations });
+    rules.push({ conditions: rule.conditions, selectors: rule.selectors.map(stripRoot), declarations });
   }
   if (problems.list.length) return { problems: problems.list };
   const canonical = css().generate(ast);

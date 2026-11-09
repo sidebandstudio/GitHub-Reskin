@@ -237,7 +237,7 @@ export function compileCss(sanitized, { registry = null, cssAllowed, preferences
         if (problem) fail(`${rule.selectors.map(renderSelector).join(",")}: ${problem}.`);
       }
     }
-    compiled.push({ media: rule.media, selectors, declarations: rule.declarations, native: kinds.size > 0, owned: owned > 0, textSlot });
+    compiled.push({ conditions: rule.conditions, selectors, declarations: rule.declarations, native: kinds.size > 0, owned: owned > 0, textSlot });
   }
   if (issues.length) return { ok: false, issues };
 
@@ -252,7 +252,7 @@ export function compileCss(sanitized, { registry = null, cssAllowed, preferences
       const declarations = rule.declarations.filter((d) => !(preferences?.fonts === false && has(POLICY.fontProperties, d.property)));
       if (!declarations.length || !rule.selectors.length) continue;
       let text = `${rule.selectors.join(",")}{${declarations.map((d) => `${d.property}:${d.value}`).join(";")}}`;
-      for (const media of [...rule.media].reverse()) text = `@media ${media}{${text}}`;
+      for (const condition of [...rule.conditions].reverse()) text = `${condition}{${text}}`;
       css += text;
       if (rule.native) nativeRules++;
       if (rule.owned) ownedRules++;

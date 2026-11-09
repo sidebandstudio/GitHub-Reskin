@@ -77,7 +77,7 @@ test("theme-local variables are substituted statically, bounded and never left f
   assert.match(reasons(".AppHeader{--theme-a:var(--theme-b);--theme-b:var(--theme-a);border-color:var(--theme-a)}"), /depends on itself/);
   assert.match(reasons(".AppHeader{border-color:var(--theme-missing)}"), /never declared/);
   assert.match(reasons(".AppHeader{--theme-x:1px solid red}"), /holds one value/);
-  assert.match(reasons(".AppHeader:hover{--theme-x:red}"), /cannot change inside @media or a state selector/);
+  assert.match(reasons(".AppHeader:hover{--theme-x:red}"), /cannot change inside @media, @supports or a state selector/);
   assert.match(reasons(".AppHeader{border-color:var(--color-accent-fg)}"), /not an audited Reskin variable/);
   // Fallbacks are validated, then dropped: the host always defines its variables.
   assert.equal(ok(".AppHeader{border-color:var(--reskin-accent,red)}").css, ".AppHeader{border-color:var(--reskin-accent)}");
@@ -132,7 +132,41 @@ test("gradientCss admits exactly one bounded gradient value and size, with no va
 
 test("deferred CSS conveniences are rejected with their own reason", () => {
   assert.match(reasons(".AppHeader{ & .x{border-color:red}}"), /nesting is not available/);
-  assert.match(reasons("@supports (color:red){.AppHeader{border-color:red}}"), /@supports is not available/);
+});
+
+test("@supports tests permitted properties one declaration at a time, negated or joined, and keeps every rule checked", () => {
+  const tag = '[data-reskin-slot="profile.tag"]{border-radius:6px 0;corner-shape:bevel}';
+  const admitted = ok(`@supports NOT (Corner-Shape: BEVEL){${tag}}`);
+  assert.equal(admitted.css, `@supports not (corner-shape:bevel){${tag}}`);
+  assert.deepEqual(admitted.rules[0].conditions, ["@supports not (corner-shape:bevel)"]);
+  const nested = ok(`@media (min-width:600px){@supports (corner-shape:bevel) and (border-radius:4px 0){@supports not (corner-shape:notch){${tag}}}}`);
+  assert.deepEqual(nested.rules[0].conditions, ["@media (min-width:600px)", "@supports (corner-shape:bevel) and (border-radius:4px 0)", "@supports not (corner-shape:notch)"]);
+  ok(`@supports (corner-shape:bevel) or (corner-shape:notch){${tag}}`);
+  // The compiler keeps the chain, outermost first.
+  const compiled = compileCss(nested, { registry: null, cssAllowed: true, preferences: FULL });
+  assert.ok(compiled.ok);
+  assert.match(compiled.css, /^@media \(min-width:600px\)\{@supports \(corner-shape:bevel\) and \(border-radius:4px 0\)\{@supports not \(corner-shape:notch\)\{:where/);
+
+  const refused = {
+    [`@supports ((corner-shape:bevel) or (border-radius:1px)){${tag}}`]: /could not be read as CSS/,
+    [`@supports (not (corner-shape:bevel)) or (border-radius:1px){${tag}}`]: /could not be read as CSS/,
+    [`@supports (corner-shape:bevel) and (border-radius:1px) or (color:red){${tag}}`]: /one of and or or, never both/,
+    [`@supports not (corner-shape:bevel) and (color:red){${tag}}`]: /not tests one declaration/,
+    [`@supports selector(:has(a)){${tag}}`]: /not selectors, fonts or functions/,
+    [`@supports (display:grid){${tag}}`]: /display is not one/,
+    [`@supports (-moz-appearance:none){${tag}}`]: /-moz-appearance is not one/,
+    [`@supports (--theme-edge:1px){${tag}}`]: /cannot test a custom property/,
+    [`@supports (color:var(--reskin-accent)){${tag}}`]: /literal values, no variables/,
+    [`@supports (background-image:url(https://leak.invalid/x)){${tag}}`]: /url\(\) is not allowed/,
+    [`@supports (corner-shape:pointy){${tag}}`]: /not a valid corner-shape value/,
+    [`@supports (color:inherit){${tag}}`]: /inherit is not allowed/,
+    [`@supports (border-radius:1px !important){${tag}}`]: /no !important/,
+    ["@supports (corner-shape:bevel){.AppHeader{display:none}}"]: /display is not an allowed property/,
+    ["@supports (corner-shape:bevel){.AppHeader{--theme-edge:red;border-color:var(--theme-edge)}}"]: /cannot change inside @media, @supports/,
+  };
+  for (const [css, reason] of Object.entries(refused)) assert.match(reasons(css), reason, css);
+  // Each refusal is located.
+  assert.match(reasons(`@supports (display:grid){${tag}}`), /line 1, column 12/);
 });
 
 test("without a registry, native-node CSS fails closed and owned decorations still compile", () => {
