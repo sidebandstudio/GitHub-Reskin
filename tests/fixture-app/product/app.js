@@ -80,14 +80,18 @@ window.reskinViews = {
   },
 };
 
-function applyTheme(theme, prefs, anchors, { play = false, extraCss = "" } = {}) {
+// The content host's part: compiled CSS in one owned style node, the CSS scope marker on the root
+// when the theme's admitted CSS may apply, then owned nodes at located anchors.
+function applyTheme(theme, prefs, anchors, { play = false, extraCss = "", cssAllowed = false } = {}) {
   const { plan, resolved } = resolveFor(theme);
   const style = document.createElement("style");
   style.setAttribute("data-reskin-style", "");
-  const fontUrl = prefs.enabled && prefs.extras && prefs.fonts && resolved.policy === "themed" ? resources.fontUrl(resolved.font) : null;
-  style.textContent = [extraCss, primer.compileGitHub(resolved, plan, prefs).css, fontUrl ? fontFaceCss(resolved.font, fontUrl) : "", compileAppearance(resolved, prefs, "github")].join("\n");
+  const fontUrl = prefs.enabled && prefs.fonts && resolved.policy === "themed" ? resources.fontUrl(resolved.font) : null;
+  const owned = { css: theme.css ?? null, cssAllowed };
+  style.textContent = [extraCss, primer.compileGitHub(resolved, plan, prefs).css, fontUrl ? fontFaceCss(resolved.font, fontUrl) : "", compileAppearance(resolved, prefs, "github", owned)].join("\n");
   document.head.append(style);
-  const decoration = mountAppearance(document.body, resolved, prefs, anchors());
+  if (cssAllowed && resolved.policy === "themed") document.documentElement.setAttribute("data-reskin-css", "active");
+  const decoration = mountAppearance(document.body, resolved, prefs, anchors(), owned);
   if (play) decoration.play();
   return { resolved, style, decoration };
 }
@@ -101,7 +105,7 @@ window.reskinNative = {
     style.textContent = FIXTURE_CSS + nativeBaseline(index, standard(document.documentElement.getAttribute("data-color-mode")).id);
     document.head.append(style);
   },
-  apply(theme, prefs, { play = false, hostile = false } = {}) {
+  apply(theme, prefs, { play = false, hostile = false, cssAllowed = false } = {}) {
     window.reskinNative.remove();
     let count = 0;
     const anchors = () => {
@@ -109,7 +113,7 @@ window.reskinNative = {
       count = found.length;
       return found;
     };
-    const { resolved, style, decoration } = applyTheme(theme, prefs, anchors, { play });
+    const { resolved, style, decoration } = applyTheme(theme, prefs, anchors, { play, cssAllowed });
     applied = { style, decoration };
     return { sourceHash: resolved.sourceHash, seedHash: resolved.seedHash, policy: resolved.policy, owned: decoration.owned, animated: decoration.animated, anchors: count };
   },
@@ -117,6 +121,7 @@ window.reskinNative = {
   remove() {
     applied?.decoration.destroy();
     applied?.style.remove();
+    document.documentElement.removeAttribute("data-reskin-css");
     applied = null;
   },
 };
@@ -139,7 +144,7 @@ window.reskinGithub = {
     return {
       policy: resolved.policy,
       anchors: found.map((a) => ({ slot: a.slot, insert: a.insert })),
-      slots: [...document.querySelectorAll("[data-reskin-owned]")].map((n) => n.getAttribute("data-reskin-owned")),
+      slots: [...document.querySelectorAll("[data-reskin-owned]:not([data-reskin-slot])")].map((n) => n.getAttribute("data-reskin-owned")),
       owned: decoration.owned,
     };
   },

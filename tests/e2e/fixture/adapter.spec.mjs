@@ -26,7 +26,7 @@ test("no authored text, control name or native structure changes, and removal re
   expect(await page.evaluate(authored)).toEqual(before.text);
   expect(await page.locator("body").ariaSnapshot()).toBe(before.aria);
   for (const name of ["Follow", "Star sentinel-repo", "Year", "Find a repository"]) await expect(page.getByRole(/^Star|Follow/.test(name) ? "button" : name === "Year" ? "combobox" : "searchbox", { name, exact: true })).toHaveCount(1);
-  const slots = await page.evaluate(() => [...document.querySelectorAll("[data-reskin-owned]")].map((n) => [n.dataset.reskinOwned, n.getAttribute("aria-hidden"), n.closest(".markdown-body,.comment-body,.js-issue-title,button,form,summary") === null]));
+  const slots = await page.evaluate(() => [...document.querySelectorAll("[data-reskin-owned]:not([data-reskin-slot])")].map((n) => [n.dataset.reskinOwned, n.getAttribute("aria-hidden"), n.closest(".markdown-body,.comment-body,.js-issue-title,button,form,summary") === null]));
   expect(slots.map(([slot]) => slot).sort()).toEqual(["contributions.caption", "profile.activity.heading", "profile.organizations.heading", "profile.pinned.heading", "profile.tag"]);
   for (const [, hidden, outside] of slots) {
     expect(hidden).toBe("true");
@@ -92,7 +92,7 @@ test("appended heading and tag decoration survives beside its own copy, with Git
   }));
   const before = await native();
   await page.evaluate(([t, p]) => window.reskinNative.apply(t, p), [THEME, PREFS]);
-  const placed = await page.evaluate(() => [...document.querySelectorAll("[data-reskin-owned]")].map((n) => [n.dataset.reskinOwned, n.parentElement.matches("h2, .vcard-names-container") ? "inside" : "beside", n.querySelectorAll(".rs-fx").length]));
+  const placed = await page.evaluate(() => [...document.querySelectorAll("[data-reskin-owned]:not([data-reskin-slot])")].map((n) => [n.dataset.reskinOwned, n.parentElement.matches("h2, .vcard-names-container") ? "inside" : "beside", n.querySelectorAll(".rs-fx").length]));
   for (const slot of ["profile.pinned.heading", "profile.activity.heading", "profile.organizations.heading", "profile.tag"]) {
     const entry = placed.find(([s]) => s === slot);
     expect(entry, slot).toBeTruthy();
