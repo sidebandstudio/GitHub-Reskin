@@ -2,6 +2,7 @@
 // Full/Calm, Extra theme text, on/off, search, groups, keyboard use, failure recovery, miniatures
 // that follow the preferences, and popup geometry in every state, short windows and real zoom.
 import { readFileSync } from "node:fs";
+import { SLOTS } from "../../../extension/content/github/selectors.js";
 import { resolveTheme } from "../../../packages/engine/index.js";
 import { MODE_INDEX, standardSeed } from "../../../packages/primer/index.js";
 import { CHOOM, CHOOM_CANVAS, expect, openGitHub, openPage, painted, storage, test, waitPainted } from "./helpers.mjs";
@@ -9,16 +10,22 @@ import { CHOOM, CHOOM_CANVAS, expect, openGitHub, openPage, painted, storage, te
 const frieren = JSON.parse(readFileSync(new URL("../../../themes/anime/longroad-petals.reskin.json", import.meta.url), "utf8"));
 const FRIEREN_CANVAS = resolveTheme(frieren, { seed: standardSeed(MODE_INDEX, "light"), policy: "themed", reducedMotion: false, forcedColors: false }).tokens.canvas;
 const card = (popup, show) => popup.locator(".rs-card", { hasText: show });
-const FLAVOR = ["profile.activity.heading", "profile.organizations.heading", "profile.pinned.heading", "profile.tag"];
-const CHOOM_COPY = ["// choom", "Crews", "Preem picks", "Gig log"];
+// Choom's flavor on the profile fixture, from the theme's slots and the adapter's profile slots:
+// the owned slots as painted() lists them, and their copy in any order.
+const choom = JSON.parse(readFileSync(new URL("../../../themes/anime/choom-circuit.reskin.json", import.meta.url), "utf8")).flavor.slots;
+const PROFILE_SLOTS = new Set(SLOTS.filter((slot) => slot.route === "profile").map((slot) => slot.slot));
+const FLAVOR = Object.keys(choom).filter((slot) => PROFILE_SLOTS.has(slot)).sort();
+const CHOOM_COPY = FLAVOR.map((slot) => choom[slot]).sort();
+const copyOf = (state) => [...state.copy].sort();
 const TEXT = "Extra theme text";
 
 test("a new install paints Choom Circuit on GitHub with its flavor, and the popup leads with the anime", async ({ extension }) => {
   const github = await openGitHub(extension);
   const state = await waitPainted(github, (s) => s.owned.length > 0);
   expect(state).toMatchObject({ boot: "ready", styled: true, canvas: CHOOM_CANVAS });
-  expect(state.owned).toEqual(["profile.activity.heading", "profile.organizations.heading", "profile.pinned.heading", "profile.tag"]);
-  expect(state.copy).toContain("// choom");
+  expect(state.owned).toEqual(FLAVOR);
+  expect(FLAVOR).toEqual(expect.arrayContaining(["footer.signoff", "profile.achievements.heading", "profile.tag"]));
+  expect(copyOf(state)).toEqual(CHOOM_COPY);
 
   const popup = await openPage(extension, "popup");
   await expect(popup.locator("[data-rs=summary-show]")).toHaveText("Cyberpunk: Edgerunners");
@@ -36,7 +43,7 @@ test("a new install paints Choom Circuit on GitHub with its flavor, and the popu
 
 test("a theme click commits to the open GitHub tab at once, and Undo restores the previous theme once", async ({ extension }) => {
   const github = await openGitHub(extension);
-  await waitPainted(github, (s) => s.canvas === CHOOM_CANVAS && s.owned.length === 4);
+  await waitPainted(github, (s) => s.canvas === CHOOM_CANVAS && s.owned.length === FLAVOR.length);
   const popup = await openPage(extension, "popup");
   await expect(popup.locator("[data-rs=undo]")).toBeHidden();
 
@@ -56,9 +63,9 @@ test("a theme click commits to the open GitHub tab at once, and Undo restores th
   await expect(again.locator("[data-rs=undo]")).toBeHidden();
   await expect(again.locator("[data-rs=summary-name]")).toHaveText("Choom Circuit");
   // The same document gets Choom's colors and its whole flavor back, without a reload.
-  const state = await waitPainted(github, (s) => s.canvas === CHOOM_CANVAS && s.owned.length === 4);
+  const state = await waitPainted(github, (s) => s.canvas === CHOOM_CANVAS && s.owned.length === FLAVOR.length);
   expect(state.owned).toEqual(FLAVOR);
-  expect(state.copy).toEqual(CHOOM_COPY);
+  expect(copyOf(state)).toEqual(CHOOM_COPY);
   expect((await storage(extension.worker))["reskin.settings"].selectedThemeId).toBe(CHOOM);
 
   // A new choice makes Undo available again.
@@ -68,7 +75,7 @@ test("a theme click commits to the open GitHub tab at once, and Undo restores th
 
 test("Calm keeps the colors and removes flavor; Full, Extra theme text and theme changes restore it on the same document", async ({ extension }) => {
   const github = await openGitHub(extension);
-  await waitPainted(github, (s) => s.owned.length === 4);
+  await waitPainted(github, (s) => s.owned.length === FLAVOR.length);
   const origin = await github.evaluate(() => performance.timeOrigin);
   const popup = await openPage(extension, "popup");
   const selectedMini = popup.locator(".rs-card[aria-pressed=true] .rs-mini");
@@ -87,8 +94,8 @@ test("Calm keeps the colors and removes flavor; Full, Extra theme text and theme
   await expect(popup.getByRole("switch", { name: TEXT })).toBeChecked();
 
   await popup.getByRole("radio", { name: "Full" }).check();
-  state = await waitPainted(github, (s) => s.owned.length === 4);
-  expect(state.copy).toEqual(CHOOM_COPY);
+  state = await waitPainted(github, (s) => s.owned.length === FLAVOR.length);
+  expect(copyOf(state)).toEqual(CHOOM_COPY);
 
   await popup.getByRole("switch", { name: TEXT }).uncheck();
   await expect(popup.locator("[data-rs=status]")).toHaveText("Saved.");
@@ -96,15 +103,15 @@ test("Calm keeps the colors and removes flavor; Full, Extra theme text and theme
   expect(state.canvas).toBe(CHOOM_CANVAS);
   await expect(selectedMini.locator(".rs-mini-tag")).toHaveCount(0);
   await popup.getByRole("switch", { name: TEXT }).check();
-  state = await waitPainted(github, (s) => s.copy.length === 4);
-  expect(state.copy).toEqual(CHOOM_COPY);
+  state = await waitPainted(github, (s) => s.copy.length === FLAVOR.length);
+  expect(copyOf(state)).toEqual(CHOOM_COPY);
 
   // Theme changes and Undo keep the flavor following the theme on this same document.
   await card(popup, "Frieren").click();
   await waitPainted(github, (s) => s.canvas === FRIEREN_CANVAS && s.copy.includes("// travel journal"));
   await popup.locator("[data-rs=undo]").click();
-  state = await waitPainted(github, (s) => s.canvas === CHOOM_CANVAS && s.owned.length === 4);
-  expect(state.copy).toEqual(CHOOM_COPY);
+  state = await waitPainted(github, (s) => s.canvas === CHOOM_CANVAS && s.owned.length === FLAVOR.length);
+  expect(copyOf(state)).toEqual(CHOOM_COPY);
   expect(await github.evaluate(() => performance.timeOrigin)).toBe(origin);
 
   // Switching themes never turns a preference back on.
