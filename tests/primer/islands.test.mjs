@@ -35,9 +35,10 @@ const compiled = compileGitHub(resolved, { seedMode: "dark", policy: "themed" },
 const GREEN = "rgb(64, 196, 99)";
 
 // A stylesheet as an engine without container style queries applies it: every style-query block
-// removed, the blocks nested inside it included.
+// removed, the blocks nested inside it included, and the selector fallback's condition as Gecko
+// before Firefox 151 evaluates it, without position-anchor.
 function stripStyleQueries(text) {
-  let css = text;
+  let css = text.replaceAll("@supports selector(:-moz-focusring) and (not (position-anchor: normal)){", "@supports selector(:-moz-focusring){");
   for (let i = css.indexOf("@container style(--reskin-on: 1){"); i >= 0; i = css.indexOf("@container style(--reskin-on: 1){")) {
     let depth = 0;
     let j = css.indexOf("{", i);

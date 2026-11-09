@@ -2,25 +2,32 @@
 // pills, the primary button's shadow, neutral label and topic pairs, scrollbars and contribution
 // cell shape and glow. Each rule names GitHub's own stable classes or component attributes,
 // recorded on github.com on 2026-11-08, and only presentation properties: no layout, size, text,
-// hit target or focus outline changes. The compiler scopes every rule to eligible islands. Pure.
+// hit target or focus outline changes. The compiler scopes every rule to eligible islands and
+// keeps protected UI out of all of them. Pure.
+//
+// A target is a list of alternatives, each led by its own class, element or attribute, never one
+// :is() of several, so engines index each by that key and test it only against those elements.
 //
 // Full keeps every request. Calm keeps colors, corners and borders, renders bevels square and
 // drops shadows and glow. Effects off drops shadows and glow too.
 
-// Panels. A box's first and last children carry its corners, as GitHub's own Box rules do.
+// Panels. A box's first and last children carry its corners, as GitHub's own Box rules do. They
+// have no key of their own, so the parent test comes right after the position test.
 const BOX = ".Box";
-const BOX_FIRST = ".Box > :first-child";
-const BOX_LAST = ".Box > :last-child";
+const BOX_FIRST = ":first-child:is(.Box > *)";
+const BOX_LAST = ":last-child:is(.Box > *)";
+const all = (keys, rest) => keys.map((key) => `${key}${rest}`).join(",");
 // Legacy and Primer React buttons, outside button groups, whose joined corners stay GitHub's.
-const BUTTON = ':is(.btn,[data-component="Button"],[data-component="IconButton"]):not(.btn-link,.btn-octicon,.BtnGroup-item,.BtnGroup > *,[data-component="ButtonGroup"] *)';
+const BUTTON = all([".btn", '[data-component="Button"]', '[data-component="IconButton"]'], ':not(.btn-link,.btn-octicon,.BtnGroup-item,.BtnGroup > *,[data-component="ButtonGroup"] *)');
 // The primary button's shadow keeps GitHub's own focus styles: a focused primary button has its
 // inner contrasting ring, so the rule leaves it while focused.
-const PRIMARY = ':is(.btn-primary,[data-component="Button"][data-variant="primary"]):not(:focus-visible,:disabled,[aria-disabled="true"])';
-const PRIMARY_HOVER = ':is(.btn-primary,[data-component="Button"][data-variant="primary"]):hover:not(:focus-visible,:disabled,[aria-disabled="true"])';
+const PRIMARY_KEYS = [".btn-primary", '[data-component="Button"][data-variant="primary"]'];
+const PRIMARY = all(PRIMARY_KEYS, ':not(:focus-visible,:disabled,[aria-disabled="true"])');
+const PRIMARY_HOVER = all(PRIMARY_KEYS, ':hover:not(:focus-visible,:disabled,[aria-disabled="true"])');
 // Neutral labels only. Status variants, issue labels and achievement tiers keep their meaning.
-const LABEL = ':is(.Label:not(.Label--primary,.Label--accent,.Label--success,.Label--attention,.Label--severe,.Label--danger,.Label--done,.Label--sponsors,.achievement-tier-label,.hx_IssueLabel,.IssueLabel),[data-component="Label"]:is([data-variant="secondary"],[data-variant="default"],:not([data-variant])))';
+const LABEL = '.Label:not(.Label--primary,.Label--accent,.Label--success,.Label--attention,.Label--severe,.Label--danger,.Label--done,.Label--sponsors,.achievement-tier-label,.hx_IssueLabel,.IssueLabel),[data-component="Label"]:is([data-variant="secondary"],[data-variant="default"],:not([data-variant]))';
 // Issue labels take the label shape only; their category colors stay GitHub's formula.
-const ISSUE_LABEL = ":is(.hx_IssueLabel,.IssueLabel)";
+const ISSUE_LABEL = ".hx_IssueLabel,.IssueLabel";
 // Legacy topic pills. GitHub's React topic pills carry only a hashed class; they read the mapped
 // accent and topic border variables instead.
 const TOPIC = ".topic-tag";

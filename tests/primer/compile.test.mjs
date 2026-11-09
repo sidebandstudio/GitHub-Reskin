@@ -4,6 +4,7 @@ import { CSS_VARIABLES } from "../../packages/contracts/index.js";
 import { cssVariables } from "../../packages/engine/variables.js";
 import { parseStylesheet } from "../../packages/primer/css.js";
 import { colorAt, compileGitHub, coveredModes, emittedColors, islandScope, MODE_INDEX, modeSelectors, selectMode } from "../../packages/primer/index.js";
+import { PROTECTED } from "../../packages/primer/registry.js";
 import { EXTRAS_OFF, nativeResolved, PREFS, readJson, resolvedFromSeed } from "./helpers.mjs";
 
 const mappings = readJson("packages/primer/mappings.json");
@@ -22,6 +23,12 @@ function compounds(grouped) {
   }
   return out;
 }
+// The stylesheet without the registry's fixed protected-UI list, whose link and form tests are
+// substring matches on GitHub's own URLs, not on mode attributes or theme input.
+const withoutProtected = (css) => css.replaceAll(PROTECTED, "");
+const GRAPH = '.js-highlight-blob,.Progress-item:is(main #js-contribution-activity .Progress[role="img"] > *):not(.markdown-body *)';
+const PROTECTED_UI = `${PROTECTED},[data-reskin-protected]`;
+const UNPROTECTED = `:not(${PROTECTED_UI},:is(${PROTECTED_UI}) *)`;
 const scopeOf = (seedMode, branch) => islandScope(coveredModes(MODE_INDEX, seedMode), Object.keys(MODE_INDEX.modes), (m) => MODE_INDEX.modes[m].base, branch);
 
 // The innermost rules of a compiled stylesheet: [selectors, declarations, media path].
@@ -90,7 +97,7 @@ test("theme scope covers exactly the plan's modes; high-contrast and other famil
   ].sort());
   assert.deepEqual(themedOf(darkBranch).filter((c) => c.startsWith("[data-color-mode=auto]")).sort(), ["[data-color-mode=auto][data-dark-theme=light]", "[data-color-mode=auto][data-dark-theme=dark]", "[data-color-mode=auto][data-dark-theme=dark_dimmed]"].sort());
   // No blanket rule on every theme attribute and no substring matching.
-  assert.doesNotMatch(css, /\[data-(?:light|dark)-theme\]\s*\{|:root\s*[,{]|\*=|\^=|\$=/);
+  assert.doesNotMatch(withoutProtected(css), /\[data-(?:light|dark)-theme\]\s*\{|:root\s*[,{]|\*=|\^=|\$=/);
   for (const sel of modeSelectors().filter((s) => s.policy !== "themed" || !["light", "dark", "dark_dimmed"].includes(s.mode))) {
     for (const rule of main) assert.ok(!themedOf(rule).includes(sel.selector), `${sel.selector} is not themed by the standard plan`);
   }
@@ -144,7 +151,7 @@ test("component rules follow a subject's own island, then the nearest island: th
   const [resolved, p] = themed("light");
   const { css } = compileGitHub(resolved, p, PREFS);
   const all = rules(css);
-  const graph = all.filter((r) => r.selectors.some((s) => s.includes(".js-highlight-blob")));
+  const graph = all.filter((r) => r.selectors.some((s) => s.startsWith(".js-highlight-blob")));
   assert.equal(graph.length, 6);
   const branchOf = (r) => (r.media[1].startsWith("not") ? "light" : "dark");
   // A graph that is itself an island takes the theme only through its own themed mode.
@@ -152,21 +159,33 @@ test("component rules follow a subject's own island, then the nearest island: th
   assert.equal(own.length, 2);
   for (const r of own) {
     const scope = scopeOf("light", branchOf(r));
-    assert.deepEqual(r.selectors, [`:is(.js-highlight-blob,.Progress-item:is(main #js-contribution-activity .Progress[role="img"] > *):not(.markdown-body *))${scope.themed}:not(:has(${scope.unsafe}))`]);
+    // Each alternative keeps its own leading key, and protected UI keeps GitHub's graph.
+    assert.deepEqual(r.selectors, GRAPH.split(/,(?=\.)/).map((t) => `${t}${scope.themed}:not(:has(${scope.unsafe}))${UNPROTECTED}`));
   }
-  const gecko = graph.filter((r) => r.media.includes("selector(:-moz-focusring)"));
+  // Only Gecko without style queries, before Firefox 151, which also first accepts
+  // position-anchor:normal, runs the selector fallback.
+  const gecko = graph.filter((r) => r.media.includes("selector(:-moz-focusring) and (not (position-anchor: normal))"));
   assert.equal(gecko.length, 2);
-  // One nested rule per branch holds every Gecko subject, under the nearest-island test.
-  for (const r of gecko) assert.equal(r.selectors[0], `:is(${scopeOf("light", branchOf(r)).nearest}):is(.js-highlight-blob,.Progress-item:is(main #js-contribution-activity .Progress[role="img"] > *):not(.markdown-body *)):not([data-color-mode])`);
+  // One nested rule per branch holds every Gecko subject, its parent test last. The parent names
+  // the subjects first, graph alternatives among them, so any other element fails at once.
+  for (const r of gecko) {
+    const parent = r.selectors[0].slice(r.selectors[0].indexOf(":not([data-color-mode]):is(") + ":not([data-color-mode]):is(".length, -1);
+    assert.ok(parent.startsWith(`:is(${GRAPH},`), parent.slice(0, 80));
+    assert.ok(parent.endsWith(`)${UNPROTECTED}${scopeOf("light", branchOf(r)).nearest}`));
+    assert.deepEqual(r.selectors, GRAPH.split(/,(?=\.)/).map((t) => `${t}:not([data-color-mode]):is(${parent})`));
+  }
   // Every engine with container style queries reads the switch, through any depth.
   const queried = graph.filter((r) => r.media.includes("style(--reskin-on: 1)"));
   assert.equal(queried.length, 2);
   for (const r of queried) {
     assert.deepEqual(r.media.slice(2), ["style(--reskin-on: 1)"]);
-    assert.equal(r.selectors.length, 1);
-    // The style query reads the parent's switch, so a subject that is an island never matches.
-    assert.match(r.selectors[0], /:not\(\[data-color-mode\]\)$/);
-    assert.doesNotMatch(r.selectors[0], /data-color-mode=|:has/);
+    assert.equal(r.selectors.length, 2);
+    // The style query reads the parent's switch, so a subject that is an island never matches,
+    // and protected UI, which clears the switch for its descendants, is refused itself.
+    for (const s of r.selectors) {
+      assert.ok(s.endsWith(`:not([data-color-mode]):not(${PROTECTED_UI})`), s);
+      assert.doesNotMatch(s.replace(PROTECTED_UI, ""), /data-color-mode=|:has/);
+    }
     const values = Object.fromEntries(r.declarations.map((d) => [d.name, d.value]));
     assert.deepEqual(values, { fill: colorAt(resolved, "/graph/4"), stroke: colorAt(resolved, "/graph/4"), "background-color": colorAt(resolved, "/graph/3") });
   }
@@ -179,7 +198,7 @@ test("component rules follow a subject's own island, then the nearest island: th
   assert.equal(decl["--reskin-selection-background"], colorAt(resolved, "/tokens/selectionBackground"));
   // And every audited scalar variable advanced CSS and owned decorations read.
   for (const [name, value] of Object.entries(cssVariables(resolved))) assert.equal(decl[name], value, name);
-  const reset = all.filter((r) => r.declarations.some((d) => d.name === "--reskin-on" && d.value === "initial"));
+  const reset = all.filter((r) => r.selectors[0].startsWith(":where(") && r.declarations.some((d) => d.name === "--reskin-on" && d.value === "initial"));
   assert.equal(reset.length, 2);
   for (const r of reset) {
     assert.deepEqual(r.selectors, [":where([data-color-mode]:is([data-light-theme],[data-dark-theme]))"]);
@@ -189,13 +208,57 @@ test("component rules follow a subject's own island, then the nearest island: th
   }
 });
 
+test("structured component rules never reach protected UI or anything inside it, and protected UI clears the switches", () => {
+  for (const prefs of [{ ...PREFS, appearance: "full" }, { ...PREFS, appearance: "calm" }]) {
+    const [resolved, p] = themed("dark");
+    resolved.appearance = { ...resolved.appearance, shape: { corners: { style: "bevel", radius: 12 }, borders: { width: 4, style: "solid", color: "#123456" }, shadows: { style: "glow", color: "#fcee0a", opacity: 0.6, blur: 24, offset: 0 }, buttons: { style: "bevel", radius: 8 }, avatar: null } };
+    const { css } = compileGitHub(resolved, p, prefs);
+    const all = rules(css);
+    // Every rule that styles a GitHub element rather than an island: components, graph, labels
+    // and scroll containers, in every engine path.
+    const styled = all.filter((r) => r.declarations.length && !r.selectors.some((s) => s.startsWith(":where(") || s.includes("[data-color-mode]:not([data-light-theme],[data-dark-theme])") || s.startsWith("header.HeaderMktg") || s.startsWith(":root") || s.startsWith("::selection") || s.startsWith(":is([data-color-mode=")) && r.selectors.join(",") !== PROTECTED_UI);
+    assert.ok(styled.length > 12, prefs.appearance);
+    for (const r of styled) {
+      for (const s of r.selectors) {
+        const queried = r.media.includes("style(--reskin-on: 1)");
+        // Under the style query a protected subject is refused itself; its descendants read the
+        // cleared switch. The selector paths refuse it and everything inside it.
+        assert.ok(queried ? s.includes(`:not(${PROTECTED_UI})`) : s.includes(UNPROTECTED), `${prefs.appearance} ${r.media.join(" ")} ${s.slice(0, 80)}`);
+      }
+    }
+    // Protected UI clears every Reskin switch, after both branches, as a native island does.
+    const guard = all.at(-2);
+    assert.deepEqual(guard.selectors, PROTECTED_UI.split(/,(?=[a-z.[])/));
+    assert.deepEqual(guard.media, ["not all and (forced-colors: active)"]);
+    assert.deepEqual(guard.declarations.map((d) => [d.name, d.value, d.important]), [["--reskin-on", "initial", true], ...Object.keys(CSS_VARIABLES).map((name) => [name, "initial", true])]);
+  }
+});
+
+test("scrollbar colors reach the viewport through the root island and GitHub's scroll containers, not every element", () => {
+  const [resolved, p] = themed("dark");
+  const all = rules(compileGitHub(resolved, p, PREFS).css);
+  const thumb = resolved.appearance.colors.scrollbar;
+  const color = `${thumb.thumb} ${thumb.track}`;
+  // The eligible island itself carries them, for the viewport.
+  const main = all.find((r) => r.declarations.some((d) => d.name === "--bgColor-default"));
+  assert.equal(main.declarations.find((d) => d.name === "scrollbar-color").value, color);
+  // Its children start again from the browser's, at no specificity, so GitHub's own rules win.
+  const reset = all.filter((r) => r.selectors[0] === ":where([data-color-mode]:is([data-light-theme],[data-dark-theme])) > *");
+  assert.equal(reset.length, 2);
+  for (const r of reset) assert.deepEqual(r.declarations.map((d) => [d.name, d.value, d.important]), [["scrollbar-color", "auto", false]]);
+  // Scroll containers take them where their nearest island is eligible.
+  const scrollers = all.filter((r) => r.selectors.some((s) => s.startsWith("pre:not([data-color-mode])")));
+  assert.equal(scrollers.length, 4);
+  for (const r of scrollers) assert.equal(r.declarations.find((d) => d.name === "scrollbar-color").value, color);
+});
+
 test("the activity timeline's commit bars are recolored only through their verified structure", () => {
   const [resolved, p] = themed("dark");
   const { css } = compileGitHub(resolved, p, PREFS);
-  const bars = rules(css).filter((r) => r.selectors.some((s) => s.includes(".Progress-item")));
+  const bars = rules(css).filter((r) => r.selectors.some((s) => s.startsWith(".Progress-item")));
   assert.equal(bars.length, 6);
   for (const r of bars) {
-    assert.match(r.selectors[0], /\.Progress-item:is\(main #js-contribution-activity \.Progress\[role="img"\] > \*\):not\(\.markdown-body \*\)/);
+    assert.match(r.selectors.find((s) => s.startsWith(".Progress-item")), /^\.Progress-item:is\(main #js-contribution-activity \.Progress\[role="img"\] > \*\):not\(\.markdown-body \*\)/);
     assert.equal(r.declarations.find((d) => d.name === "background-color").value, colorAt(resolved, "/graph/3"));
     assert.equal(r.declarations.find((d) => d.name === "background-color").important, true);
     assert.ok(!r.declarations.some((d) => /^(width|content)$/.test(d.name)));
@@ -230,7 +293,7 @@ test("selection: Gecko reads each island's colors per element; Chromium sets the
 test("the compiler interpolates only validated colors, never metadata, flavor or URLs", () => {
   const [resolved, p] = themed("dark");
   const { css } = compileGitHub(resolved, p, PREFS);
-  assert.doesNotMatch(css, /<|script|alert|url\(|@import|https?:|expression\(/i);
+  assert.doesNotMatch(withoutProtected(css), /<|script|alert|url\(|@import|https?:|expression\(/i);
   const hostile = resolvedFromSeed(MODE_INDEX.modes.dark, { "/tokens/canvas": "#000;}*{x:y" });
   assert.throws(() => compileGitHub(hostile, p, PREFS), /lowercase #rrggbb/);
   const upper = resolvedFromSeed(MODE_INDEX.modes.dark, { "/tokens/text": "#FFFFFF" });
@@ -284,7 +347,7 @@ test("the Primer Brand footer gets its own mapped variables, scoped by structure
 test("issue labels use GitHub's formula for the theme's base, not the native mode name", () => {
   for (const [seedMode, threshold] of [["dark", ".6"], ["light", ".453"]]) {
     const [resolved, p] = themed(seedMode);
-    const labels = rules(compileGitHub(resolved, p, PREFS).css).filter((r) => r.selectors.some((s) => s.includes(".hx_IssueLabel")));
+    const labels = rules(compileGitHub(resolved, p, PREFS).css).filter((r) => r.selectors.some((s) => s.startsWith(".hx_IssueLabel")));
     assert.equal(labels.length, 6, seedMode);
     for (const r of labels) {
       assert.equal(r.declarations.find((d) => d.name === "--lightness-threshold").value, threshold);

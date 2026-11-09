@@ -1,12 +1,13 @@
 // Compiles a resolved theme into the trusted stylesheet GitHub actually reads: the family seed's
 // native baseline, then every mapped Primer variable from its resolved role, scoped to the GitHub
 // mode islands the plan covers. Native and forced-color resolutions emit nothing. Pure: no DOM.
-import { CSS_VARIABLES, ENGINE_VERSION, PAIR_MATRIX_VERSION, RENDERER_VERSION } from "../contracts/index.js";
+import { CSS_MARKERS, CSS_VARIABLES, ENGINE_VERSION, PAIR_MATRIX_VERSION, RENDERER_VERSION } from "../contracts/index.js";
 import { cssVariables } from "../engine/variables.js";
 import { appearanceMode, componentRules, scrollbarDeclarations } from "./components.js";
 import { MODE_INDEX } from "./data.js";
 import MAPPINGS from "./mappings.json" with { type: "json" };
 import { coveredModes } from "./modes.js";
+import { PROTECTED } from "./registry.js";
 import { ATTRIBUTED, BRAND_HEADER, islandScope } from "./selectors.js";
 
 export const COMPILER_VERSION = 2;
@@ -17,7 +18,18 @@ const PREFERENCE_KEYS = ["enabled", "extras", "text", "motion", "fonts", "effect
 // The activity overview's highlight shape, whose seasonal color is an attribute, and the profile
 // timeline's commit-share bars, which GitHub paints with an inline green. Only an explicit rule
 // recolors them. Widths, labels and content stay GitHub's.
-const GRAPH_TARGET = ':is(.js-highlight-blob,.Progress-item:is(main #js-contribution-activity .Progress[role="img"] > *):not(.markdown-body *))';
+const GRAPH_TARGET = '.js-highlight-blob,.Progress-item:is(main #js-contribution-activity .Progress[role="img"] > *):not(.markdown-body *)';
+// Protected UI, as the registry lists it and as admission marks it, keeps GitHub's own components
+// with everything inside it, and clears the Reskin switches its descendants' rules read.
+const PROTECTED_UI = `${PROTECTED},[${CSS_MARKERS.protected}]`;
+const UNPROTECTED = `:not(${PROTECTED_UI},:is(${PROTECTED_UI}) *)`;
+// Under a style query a descendant of protected UI already fails, since protected UI clears the
+// switch, so a rule there tests only the subject itself.
+const NOT_PROTECTED = `:not(${PROTECTED_UI})`;
+// Scrollbar colors inherit. Set on an island they would restyle every element in it, which on a
+// large diff costs more than a frame, so an island's children start from the browser's again and
+// only the viewport, through the root island, and GitHub's own scroll containers take them.
+const SCROLLERS = "pre,.overflow-auto,.overflow-x-auto,.overflow-y-auto,.overflow-scroll";
 
 // GitHub's own issue-label formulas, copied from its application stylesheet. GitHub picks one by
 // the native theme name, so a light theme over a native dark mode would get translucent labels
@@ -34,11 +46,35 @@ const SELECTION_TEXT = "--reskin-selection-text";
 const SELECTION_BACKGROUND = "--reskin-selection-background";
 const CLEARED = [ON, ...Object.keys(CSS_VARIABLES)].map((name) => `${name}:initial !important`).join(";");
 // Gecko matches these selectors. Before Firefox 151 it has no container style queries, and
-// Chromium's selection needs its own rule.
+// Chromium's selection needs its own rule. Firefox 151 also first accepts position-anchor:normal,
+// so the selector fallback runs only in the Gecko versions without style queries.
 const GECKO = "selector(:-moz-focusring)";
+const GECKO_FALLBACK = `${GECKO} and (not (position-anchor: normal))`;
 // Engines that draw corner-shape. Gecko never does, so its selector rules are always square.
 const BEVEL = `(corner-shape: bevel) and (not ${GECKO})`;
 const important = (declarations) => declarations.replace(/;/g, " !important;") + " !important";
+
+// The top-level alternatives of a selector list.
+function alternatives(list) {
+  const out = [];
+  let depth = 0;
+  let start = 0;
+  let quote = null;
+  for (let i = 0; i < list.length; i++) {
+    const c = list[i];
+    if (quote) quote = c === quote ? null : quote;
+    else if (c === '"' || c === "'") quote = c;
+    else if (c === "(" || c === "[") depth++;
+    else if (c === ")" || c === "]") depth--;
+    else if (c === "," && !depth) {
+      out.push(list.slice(start, i));
+      start = i + 1;
+    }
+  }
+  return [...out, list.slice(start)];
+}
+// Every alternative of `target` with `suffix`, as one list: each keeps its own leading key.
+const each = (target, suffix) => alternatives(target).map((t) => `${t}${suffix}`).join(",");
 
 const checkedBaselines = new WeakMap();
 // islandScope builds the same long selectors for every compile of a plan, so they are kept.
@@ -214,34 +250,43 @@ export function compileGitHub(resolved, modePlan, prefs, index = MODE_INDEX, opt
   const same = bevel.filter((r, i) => square[i]?.id === r.id && square[i].body === r.body);
   const onlyBevel = bevel.filter((r) => !same.includes(r));
   const onlySquare = square.filter((r) => !same.some((s) => s.id === r.id));
+  const scrollbar = wanted("scrollbar") ? scrollbarDeclarations(resolved).map((d) => `${d} !important`).join(";") : "";
   const branch = (name) => {
     const full = cachedScope(covered, known, baseOf, name);
     const scope = preview ? previewScope(full) : full;
     // Rules that are not inherited custom properties, for elements whose nearest island is
     // eligible. A graph, label or Brand island that is itself an island follows its own mode,
-    // below; other subjects that are islands themselves stay GitHub's.
+    // below; other subjects that are islands themselves stay GitHub's. The Brand selectors carry
+    // their own island test.
+    const guard = ":not([data-color-mode])";
+    const component = (r) => [r.target, r.body, guard];
     const subjects = [
-      ...(wanted("graph") ? [[`${GRAPH_TARGET}:not([data-color-mode])`, graph]] : []),
-      ...(wanted("issue-label") ? [[".hx_IssueLabel:not([data-color-mode])", label]] : []),
-      ...(preview ? [] : [[`${scope.brand}:not(${ATTRIBUTED})`, brandDeclarations], [`${scope.brandPage}:not(${ATTRIBUTED})`, brandPageDeclarations], [`${BRAND_HEADER}:not(${ATTRIBUTED})`, brandPageDeclarations]]),
-      ...same.map((r) => [`:is(${r.target}):not([data-color-mode])`, r.body]),
+      ...(wanted("graph") ? [[GRAPH_TARGET, graph, guard]] : []),
+      ...(wanted("issue-label") ? [[".hx_IssueLabel", label, guard]] : []),
+      ...(scrollbar ? [[SCROLLERS, scrollbar, guard]] : []),
+      ...(preview ? [] : [[scope.brand, brandDeclarations, `:not(${ATTRIBUTED})`], [scope.brandPage, brandPageDeclarations, `:not(${ATTRIBUTED})`], [BRAND_HEADER, brandPageDeclarations, `:not(${ATTRIBUTED})`]]),
+      ...same.map(component),
     ];
-    const rule = (prefix) => ([selector, body]) => `${prefix}${selector}{${body}}`;
-    const variants = (prefix) => [
-      ...subjects.map(rule(prefix)),
-      ...(onlyBevel.length ? [`@supports ${BEVEL}{`, ...onlyBevel.map((r) => `${prefix}:is(${r.target}):not([data-color-mode]){${r.body}}`), "}"] : []),
-      ...(onlySquare.length ? [`@supports not (${BEVEL}){`, ...onlySquare.map((r) => `${prefix}:is(${r.target}):not([data-color-mode]){${r.body}}`), "}"] : []),
+    // No nesting: an engine tests a nested rule's parent against every element. Each alternative
+    // is matched first by its own key, then by the cheap tests after it.
+    const rule = (more) => ([target, body, suffix]) => `${each(target, `${suffix}${more}`)}{${body}}`;
+    const variants = [
+      ...subjects.map(rule(NOT_PROTECTED)),
+      ...(onlyBevel.length ? [`@supports ${BEVEL}{`, ...onlyBevel.map(component).map(rule(NOT_PROTECTED)), "}"] : []),
+      ...(onlySquare.length ? [`@supports not (${BEVEL}){`, ...onlySquare.map(component).map(rule(NOT_PROTECTED)), "}"] : []),
     ];
+    const geckoRules = [...subjects, ...onlySquare.map(component)];
     return [
       // Every island with theme attributes clears the Reskin switches, at no specificity, and
       // eligible islands raise them again: native, unknown and suppressed islands stay cleared.
       `:where(${ATTRIBUTED}){${CLEARED};scrollbar-color:auto}`,
+      ...(scrollbar ? [`:where(${ATTRIBUTED}) > *{scrollbar-color:auto}`] : []),
       `${scope.eligible}{${declarations}}`,
       // Only a themed island's own descendants can suppress it, and a graph or label holds no
       // islands, so for these subjects no unsafe descendant at all is the same, shorter test. A
       // Brand footer holds no island of `others`, unsafe ones included.
-      ...(wanted("graph") ? [`${GRAPH_TARGET}${scope.themed}:not(:has(${scope.unsafe})){${graph}}`] : []),
-      ...(wanted("issue-label") ? [`.hx_IssueLabel${scope.themed}:not(:has(${scope.unsafe})){${label}}`] : []),
+      ...(wanted("graph") ? [`${each(GRAPH_TARGET, `${scope.themed}:not(:has(${scope.unsafe}))${UNPROTECTED}`)}{${graph}}`] : []),
+      ...(wanted("issue-label") ? [`.hx_IssueLabel${scope.themed}:not(:has(${scope.unsafe}))${UNPROTECTED}{${label}}`] : []),
       ...(preview ? [] : [`${scope.brand}${scope.themed}{${brandDeclarations}}`]),
       // The marketing header, usually an island itself, takes the Brand page mapping by the same
       // shorter test: it holds no islands.
@@ -249,14 +294,16 @@ export function compileGitHub(resolved, modePlan, prefs, index = MODE_INDEX, opt
       // The other component rules read the nearest island's switch with a style query, which
       // reads the parent's, so it never sees a subject's own island, through any depth.
       `@container style(${ON}: 1){`,
-      ...variants(""),
+      ...variants,
       "}",
       // Gecko before Firefox 151 matches selectors instead, once for every subject through one
-      // nested rule, and an engine with neither keeps GitHub's components. Gecko draws no
-      // corner-shape, so its bevels are square.
-      `@supports ${GECKO}{`,
-      `${scope.nearest}{`,
-      ...[...subjects, ...onlySquare.map((r) => [`:is(${r.target}):not([data-color-mode])`, r.body])].map(rule("&")),
+      // nested rule whose nearest-island test is too long to repeat, and an engine with neither
+      // keeps GitHub's components. Gecko draws no corner-shape, so its bevels are square. Gecko
+      // tests a nested rule's parent against every element, so the parent first names the
+      // subjects themselves and fails at once for any other element.
+      `@supports ${GECKO_FALLBACK}{`,
+      `:is(${geckoRules.map(([target]) => target).join(",")})${UNPROTECTED}${scope.nearest}{`,
+      ...geckoRules.map(rule("&")),
       "}",
       "}",
       ...(wanted("selection")
@@ -283,6 +330,9 @@ export function compileGitHub(resolved, modePlan, prefs, index = MODE_INDEX, opt
     "@media (prefers-color-scheme: dark){",
     branch("dark"),
     "}",
+    // Last, protected UI clears the Reskin switches for itself and everything in it, as a native
+    // island does, so no style-queried rule or Reskin variable reaches inside.
+    `${PROTECTED_UI}{${CLEARED}}`,
     // Gecko matches selection per element and paints HighlightText on Highlight by default, which
     // an element outside every themed island keeps.
     ...(wanted("selection") ? [`@supports ${GECKO}{::selection{color:var(${SELECTION_TEXT},HighlightText);background-color:var(${SELECTION_BACKGROUND},Highlight)}}`] : []),
