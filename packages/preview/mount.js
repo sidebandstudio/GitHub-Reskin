@@ -9,9 +9,10 @@
 // decoration.
 import { PREVIEW_VIEWS, RENDERER_VERSION } from "../contracts/index.js";
 import { repairTheme, resolveTheme } from "../engine/index.js";
-import { validateTheme } from "../format/index.js";
+import { escapeCssForHtml, validateTheme } from "../format/index.js";
 import { FONT_BY_ID, compileAppearance, fontFaceCss, mountAppearance, noResources } from "../appearance/index.js";
 import { motionMs } from "../appearance/effects.js";
+import { THEMED_SWITCH } from "../appearance/paint.js";
 import { LIMITS } from "../appearance/registry.js";
 import { fixtureBody, serializeFixture } from "./serialize.js";
 import { FIXTURE_CSS } from "./styles.js";
@@ -69,6 +70,13 @@ function checkOptions({ theme, preferences }) {
   if (!result.ok) throw new TypeError(`The preview needs a valid theme: ${(result.issues || []).map((i) => i.message).join("; ")}`);
   for (const key of ["enabled", "extras", "text", "motion", "fonts", "effects"]) if (typeof preferences?.[key] !== "boolean") throw new TypeError(`preferences.${key} must be a boolean`);
 }
+const checkCssAllowed = (value) => {
+  if (value !== undefined && typeof value !== "boolean") throw new TypeError("cssAllowed must be a boolean");
+  return value === true;
+};
+// The scope marker the host issues where a theme's admitted CSS may apply; compiled owned rules
+// require it on an ancestor. On github.com the content host sets it on the document root.
+const CSS_SCOPE = "data-reskin-css";
 
 const LAYERS = ["fixture", "native", "theme", "fonts", "appearance"];
 const SHELL = `<!doctype html><html lang="en"><head><meta charset="utf-8">${LAYERS.map((name) => `<style data-layer="${name}"></style>`).join("")}</head><body></body></html>`;
@@ -76,7 +84,7 @@ const SHELL = `<!doctype html><html lang="en"><head><meta charset="utf-8">${LAYE
 /**
  * Paints the fixture into any trusted document: the preview's layout document, a test page or a
  * build-time DOM. The document gets the fixture's five style layers in its head and the view as
- * its body. paint(state, options) applies { view, theme, preferences, before }; it resolves only
+ * its body. paint(state, options) applies { view, theme, preferences, before, cssAllowed }; it resolves only
  * when the theme or preferences changed, and plays motion only when asked to for an explicit
  * selection. options: { play, omit: layer names left empty, fontUrl: overrides the adapter's,
  * layoutOnly: write the style layers only when the body is laid out again }. A paint whose
@@ -94,6 +102,12 @@ export function createFixtureRenderer(fdoc, rt = runtime) {
     fdoc.head.append(style);
   }
   const layer = (name) => fdoc.head.querySelector(`style[data-layer="${name}"]`);
+  // The screen the preview stands for: the page holding the layout frame, whose own height is the
+  // whole fixture page.
+  const screen = () => {
+    const top = win?.parent ?? win;
+    return top ? { width: top.innerWidth, height: top.innerHeight } : null;
+  };
   let decoration = null;
   let built = null;
   let cacheKey = null;
@@ -123,7 +137,8 @@ export function createFixtureRenderer(fdoc, rt = runtime) {
     const { resolved } = resolve(state);
     const prefs = state.preferences;
     const themed = prefs.enabled && !state.before && resolved.policy === "themed";
-    if (!themed || !prefs.extras || !prefs.fonts || resolved.font === "system") return null;
+    // The heading role applies in Full and Calm alike while Fonts is on.
+    if (!themed || !prefs.fonts || resolved.font === "system") return null;
     const url = rt.resources.fontUrl(resolved.font);
     return url ? { id: resolved.font, url } : null;
   }
@@ -143,20 +158,27 @@ export function createFixtureRenderer(fdoc, rt = runtime) {
       // Only the selected face gets a rule, so only that one file can load.
       const face = font(state);
       const url = fontUrl === undefined ? face?.url : fontUrl;
+      const cssAllowed = Boolean(state.cssAllowed);
+      const owned = { css: state.theme.css ?? null, cssAllowed };
       const css = {
         fixture: FIXTURE_CSS,
         native: nativeBaseline(rt.modeIndex, plan.seedMode ?? standardMode(rt.modeIndex, state.theme.base)),
         theme: compiled?.css ?? "",
         fonts: face && url ? fontFaceCss(face.id, url) : "",
-        appearance: themed ? compileAppearance(resolved, prefs, "preview") : "",
+        appearance: themed ? escapeCssForHtml(compileAppearance(resolved, prefs, "preview", { ...owned, viewport: screen() })) : "",
       };
-      // Colors reach the body only through the style layers, so a color edit keeps the body.
-      const structure = JSON.stringify([state.view, state.theme.base, state.before, themed, prefs, resolved.policy, resolved.flavor, resolved.effects, resolved.font, Boolean(css.fonts), win?.innerWidth ?? 0]);
+      // Colors reach the body only through the style layers, so a color edit keeps the body. The
+      // structured appearance can move text (fonts, case, tracking, a banner), so it is structure.
+      const a = resolved.appearance;
+      const structure = JSON.stringify([state.view, state.theme.base, state.before, themed, prefs, resolved.policy, resolved.flavor, resolved.effects, resolved.font, Boolean(css.fonts), win?.innerWidth ?? 0, cssAllowed, owned.css, a?.fonts ?? null, a?.typography ?? null, Boolean(a?.paints?.profileBanner)]);
       const rebuilt = play || structure !== built?.structure || !fdoc.body.contains(built.root);
       // A layout document needs new styles only for a new layout; colors never move anything.
       if (rebuilt || !layoutOnly) {
         for (const name of LAYERS) {
-          const text = omit.includes(name) ? "" : css[name];
+          // A document without the Primer adapter's stylesheet, which only colors, keeps its island
+          // switch: the fixture has no island below its root, so the root's switch stands for the
+          // whole stylesheet, and the structured rules lay out as they do in the shown frame.
+          const text = !omit.includes(name) ? css[name] : name === "theme" && css.theme ? `:root{${THEMED_SWITCH}:1}` : "";
           if (layer(name).textContent !== text) layer(name).textContent = text;
         }
       }
@@ -172,8 +194,10 @@ export function createFixtureRenderer(fdoc, rt = runtime) {
           fdoc.body.replaceChildren(view.root);
         }
         built = { structure, nativeKey, view, root: view.root };
+        if (themed && cssAllowed) view.root.setAttribute(CSS_SCOPE, "active");
+        else view.root.removeAttribute(CSS_SCOPE);
         if (themed) {
-          decoration = mountAppearance(fdoc.body, resolved, prefs, view.anchors.filter((anchor) => !rt.dormantSlots.includes(anchor.slot)));
+          decoration = mountAppearance(fdoc.body, resolved, prefs, view.anchors.filter((anchor) => !rt.dormantSlots.includes(anchor.slot)), owned);
           if (play) decoration.play();
         }
       }
@@ -281,7 +305,7 @@ export function mountPreview(container, options) {
   const rt = runtime;
   const doc = container.ownerDocument;
   const win = doc.defaultView;
-  const state = { view: options.view, theme: options.theme, preferences: options.preferences, before: false };
+  const state = { view: options.view, theme: options.theme, preferences: options.preferences, before: false, cssAllowed: checkCssAllowed(options.cssAllowed) };
 
   let host = doc.createElement("div");
   host.className = "reskin-preview";
@@ -550,9 +574,11 @@ export function mountPreview(container, options) {
     update(next) {
       if (destroyed) return;
       checkOptions(next);
+      const cssAllowed = checkCssAllowed(next.cssAllowed);
       const selected = JSON.stringify(next.theme) !== JSON.stringify(state.theme);
       state.theme = next.theme;
       state.preferences = next.preferences;
+      state.cssAllowed = cssAllowed;
       // A newly selected theme is an explicit selection: its one pass of motion may play.
       request({ play: selected });
     },

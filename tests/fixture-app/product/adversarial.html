@@ -10,10 +10,21 @@
 <body>
 <!-- Fictional content. Authored text deliberately repeats GitHub's own section names, slot copy
      and class names, and every native control has a real accessible name. -->
+<header class="AppHeader" role="banner">
+  <div class="AppHeader-globalBar">
+    <div class="AppHeader-globalBar-start">
+      <a href="#home" class="AppHeader-logo" aria-label="Homepage"><svg class="octicon" width="32" height="32" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor"><circle cx="8" cy="8" r="6.5"></circle></svg></a>
+      <nav class="AppHeader-context" aria-label="Page context"><a href="#user"><span class="AppHeader-context-item">sentinel-user</span></a></nav>
+    </div>
+    <div class="AppHeader-globalBar-end">
+      <label for="header-search" class="AppHeader-search">Search <input id="header-search" type="search" placeholder="SENTINEL-HEADER-3e1f"></label>
+    </div>
+  </div>
+</header>
 <main class="application-main page">
   <div class="layout">
     <div class="h-card">
-      <span class="avatar" style="width:128px;height:128px;margin-bottom:16px" role="img" aria-label="@sentinel-user"></span>
+      <span class="avatar avatar-user" style="width:128px;height:128px;margin-bottom:16px" role="img" aria-label="@sentinel-user"></span>
       <div class="vcard-names-container"><h1 class="vcard-names"><span class="vcard-fullname p-name">Sentinel User</span><span class="vcard-username p-nickname">sentinel-user</span></h1></div>
       <div class="after-names">
         <div class="user-profile-bio">SENTINEL-BIO-a41c: Pinned // choom view, Organizations</div>
