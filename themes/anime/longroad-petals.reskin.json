@@ -110,7 +110,7 @@
   },
   "colors": {
     "accent": "#655080",
-    "background": "#e9e5f3",
+    "background": "#fdfaf2",
     "contribution": "#4d3c69",
     "text": "#303245"
   },
@@ -211,7 +211,7 @@
     "selectionBackground": "#655080",
     "selectionText": "#ffffff",
     "success": "#22583b",
-    "surface": "#fffdf9",
+    "surface": "#f2eef8",
     "warning": "#724f0e"
   },
   "schemaVersion": 1,
