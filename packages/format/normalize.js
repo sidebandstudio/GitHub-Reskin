@@ -49,7 +49,8 @@ export function normalizeHex(value) {
 }
 
 // ASCII whitespace only; a no-break or other Unicode space is the author's choice.
-const collapse = (value) => value.replace(/[\t\n\v\f\r ]+/g, " ").replace(/^ | $/g, "");
+// Tested first, so long text that needs no change is not copied.
+const collapse = (value) => (/[\t\n\v\f\r]| {2}|^ | $/.test(value) ? value.replace(/[\t\n\v\f\r ]+/g, " ").replace(/^ | $/g, "") : value);
 
 function looksLikeV1(theme) {
   const { colors } = theme;
