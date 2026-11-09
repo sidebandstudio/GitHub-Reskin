@@ -44,8 +44,10 @@ export function mountOnboarding() {
       if (!theme) return;
       // The preview always shows the chosen theme; Before is the comparison with GitHub's own look.
       const preferences = { ...effectivePreferences(settings), enabled: true };
-      if (!preview) preview = mountPreview(container, { view: "profile", theme, preferences });
-      else preview.update({ theme, preferences });
+      // A bundled theme's own reviewed CSS applies, as on GitHub; a saved theme's waits for consent.
+      const cssAllowed = catalog.has(selectedId);
+      if (!preview) preview = mountPreview(container, { view: "profile", theme, preferences, cssAllowed });
+      else preview.update({ theme, preferences, cssAllowed });
     },
   });
 

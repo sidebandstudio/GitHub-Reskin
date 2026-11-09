@@ -26,7 +26,7 @@ const github = {
   classifyRoute: () => "profile",
   locateSlots: () => [],
 };
-const renderer = createRenderer({ github, resources });
+const renderer = createRenderer({ github, resources, catalog });
 const prefs = (patch = {}) => ({ enabled: true, appearance: "full", extras: true, text: true, motion: true, fonts: true, effects: true, ...patch });
 
 test("the embedded catalog is the validated catalog: same IDs, order, hashes and documents", () => {
@@ -83,10 +83,15 @@ test("the renderer paints Choom Circuit through C3's Primer compiler and C5's ap
   assert.match(full.css, /--bgColor-default:#0a0a17 !important/);
   assert.match(full.css, /--fgColor-accent:#fcee0a !important/);
   assert.match(full.css, /GitHub Reskin appearance, renderer 1/);
-  // Calm keeps colors and drops decoration; disabled leaves GitHub native.
+  // Full: the page grid and header rule as paint layers, owned-node rules, and Choom's own reviewed
+  // CSS behind the host scope marker.
+  assert.match(full.css, /linear-gradient/);
+  assert.match(full.css, /rs-slot--overlay/);
+  assert.match(full.css, /\[data-reskin-css="active"\][^{]*\[data-reskin-slot="profile\.tag"\]/);
+  // Calm keeps colors and drops layers, decoration and the theme's CSS; disabled leaves GitHub native.
   const calm = renderer.compile(resolved, plan, prefs({ appearance: "calm", extras: false }));
   assert.match(calm.css, /--bgColor-default:#0a0a17 !important/);
-  assert.doesNotMatch(calm.css, /GitHub Reskin appearance/);
+  assert.doesNotMatch(calm.css, /linear-gradient|rs-slot--overlay|data-reskin-css=/);
   assert.notEqual(calm.fingerprint, full.fingerprint);
   assert.equal(renderer.compile(resolved, plan, prefs({ enabled: false })).css, "");
   // High contrast stays native.

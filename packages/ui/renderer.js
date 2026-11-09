@@ -3,19 +3,31 @@
 // renderer with its own resources. Nothing here reads storage; the GitHub adapter is passed in
 // because it lives with the content script.
 import { compileAppearance, fontFaceCss, mountAppearance } from "../appearance/index.js";
+import { CSS_MARKERS } from "../contracts/index.js";
 import { repairTheme, resolveTheme } from "../engine/index.js";
 import { compileGitHub, MODE_INDEX, seedFor, selectMode, standardSeed } from "../primer/index.js";
 import { themeCard } from "./catalog.js";
+
+// The host scope marker the format compiler puts in front of every rule of a theme's own CSS.
+const CSS_SCOPE = CSS_MARKERS.scope;
 
 /**
  * @param {object} options
  * @param {object} options.github C3's content adapter (extension/content/github): readNativeMode,
  *   forcedColorsActive, reducedMotion, classifyRoute, locateSlots, MODE_ATTRIBUTES
  * @param {object} options.resources a C5 resource adapter (extensionResources, embeddedResources)
+ * @param {object} [options.catalog] CatalogSource; a bundled theme's own reviewed CSS applies in
+ *   Full. A saved theme's CSS needs consent for its hash, which arrives with the stage 2 builder,
+ *   so until then it gets none.
  * @param {object} [options.index] the ModeIndex; the frozen production index by default
  * @returns the renderer startContent takes
  */
-export function createRenderer({ github, resources, index = MODE_INDEX }) {
+export function createRenderer({ github, resources, catalog = null, index = MODE_INDEX }) {
+  const bundled = new Map((catalog?.ids ?? []).map((id) => [catalog.sourceHash(id), catalog.document(id)]));
+  const themeCss = (resolved) => {
+    const css = bundled.get(resolved.sourceHash)?.css ?? null;
+    return { css, cssAllowed: css !== null };
+  };
   return {
     modeAttributes: github.MODE_ATTRIBUTES,
     readPage: (document, view) => ({
@@ -32,12 +44,25 @@ export function createRenderer({ github, resources, index = MODE_INDEX }) {
       const primer = compileGitHub(resolved, plan, prefs, index);
       if (!primer.css) return { css: "", fingerprint: primer.fingerprint };
       const fontUrl = prefs.extras && prefs.fonts && resolved.font !== "system" ? resources.fontUrl(resolved.font) : null;
-      const css = [primer.css, fontUrl ? fontFaceCss(resolved.font, fontUrl) : "", compileAppearance(resolved, prefs, "github")].join("\n");
+      const css = [primer.css, fontUrl ? fontFaceCss(resolved.font, fontUrl) : "", compileAppearance(resolved, prefs, "github", themeCss(resolved))].join("\n");
       return { css, fingerprint: `${primer.fingerprint}:${fontUrl ? 1 : 0}` };
     },
+    // Owned decoration at C3's verified anchors. The theme's own CSS reaches owned nodes only under
+    // the host's scope marker, which lives exactly as long as the decoration.
     decorate(document, resolved, prefs) {
       const anchors = github.locateSlots(document, github.classifyRoute(document));
-      return mountAppearance(document.body, resolved, prefs, anchors);
+      const owned = themeCss(resolved);
+      const decoration = mountAppearance(document.body, resolved, prefs, anchors, owned);
+      const root = document.documentElement;
+      const scoped = owned.cssAllowed && resolved.policy === "themed" && prefs.extras;
+      if (scoped) root.setAttribute(CSS_SCOPE, "active");
+      return {
+        ...decoration,
+        destroy() {
+          if (scoped) root.removeAttribute(CSS_SCOPE);
+          decoration.destroy();
+        },
+      };
     },
   };
 }

@@ -4,11 +4,15 @@
 //   node tests/e2e/extension/live.mjs --extension <unpacked chrome dir> --out <dir> [--theme <id>]
 // Writes <page>-<mode>-<width>.png for each page in Full and Calm at 1440x900 and 390x844, plus
 // the popup and first-run page, and capture.json with the URL, viewport and settings of each.
+//   node tests/e2e/extension/live.mjs --firefox <unpacked firefox dir> --out <dir>
+// Installs the Firefox build as a temporary add-on through Firefox's remote debugging protocol
+// (web-ext's client) in Playwright's Firefox and captures the pages with the defaults (Choom
+// Circuit, Full). Playwright cannot open moz-extension pages, so the popup is Chromium-only.
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { parseArgs } from "node:util";
-import { chromium } from "@playwright/test";
+import { chromium, firefox } from "@playwright/test";
 
 export const LIVE_PAGES = Object.freeze([
   { name: "profile", url: "https://github.com/whoisaldo" },
@@ -52,10 +56,60 @@ export async function commitFromPage(page, action) {
   }, action);
 }
 
+// GitHub sometimes answers with a bare 5xx page, which Reskin rightly leaves native; retry.
+async function visit(page, url) {
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const response = await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60000 });
+    if ((response?.status() ?? 200) < 500) break;
+    await page.waitForTimeout(5000);
+  }
+  await page.waitForLoadState("load", { timeout: 30000 }).catch(() => {});
+}
+
+const paintedState = (page) =>
+  page.evaluate(() => ({ boot: document.documentElement.getAttribute("data-reskin-boot"), styled: Boolean(document.getElementById("reskin-style")?.textContent), owned: document.querySelectorAll("[data-reskin-owned]").length - 1 }));
+
+async function captureFirefox(dir, out) {
+  const { connectWithMaxRetries } = await import(new URL("../../../node_modules/web-ext/lib/firefox/remote.js", import.meta.url).href);
+  const port = 6000 + Math.floor(Math.random() * 1000);
+  const profile = await mkdtemp(join(tmpdir(), "reskin-live-firefox-"));
+  const context = await firefox.launchPersistentContext(profile, {
+    headless: true,
+    args: ["-start-debugger-server", String(port)],
+    firefoxUserPrefs: { "devtools.debugger.remote-enabled": true, "devtools.chrome.enabled": true, "devtools.debugger.prompt-connection": false },
+  });
+  const records = [];
+  try {
+    const remote = await connectWithMaxRetries({ port, maxRetries: 50, retryInterval: 200 });
+    await remote.installTemporaryAddon(dir);
+    await new Promise((done) => setTimeout(done, 2000));
+    for (const viewport of VIEWPORTS) {
+      const page = await context.newPage();
+      await page.setViewportSize(viewport);
+      for (const { name, url } of LIVE_PAGES) {
+        await visit(page, url);
+        await page.waitForTimeout(name === "profile" || name === "404" ? 2000 : 4000);
+        const path = join(out, `firefox-${name}-full-${viewport.width}.png`);
+        await page.screenshot({ path });
+        const state = await paintedState(page);
+        records.push({ file: path, url, viewport, appearance: "full", browser: `firefox ${context.browser()?.version() ?? ""}`, ...state });
+        console.log(`firefox ${name} ${viewport.width}: ${JSON.stringify(state)}`);
+      }
+      await page.close();
+    }
+    remote.disconnect();
+  } finally {
+    await context.close();
+    await rm(profile, { recursive: true, force: true });
+  }
+  await writeFile(join(out, "capture-firefox.json"), `${JSON.stringify({ captured: new Date().toISOString(), records }, null, 2)}\n`);
+}
+
 async function main() {
-  const { values } = parseArgs({ options: { extension: { type: "string" }, out: { type: "string" }, theme: { type: "string", default: "anime.cyberpunk-edgerunners" } } });
+  const { values } = parseArgs({ options: { extension: { type: "string" }, firefox: { type: "string" }, out: { type: "string" }, theme: { type: "string", default: "anime.cyberpunk-edgerunners" } } });
   const out = resolve(values.out);
   await mkdir(out, { recursive: true });
+  if (values.firefox) return captureFirefox(resolve(values.firefox), out);
   const browser = await launchUnpacked(resolve(values.extension));
   const records = [];
   try {
@@ -89,9 +143,8 @@ async function main() {
         const page = await context.newPage();
         await page.setViewportSize(viewport);
         for (const { name, url } of LIVE_PAGES) {
-          await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60000 });
-          await page.waitForLoadState("load", { timeout: 30000 }).catch(() => {});
-          await page.waitForTimeout(1500);
+          await visit(page, url);
+          await page.waitForTimeout(name === "profile" || name === "404" ? 2000 : 4000);
           const path = join(out, `${name}-${appearance}-${viewport.width}.png`);
           await page.screenshot({ path });
           if (name === "profile") {
@@ -110,7 +163,7 @@ async function main() {
               records.push({ file: fullPath, url, viewport, appearance, theme: values.theme });
             }
           }
-          const state = await page.evaluate(() => ({ boot: document.documentElement.getAttribute("data-reskin-boot"), styled: Boolean(document.getElementById("reskin-style")?.textContent), owned: document.querySelectorAll("[data-reskin-owned]").length - 1 }));
+          const state = await paintedState(page);
           records.push({ file: path, url, viewport, appearance, theme: values.theme, ...state });
           console.log(`${name} ${appearance} ${viewport.width}: ${JSON.stringify(state)}`);
         }

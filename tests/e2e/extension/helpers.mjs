@@ -80,7 +80,8 @@ export const painted = (page) =>
     boot: document.documentElement.getAttribute("data-reskin-boot"),
     styled: Boolean(document.getElementById("reskin-style")?.isConnected && document.getElementById("reskin-style").textContent),
     canvas: getComputedStyle(document.documentElement).getPropertyValue("--bgColor-default").trim(),
-    owned: [...document.querySelectorAll("[data-reskin-owned]:not(style)")].map((node) => node.getAttribute("data-reskin-owned")).sort(),
+    // One entry per slot: C5 marks a slot's wrapper and the copy inside it with the same slot.
+    owned: [...new Set([...document.querySelectorAll("[data-reskin-owned]:not(style)")].map((node) => node.getAttribute("data-reskin-owned")))].sort(),
     copy: [...document.querySelectorAll("[data-reskin-owned] .rs-copy")].map((node) => node.textContent),
   }));
 

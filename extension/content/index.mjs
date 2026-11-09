@@ -12,10 +12,11 @@ import { startContent } from "./lifecycle/index.js";
 
 const api = globalThis.browser?.runtime?.id ? globalThis.browser : globalThis.chrome;
 
+const catalog = catalogFromData(CATALOG);
 startContent({
   storage: createExtensionStorage(api),
   document,
   view: window,
-  catalog: catalogFromData(CATALOG),
-  renderer: createRenderer({ github, resources: extensionResources(api.runtime) }),
+  catalog,
+  renderer: createRenderer({ github, catalog, resources: extensionResources(api.runtime) }),
 });
