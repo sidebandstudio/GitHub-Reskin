@@ -540,8 +540,10 @@ function checkShadows(property, nodes, ctx, loc, subjects) {
     const asPx = (q) => (q && q.unit === "" && q.min === 0 && q.max === 0 ? { ...q, unit: "px" } : q);
     const [X, Y, B, S] = [x, y, blur, spread].map(asPx);
     if (!px(X, -L.shadowOffset, L.shadowOffset) || !px(Y, -L.shadowOffset, L.shadowOffset)) return ctx.problems.add(`Shadow offsets stay within ${L.shadowOffset}px`, loc), null;
-    if (B && !px(B, 0, L.shadowBlur)) return ctx.problems.add(`Shadow blur stays within 0-${L.shadowBlur}px`, loc), null;
-    if (S && !px(S, L.shadowSpreadMin, L.shadowSpreadMax)) return ctx.problems.add(`Shadow spread stays within ${L.shadowSpreadMin} to ${L.shadowSpreadMax}px`, loc), null;
+    // A supplied blur or spread must be proved in range; only an omitted one is zero. A variable
+    // has no proved range here (--reskin-radius reaches 999px).
+    if (lengths.length > 2 && !px(B, 0, L.shadowBlur)) return ctx.problems.add(`Shadow blur stays within 0-${L.shadowBlur}px`, loc), null;
+    if (lengths.length > 3 && !px(S, L.shadowSpreadMin, L.shadowSpreadMax)) return ctx.problems.add(`Shadow spread stays within ${L.shadowSpreadMin} to ${L.shadowSpreadMax}px`, loc), null;
     const a = alpha(color);
     if (a === null) return ctx.problems.add("This shadow color's opacity cannot be checked", loc), null;
     const blurPx = B ? B.max : 0;
@@ -664,7 +666,6 @@ const BOUNDS = {
   "font-size": { px: [1, 64] },
   "line-height": { "": [1.1, 3] },
   opacity: { "": [0, 1], "%": [0, 100] },
-  "transform-origin": { px: [-360, 360], "%": [0, 100] },
   top: { "%": [0, 100] },
   right: { "%": [0, 100] },
   bottom: { "%": [0, 100] },
@@ -683,7 +684,6 @@ const KEYWORDS = {
   content: ["none"],
   "line-height": ["normal"],
   "letter-spacing": ["normal"],
-  "transform-origin": ["left", "right", "top", "bottom", "center"],
 };
 
 // Keywords the lexer accepts are fine unless the property lists its own; numbers must sit in range.
@@ -728,6 +728,18 @@ function checkTransform(nodes, ctx, loc) {
   return true;
 }
 
+// The origin stays at the box's center, the default for these HTML decorations, so a rotation
+// turns the box in place and only the translation moves it.
+function checkOrigin(nodes, ctx, loc) {
+  const parts = nodes.filter((n) => n.type !== "WhiteSpace");
+  const center = (n) => (n.type === "Identifier" && n.name === "center") || (n.type !== "Identifier" && inRange(n, { "%": [50, 50] }));
+  const zero = (n) => n.type !== "Identifier" && inRange(n, { px: [0, 0] });
+  if (!parts.length || parts.length > 3 || !parts.slice(0, 2).every(center) || (parts[2] && !zero(parts[2]))) {
+    return ctx.problems.add("transform-origin stays at the center (center or 50% 50%), so a rotation cannot move a decoration", loc), false;
+  }
+  return true;
+}
+
 function checkFontFamily(nodes, ctx, loc) {
   for (const group of split(nodes)) {
     const [node] = group;
@@ -765,6 +777,8 @@ function checkDeclaration(decl, ctx, subjects) {
     if (!checkFontFamily(nodes, ctx, loc)) return null;
   } else if (property === "transform") {
     if (!checkTransform(nodes, ctx, loc)) return null;
+  } else if (property === "transform-origin") {
+    if (!checkOrigin(nodes, ctx, loc)) return null;
   } else if (property === "content") {
     if (!(nodes.length === 1 && ((nodes[0].type === "String" && nodes[0].value === "") || (nodes[0].type === "Identifier" && nodes[0].name === "none")))) {
       return ctx.problems.add('content is only "" on a decoration; CSS cannot add text', loc), null;
@@ -958,12 +972,17 @@ function resolveVariables(ctx, budgets) {
 
   const expanded = new Map();
   const lengthOf = new Map();
+  // The values a variable could take through any one of its fallbacks, its own or a dependency's,
+  // so each use checks them against its property. Built once per variable under their own budget.
+  const alternativesOf = new Map();
   let allocated = 0;
+  let alternativeBytes = 0;
   const build = (name) => {
     if (expanded.has(name)) return expanded.get(name);
     const entry = declared.get(name);
     allocated += measured.get(name).bytes;
     if (allocated > budgets.sourceBytes) return ctx.problems.add(`Theme-local variables expand to more than ${budgets.sourceBytes} UTF-8 bytes together`, entry.decl.loc), null;
+    const forms = [entry.nodes.map((n) => csstree.clone(n)), ...entry.variants.map((variant) => variant.map((n) => csstree.clone(n)))];
     const holder = [csstree.clone(entry.nodes[0])];
     if (!substitute(holder, build)) return null;
     const [node] = holder;
@@ -979,13 +998,47 @@ function resolveVariables(ctx, budgets) {
       const values = variant.filter((n) => n.type !== "WhiteSpace");
       if (values.length !== 1 || !scalarValue(values[0])) return ctx.problems.add(`A var() fallback in ${name} is not a valid color, a finite length or number, or an audited variable`, entry.decl.loc), null;
     }
+    // Each own fallback, then each form with one dependency taking one of its alternatives.
+    const alternatives = [];
+    const seen = new Set([css().generate(node)]);
+    const admit = (candidate) => {
+      const values = candidate.filter((n) => n.type !== "WhiteSpace");
+      const text = values.length === 1 ? css().generate(values[0]) : "";
+      alternativeBytes += text.length;
+      if (alternativeBytes > budgets.sourceBytes) return ctx.problems.add(`The var() fallbacks of theme-local variables expand to more than ${budgets.sourceBytes} UTF-8 bytes`, entry.decl.loc), false;
+      if (values.length !== 1 || !scalarValue(values[0])) return ctx.problems.add(`A var() fallback in ${name} is not a valid color, a finite length or number, or an audited variable`, entry.decl.loc), false;
+      if (!seen.has(text)) seen.add(text), alternatives.push({ node: values[0], length: text.length });
+      return true;
+    };
+    for (const variant of entry.variants) if (!admit(variant)) return null;
+    for (const form of forms) {
+      const ok = eachDeviation(form, build, (ref) => alternativesOf.get(ref), admit);
+      if (!ok) return null;
+    }
     expanded.set(name, node);
     lengthOf.set(name, css().generate(node).length);
+    alternativesOf.set(name, alternatives);
     return node;
   };
   for (const name of declared.keys()) if (!build(name)) return null;
   const expand = (name, loc) => expanded.get(name) ?? (ctx.problems.add(`${name} is used but never declared`, loc), null);
-  return { lengthOf, expand };
+  return { lengthOf, expand, alternatives: (name) => alternativesOf.get(name) ?? [] };
+}
+
+// Calls visit(copy) for each copy of nodes in which exactly one var(--theme-*) takes one of its
+// alternatives and every other takes its expansion. Stops with false when a lookup or visit fails.
+function eachDeviation(nodes, expand, alternatives, visit) {
+  const refs = [];
+  if (!substitute(nodes.map((n) => csstree.clone(n)), (ref) => (refs.push(ref), expand(ref)))) return false;
+  for (const [index, ref] of refs.entries()) {
+    for (const alternative of alternatives(ref)) {
+      let at = 0;
+      const copy = nodes.map((n) => csstree.clone(n));
+      if (!substitute(copy, (name) => (at++ === index ? alternative.node : expand(name)))) return false;
+      if (!visit(copy, alternative)) return false;
+    }
+  }
+  return true;
 }
 
 // Every var(--theme-*) reference in the nodes, once per occurrence.
@@ -1108,9 +1161,11 @@ function validateStylesheet(source, path, budgets) {
         continue;
       }
       const nodes = children(decl.value);
-      // Each var() fallback is checked against this property too, though it never applies.
+      // Each var() fallback is checked against this property too, though it never applies,
+      // including those inside the theme-local variables it uses.
       const variants = [];
       for (let next = withFallbacks(nodes); next && variants.length <= L.nesting; next = withFallbacks(next)) variants.push(next);
+      const forms = [nodes.map((n) => csstree.clone(n)), ...variants.map((variant) => variant.map((n) => csstree.clone(n)))];
       const ok = substitute(nodes, (name) => {
         const value = variables.expand(name, decl.loc);
         if (value) size += variables.lengthOf.get(name);
@@ -1139,6 +1194,24 @@ function validateStylesheet(source, path, budgets) {
           fallbacksOk = false;
           break;
         }
+      }
+      for (const form of fallbacksOk ? forms : []) {
+        const expand = (name) => {
+          const value = variables.expand(name, decl.loc);
+          if (value) work += variables.lengthOf.get(name);
+          return work > budgets.sourceBytes ? null : value;
+        };
+        fallbacksOk = eachDeviation(form, expand, variables.alternatives, (candidate, alternative) => {
+          work += alternative.length;
+          if (work > budgets.sourceBytes) return false;
+          const before = problems.list.length;
+          const copy = { type: "Declaration", property: decl.property, loc: decl.loc, value: { type: "Value", children: new csstree.List().fromArray(candidate) } };
+          if (checkDeclaration(copy, ctx, subjects)) return true;
+          for (const problem of problems.list.slice(before)) problem.message = `In a var() fallback: ${problem.message}`;
+          return false;
+        });
+        if (work > budgets.sourceBytes) problems.add(`The var() fallbacks in this CSS expand to more than ${budgets.sourceBytes} UTF-8 bytes`, decl.loc);
+        if (!fallbacksOk) break;
       }
       if (!fallbacksOk) continue;
       kept.push(decl);

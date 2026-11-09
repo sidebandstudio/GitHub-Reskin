@@ -16,6 +16,7 @@ import {
   EXPANSION_VERSION,
   FLAVOR_SLOT_IDS,
   FONT_IDS,
+  FONT_INVENTORY,
   HEADING_FONT_IDS,
   LEGACY_CLASSIC_THEME_IDS,
   LEGACY_THEME_ALIASES,
@@ -128,7 +129,7 @@ async function checkSchema(root) {
 
 async function checkPrompt(root) {
   const { check, done } = tally("check:prompt");
-  const { promptModule, promptText, PROMPT_TEMPLATE_PATH, IDEA_PLACEHOLDER, EXAMPLE_PATH } = await import("../../scripts/generate-prompt.mjs");
+  const { promptModule, promptText, offeredFonts, PROMPT_TEMPLATE_PATH, IDEA_PLACEHOLDER, EXAMPLE_PATH } = await import("../../scripts/generate-prompt.mjs");
   check(readFileSync(PROMPT_TEMPLATE_PATH, "utf8") === promptModule(), `${relative(root, PROMPT_TEMPLATE_PATH)} is out of date; run node scripts/generate-prompt.mjs`);
   // Generated from the registries, the prompt reproduces AI-PROMPT.md's contract text exactly.
   check(promptText() === readFileSync(join(root, "tests/fixtures/prompt/ai-prompt-r41.txt"), "utf8"), "the generated prompt differs from the AI-PROMPT.md contract text");
@@ -138,7 +139,15 @@ async function checkPrompt(root) {
   const bytes = Buffer.byteLength(makeAiPrompt("x".repeat(500)));
   check(bytes <= MAX_PROMPT_BYTES, `prompt is ${bytes} UTF-8 bytes with a full idea, limit ${MAX_PROMPT_BYTES}`);
   check(!/https?:|www\./i.test(makeAiPrompt()), "prompt contains a URL");
-  for (const id of [...HEADING_FONT_IDS, ...BODY_FONT_IDS, ...EFFECT_IDS, ...FLAVOR_SLOT_IDS, ...THEME_SYNTAX_ROLES, ...ANSI_ROLES, ...DIFF_ROLES]) check(prompt.includes(id), `prompt omits ${id}`);
+  for (const id of [...offeredFonts("heading"), ...offeredFonts("body"), ...EFFECT_IDS, ...FLAVOR_SLOT_IDS, ...THEME_SYNTAX_ROLES, ...ANSI_ROLES, ...DIFF_ROLES]) check(prompt.includes(id), `prompt omits ${id}`);
+  // The prompt offers only what this increment admits and names nothing deferred.
+  const listed = ["Heading", "Body"].flatMap((role) => new RegExp(`${role} IDs: ([^.]+)\\.`).exec(prompt)?.[1].split(", ") ?? []);
+  const exampleFonts = Object.values(JSON.parse(readFileSync(EXAMPLE_PATH, "utf8")).fonts ?? {});
+  for (const id of [...listed, ...exampleFonts]) check(!FONT_INVENTORY.deferred.includes(id), `prompt offers the deferred font ${id}`);
+  for (const role of ["heading", "body"]) {
+    for (const id of offeredFonts(role)) check(!parseImport(JSON.stringify({ schemaVersion: 1, name: "Font", base: "dark", colors: { background: "#111111", text: "#ffffff", accent: "#ffcc00" }, fonts: { [role]: id } }), "text").notes?.some((n) => n.severity === "warning"), `the offered ${role} font ${id} is not rendered as requested`);
+  }
+  check(!/supports/i.test(prompt), "prompt mentions @supports, which this increment rejects");
   check(!/data:image|base64/.test(prompt.split("Here is a valid rich example")[1] ?? ""), "the prompt's example carries image data");
   const example = /Here is a valid rich example with no images:\n(\{.+\})\n\nMy idea/s.exec(prompt)?.[1];
   const fixture = readFileSync(EXAMPLE_PATH, "utf8");

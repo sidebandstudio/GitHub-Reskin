@@ -4,9 +4,8 @@ import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
 import { readFile, readdir } from "node:fs/promises";
 import { join } from "node:path";
-import { FLAVOR_SLOT_IDS } from "../contracts/index.js";
+import { FLAVOR_SLOT_IDS, FONT_IDS } from "../contracts/index.js";
 import { repairTheme, resolveTheme } from "../engine/index.js";
-import { FONT_ROLES } from "../format/index.js";
 import { BOX_EFFECTS, EFFECTS, FONTS, LIMITS, compileAppearance, effectCss, fontFaceCss, planAppearance, registryProblems } from "./index.js";
 import { EFFECT_PARAMETERS } from "./registry.js";
 import { codePoints, names, readWoff2, weightClass } from "./woff2.mjs";
@@ -35,11 +34,10 @@ export async function fontAudit(root) {
   const provenance = JSON.parse(await readFile(join(dir, "provenance.json"), "utf8"));
   const recorded = Object.fromEntries(provenance.fonts.map((font) => [font.id, font]));
   check(provenance.subset.replace(/\s/g, "") === schema.fontBudget.subset.replace(/^Latin\s*/, "").replace(/\s/g, ""), "provenance subset differs from the schema's");
-  // The schema's family count is the release inventory. Families whose files arrive later resolve
-  // natively (FONT_ROLES source "deferred" or "native-stack"); every "bundled" role has its file here.
-  const bundled = FONT_ROLES.filter((font) => font.source === "bundled").map((font) => font.id);
-  check(JSON.stringify(FONTS.map((font) => font.id)) === JSON.stringify(bundled), `bundled files ${FONTS.map((font) => font.id)} differ from the bundled roles ${bundled}`);
-  check(FONT_ROLES.filter((font) => font.id !== "system").length === schema.fontBudget.families, `${FONT_ROLES.length - 1} font roles, schema says ${schema.fontBudget.families}`);
+  // The schema budgets every family a theme may name; this increment bundles only FONT_IDS.
+  const bundled = FONT_IDS.filter((id) => id !== "system");
+  check(FONTS.length === bundled.length && FONTS.every((font) => bundled.includes(font.id)), `${FONTS.length} families, the bundled set is ${bundled.length}`);
+  check(FONTS.length <= schema.fontBudget.families, `${FONTS.length} families, schema allows ${schema.fontBudget.families}`);
   for (const entry of await readdir(dir, { withFileTypes: true })) {
     check(entry.isDirectory() ? FONTS.some((font) => font.id === entry.name) : FONT_FILES.has(entry.name), `unexpected assets/fonts/${entry.name}`);
   }
