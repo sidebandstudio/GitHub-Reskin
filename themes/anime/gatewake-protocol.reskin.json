@@ -24,8 +24,8 @@
       "layers": [
         {
           "gradientCss": {
-            "size": "80px 80px",
-            "value": "linear-gradient(90deg,color-mix(in srgb,#71e0ff 3%,transparent) 1px,transparent 1px)"
+            "size": "auto",
+            "value": "linear-gradient(90deg,transparent 3.3%,#22526f 3.3% 3.42%,transparent 3.42% 96.58%,#22526f 96.58% 96.7%,transparent 96.7%)"
           }
         },
         {

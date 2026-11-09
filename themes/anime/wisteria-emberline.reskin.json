@@ -19,19 +19,25 @@
         {
           "gradientCss": {
             "size": "100% 100vh",
-            "value": "radial-gradient(ellipse at 90%0,color-mix(in srgb,#8a69ba 22%,transparent),transparent 48%)"
+            "value": "radial-gradient(ellipse 32px 54%at 94.4%0,#5a3f98 0 27%,transparent 27% 32%,#50388a 32% 48%,transparent 48% 53%,#46317b 53% 67%,transparent 67% 72%,#3b2a6a 72% 84%,transparent 84%)"
           }
         },
         {
           "gradientCss": {
             "size": "100% 100vh",
-            "value": "repeating-radial-gradient(ellipse 140% 55%at 50% 125%,transparent 0 26px,color-mix(in srgb,#70cfc0 11%,transparent) 26px 28px)"
+            "value": "radial-gradient(ellipse 25px 37%at 97.4%0,#5a3f98 0 27%,transparent 27% 33%,#50388a 33% 50%,transparent 50% 56%,#46317b 56% 70%,transparent 70% 76%,#3b2a6a 76% 87%,transparent 87%)"
           }
         },
         {
           "gradientCss": {
-            "size": "auto",
-            "value": "linear-gradient(145deg,#112c28,#0d1919 58%)"
+            "size": "100% 100vh",
+            "value": "radial-gradient(ellipse 27px 46%at 99.6%0,#5a3f98 0 27%,transparent 27% 33%,#50388a 33% 50%,transparent 50% 56%,#46317b 56% 72%,transparent 72%)"
+          }
+        },
+        {
+          "gradientCss": {
+            "size": "100% 100vh",
+            "value": "radial-gradient(ellipse 130% 38%at 16% 116%,#163a3399 0,transparent 66% 80%,#26564f 80% 80.7%,transparent 80.7% 86%,#22504a 86% 86.7%,transparent 86.7% 92%,#1f4943 92% 92.7%,transparent 92.7%)"
           }
         }
       ]
