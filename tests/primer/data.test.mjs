@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import test from "node:test";
-import { SYNTAX_ROLES } from "../../packages/contracts/index.js";
+import { EXTENDED_SYNTAX_ROLES, SYNTAX_ROLES } from "../../packages/contracts/index.js";
 import { buildSeed, convertModes, flatten, readModeFile } from "../../packages/primer/convert.js";
 import { parseStylesheet } from "../../packages/primer/css.js";
 import { generate, readPolicy, readVendor } from "../../packages/primer/generate.mjs";
@@ -27,6 +27,17 @@ const COLOR_PATHS = [
   ...SYNTAX_ROLES.map((r) => `/syntax/${r}`),
   ...ANSI.map((r) => `/ansi/${r}`),
   ...[0, 1, 2, 3, 4].map((n) => `/graph/${n}`),
+];
+// The resolved appearance colors C2b pairs under matrix version 2, which the expansion maps too.
+const APPEARANCE_PATHS = [
+  ...EXTENDED_SYNTAX_ROLES.map((r) => `/appearance/colors/syntax/${r}`),
+  "/appearance/colors/page/background",
+  "/appearance/colors/header/background",
+  "/appearance/colors/header/text",
+  "/appearance/colors/scrollbar/thumb",
+  "/appearance/colors/scrollbar/track",
+  ...["labels", "topics"].flatMap((p) => ["background", "text", "border"].map((f) => `/appearance/colors/${p}/${f}`)),
+  "/appearance/colors/graph/cellBoundary",
 ];
 
 test("the frozen inputs match SOURCES.json, carry the MIT license and regenerate byte for byte offline", async () => {
@@ -119,6 +130,15 @@ test("counterparts are unique, keep the family and never drop high contrast", ()
   assert.equal(MODE_INDEX.counterparts.length, themable.length * 2);
   for (const m of Object.values(MODE_INDEX.modes).filter((m) => m.highContrast)) assert.ok(!MODE_INDEX.counterparts.some((c) => c.nativeMode === m.id), m.id);
   assert.deepEqual(Object.keys(MODE_INDEX.nativeCss).sort(), [...new Set(MODE_INDEX.counterparts.map((c) => c.seedMode))].sort());
+  // Every themable mode has a restoring baseline: its own value of each variable a themed island
+  // writes, the family baseline's and the emitted mode variables alike.
+  assert.deepEqual(Object.keys(MODE_INDEX.restoreCss).sort(), themable.map((m) => m.id).sort());
+  const names = (text) => text.split(";").map((d) => d.slice(0, d.indexOf(":")));
+  const emitted = new Set(names(Object.values(MODE_INDEX.restoreCss)[0]));
+  for (const [id, text] of Object.entries(MODE_INDEX.restoreCss)) {
+    assert.deepEqual(names(text), [...emitted], id);
+    for (const seedMode of Object.keys(MODE_INDEX.nativeCss)) for (const name of names(MODE_INDEX.nativeCss[seedMode])) assert.ok(emitted.has(name), `${id} ${name}`);
+  }
 });
 
 test("GitHub's selectors in every frozen file are exactly the ones the adapter mirrors", () => {
@@ -158,16 +178,16 @@ test("the mapping covers every seed leaf, emits only variables every mode declar
   assert.equal(new Set(emitted).size, emitted.length, "no variable is emitted twice");
   // A nested island of another mode declares every one of these itself, so none inherits from a themed ancestor.
   for (const v of emitted) assert.ok(declared.has(v), `${v} is declared by every frozen mode`);
-  for (const m of [...mappings.emit, ...mappings.brandFooter]) {
-    assert.ok(COLOR_PATHS.includes(m.role), `${m.variable} role ${m.role}`);
+  for (const m of [...mappings.emit, ...mappings.brandFooter, ...mappings.brandPage]) {
+    assert.ok(COLOR_PATHS.includes(m.role) || APPEARANCE_PATHS.includes(m.role), `${m.variable} role ${m.role}`);
     if (m.exempt) assert.ok(m.exempt.length > 20, `${m.variable} explains its exemption`);
     else {
       const coverage = mappings.rolePairs[m.role];
       assert.ok(coverage && (coverage.pairs.length || coverage.inheritedPairs.length), `${m.role} has pair coverage`);
     }
   }
-  for (const v of mappings.brandFooter.map((m) => m.variable)) assert.ok(v.startsWith("--brand-") && !declared.has(v), v);
-  const all = new Set([...emitted, ...mappings.brandFooter.map((m) => m.variable)]);
+  for (const v of [...mappings.brandFooter, ...mappings.brandPage].map((m) => m.variable)) assert.ok(v.startsWith("--brand-") && !declared.has(v), v);
+  const all = new Set([...emitted, ...mappings.brandFooter.map((m) => m.variable), ...mappings.brandPage.map((m) => m.variable)]);
   for (const p of mappings.inheritedPairs) {
     assert.ok(all.has(p.foreground), `${p.id} foreground ${p.foreground}`);
     for (const b of p.backgrounds) assert.ok(all.has(b), `${p.id} background ${b}`);

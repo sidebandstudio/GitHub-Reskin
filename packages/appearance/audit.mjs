@@ -148,7 +148,9 @@ export async function themeAudit(root, documents) {
     const reduced = resolveTheme(repairTheme(theme, seed).theme, { seed, policy: "themed", reducedMotion: true, forcedColors: false });
     check(!/@keyframes/.test(compileAppearance(reduced, PREFS, "github")), `${label} keeps keyframes under reduced motion`);
     check(!/\.rs-fx-/.test(compileAppearance(resolved, { ...PREFS, effects: false }, "github")), `${label} keeps effects with Effects off`);
-    check(compileAppearance(resolved, { ...PREFS, extras: false }, "github") === "", `${label} keeps decoration with Flavor extras off`);
+    // Calm keeps solid paints, simple avatar corners and the role fonts, and draws no decoration.
+    const calm = compileAppearance(resolved, { ...PREFS, extras: false }, "github");
+    check(!/\.rs-|data-reskin-owned|gradient\(|0 0 12px/.test(calm), `${label} keeps decoration in Calm`);
     check(compileAppearance(resolved, { ...PREFS, enabled: false }, "github") === "", `${label} keeps decoration with the extension off`);
     const native = resolveTheme(theme, { seed: null, policy: "native-high-contrast", reducedMotion: false, forcedColors: false });
     check(compileAppearance(native, PREFS, "github") === "", `${label} decorates a native high-contrast island`);

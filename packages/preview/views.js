@@ -28,6 +28,12 @@ const ICONS = {
   law: [["path", { d: "M8 2v12M4 14h8M2.5 4h11M4 4l-2 5a2 2 0 0 0 4 0zM12 4l-2 5a2 2 0 0 0 4 0z" }]],
   eye: [["path", { d: "M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z" }], ["circle", { cx: 8, cy: 8, r: 2 }]],
   branch: [["circle", { cx: 4.5, cy: 3.5, r: 1.5 }], ["circle", { cx: 4.5, cy: 12.5, r: 1.5 }], ["circle", { cx: 11.5, cy: 5, r: 1.5 }], ["path", { d: "M4.5 5v6M11.5 6.5c0 3-7 2-7 4.5" }]],
+  menu: [["path", { d: "M2.5 4h11M2.5 8h11M2.5 12h11" }]],
+  // An original placeholder mark for the site logo, not GitHub's.
+  mark: [["circle", { cx: 8, cy: 8, r: 6.5 }], ["path", { d: "M5.5 6.5L8 4l2.5 2.5M5.5 9.5L8 12l2.5-2.5" }]],
+  search: [["circle", { cx: 7, cy: 7, r: 4.5 }], ["path", { d: "M10.5 10.5l3.5 3.5" }]],
+  bell: [["path", { d: "M4 11.5V7a4 4 0 0 1 8 0v4.5l1.5 1.5h-11zM6.5 14.5h3" }]],
+  plus: [["path", { d: "M8 3v10M3 8h10" }]],
 };
 
 /** A small DOM builder bound to one document. */
@@ -62,6 +68,39 @@ export function builder(doc, resources, base) {
   const link = (href, ...children) => el("a", { "data-href": href }, ...children);
   return { el, icon, image, link };
 }
+
+// GitHub's global header as the fixture's own markup: the site mark, the page context, a search
+// field drawn as text (no input), and placeholders for the header's icon buttons (no buttons).
+function header(b, context) {
+  const p = FIXTURE.profile;
+  const icon = (name) => b.el("span", { class: "AppHeader-button", "aria-hidden": "true" }, b.icon(name));
+  return b.el(
+    "header",
+    { class: "AppHeader", role: "banner" },
+    b.el(
+      "div",
+      { class: "AppHeader-globalBar" },
+      b.el(
+        "div",
+        { class: "AppHeader-globalBar-start" },
+        icon("menu"),
+        b.el("span", { class: "AppHeader-logo", "aria-hidden": "true" }, b.icon("mark", 32)),
+        b.el("nav", { class: "AppHeader-context", "aria-label": "Page context" }, context.flatMap((part, i) => [i ? b.el("span", { class: "AppHeader-context-divider", "aria-hidden": "true" }, "/") : null, b.link(part.href, b.el("span", { class: "AppHeader-context-item" }, part.label))])),
+      ),
+      b.el(
+        "div",
+        { class: "AppHeader-globalBar-end" },
+        b.el("span", { class: "AppHeader-search", "aria-hidden": "true" }, b.icon("search"), b.el("span", { class: "AppHeader-search-text" }, "Type / to search")),
+        icon("plus"),
+        icon("bell"),
+        b.image(p.avatar, { class: "avatar avatar-user AppHeader-avatar", width: 32, height: 32, alt: "" }),
+      ),
+    ),
+  );
+}
+
+// One fixture page: the header and the view's main content under a shared root.
+const shell = (b, context, main) => b.el("div", { class: "reskin-fixture" }, header(b, context), main);
 
 // README and repository markdown from the generated node tree.
 function markdown(b, nodes) {
@@ -138,7 +177,7 @@ function profile(b) {
   const card = b.el(
     "div",
     { class: "h-card" },
-    b.image(p.avatar, { class: "avatar", width: 128, height: 128 }),
+    b.image(p.avatar, { class: "avatar avatar-user", width: 128, height: 128 }),
     names,
     b.el(
       "div",
@@ -159,10 +198,12 @@ function profile(b) {
   const pinned = b.el("div", { class: "js-pinned-items-reorder-container" }, pinnedHeading, b.el("ol", { class: "pinned-items-list" }, p.pinned.map((pin) => pinnedCard(b, pin))));
   const readme = b.el("div", { class: "Box profile-readme" }, b.el("div", { class: "profile-readme-title" }, `${p.login} / README.md`), b.el("article", { class: "markdown-body" }, markdown(b, p.readme)));
   const { section, wrapper } = calendar(b, FIXTURE.contributions);
-  const root = b.el("main", { class: "page", "data-view": "profile" }, b.el("div", { class: "layout" }, card, b.el("div", { class: "main" }, readme, pinned, section)));
+  const layout = b.el("div", { class: "layout" }, card, b.el("div", { class: "main" }, readme, pinned, section));
+  const root = shell(b, [{ label: p.login, href: `https://github.com/${p.login}` }], b.el("main", { class: "page", "data-view": "profile" }, layout));
   return {
     root,
     anchors: [
+      { slot: "profile.banner", host: layout, insert: "before", nativeSignature: "preview:profile-layout" },
       { slot: "profile.tag", host: names, insert: "append", nativeSignature: "preview:vcard-names" },
       { slot: "profile.organizations.heading", host: orgHeading, insert: "append", nativeSignature: "preview:organizations" },
       { slot: "profile.pinned.heading", host: pinnedHeading, insert: "append", nativeSignature: "preview:pinned" },
@@ -211,7 +252,8 @@ function repository(b) {
       b.el("ul", { class: "lang-list" }, r.languages.map((l) => b.el("li", null, b.el("span", { class: "lang-dot", style: `background:${LANGUAGE_COLORS[l.name] ?? "#8b949e"}` }), b.el("strong", null, l.name), " ", b.el("span", { class: "pct" }, `${l.percentage}%`)))),
     ),
   );
-  const root = b.el("main", { class: "page", "data-view": "repo" }, repoMasthead(b, r.owner, r.name, r.visibility), repoNav(b, "code", 0), b.el("div", { class: "repo-layout" }, b.el("div", null, files, readme), about));
+  const context = [{ label: r.owner, href: `https://github.com/${r.owner}` }, { label: r.name, href: `https://github.com/${r.owner}/${r.name}` }];
+  const root = shell(b, context, b.el("main", { class: "page", "data-view": "repo" }, repoMasthead(b, r.owner, r.name, r.visibility), repoNav(b, "code", 0), b.el("div", { class: "repo-layout" }, b.el("div", null, files, readme), about)));
   return { root, anchors: [] };
 }
 
@@ -249,7 +291,9 @@ function diff(b) {
     b.el("div", { class: "Box-header file-header" }, b.el("strong", null, "src/greeting.js"), b.el("span", { class: "text-success" }, `+${added}`), b.el("span", { class: "text-danger" }, `-${removed}`), b.el("span", { class: "diffstat", "aria-hidden": "true" }, b.el("i", { class: "add" }), b.el("i", { class: "add" }), b.el("i", { class: "add" }), b.el("i", { class: "del" }), b.el("i", { class: "del" }))),
     b.el("table", { class: "diff-table", "aria-label": "Changes to src/greeting.js" }, b.el("colgroup", null, b.el("col", { style: "width:44px" }), b.el("col", { style: "width:44px" }), b.el("col")), b.el("tbody", null, rows)),
   );
-  const root = b.el("main", { class: "page", "data-view": "diff" }, b.el("h1", { class: "diff-title" }, "Files changed ", b.el("span", { class: "Counter" }, 1)), file);
+  const r = FIXTURE.repository;
+  const context = [{ label: r.owner, href: `https://github.com/${r.owner}` }, { label: r.name, href: `https://github.com/${r.owner}/${r.name}` }];
+  const root = shell(b, context, b.el("main", { class: "page", "data-view": "diff" }, b.el("h1", { class: "diff-title" }, "Files changed ", b.el("span", { class: "Counter" }, 1)), file));
   return { root, anchors: [] };
 }
 
@@ -259,14 +303,18 @@ function empty(b) {
   const issuesSlateHeading = b.el("h3", { class: "blankslate-heading" }, "No issues yet");
   const pinnedSlate = b.el("div", { class: "Box blankslate" }, b.icon("repo", 24), pinnedSlateHeading, b.el("p", null, "Pinned repositories will appear here."));
   const issuesSlate = b.el("div", { class: "Box blankslate" }, b.icon("issue", 24), issuesSlateHeading, b.el("p", null, "Issues track ideas, bugs and tasks for this repository."));
-  const root = b.el(
-    "main",
-    { class: "page", "data-view": "empty" },
-    repoMasthead(b, "reskin-sample", "first-project", "Public"),
-    repoNav(b, "issues", 0),
-    b.el("div", { class: "js-pinned-items-reorder-container" }, pinnedHeading, pinnedSlate),
-    b.el("div", { class: "issues-head" }, b.el("h2", { class: "h4" }, "Issues"), b.el("span", { class: "color-fg-muted" }, "0 open · 0 closed")),
-    issuesSlate,
+  const root = shell(
+    b,
+    [{ label: "reskin-sample", href: "https://github.com/reskin-sample" }, { label: "first-project", href: "https://github.com/reskin-sample/first-project" }],
+    b.el(
+      "main",
+      { class: "page", "data-view": "empty" },
+      repoMasthead(b, "reskin-sample", "first-project", "Public"),
+      repoNav(b, "issues", 0),
+      b.el("div", { class: "js-pinned-items-reorder-container" }, pinnedHeading, pinnedSlate),
+      b.el("div", { class: "issues-head" }, b.el("h2", { class: "h4" }, "Issues"), b.el("span", { class: "color-fg-muted" }, "0 open · 0 closed")),
+      issuesSlate,
+    ),
   );
   return {
     root,
@@ -279,17 +327,22 @@ function empty(b) {
 }
 
 function notFound(b) {
-  const art = b.el("div", { class: "error-illustration", "aria-hidden": "true" }, [120, 170].map((size) => b.el("span", { class: "ring", style: `width:${size}px;height:${size}px;margin:-${size / 2}px 0 0 -${size / 2}px` })), b.el("span", { class: "code" }, "404"));
-  const root = b.el(
-    "main",
-    { class: "page", "data-view": "404" },
+  // A wide illustration band like GitHub's, with its art left of center and a blank lower right.
+  const art = b.el("div", { class: "error-illustration", "aria-hidden": "true" }, b.el("span", { class: "art" }, [120, 170].map((size) => b.el("span", { class: "ring", style: `width:${size}px;height:${size}px;margin:-${size / 2}px 0 0 -${size / 2}px` })), b.el("span", { class: "code" }, "404")));
+  const root = shell(
+    b,
+    [{ label: "github.com", href: "https://github.com/" }],
     b.el(
-      "div",
-      { class: "error-page" },
-      art,
-      b.el("h1", null, "Page not found"),
-      b.el("p", null, "The page you asked for doesn't exist here, or it has moved."),
-      b.el("div", { class: "error-links" }, b.link("https://github.com/", "Home"), b.link("https://docs.github.com/", "Documentation"), b.link("https://www.githubstatus.com/", "Status")),
+      "main",
+      { class: "page", "data-view": "404" },
+      b.el(
+        "div",
+        { class: "error-page" },
+        art,
+        b.el("h1", null, "Page not found"),
+        b.el("p", null, "The page you asked for doesn't exist here, or it has moved."),
+        b.el("div", { class: "error-links" }, b.link("https://github.com/", "Home"), b.link("https://docs.github.com/", "Documentation"), b.link("https://www.githubstatus.com/", "Status")),
+      ),
     ),
   );
   return { root, anchors: [{ slot: "error.notFound.caption", host: art, insert: "after", nativeSignature: "preview:404" }] };

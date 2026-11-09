@@ -2,7 +2,9 @@
 // Run after building the fixture app (npm run test:e2e -- --project=fixture-chromium builds it):
 //   node tests/fixture-app/product/capture.mjs --out <dir> [--view profile] [--width 390,1440] <theme.reskin.json>...
 // Each theme is captured After with effects on, After with Effects off (Text and Fonts on), and
-// Before, at each width.
+// Before, at each width. --modes full,calm captures Full and Calm instead, and --css lets the
+// theme's own CSS apply, as for a packaged built-in or an import with consent. --page captures
+// the whole frame rather than the first screen.
 import { mkdir, readFile } from "node:fs/promises";
 import { basename, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -16,7 +18,15 @@ const OFF = { ...ON, effects: false };
 
 const { values, positionals } = parseArgs({
   allowPositionals: true,
-  options: { out: { type: "string" }, view: { type: "string", default: "profile" }, width: { type: "string", default: "390,1440" }, app: { type: "string", default: join(ROOT, "dist/fixture/product") } },
+  options: {
+    out: { type: "string" },
+    view: { type: "string", default: "profile" },
+    width: { type: "string", default: "390,1440" },
+    app: { type: "string", default: join(ROOT, "dist/fixture/product") },
+    modes: { type: "string" },
+    css: { type: "boolean", default: false },
+    height: { type: "string", default: "900" },
+  },
 });
 if (!values.out || !positionals.length) throw new Error("Usage: capture.mjs --out <dir> [--view v] [--width 390,1440] <theme.reskin.json>...");
 await mkdir(values.out, { recursive: true });
@@ -27,13 +37,16 @@ try {
     const theme = JSON.parse(await readFile(resolve(file), "utf8"));
     const slug = basename(file).replace(/\.reskin\.json$|\.json$/, "");
     for (const width of values.width.split(",").map(Number)) {
-      const page = await browser.newPage({ viewport: { width, height: 900 }, deviceScaleFactor: width < 600 ? 2 : 1 });
+      const page = await browser.newPage({ viewport: { width, height: Number(values.height) }, deviceScaleFactor: width < 600 ? 2 : 1 });
       await page.goto(new URL("preview.html", server.url).href);
-      for (const [label, preferences, before] of [["effects-on", ON, false], ["effects-off", OFF, false], ["before", ON, true]]) {
-        await page.evaluate(({ theme, preferences, view, before }) => {
-          window.reskinPreview.mount({ view, theme, preferences });
+      const states = values.modes
+        ? values.modes.split(",").map((mode) => [mode, mode === "calm" ? { ...ON, extras: false } : ON, false])
+        : [["effects-on", ON, false], ["effects-off", OFF, false], ["before", ON, true]];
+      for (const [label, preferences, before] of states) {
+        await page.evaluate(({ theme, preferences, view, before, cssAllowed }) => {
+          window.reskinPreview.mount({ view, theme, preferences, cssAllowed });
           if (before) window.reskinPreview.setBefore(true);
-        }, { theme, preferences, view: values.view, before });
+        }, { theme, preferences, view: values.view, before, cssAllowed: values.css });
         await page.waitForFunction(() => {
           const host = document.querySelector("[data-reskin-preview][data-completed]");
           return host && host.dataset.completed === host.dataset.requested;

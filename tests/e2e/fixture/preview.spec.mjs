@@ -184,7 +184,7 @@ test("Text off removes every copy node and keeps decoration; Flavor extras off r
 
 test("dormant slots stay dormant in the default preview", async ({ page, fixtureApp }) => {
   await mount(page, fixtureApp, { theme: CHOOM_LIKE });
-  const slots = await inFrame(page, (doc) => [...doc.querySelectorAll("[data-reskin-owned]")].map((n) => n.dataset.reskinOwned).sort());
+  const slots = await inFrame(page, (doc) => [...doc.querySelectorAll("[data-reskin-owned]:not([data-reskin-slot])")].map((n) => n.dataset.reskinOwned).sort());
   // C3's evidence leaves only the issue-list caption dormant; the capture has no activity section.
   expect(slots).toEqual(["contributions.caption", "profile.organizations.heading", "profile.pinned.heading", "profile.tag"]);
 });

@@ -7,7 +7,7 @@ import { after, before, describe, test } from "node:test";
 import { chromium, firefox } from "playwright";
 import { readModeFile } from "../../packages/primer/convert.js";
 import { compileGitHub, MODE_INDEX } from "../../packages/primer/index.js";
-import { PREFS, readText, resolvedFromSeed } from "./helpers.mjs";
+import { PREFS, readText, resolvedFromSeed, stripStyleQueries } from "./helpers.mjs";
 
 const MODES = Object.keys(MODE_INDEX.modes);
 const raw = Object.fromEntries(MODES.map((id) => [id, readText(`vendor/primer/source/${id}.css`)]));
@@ -338,7 +338,7 @@ for (const [name, engine] of [["Chromium", chromium], ["Firefox", firefox]]) {
       if (name !== "Firefox") return;
       // Gecko before Firefox 151 has no style queries and matches selectors alone: themed through
       // every depth of themed islands, and native wherever its nearest island is not eligible.
-      const css = compiled.replace(/@container style\(--reskin-on: 1\)\{\n(?:.*\n){3}\}\n/g, "");
+      const css = stripStyleQueries(compiled);
       assert.doesNotMatch(css, /@container/);
       for (let n = 1; n <= 6; n++) {
         let t = await open({ body: deep(n, content), css });
@@ -357,7 +357,7 @@ for (const [name, engine] of [["Chromium", chromium], ["Firefox", firefox]]) {
     // `n` standard islands around `inner`, the innermost with an id.
     const nest = (n, inner, id = "deep") => (n ? `${`<div ${STD}>`.repeat(n - 1)}<div id="${id}" ${STD}>${inner}</div>${"</div>".repeat(n - 1)}` : inner);
     // Gecko before Firefox 151 has no style queries: the compiled theme without them.
-    const withoutStyleQueries = compiled.replace(/@container style\(--reskin-on: 1\)\{\n(?:.*\n){3}\}\n/g, "");
+    const withoutStyleQueries = stripStyleQueries(compiled);
     const themedComponents = async (t, why) => {
       assert.equal(await t.p.evaluate(() => getComputedStyle(document.getElementById("blob")).fill), "rgb(57, 255, 20)", `${why} graph`);
       assert.equal(await t.p.evaluate(() => getComputedStyle(document.getElementById("label")).backgroundColor), "rgba(215, 58, 74, 0.18)", `${why} label`);
