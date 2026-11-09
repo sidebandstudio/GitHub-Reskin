@@ -5,7 +5,7 @@
 // islands stay native, and a theme without the override compiles as main 127233c did.
 import assert from "node:assert/strict";
 import test from "node:test";
-import { repairTheme, resolveTheme } from "../../packages/engine/index.js";
+import { contrast, repairTheme, resolveTheme } from "../../packages/engine/index.js";
 import { compileGitHub, emittedColors, MODE_INDEX, seedFor, selectMode, standardSeed } from "../../packages/primer/index.js";
 import { compileHashes, withoutAdded } from "./compile-baseline.mjs";
 import { EXTRAS_OFF, PREFS, readJson, ROOT } from "./helpers.mjs";
@@ -51,6 +51,16 @@ test("the override drives GitHub's emphasis fill and its ink in Full and Calm on
     // Only the emphasis variables follow the override: the rest of the stylesheet is the same.
     const strip = (css) => withoutAdded(css).replace(/--(?:bgColor-accent-emphasis|fgColor-onEmphasis|diffBlob-hunkNum-bgColor-hover|control-checked-(?:bg|border)Color-(?:rest|hover|active)):#[0-9a-f]{6}/g, "");
     assert.equal(strip(compileGitHub(resolved, plan, PREFS).css), strip(compileGitHub(plain, plan, PREFS).css), mode.id);
+  }
+});
+
+test("on the review's mid-gray canvas, GitHub's emphasis fill and its ink stay readable before and after source repair", () => {
+  const theme = { schemaVersion: 1, name: "Mid gray", base: "dark", colors: { background: "#666666", text: "#ffffff", accent: TEAL }, overrides: { accentEmphasis: TEAL } };
+  const context = { seed: standardSeed(MODE_INDEX, "dark"), policy: "themed", reducedMotion: false, forcedColors: false };
+  for (const source of [theme, repairTheme(theme, context.seed).theme]) {
+    const emitted = new Map(emittedColors(resolveTheme(source, context)));
+    const [fill, ink] = ["--bgColor-accent-emphasis", "--fgColor-onEmphasis"].map((name) => emitted.get(name));
+    assert.ok(contrast(ink, fill) >= 4.5 && contrast(fill, "#666666") >= 3, `${fill} with ${ink}`);
   }
 });
 

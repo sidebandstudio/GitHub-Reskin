@@ -116,3 +116,76 @@ test("a repaired accentEmphasis survives export, share and reimport", () => {
   assert.equal(again.sourceHash, original.sourceHash);
   assert.deepEqual(again.tokens, original.tokens);
 });
+
+// C2c review round 1: repairing the fill for the shared ink and then for the canvas, one record at
+// a time, alternated until the passes ran out and left white text at 1.90:1 on #bbbcbc.
+const MID_GRAY = { schemaVersion: 1, name: "Mid gray", base: "dark", colors: { background: "#666666", text: "#ffffff", accent: TEAL }, overrides: { accentEmphasis: TEAL } };
+const FALLBACK = /^No emphasis fill reaches/;
+
+// Every pair of every seed of the base passes, and a fill that cannot pass both pairs falls back to
+// the fill a theme without the override gets, with a note. Source repair is a readable fixed point.
+function assertReadable(theme) {
+  const s = [dark, light].find((x) => x.base === theme.base);
+  const label = `${theme.colors.background} ${theme.overrides.accentEmphasis}`;
+  const outcomes = new Set();
+  const repaired = repairTheme(theme, s).theme;
+  assert.deepEqual(repairTheme(repaired, s).repairs, [], `${label}: repair is a fixed point`);
+  for (const source of [theme, repaired]) {
+    for (const seedRecord of SEEDS.filter((x) => x.base === theme.base)) {
+      const r = resolveTheme(source, themed(seedRecord));
+      const at = `${label} on ${seedRecord.id}`;
+      assert.deepEqual(r.pairAudit.filter((p) => !p.passed), [], at);
+      assert.deepEqual(auditPairs(r), r.pairAudit, at);
+      const t = r.tokens;
+      assert.ok(contrast(t.emphasisText, t.accentEmphasis) >= 4.5, at);
+      if (r.pairAudit.some((p) => p.id === "accentEmphasis")) {
+        assert.ok(contrast(t.accentEmphasis, t.canvas) >= 3, at);
+        outcomes.add("fitted");
+      } else {
+        const { overrides, ...plain } = source;
+        assert.equal(t.accentEmphasis, resolveTheme(plain, themed(seedRecord)).tokens.accentEmphasis, at);
+        assert.match(r.repairs.find((x) => x.path === "/tokens/accentEmphasis")?.reason ?? "", FALLBACK, at);
+        outcomes.add("fallback");
+      }
+    }
+  }
+  return outcomes;
+}
+
+test("the review's mid-gray case fits the fill against the emphasis ink and the canvas together", () => {
+  const r = resolveTheme(MID_GRAY, themed(dark));
+  const t = r.tokens;
+  assert.notEqual(t.accentEmphasis, "#bbbcbc");
+  assert.equal(t.emphasisText, "#ffffff");
+  assert.ok(contrast(t.emphasisText, t.accentEmphasis) >= 4.5 && contrast(t.accentEmphasis, t.canvas) >= 3, t.accentEmphasis);
+  assert.ok(r.pairAudit.every((p) => p.passed));
+  const { theme: repaired, repairs } = repairTheme(MID_GRAY, dark);
+  assert.equal(repairs.find((x) => x.path === "/overrides/accentEmphasis")?.after, t.accentEmphasis);
+  assert.deepEqual(repairTheme(repaired, dark).repairs, []);
+  assert.deepEqual(resolveTheme(repaired, themed(dark)).tokens, t);
+  assert.deepEqual([...assertReadable(MID_GRAY)], ["fitted"]);
+});
+
+test("a sweep of light, dark and mid-gray canvases and override hues passes every pair", () => {
+  const CANVASES = [
+    ["light", "#ffffff", "#1f2328"],
+    ["light", "#f6f2e8", "#27372d"],
+    ["light", "#888888", "#000000"],
+    ["light", "#777777", "#000000"],
+    ["dark", "#666666", "#ffffff"],
+    ["dark", "#555555", "#ffffff"],
+    ["dark", "#3a3a3a", "#ffffff"],
+    ["dark", "#22272e", "#e6edf3"],
+    ["dark", "#0a0a17", "#e4f3ff"],
+  ];
+  const HUES = [TEAL, "#fcee0a", "#ff0055", "#3355ff", "#7fff00", "#808080", "#ffffff", "#000000"];
+  const outcomes = new Set();
+  for (const [base, background, text] of CANVASES) {
+    for (const hue of HUES) {
+      const theme = { schemaVersion: 1, name: "Sweep", base, colors: { background, text, accent: TEAL }, overrides: { accentEmphasis: hue } };
+      for (const outcome of assertReadable(theme)) outcomes.add(outcome);
+    }
+  }
+  // White emphasis text cannot reach 4.5:1 on a fill that is 3:1 from a #3a3a3a or #555555 canvas.
+  assert.deepEqual([...outcomes].sort(), ["fallback", "fitted"]);
+});
