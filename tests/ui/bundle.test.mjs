@@ -24,7 +24,8 @@ test("the builder generates exactly the entry's generated files, deterministical
 test("runtime bundles install the css-tree sanitizer and carry the bundled catalog and proofs", () => {
   for (const path of Object.keys(BUNDLES)) {
     const text = first[path].toString("utf8");
-    assert.match(text, /node_modules\/css-tree/, path);
+    // css-tree itself: its lexer error class survives minification, its file paths do not.
+    assert.match(text, /SyntaxMatchError/, path);
     assert.match(text, /installCssSanitizer\(\{/, path);
     assert.match(text, /anime\.cyberpunk-edgerunners/, path);
     assert.match(text, /cssProofs/, path);

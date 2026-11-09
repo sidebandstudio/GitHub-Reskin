@@ -9,6 +9,9 @@
 // css-tree sanitizer: a saved theme can hold Advanced CSS or a gradientCss layer, and settings
 // validation in the background, the content script and every page checks it, so no entry can be
 // without the parser once the builder saves one. Bundled CSS is still admitted from the proofs.
+// The content script and background have whitespace and syntax minified, names kept, so the three
+// copies of the parser fit the 5 MiB unpacked package. The page script stays as written: the
+// artifact scan admits the preview's one packaged-file read by its exact source text.
 // Reads only checked-in files and lockfile-installed packages; same inputs, same bytes.
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -21,6 +24,8 @@ export const BUNDLES = Object.freeze({
   "background.js": "extension/pages/background.mjs",
   "pages/pages.js": "extension/pages/main.mjs",
 });
+const MINIFIED = Object.freeze(["content.js", "background.js"]);
+
 const readJson = async (root, path) => JSON.parse(await readFile(join(root, path), "utf8"));
 
 /** The catalog's entries in display order, read from themes/catalog.json. */
@@ -60,7 +65,7 @@ function virtualModules(modules) {
   };
 }
 
-async function bundle(root, entry, modules) {
+async function bundle(root, entry, modules, { minify = false } = {}) {
   const { build } = await import("esbuild");
   const result = await build({
     entryPoints: [entry],
@@ -71,6 +76,8 @@ async function bundle(root, entry, modules) {
     target: ["chrome120", "firefox140"],
     charset: "utf8",
     legalComments: "inline",
+    minifyWhitespace: minify,
+    minifySyntax: minify,
     write: false,
     logLevel: "silent",
     plugins: [virtualModules(modules)],
@@ -87,7 +94,7 @@ export async function build({ root, entry }) {
   const modules = { "reskin:catalog": catalogData(entries), "reskin:cards": catalogCards(entries) };
   const files = {};
   for (const path of entry.generated) {
-    if (Object.hasOwn(BUNDLES, path)) files[path] = await bundle(root, BUNDLES[path], modules);
+    if (Object.hasOwn(BUNDLES, path)) files[path] = await bundle(root, BUNDLES[path], modules, { minify: MINIFIED.includes(path) });
     else if (/^(assets\/fonts|packages\/preview\/fixture\/assets)\//.test(path)) files[path] = await readFile(join(root, path));
     else throw new Error(`packages/ui/bundle.mjs does not generate ${path}`);
   }
