@@ -12,6 +12,7 @@ import { repairTheme, resolveTheme } from "../engine/index.js";
 import { escapeCssForHtml, validateTheme } from "../format/index.js";
 import { FONT_BY_ID, compileAppearance, fontFaceCss, mountAppearance, noResources } from "../appearance/index.js";
 import { motionMs } from "../appearance/effects.js";
+import { THEMED_SWITCH } from "../appearance/paint.js";
 import { LIMITS } from "../appearance/registry.js";
 import { fixtureBody, serializeFixture } from "./serialize.js";
 import { FIXTURE_CSS } from "./styles.js";
@@ -174,7 +175,10 @@ export function createFixtureRenderer(fdoc, rt = runtime) {
       // A layout document needs new styles only for a new layout; colors never move anything.
       if (rebuilt || !layoutOnly) {
         for (const name of LAYERS) {
-          const text = omit.includes(name) ? "" : css[name];
+          // A document without the Primer adapter's stylesheet, which only colors, keeps its island
+          // switch: the fixture has no island below its root, so the root's switch stands for the
+          // whole stylesheet, and the structured rules lay out as they do in the shown frame.
+          const text = !omit.includes(name) ? css[name] : name === "theme" && css.theme ? `:root{${THEMED_SWITCH}:1}` : "";
           if (layer(name).textContent !== text) layer(name).textContent = text;
         }
       }
