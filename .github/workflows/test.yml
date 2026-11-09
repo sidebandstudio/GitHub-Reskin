@@ -17,6 +17,8 @@ jobs:
       # The tests now include the build's, which use the pinned dev dependencies.
       - run: npm install --global npm@11.12.1
       - run: npm ci
+      # The browser suites run in real Chromium and Firefox, as in the Build workflow.
+      - run: npx --no-install playwright install --with-deps chromium firefox
 
       - run: node --test
 

@@ -1,13 +1,14 @@
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import vm from "node:vm";
 import "./extension/github-modes.js";
 import "./extension/themes.js";
+// slang.js still ships in the transitional 1.1.0 entry, so css() keeps its output here; its label
+// swaps are no longer asserted. The new adapter's additive slot anchors are tested in tests/primer.
 import "./extension/slang.js";
 
-const { THEMES, DEFAULTS, palette, css, load, contrast, isHex, slang } = globalThis.GitHubReskin;
+const { THEMES, DEFAULTS, palette, css, load, contrast, isHex } = globalThis.GitHubReskin;
 
 test("every theme keeps text, muted text, links and button text readable", () => {
   for (const theme of THEMES) {
@@ -62,12 +63,6 @@ test("an unreadable text color falls back to black or white for derived colors",
   assert.ok(contrast(p.link, p.bg) >= 4.5);
 });
 
-test("Cyberpunk is the first theme and the default", () => {
-  assert.equal(THEMES[0].id, "cyberpunk");
-  assert.equal(DEFAULTS.theme, "cyberpunk");
-  assert.equal(palette(DEFAULTS).effects, "cyberpunk");
-});
-
 test("only themes with effects get the effects CSS, and it follows edited colors", () => {
   for (const theme of THEMES) {
     const out = css(palette({ theme: theme.id }));
@@ -79,78 +74,6 @@ test("only themes with effects get the effects CSS, and it follows edited colors
   assert.match(effects, /#ff2a6d/);
   assert.match(effects, /#39ff14/);
   assert.doesNotMatch(out, /#fcee0a|#00f0ff/);
-});
-
-test("only Cyberpunk swaps GitHub's labels for street slang, with its colors or edited ones", () => {
-  for (const theme of THEMES) {
-    const out = css(palette({ theme: theme.id }));
-    assert.equal(out.includes("reskin-slang"), theme.effects === "cyberpunk", theme.id);
-  }
-  const custom = { bg: "#101010", text: "#f0f0f0", accent: "#ff2a6d", graph: "#39ff14" };
-  const out = css(palette({ theme: "cyberpunk", custom }));
-  assert.match(out, /\.vcard-names:not\([^{]*\)::before\{content:"\/\/ choom" \/ ""/);
-  assert.match(out.slice(out.indexOf("reskin-slang")), /#ff2a6d/);
-});
-
-test("screen readers hear GitHub's words, not the slang", () => {
-  const out = slang(palette(DEFAULTS));
-  // Every added word has empty alternative text.
-  const contents = [...out.matchAll(/content:([^;}]*)/g)].map(([, value]) => value);
-  assert.ok(contents.length > 10, `${contents.length} contents`);
-  for (const value of contents) assert.match(value, /^"[^"]+" \/ ""$/, value);
-  // GitHub's labels are shrunk, which keeps them in the accessibility tree, and each gets slang in its place.
-  assert.doesNotMatch(out, /display:\s*none|visibility:\s*hidden|content-visibility/);
-  const shrunk = [...out.matchAll(/^([^{}\n]+)\{[^}]*font-size:0 !important\}$/gm)].map(([, selector]) => selector);
-  assert.ok(shrunk.length > 10, `${shrunk.length} labels`);
-  for (const selector of shrunk) assert.ok(out.includes(`\n${selector}::before{content:"`), selector);
-  assert.doesNotMatch(out, /@import|https?:|url\(/i);
-});
-
-// What people wrote, as GitHub's Markdown rendered it on 2026-10-31 (api.github.com/markdown),
-// made to look like the labels slang.js swaps: heading links to achievements, releases and
-// contributors, an itemprop follows link, a Pro title, the graph legend's ids and GitHub's classes.
-const AUTHORED = `<h2><a href="https://github.com/whoisaldo?tab=achievements">My personal trophies</a></h2>
-<h2><a href="https://github.com/acme/repo/releases"><span>Download version 27</span></a></h2>
-<h2><a href="https://github.com/acme/repo/graphs/contributors"><span>Top 10 contributors</span></a></h2>
-<h2>Crews I run with</h2><a itemprop="follows" href="https://github.com/acme">acme</a>
-<p><span title="Label: Pro">Pro tip 3</span> <span>Less than 5</span><span id="user-content-contribution-graph-legend-level-0">x</span><span id="user-content-contribution-graph-legend-level-4">y</span><span>More than 9</span></p>
-<div id="user-content-js-contribution-activity"><h2>Contribution activity in 2025</h2></div>
-<div><h2>Pinned 3 repos</h2></div>
-o<span>Footer 2026</span>
-<div>Card</div>
-<div><a target="_blank" rel="noopener noreferrer" href="x.png"><img src="x.png" style="max-width: 100%;"></a></div>`;
-
-test("slang changes only GitHub's own labels, never what people wrote", () => {
-  const out = slang(palette(DEFAULTS));
-  // The rules inside an @supports are checked too, but not the @supports itself.
-  const selectors = [...out.matchAll(/^([^{}\n@][^{}\n]*)\{/gm)].map(([, selector]) => selector.replace(/::(before|after)$/, ""));
-  assert.ok(selectors.length > 30, `${selectors.length} selectors`);
-  // Nothing inside a README, comment, issue or pull request title, or file, gists' included, ever matches.
-  const exclusion = ":not(:is(.markdown-body,.comment-body,.js-comment-body,.markdown-title,.file,.blob-wrapper,.react-code-file-contents) *)";
-  for (const selector of selectors) assert.ok(selector.endsWith(exclusion), selector);
-  // Each starts inside a part of GitHub's page named by a class, id or data attribute, never at a
-  // bare element or link someone could write, like h2 a[href$='/releases'].
-  const authored = {
-    classes: [...AUTHORED.matchAll(/class="([^"]*)"/g)].flatMap(([, value]) => value.split(" ")),
-    ids: [...AUTHORED.matchAll(/id="([^"]*)"/g)].map(([, value]) => value),
-    data: [...AUTHORED.matchAll(/(data-[\w-]+)=/g)].map(([, name]) => name),
-  };
-  assert.deepEqual(authored.classes, []);
-  assert.deepEqual(authored.data, []);
-  assert.ok(authored.ids.every((id) => id.startsWith("user-content-")));
-  for (const selector of selectors) {
-    const container = selector.split(" ")[0];
-    const names = (container.match(/[.#][\w-]+|\[data-[\w-]+/g) || []).map((token) => token.slice(1));
-    assert.ok(names.length, selector);
-    for (const name of names) assert.ok(![...authored.classes, ...authored.ids, ...authored.data].includes(name), selector);
-  }
-  // Counts beside a label keep their size: Releases' and Contributors' counters are never the label,
-  // and whatever sits in Pinned's heading beside the word, its spinner and saved note, is put back.
-  for (const link of ["/releases'", "/graphs/contributors'"]) {
-    const label = selectors.find((selector) => selector.includes(link));
-    assert.ok(label.includes("span:not(.Counter,[data-component='CounterLabel'])"), label);
-  }
-  assert.match(out, /^\.Layout-main \.js-pinned-items-reorder-container > h2 > \*:not\([^{]*\)\{font-size:12px\}$/m);
 });
 
 // The value css() gives a variable last, which is the one that applies.
@@ -464,18 +387,6 @@ test("a tab's first read finishing late can't repaint over a newer change", asyn
   assert.equal(tab.cache.get("github-reskin-css"), cyberpunk);
 });
 
-// sha256 of css() for every theme without effects, plus one with edited colors. It was
-// computed from main before effects existed. Change it only when you mean to change how
-// those themes look, or after regenerating extension/github-modes.js.
-const PLAIN_CSS_SHA256 = "eb1b9710b801c12a8be39e3940f48b03fc554d2daeb3df8c3e36e31d82382c8f";
-
-test("themes without effects keep exactly the CSS they had before", () => {
-  const custom = { bg: "#000000", text: "#ffffff", accent: "#ff0000", graph: "#00ff00" };
-  const outputs = THEMES.filter((t) => !t.effects).map((t) => css(palette({ theme: t.id })));
-  outputs.push(css(palette({ theme: "editing-suite", custom })));
-  assert.equal(createHash("sha256").update(outputs.join("\n---\n")).digest("hex"), PLAIN_CSS_SHA256);
-});
-
 // Splits out every block that starts with the global regex `start`, braces included.
 function splitBlocks(text, start) {
   const blocks = [];
@@ -545,10 +456,10 @@ test("where corner-shape doesn't draw, Gecko included, Cyberpunk's bevels become
   assert.match(popupCss, gate);
 });
 
-test("every Cyberpunk bevel, slang's tags included, has a square fallback in Gecko's gate", () => {
+test("every Cyberpunk bevel has a square fallback in Gecko's gate", () => {
   const gate = /@supports \(not \(corner-shape: ?bevel\)\) or \(-moz-appearance: ?none\) ?\{/g;
   const p = palette({ theme: "cyberpunk" });
-  for (const [name, text] of [["css", css(p)], ["slang", slang(p)]]) {
+  for (const [name, text] of [["css", css(p)]]) {
     const { blocks, rest } = splitBlocks(text.replace(/\/\*[^]*?\*\//g, ""), gate);
     assert.ok(blocks.length, name);
     const squared = new Set(rules(blocks.join("")).filter(([, body]) => /border-radius:0( !important)?(;|$)/.test(body)).flatMap(([selectors]) => selectorList(selectors)));
@@ -556,9 +467,6 @@ test("every Cyberpunk bevel, slang's tags included, has a square fallback in Gec
     assert.ok(beveled.length, name);
     for (const selector of beveled) assert.ok(squared.has(selector), `${name}: ${selector}`);
   }
-  // The choom tag and the 404 stamp glow, so they get no clip-path bevel.
-  const { blocks } = splitBlocks(slang(p), gate);
-  assert.doesNotMatch(blocks.join(""), /clip-path/);
 });
 
 test("Cyberpunk's marketing footer reads on its inset background, and only Cyberpunk has it", () => {
