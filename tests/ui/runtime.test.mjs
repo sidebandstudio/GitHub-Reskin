@@ -2,6 +2,7 @@
 // background's boot callbacks, against the real catalog, engine, Primer data and appearance.
 import assert from "node:assert/strict";
 import test from "node:test";
+import { FONT_BY_ID } from "../../packages/appearance/index.js";
 import { DEFAULT_THEME_ID, SANITIZER_VERSION } from "../../packages/contracts/index.js";
 import { resolveTheme } from "../../packages/engine/index.js";
 import { admitCss } from "../../packages/format/index.js";
@@ -18,7 +19,7 @@ const catalog = catalogFromData(structuredClone(data));
 const cards = catalogCards(entries);
 
 const fontUrls = [];
-const resources = { kind: "test", fontUrl: (id) => (fontUrls.push(id), `chrome-extension://test/assets/fonts/${id}/${id}.woff2`), assetUrl: () => null };
+const resources = { kind: "test", fontUrl: (id, weight) => (fontUrls.push(`${id} ${weight}`), `chrome-extension://test/assets/fonts/${id}/${id}-${weight}.woff2`), assetUrl: () => null };
 const github = {
   MODE_ATTRIBUTES: ["data-color-mode", "data-light-theme", "data-dark-theme"],
   readNativeMode: () => ({ colorMode: "dark", lightTheme: "light", darkTheme: "dark", systemDark: true }),
@@ -114,16 +115,39 @@ test("a bundled heading font is loaded from the packaged path in Full and Calm w
   const { plan, seed } = renderer.plan(renderer.readPage(null, null), document.base);
   const resolved = renderer.resolve(document, { seed, policy: "themed", reducedMotion: false, forcedColors: false });
   assert.notEqual(resolved.font, "system");
+  // One face per reviewed weight; the browser fetches only the weights its text uses.
+  const faces = FONT_BY_ID[resolved.font].weights.map((weight) => `${resolved.font} ${weight}`);
   fontUrls.length = 0;
   assert.match(renderer.compile(resolved, plan, prefs()).css, /@font-face/);
-  assert.deepEqual(fontUrls, [resolved.font]);
+  assert.deepEqual(fontUrls, faces);
   fontUrls.length = 0;
   assert.doesNotMatch(renderer.compile(resolved, plan, prefs({ fonts: false })).css, /@font-face/);
   assert.doesNotMatch(renderer.compile(resolved, plan, prefs({ appearance: "calm", extras: false, fonts: false })).css, /@font-face/);
   assert.deepEqual(fontUrls, []);
   // Calm keeps role fonts (THEME-EXPANSION.md), so the face its heading rule names is loaded too.
   assert.match(renderer.compile(resolved, plan, prefs({ appearance: "calm", extras: false })).css, /@font-face/);
-  assert.deepEqual(fontUrls, [resolved.font]);
+  assert.deepEqual(fontUrls, faces);
+});
+
+test("a bundled body font loads beside the heading font at its reviewed weights, and Choom keeps its native stack first", () => {
+  const document = { ...catalog.document("anime.solo-leveling"), fonts: { heading: "oxanium", body: "atkinson-hyperlegible" } };
+  const { plan, seed } = renderer.plan(renderer.readPage(null, null), document.base);
+  const resolved = renderer.resolve(document, { seed, policy: "themed", reducedMotion: false, forcedColors: false });
+  fontUrls.length = 0;
+  const { css } = renderer.compile(resolved, plan, prefs());
+  assert.deepEqual(fontUrls, ["oxanium 600", "atkinson-hyperlegible 400", "atkinson-hyperlegible 700"]);
+  assert.match(css, /@font-face\{font-family:"Reskin Atkinson Hyperlegible";src:url\("chrome-extension:\/\/test\/assets\/fonts\/atkinson-hyperlegible\/atkinson-hyperlegible-700\.woff2"\) format\("woff2"\);font-weight:700;/);
+  assert.match(css, /font-family:"Reskin Atkinson Hyperlegible", system-ui/);
+  // Choom names Roboto Condensed after the owner's Bahnschrift and DIN Alternate; the bundled face
+  // takes that name, so it renders only where those native faces are missing.
+  const choom = catalog.document(DEFAULT_THEME_ID);
+  const choomPlan = renderer.plan(renderer.readPage(null, null), choom.base);
+  const choomResolved = renderer.resolve(choom, { seed: choomPlan.seed, policy: "themed", reducedMotion: false, forcedColors: false });
+  fontUrls.length = 0;
+  const choomCss = renderer.compile(choomResolved, choomPlan.plan, prefs()).css;
+  assert.deepEqual(fontUrls, ["roboto-condensed 600", "roboto-condensed 700"]);
+  assert.match(choomCss, /@font-face\{font-family:"Roboto Condensed";/);
+  assert.match(choomCss, /font-family:Bahnschrift, "DIN Alternate", "Roboto Condensed", "Arial Narrow", ui-monospace, monospace/);
 });
 
 test("cards carry what Full adds, at miniature scale: wallpaper, heading face, tag, heading addition, glow and rail", () => {

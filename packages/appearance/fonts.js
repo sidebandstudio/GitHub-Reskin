@@ -23,13 +23,38 @@ export function fontStack(fontId) {
 }
 
 /**
- * One @font-face rule for a bundled font, loaded only where something uses that family.
- * Returns "" for system. Throws for an unknown ID or a URL that is not a packaged resource.
+ * One @font-face rule for one reviewed weight of a bundled font, by default its registry weight,
+ * loaded only where something uses that family at that weight. Returns "" for system. Throws for
+ * an unknown ID, an unreviewed weight or a URL that is not a packaged resource.
  */
-export function fontFaceCss(fontId, resourceUrl) {
+export function fontFaceCss(fontId, resourceUrl, weight = FONT_BY_ID[fontId]?.weight) {
   if (fontId === "system") return "";
   const font = FONT_BY_ID[fontId];
   if (!font) throw new Error(`Unknown font ${fontId}`);
+  if (!font.weights.includes(weight)) throw new Error(`Font ${fontId} has no reviewed weight ${weight}`);
   if (!isFontResourceUrl(resourceUrl)) throw new Error(`Font ${fontId} needs a packaged resource URL from the runtime adapter`);
-  return `@font-face{font-family:"${font.cssFamily}";src:url("${resourceUrl}") format("woff2");font-weight:${font.weight};font-style:normal;font-display:swap;unicode-range:${UNICODE_RANGE}}`;
+  return `@font-face{font-family:"${font.cssFamily}";src:url("${resourceUrl}") format("woff2");font-weight:${weight};font-style:normal;font-display:swap;unicode-range:${UNICODE_RANGE}}`;
+}
+
+/**
+ * The bundled families a themed resolution's heading and body roles name, once each: a bundled
+ * role's family, and a native stack's own face. Without role fonts, the legacy heading font.
+ */
+export function roleFontIds(resolved) {
+  const roles = resolved?.appearance?.fonts;
+  const ids = roles ? ["heading", "body"].filter((role) => ["bundled", "native-stack"].includes(roles[role]?.source)).map((role) => roles[role].id) : [resolved?.font];
+  return [...new Set(ids)].filter((id) => FONT_BY_ID[id]);
+}
+
+/**
+ * Every reviewed weight's @font-face rule for the role families, from the runtime's resource
+ * adapter. A browser fetches only the weights its text uses; a file the adapter has no copy of is
+ * left out, so its role renders in the fallback stack.
+ */
+export function roleFontFaceCss(resolved, resources) {
+  return roleFontIds(resolved)
+    .flatMap((id) => FONT_BY_ID[id].weights.map((weight) => [id, weight, resources.fontUrl(id, weight)]))
+    .filter(([, , url]) => url)
+    .map(([id, weight, url]) => fontFaceCss(id, url, weight))
+    .join("\n");
 }

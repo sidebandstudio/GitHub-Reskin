@@ -212,61 +212,194 @@ export const EFFECT_PARAMETERS = {
   }
 };
 
-// The bundled families, the ones with files. "system" ships no file and has no family.
+// The bundled families, the ones with files, with the registry weight and every reviewed weight.
+// "system" ships no file and has no family.
 export const FONTS = [
   {
     "id": "system",
     "family": null,
     "weight": null,
+    "weights": [],
     "minimumAccentPx": null
   },
   {
     "id": "rajdhani",
     "family": "Rajdhani",
     "weight": 600,
+    "weights": [
+      600,
+      700
+    ],
     "minimumAccentPx": 18
   },
   {
     "id": "barlow-condensed",
     "family": "Barlow Condensed",
     "weight": 600,
+    "weights": [
+      600,
+      700
+    ],
     "minimumAccentPx": 18
   },
   {
     "id": "fraunces",
     "family": "Fraunces",
     "weight": 600,
+    "weights": [
+      600,
+      700
+    ],
     "minimumAccentPx": 20
   },
   {
     "id": "alegreya",
     "family": "Alegreya",
     "weight": 600,
+    "weights": [
+      600,
+      700
+    ],
     "minimumAccentPx": 20
   },
   {
     "id": "cormorant-garamond",
     "family": "Cormorant Garamond",
     "weight": 700,
+    "weights": [
+      600,
+      700
+    ],
     "minimumAccentPx": 22
   },
   {
     "id": "josefin-sans",
     "family": "Josefin Sans",
     "weight": 600,
+    "weights": [
+      600,
+      700
+    ],
     "minimumAccentPx": 18
   },
   {
     "id": "bungee",
     "family": "Bungee",
     "weight": 400,
+    "weights": [
+      400
+    ],
     "minimumAccentPx": 22
   },
   {
     "id": "space-grotesk",
     "family": "Space Grotesk",
     "weight": 600,
+    "weights": [
+      600
+    ],
     "minimumAccentPx": 18
+  },
+  {
+    "id": "bebas-neue",
+    "family": "Bebas Neue",
+    "weight": 400,
+    "weights": [
+      400
+    ],
+    "minimumAccentPx": 18
+  },
+  {
+    "id": "cinzel",
+    "family": "Cinzel",
+    "weight": 600,
+    "weights": [
+      600
+    ],
+    "minimumAccentPx": 18
+  },
+  {
+    "id": "orbitron",
+    "family": "Orbitron",
+    "weight": 600,
+    "weights": [
+      600
+    ],
+    "minimumAccentPx": 18
+  },
+  {
+    "id": "oxanium",
+    "family": "Oxanium",
+    "weight": 600,
+    "weights": [
+      600
+    ],
+    "minimumAccentPx": 18
+  },
+  {
+    "id": "ibm-plex-sans",
+    "family": "IBM Plex Sans",
+    "weight": 400,
+    "weights": [
+      400,
+      500,
+      600,
+      700
+    ],
+    "minimumAccentPx": 16
+  },
+  {
+    "id": "source-sans-3",
+    "family": "Source Sans 3",
+    "weight": 400,
+    "weights": [
+      400,
+      600,
+      700
+    ],
+    "minimumAccentPx": 16
+  },
+  {
+    "id": "nunito-sans",
+    "family": "Nunito Sans",
+    "weight": 400,
+    "weights": [
+      400,
+      700
+    ],
+    "minimumAccentPx": 16
+  },
+  {
+    "id": "atkinson-hyperlegible",
+    "family": "Atkinson Hyperlegible",
+    "weight": 400,
+    "weights": [
+      400,
+      700
+    ],
+    "minimumAccentPx": 16
+  },
+  {
+    "id": "roboto-condensed",
+    "family": "Roboto Condensed",
+    "weight": 600,
+    "weights": [
+      600,
+      700
+    ],
+    "minimumAccentPx": 18
+  },
+  {
+    "id": "barlow",
+    "family": "Barlow",
+    "weight": 400,
+    "weights": [
+      400,
+      500,
+      600,
+      700
+    ],
+    "minimumAccentPx": 16
   }
 ];
 
@@ -395,7 +528,7 @@ export const FONT_ROLES = [
     "weights": [
       400
     ],
-    "source": "deferred",
+    "source": "bundled",
     "fallback": "\"Arial Narrow\", system-ui, sans-serif"
   },
   {
@@ -407,7 +540,7 @@ export const FONT_ROLES = [
     "weights": [
       600
     ],
-    "source": "deferred",
+    "source": "bundled",
     "fallback": "Georgia, \"Times New Roman\", serif"
   },
   {
@@ -419,7 +552,7 @@ export const FONT_ROLES = [
     "weights": [
       600
     ],
-    "source": "deferred",
+    "source": "bundled",
     "fallback": "Impact, \"Arial Black\", system-ui, sans-serif"
   },
   {
@@ -431,7 +564,7 @@ export const FONT_ROLES = [
     "weights": [
       600
     ],
-    "source": "deferred",
+    "source": "bundled",
     "fallback": "\"Arial Narrow\", system-ui, sans-serif"
   },
   {
@@ -447,7 +580,7 @@ export const FONT_ROLES = [
       600,
       700
     ],
-    "source": "deferred",
+    "source": "bundled",
     "fallback": "system-ui, -apple-system, \"Segoe UI\", sans-serif"
   },
   {
@@ -462,7 +595,7 @@ export const FONT_ROLES = [
       600,
       700
     ],
-    "source": "deferred",
+    "source": "bundled",
     "fallback": "system-ui, -apple-system, \"Segoe UI\", sans-serif"
   },
   {
@@ -476,7 +609,7 @@ export const FONT_ROLES = [
       400,
       700
     ],
-    "source": "deferred",
+    "source": "bundled",
     "fallback": "system-ui, -apple-system, \"Segoe UI\", sans-serif"
   },
   {
@@ -490,7 +623,7 @@ export const FONT_ROLES = [
       400,
       700
     ],
-    "source": "deferred",
+    "source": "bundled",
     "fallback": "system-ui, -apple-system, \"Segoe UI\", sans-serif"
   },
   {
@@ -519,7 +652,7 @@ export const FONT_ROLES = [
       600,
       700
     ],
-    "source": "deferred",
+    "source": "bundled",
     "fallback": "system-ui, -apple-system, \"Segoe UI\", sans-serif"
   }
 ];

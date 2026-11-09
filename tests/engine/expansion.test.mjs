@@ -116,11 +116,12 @@ test("cssVariables exposes exactly the audited registry from repaired output", (
   assert.throws(() => cssVariables(resolveTheme(choom, { seed: null, policy: "native-unknown", reducedMotion: false, forcedColors: false })), /themed/);
 });
 
-test("deferred font families resolve to GitHub's font with a note; the bundled legacy font field is kept", () => {
+test("every heading and body family resolves to its bundled face without a note; the bundled legacy font field is kept", () => {
   const r = resolveTheme({ ...MINIMAL, fonts: { heading: "orbitron", body: "barlow" } }, themed(dark));
-  assert.deepEqual([r.appearance.fonts.heading.id, r.appearance.fonts.heading.requested, r.appearance.fonts.body.id], ["system", "orbitron", "system"]);
-  assert.deepEqual(r.appearance.notes.map((n) => n.path), ["/fonts/heading", "/fonts/body"]);
-  assert.equal(r.font, "system");
+  assert.deepEqual([r.appearance.fonts.heading.id, r.appearance.fonts.heading.source, r.appearance.fonts.body.id, r.appearance.fonts.body.source], ["orbitron", "bundled", "barlow", "bundled"]);
+  assert.deepEqual(r.appearance.fonts.body.weights, [400, 500, 600, 700]);
+  assert.deepEqual(r.appearance.notes, []);
+  assert.equal(r.font, "orbitron");
   const accent = resolveTheme({ ...MINIMAL, fonts: { accent: "bungee", heading: "rajdhani" } }, themed(dark));
   assert.deepEqual([accent.font, accent.appearance.fonts.heading.id], ["rajdhani", "rajdhani"]);
   const native = resolveTheme({ ...MINIMAL, fonts: { heading: "roboto-condensed" } }, themed(dark));

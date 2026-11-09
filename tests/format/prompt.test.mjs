@@ -44,12 +44,13 @@ test("the prompt's rich example is the executable fixture and a fenced reply imp
   assert.deepEqual(reply.notes.filter((n) => n.severity === "warning"), []);
 });
 
-test("c2b r2 blocker 4: the prompt offers only this increment's fonts and at-rules and names nothing deferred", () => {
+test("c2b r2 blocker 4: the prompt offers every bundled font and only this increment's at-rules, and names nothing deferred", () => {
   const prompt = makeAiPrompt();
   const heading = /Heading IDs: ([^.]+)\./.exec(prompt)[1].split(", ");
   const body = /Body IDs: ([^.]+)\./.exec(prompt)[1].split(", ");
   assert.deepEqual(heading, offeredFonts("heading"));
-  assert.deepEqual(body, ["system"]);
+  assert.deepEqual(body, ["system", "ibm-plex-sans", "source-sans-3", "nunito-sans", "atkinson-hyperlegible", "barlow"]);
+  assert.equal(heading.length, 19);
   assert.ok(heading.includes("roboto-condensed"), "the native condensed stack stays offered");
   assert.deepEqual([...heading, ...body].filter((id) => FONT_INVENTORY.deferred.includes(id)), []);
   // Every offered font resolves as requested, with no deferred-font warning.

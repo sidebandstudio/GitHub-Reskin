@@ -18,7 +18,7 @@ export const CAPABILITIES = Object.freeze({
   ]),
   deferred: Object.freeze([
     "rasters needing conversion: animated frames and metadata are rejected until local conversion lands",
-    `fonts without files yet (${FONT_INVENTORY.deferred.join(", ")}): requests resolve to GitHub's font with a note`,
+    ...(FONT_INVENTORY.deferred.length ? [`fonts without files yet (${FONT_INVENTORY.deferred.join(", ")}): requests resolve to GitHub's font with a note`] : []),
     "css conveniences: nesting and @supports are rejected",
     `editor controls: ${DEFERRED_EDITOR_ACTION_TYPES.join(", ")} are rejected; images and CSS arrive by import`,
   ]),

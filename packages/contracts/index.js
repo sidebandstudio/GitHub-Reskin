@@ -149,9 +149,9 @@ export const DIFF_ROLES = freeze([
 // Every color role the theme format names, with syntax as one group. A schema registry only.
 export const COLOR_ROLES = freeze([...CORE_COLOR_ROLES, ...OVERRIDE_COLOR_ROLES, "syntax"]);
 
-// The font families this build ships files for. "system" uses the platform font and ships no
-// file. C5 supplies assets/fonts/<id>/ for every other entry. Revision 4 names more families in
-// the schema; their files are deferred, see FONT_INVENTORY.
+// The font families this build ships files for: "system", which uses the platform font and ships
+// no file, and the eighteen families of the schema's registry, each with C5's files in
+// assets/fonts/<id>/. Every heading font has files.
 export const FONT_IDS = freeze([
   "system",
   "rajdhani",
@@ -162,11 +162,6 @@ export const FONT_IDS = freeze([
   "josefin-sans",
   "bungee",
   "space-grotesk",
-]);
-// Every heading and body font ID the schema accepts, in schema order. fonts.accent takes the
-// heading list.
-export const HEADING_FONT_IDS = freeze([
-  ...FONT_IDS,
   "bebas-neue",
   "cinzel",
   "orbitron",
@@ -178,16 +173,19 @@ export const HEADING_FONT_IDS = freeze([
   "roboto-condensed",
   "barlow",
 ]);
+// Every heading and body font ID the schema accepts, in schema order. fonts.accent takes the
+// heading list.
+export const HEADING_FONT_IDS = FONT_IDS;
 export const BODY_FONT_IDS = freeze(["system", "ibm-plex-sans", "source-sans-3", "nunito-sans", "atkinson-hyperlegible", "barlow"]);
 // The font inventory of this increment. `bundled` families have files (FONT_IDS); `nativeStack`
-// families resolve to their reviewed native stack with no file, which is how Choom keeps the
-// owner's condensed display faces; `deferred` families have no file yet, so a request for one
-// resolves to the native font and is reported. The full expansion bundles all eighteen.
+// families keep their reviewed native stack in front of their file, which is how Choom keeps the
+// owner's condensed display faces; `deferred` families would have no file yet, so a request for
+// one resolves to the native font and is reported. Every family is bundled and none is deferred.
 export const FONT_INVENTORY = freeze({
   increment: 1,
   bundled: FONT_IDS.filter((id) => id !== "system"),
   nativeStack: ["roboto-condensed"],
-  deferred: ["bebas-neue", "cinzel", "orbitron", "oxanium", "ibm-plex-sans", "source-sans-3", "nunito-sans", "atkinson-hyperlegible", "barlow"],
+  deferred: [],
 });
 export const EFFECT_IDS = freeze(["glow", "grid", "scanlines", "paper", "rail", "rules", "orbit", "seal", "drift", "echo"]);
 export const EFFECT_TARGETS = freeze(["owned-badge", "owned-margin-strip", "owned-caption-edge"]);

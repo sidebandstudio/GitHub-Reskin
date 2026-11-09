@@ -70,9 +70,9 @@ test("each shared scope builds all of its prerequisites, and fails while one is 
   assert.deepEqual(inputs("engine"), []);
   assert.deepEqual(inputs("primer"), ["vendor/primer/modes.json", "licenses/primer-primitives.txt"]);
   assert.deepEqual(inputs("preview"), [...inputs("primer"), ...FONT_INPUTS.map(([path]) => path)]);
-  // Eight bundled families, one WOFF2 and one OFL notice each, all C5's.
-  assert.equal(FONT_INPUTS.length, 16);
-  assert.ok(FONT_INPUTS.every(([path, owner]) => owner === "C5" && /^assets\/fonts\/([a-z-]+)\/(\1\.woff2|OFL\.txt)$/.test(path)));
+  // Eighteen bundled families, a WOFF2 per reviewed weight (35 in all) and one OFL notice each, all C5's.
+  assert.equal(FONT_INPUTS.length, 35 + 18);
+  assert.ok(FONT_INPUTS.every(([path, owner]) => owner === "C5" && /^assets\/fonts\/([a-z0-9-]+)\/(\1(-[4-7]00)?\.woff2|OFL\.txt)$/.test(path)));
 
   await withTempDir(async (tmp) => {
     for (const scope of SHARED_BUILD_SCOPES) {

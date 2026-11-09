@@ -1,5 +1,5 @@
 {
-  "note": "SHA-256 of each complete resolveTheme result (appearance.css.policyHash left out) on the four synthetic seeds and each standard-seed source repair, for every Classic and engine/format fixture, captured from main 6636712 before overrides.accentEmphasis and the footer.signoff and profile.achievements.heading slots. tests/engine/accent-emphasis.test.mjs recomputes them; a source without accentEmphasis must resolve exactly as before. policyHash is left out because the CSS policy's owned-slot and variable lists gained the new entries.",
+  "note": "SHA-256 of each complete resolveTheme result (appearance.css.policyHash left out) on the four synthetic seeds and each standard-seed source repair, for every Classic and engine/format fixture, captured from main 6636712 before overrides.accentEmphasis and the footer.signoff and profile.achievements.heading slots. tests/engine/accent-emphasis.test.mjs recomputes them; a source without accentEmphasis must resolve exactly as before. policyHash is left out because the CSS policy's owned-slot and variable lists gained the new entries. The two art-additions.reskin.json resolutions were recorded again when its body font, Barlow, gained files; with the earlier font inventory they match main 6636712.",
   "cases": [
     {
       "file": "themes/classics/editing-suite.reskin.json",
@@ -294,12 +294,12 @@
     {
       "file": "tests/fixtures/schema/valid/art-additions.reskin.json",
       "seed": "fixture.standard-light",
-      "sha256": "5f972db49d702e171145641339e8199a1caee50fe0ba01db890c45fe24576f15"
+      "sha256": "f1e95ce2288391dcd6fe107682f424ca0becc37611cbbbbc2f6e28248591d260"
     },
     {
       "file": "tests/fixtures/schema/valid/art-additions.reskin.json",
       "seed": "fixture.tritanopia-light",
-      "sha256": "8783515824de136aadd4943a723833fe4845642a62d1b9dfd4a596b179d96b8f"
+      "sha256": "ce9b3ada0c2b2e9d67fa5ba654ee4851d56cab857aaf879942de5724e906b887"
     },
     {
       "file": "tests/fixtures/schema/valid/choom-circuit.reskin.json",

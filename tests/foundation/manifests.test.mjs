@@ -41,7 +41,7 @@ test("the generated manifests name the reskin-2 runtime, its background per brow
     assert.equal(manifest.action.default_popup, "pages/popup.html");
     assert.equal(manifest.options_ui.page, "pages/settings.html");
     assert.deepEqual(manifest.web_accessible_resources.map((r) => r.matches), [config.extension.hostMatches]);
-    assert.ok(manifest.web_accessible_resources[0].resources.every((path) => /^assets\/fonts\/[a-z-]+\/[a-z-]+\.woff2$/.test(path)));
+    assert.ok(manifest.web_accessible_resources[0].resources.every((path) => /^assets\/fonts\/([a-z0-9-]+)\/\1(-[4-7]00)?\.woff2$/.test(path)));
     for (const path of manifestPaths(manifest)) assert.ok(entry.files.includes(path), path);
   }
   const { browser_specific_settings, background, ...chromeRest } = firefox;
