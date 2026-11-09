@@ -1,7 +1,9 @@
 // A small CSS parser for the frozen GitHub mode stylesheets, following the CSS Syntax tokenizing
 // rules that matter there: comments, quoted strings, escapes and nested (), [] and {} blocks.
 // It returns qualified rules and at-rules with their blocks; declarations keep their raw values.
-// Pure: no DOM, no browser parser. Used only by the offline generator and checks.
+// A style rule nested in another, as the compiler writes for Gecko, follows its parent with `&`
+// resolved to :is(parent). Pure: no DOM, no browser parser. Used only by the offline generator
+// and checks.
 
 /**
  * @typedef {{name:string, value:string, important:boolean}} Declaration
@@ -120,11 +122,32 @@ function parseRules(css, start, end) {
       const close = scan(css, open + 1, ["}"]);
       if (css[close] !== "}") throw new SyntaxError(`Unclosed rule block at ${i}`);
       const prelude = css.slice(i, open).trim();
-      rules.push({ type: "rule", prelude, selectors: splitTopLevel(prelude), declarations: parseDeclarations(css.slice(open + 1, close)) });
+      rules.push(...styleRule(prelude, css.slice(open + 1, close)));
       i = close + 1;
     }
   }
   return rules;
+}
+
+// A style rule and the style rules nested in its block, flattened after it.
+function styleRule(prelude, body) {
+  const declarations = [];
+  const nested = [];
+  for (let i = 0; i < body.length; ) {
+    const stop = scan(body, i, [";", "{"]);
+    if (body[stop] === "{") {
+      const close = scan(body, stop + 1, ["}"]);
+      const inner = body.slice(i, stop).trim();
+      if (!inner.includes("&")) throw new SyntaxError(`Nested rule without &: ${inner.slice(0, 60)}`);
+      const parent = `:is(${prelude})`;
+      nested.push(...styleRule(splitTopLevel(inner).map((s) => s.replaceAll("&", parent)).join(","), body.slice(stop + 1, close)));
+      i = close + 1;
+    } else {
+      declarations.push(body.slice(i, stop));
+      i = stop + 1;
+    }
+  }
+  return [{ type: "rule", prelude, selectors: splitTopLevel(prelude), declarations: parseDeclarations(declarations.join(";")) }, ...nested];
 }
 
 /** Parses a stylesheet into rules. Throws SyntaxError on malformed input. */
