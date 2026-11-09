@@ -20,7 +20,7 @@
     "source/light_tritanopia_high_contrast.css": {"mode":"light_tritanopia_high_contrast","url":"https://github.githubassets.com/assets/light_tritanopia_high_contrast-c7ac71fdcac9204f.css","sha256":"2a59b378e9d7d0152b99e30882e64feb347ac2f622df33b50e3295943a40abec"}
   },
   "policy": {"file":"packages/primer/mode-policy.json","sha256":"d229f84202df5688a01998ee5b909f241e76a17d622937a0b40447cc52584591"},
-  "mappings": {"file":"packages/primer/mappings.json","sha256":"ac2c632f98eb28d7f5f1871e1f376f4dc3d371311fb48b60ee8c9f1c63083ac5"},
+  "mappings": {"file":"packages/primer/mappings.json","sha256":"842f512678c9f8fb7809cb343692f07db34a94cf57e4f6fdfe4d400981e46368"},
   "modes": {
     "light": {"file":"source/light.css","base":"light","family":"standard","highContrast":false,"policy":"themed","sourceHash":"2f7441b14f377836acc6fc68687be738cf1aa958f1b91a666eee697a346d8dc9"},
     "light_high_contrast": {"file":"source/light_high_contrast.css","base":"light","family":"standard","highContrast":true,"policy":"native-high-contrast","sourceHash":"82b91bb3d8d62b91ff5b70bf020ad1f47bb1e2b62cdc245b1121d7ca29f61e2b"},
