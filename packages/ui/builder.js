@@ -7,11 +7,12 @@
 // built here from fields.js. Text from themes enters only through textContent and value.
 import { LOCAL_THEME_ID_PREFIX, LIMITS, SANITIZER_VERSION } from "../contracts/index.js";
 import { basePolarityIssue, repairTheme } from "../engine/index.js";
-import { acceptsFileName, canonicalize, makeAiPrompt, normalizeHex } from "../format/index.js";
-import { COPY as DRAFT_COPY, addLayer, checked, commitEdit, copyName, createDraft, draftFromRecord, draftRecord, fixBase, layerCount, removeLayer, setCss, setEffect, setField, setFlavorSlot, setGraphLevel, switchBase, undo, valueAt, withValue } from "./draft.js";
+import { acceptsFileName, canonicalize, dataUrlBytes, makeAiPrompt, normalizeHex, rasterInfo, rasterSourceInfo, rasterTotals, UPLOAD_SOURCE_BYTES } from "../format/index.js";
+import { browserRasterEnv, convertRaster, createRasterQueue, fitSize, removeRasterLayer, setRasterLayer } from "../appearance/raster.js";
+import { COPY as DRAFT_COPY, addLayer, checked, commitEdit, copyName, createDraft, draftFromRecord, draftRecord, fixBase, freshDocument, layerCount, removeLayer, setCss, setEffect, setField, setFlavorSlot, setGraphLevel, switchBase, undo, valueAt, withValue } from "./draft.js";
 import { ANSI_COLORS, BACKGROUND_TARGETS, CODE_COLORS, CORE_COLORS, DETAIL_COLORS, DETAIL_FIELDS, DIFF_COLORS, EFFECTS, FLAVOR_FIELDS, GRADIENT_TYPES, GRAPH_FIELDS, GRAPH_LEVEL_LABELS, IMAGE_FITS, IMAGE_POSITIONS, PATTERN_KINDS, SHAPE_FIELDS, SYNTAX_COLORS, fontChoices } from "./fields.js";
 import { effectivePreferences } from "../settings/index.js";
-import { analyzeImport, COPY as IMPORT_COPY, cssSummary, exportFile, kib, repaired, shareSheet, themeJson } from "./importer.js";
+import { analyzeImport, COPY as IMPORT_COPY, cssSummary, exportFile, extractObject, kib, repaired, shareSheet, themeJson } from "./importer.js";
 
 export const COPY = Object.freeze({
   promptCopied: "AI prompt copied.",
@@ -35,13 +36,37 @@ export const COPY = Object.freeze({
   fileType: "Choose a .json or .reskin.json file.",
   fileTooLarge: `This theme exceeds the file, image or CSS limit. Theme files are at most ${kib(LIMITS.fileUtf8Bytes)}.`,
   baseFix: (base) => `Switch to ${base}`,
+  cssRevoked: "Advanced CSS was turned off in another window. Turn on Enable advanced CSS to use it again.",
+  missingColor: (label) => `Choose ${label.toLowerCase()} here, or copy a fix request for your chatbot.`,
+  fresh: "New theme from three colors",
+  imageLimits: `Each image is at most ${kib(LIMITS.perImageDecodedBytes)}, and a theme's images come to at most ${kib(LIMITS.documentImageDecodedBytes)} and ${LIMITS.documentImageDecodedPixels.toLocaleString("en-US")} pixels together. PNG, JPEG, WebP or GIF files up to ${UPLOAD_SOURCE_BYTES / 1048576} MiB that don't fit are converted here first, and you choose whether to use the result.`,
+  imageUsage: (bytes, pixels) => `Images in this theme: ${kib(bytes)} of ${kib(LIMITS.documentImageDecodedBytes)}, ${pixels.toLocaleString("en-US")} of ${LIMITS.documentImageDecodedPixels.toLocaleString("en-US")} pixels.`,
+  imageType: "Choose a PNG, JPEG, WebP or GIF image.",
+  imageTooLarge: (bytes) => `This image is ${kib(bytes)}. Images to convert are at most ${UPLOAD_SOURCE_BYTES / 1048576} MiB.`,
+  imageAdded: (name, image, bytes) => `Added ${name}, ${image.width} × ${image.height} px, ${kib(bytes)}.`,
+  imageConverting: "Converting the image on this device…",
+  imageOffer: (name) => `${name} doesn't fit as it is. Use this converted copy?`,
+  imageAccepted: "Added the converted image.",
+  imageReplaced: "Replaced the image with the smaller copy.",
+  imageRemoved: "Removed the image.",
+  freshStarted: "Started a new theme from three colors. Undo puts the last one back.",
+  remixed: (name) => `Started from every detail of ${name}. Undo puts the last one back.`,
 });
+const ROLE_LABELS = { background: "Background", text: "Text", accent: "Accent" };
+const ROLE_EXAMPLES = { background: "#18212b", text: "#e6edf3", accent: "#ff806c" };
 
 const AUTOSAVE_MS = 400;
 const CSS_CHECK_MS = 250;
 const HEX = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
 
 const json = (value) => JSON.stringify(value);
+const MIME_NAMES = { "image/png": "PNG", "image/jpeg": "JPEG", "image/webp": "WebP", "image/gif": "GIF" };
+const describe = ({ bytes, width, height, mime }) => `${kib(bytes)} ${MIME_NAMES[mime] ?? ""}, ${width} × ${height} px`.replace(/ ,/, ",");
+function base64(bytes) {
+  let text = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) text += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(text);
+}
 // Saved documents come back from storage in canonical key order; compare themes the same way.
 const same = (a, b) => (a && b ? canonicalize(a) === canonicalize(b) : a === b);
 const el = (doc, tag, props = {}, children = []) => {
@@ -68,8 +93,9 @@ const idFor = (path) => `rb${path.replace(/[^a-z0-9]+/gi, "-")}`;
  * @param {(fontId:string)=>string} [options.fontFace] @font-face CSS for a bundled face
  * @param {object} [options.clipboard] {writeText(text)}; navigator.clipboard by default
  * @param {(file:{filename,mime,bytes})=>void} [options.download]
+ * @param {(bytes:Uint8Array, options:object)=>Promise<object>} [options.convertImage] convertRaster in this page
  */
-export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, fontFace = null, clipboard = doc.defaultView?.navigator?.clipboard, download = null }) {
+export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, fontFace = null, clipboard = doc.defaultView?.navigator?.clipboard, download = null, convertImage = null }) {
   const root = doc.querySelector('[data-rb="builder"]');
   if (!root) return null;
   const part = (name) => root.querySelector(`[data-rb="${name}"]`);
@@ -102,13 +128,14 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
 
   // ----- messages -----
   const say = (text) => (part("status").textContent = text);
-  function fail(text, { again = null, offerDownload = false } = {}) {
+  function fail(text, { again = null, offerDownload = false, manage = false } = {}) {
     retry = again;
     const box = part("error");
     box.hidden = false;
     box.querySelector("[data-rb-text]").textContent = text;
     part("retry").hidden = !again;
     part("download-draft").hidden = !offerDownload;
+    part("manage").hidden = !manage;
   }
   const clearError = () => {
     retry = null;
@@ -129,6 +156,7 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
     const id = draftLike.basedOn && catalog.has(draftLike.basedOn) ? draftLike.basedOn : null;
     if (!id) return null;
     const document = catalog.document(id);
+    if (draftLike.fresh) return { name: document.name, document: freshDocument(document), cssEnabled: false, savedId: null, bundledName: document.name, fresh: true };
     return { name: document.name, document: { ...structuredClone(document), name: copyName(document.name) }, cssEnabled: false, savedId: null, bundledName: document.name };
   }
   function consentMatches(id, document) {
@@ -136,15 +164,23 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
     const css = cssSummary(document);
     return Boolean(consent && css?.ok && consent.hash === css.hash && consent.sanitizerVersion === SANITIZER_VERSION);
   }
-  // The draft a selected theme starts: a bundled theme becomes "My <name>", a saved one is edited.
-  function startFrom(themeId) {
+  // The draft a selected theme starts: a saved one is edited; a bundled one starts a new theme from
+  // its three colors alone, or with `remix` every detail of it as "My <name>".
+  function startFrom(themeId, { remix = false } = {}) {
     if (themeId.startsWith(LOCAL_THEME_ID_PREFIX) && customTheme(themeId)) {
       const saved = customTheme(themeId);
       return createDraft({ document: structuredClone(saved.document), basedOn: saved.basedOn ?? null, savedId: saved.id, cssEnabled: consentMatches(saved.id, saved.document) });
     }
     const id = catalog.has(themeId) ? themeId : catalog.ids[0];
+    if (!remix) return createDraft({ document: freshDocument(catalog.document(id)), basedOn: id, fresh: true });
     return createDraft({ document: { ...structuredClone(catalog.document(id)), name: copyName(catalog.document(id).name) }, basedOn: id });
   }
+  // The bundled theme a new draft takes its starting colors or details from.
+  const bundledBase = () => [draft?.basedOn, settings?.selectedThemeId].find((id) => id && catalog.has(id)) ?? catalog.ids[0];
+  // What Remix (a bundled theme) or Edit (a saved one) starts from: the theme the builder opened
+  // on, or the one it last saved.
+  let remixFrom = null;
+  const remixTarget = () => (remixFrom && (customTheme(remixFrom) || catalog.has(remixFrom)) ? remixFrom : bundledBase());
   const dirty = () => Boolean(source && (!same(draft.document, source.document) || Boolean(draft.cssEnabled) !== Boolean(source.cssEnabled)));
 
   /** Replaces the draft after a completed edit, then renders, previews and schedules the autosave. */
@@ -292,6 +328,7 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
     for (const [role, select] of [["heading", part("font-heading")], ["body", part("font-body")]]) {
       select.append(...fontChoices(role).map((font) => el(doc, "option", { value: font.id, text: font.label })));
     }
+    part("image-limits").textContent = COPY.imageLimits;
     part("css-warning").textContent = IMPORT_COPY.cssWarning;
     part("import-css-warning").textContent = IMPORT_COPY.cssWarning;
   }
@@ -354,8 +391,15 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
     part("undo").disabled = !draft.previous;
     const isDirty = dirty();
     part("dirty").hidden = !isDirty;
-    part("based-on").textContent = source ? (draft.savedId ? `Editing ${source.name}` : `Based on ${source.bundledName ?? source.name}`) : "";
-    part("reset").textContent = source ? `Reset to ${source.bundledName ?? source.name}` : "Reset";
+    part("based-on").textContent = source ? (draft.savedId ? `Editing ${source.name}` : draft.fresh ? COPY.fresh : `Based on ${source.bundledName ?? source.name}`) : "";
+    part("reset").textContent = source ? (source.fresh ? `Reset to ${source.bundledName} colors` : `Reset to ${source.bundledName ?? source.name}`) : "Reset";
+    const target = remixTarget();
+    const remixName = customTheme(target)?.document.name ?? catalog.document(target)?.name;
+    part("start-remix").textContent = customTheme(target) ? `Edit ${remixName}` : `Remix ${remixName}`;
+    part("start-note").textContent = draft.fresh
+      ? "Background, Text and Accent make the whole theme; the graph and every other color follow them."
+      : `Starts with every detail of ${remixName}: backgrounds, effects, fonts, code colors and more.`;
+    for (const input of root.querySelectorAll('input[name="rb-start"]')) input.checked = input.value === (draft.fresh ? "fresh" : "remix");
     part("save").textContent = draft.savedId ? "Save changes" : "Save as theme";
     part("save-copy").hidden = !draft.savedId;
     part("discard").disabled = !isDirty;
@@ -419,6 +463,81 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
     const full = layerCount(draft.document, bgTarget) >= LIMITS.maxBackgroundLayers;
     part("bg-add-gradient").disabled = full;
     part("bg-add-pattern").disabled = full;
+    part("image-file").disabled = full;
+    const totals = rasterTotals(draft.document);
+    part("image-usage").textContent = COPY.imageUsage(totals.bytes, totals.pixels);
+  }
+
+  // ----- images -----
+  // Uploads, Compress and Resize run one at a time on this device; a newer request cancels an
+  // older one. A file that already fits is added as it is; anything else is converted to a still,
+  // metadata-free copy that is added only once the person accepts its before and after sizes.
+  const images = createRasterQueue();
+  const convert = convertImage ?? ((bytes, options) => convertRaster(bytes, options, browserRasterEnv(win)));
+  let offer = null;
+  const imageError = (text) => fieldError("backgrounds", text);
+  function closeOffer() {
+    offer = null;
+    part("image-offer").hidden = true;
+  }
+
+  async function addImageFile(file) {
+    closeOffer();
+    imageError(null);
+    if (!file) return;
+    if (!/^image\/(png|jpeg|webp|gif)$/.test(file.type) && !/\.(png|jpe?g|webp|gif)$/i.test(file.name)) return imageError(COPY.imageType);
+    if (file.size > UPLOAD_SOURCE_BYTES) return imageError(COPY.imageTooLarge(file.size));
+    const target = bgTarget;
+    if (layerCount(draft.document, target) >= LIMITS.maxBackgroundLayers) return imageError(`A background holds up to ${LIMITS.maxBackgroundLayers} layers. Remove one first.`);
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const source = rasterSourceInfo(bytes);
+    if (!source.ok) return imageError(source.message);
+    if (!source.animated && !source.metadata) {
+      const image = { data: `data:${source.mime};base64,${base64(bytes)}`, width: source.width, height: source.height };
+      if (rasterInfo(image.data).ok) {
+        const placed = setRasterLayer(draft.document, target, null, image);
+        if (placed.ok && edit(checked(placed.theme)).ok) return say(COPY.imageAdded(file.name, image, bytes.length));
+      }
+    }
+    await offerConversion({ bytes, target, index: null, name: file.name, options: { compress: true } });
+  }
+
+  async function offerConversion({ bytes, target, index, name, options }) {
+    const others = rasterTotals(draft.document, index === null ? null : `/backgrounds/${target}/layers/${index}/image`);
+    say(COPY.imageConverting);
+    const result = await images.run("image", (signal) => convert(bytes, { ...options, others, signal }));
+    if (destroyed || result.code === "cancelled") return;
+    say("");
+    if (!result.ok) return imageError(result.message);
+    offer = { target, index, image: result.image };
+    part("image-offer-title").textContent = COPY.imageOffer(name);
+    part("image-before").textContent = describe(result.before);
+    part("image-after").textContent = describe(result.after);
+    part("image-note").textContent = result.note;
+    part("image-offer").hidden = false;
+    part("image-accept").focus();
+  }
+
+  function acceptOffer() {
+    if (!offer) return;
+    const { target, index, image } = offer;
+    const placed = setRasterLayer(draft.document, target, index, image);
+    closeOffer();
+    if (!placed.ok) return imageError(placed.message);
+    const result = edit(checked(placed.theme));
+    if (!result.ok) return imageError(result.message);
+    say(index === null ? COPY.imageAccepted : COPY.imageReplaced);
+    part("image-file").value = "";
+  }
+
+  function imageAction(action, index) {
+    const layer = draft.document.backgrounds?.[bgTarget]?.layers?.[index]?.image;
+    const bytes = layer ? dataUrlBytes(layer.data) : null;
+    if (!bytes) return;
+    imageError(null);
+    const options = action === "compress" ? { compress: true, quality: 0.8 } : { maxSide: Math.max(16, Math.ceil(Math.max(layer.width, layer.height) / 2)) };
+    if (action === "resize" && fitSize(layer.width, layer.height, options.maxSide).width === layer.width) return imageError("This image is already as small as Resize makes it.");
+    offerConversion({ bytes, target: bgTarget, index, name: `Layer ${index + 1}`, options });
   }
 
   function layerItem(layer, index) {
@@ -447,6 +566,13 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
       grid.append(select(`${base}/kind`, "Pattern", PATTERN_KINDS), colorRow({ path: `${base}/color`, label: "Pattern color", required: true }, { group: "bg" }), number(`${base}/opacity`, "Opacity (0 to 0.2)", 0, 0.2, 0.01), number(`${base}/size`, "Size (px, 2 to 128)", 2, 128, 1));
     } else if (kind === "image") {
       grid.append(el(doc, "p", { class: "rs-note", dataset: { imageInfo: "" } }), select(`${base}/fit`, "Fit", [["", "Default (cover)"], ...IMAGE_FITS]), select(`${base}/position`, "Position", [["", "Default (center)"], ...IMAGE_POSITIONS]), number(`${base}/opacity`, "Opacity (0 to 1)", 0, 1, 0.05));
+      const what = `layer ${index + 1}, image`;
+      item.append(
+        el(doc, "div", { class: "rs-actions" }, [
+          el(doc, "button", { type: "button", class: "rs-button", text: "Compress", "aria-label": `Compress ${what}`, dataset: { imageAction: "compress", index: String(index) } }),
+          el(doc, "button", { type: "button", class: "rs-button", text: "Resize", "aria-label": `Resize ${what} to half its width and height`, dataset: { imageAction: "resize", index: String(index) } }),
+        ]),
+      );
     } else {
       grid.append(el(doc, "p", { class: "rs-note", text: "Imported as CSS. Edit it in the theme file." }));
     }
@@ -463,8 +589,8 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
     for (const row of item.querySelectorAll(".rb-color")) syncColor(row, valueAt(draft.document, row.dataset.path) ?? null, true, null);
     const info = item.querySelector("[data-image-info]");
     if (info && layer.image) {
-      const bytes = Math.floor((layer.image.data.length - layer.image.data.indexOf(",") - 1) * 0.75);
-      info.textContent = `${layer.image.width} × ${layer.image.height} px, about ${kib(bytes)}.`;
+      const admitted = rasterInfo(layer.image.data);
+      info.textContent = admitted.ok ? `${describe({ bytes: admitted.bytes.length, width: admitted.width, height: admitted.height, mime: admitted.mime })}.` : `${layer.image.width} × ${layer.image.height} px.`;
     }
   }
 
@@ -590,11 +716,53 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
     }
     if (typeof value === "string" && !value.trim()) return importError({ ok: false, message: kind === "code" ? "Paste a share code first." : "Paste the chatbot's answer first.", details: [], actions: [] });
     const result = analyzeImport(value, kind, { standardSeed });
-    if (!result.ok) return importError(result);
+    if (!result.ok) return importError(result, value);
     showImport(result);
   }
 
-  function importError(view) {
+  // The missing Background, Text or Accent of an answer that is otherwise a theme: a labeled picker
+  // and hex field. The chosen color goes into the retained object, which the normal importer then
+  // parses, validates and repairs again from scratch.
+  function missingColorFix(path, input) {
+    const text = typeof input === "string" ? input : input instanceof Uint8Array ? new TextDecoder().decode(input) : null;
+    const object = text === null ? null : extractObject(text);
+    if (!object) return null;
+    const role = path.split("/")[2];
+    const label = ROLE_LABELS[role];
+    const example = ROLE_EXAMPLES[role];
+    const picker = el(doc, "input", { type: "color", id: "rb-missing-picker", class: "rb-picker", value: example, "aria-label": `${label} color picker` });
+    const hex = el(doc, "input", { type: "text", id: "rb-missing-hex", class: "rb-input rb-hex", value: example, maxlength: "7", autocomplete: "off", spellcheck: "false", "aria-describedby": "rb-missing-note rb-missing-error" });
+    const error = el(doc, "p", { class: "rb-field-error", id: "rb-missing-error", hidden: true });
+    const apply = el(doc, "button", { type: "button", class: "rs-button rs-button--primary", text: `Preview with this ${label.toLowerCase()}` });
+    picker.addEventListener("input", () => {
+      hex.value = picker.value;
+      error.hidden = true;
+      hex.removeAttribute("aria-invalid");
+    });
+    hex.addEventListener("input", () => {
+      const value = normalizeHex(hex.value.trim());
+      if (value && HEX.test(hex.value.trim())) picker.value = value.length === 7 ? value : picker.value;
+    });
+    apply.addEventListener("click", () => {
+      const raw = hex.value.trim();
+      if (!HEX.test(raw)) {
+        Object.assign(error, { hidden: false, textContent: COPY.hex });
+        hex.setAttribute("aria-invalid", "true");
+        return hex.focus();
+      }
+      const fixed = { ...object, colors: { ...(object.colors && typeof object.colors === "object" ? object.colors : {}), [role]: normalizeHex(raw) } };
+      runImport(JSON.stringify(fixed), "text");
+    });
+    return el(doc, "div", { class: "rb-missing", role: "group", "aria-labelledby": "rb-missing-label" }, [
+      el(doc, "label", { id: "rb-missing-label", for: "rb-missing-hex", text: label }),
+      el(doc, "span", { class: "rb-color-inputs" }, [picker, hex]),
+      el(doc, "p", { class: "rs-note", id: "rb-missing-note", text: COPY.missingColor(label) }),
+      error,
+      apply,
+    ]);
+  }
+
+  function importError(view, input = null) {
     importResult = null;
     part("import-result").hidden = true;
     part("import-use").disabled = true;
@@ -603,6 +771,8 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
     box.querySelector("[data-rb-text]").textContent = view.message;
     part("import-details").replaceChildren(...(view.details ?? []).map((d) => el(doc, "li", {}, [d.path ? el(doc, "code", { text: d.path }) : "", d.path ? " " : "", d.message])));
     const choices = [];
+    const fix = view.missingColor ? missingColorFix(view.missingColor, input) : null;
+    if (fix) choices.push(fix);
     for (const candidate of view.candidates ?? []) choices.push(el(doc, "button", { type: "button", class: "rs-button", text: `Preview ${candidate.name || "this theme"}`, onclick: () => runImport(candidate.input, candidate.input.startsWith("RS1.") ? "code" : "text") }));
     for (const action of view.actions ?? []) {
       choices.push(el(doc, "button", { type: "button", class: "rs-button", text: action.label, title: `Leaves out: ${action.omitted.join(", ")}`, onclick: () => runImport(action.input, "text") }));
@@ -667,6 +837,15 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
   }
 
   // ----- save -----
+  // The saved theme or its CSS approval changed elsewhere since this draft loaded it.
+  function drifted(asCopy) {
+    if (!draft.savedId || !source) return false;
+    const stored = customTheme(draft.savedId);
+    if (!stored) return !asCopy;
+    if (consentMatches(stored.id, stored.document) !== Boolean(source.cssEnabled)) return true;
+    return !asCopy && !same(stored.document, source.document);
+  }
+
   async function save({ asCopy = false } = {}) {
     clearError();
     part("conflict").hidden = true;
@@ -685,31 +864,28 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
     const current = await host.read();
     if (!current.ok) return fail(COPY.saveFailed, { again: () => save({ asCopy }), offerDownload: true });
     settings = current.settings;
-    // The saved theme this draft edits changed elsewhere: never overwrite it silently.
-    if (draft.savedId && !asCopy) {
-      const stored = customTheme(draft.savedId);
-      if (!stored || (source && !same(stored.document, source.document))) return void (part("conflict").hidden = false);
-    }
+    // Never overwrite an unknown revision silently, and never grant again an approval another
+    // window revoked: both need Keep editing or Load saved theme first.
+    if (drifted(asCopy)) return void (part("conflict").hidden = false);
+    const editing = Boolean(draft.savedId && !asCopy);
     const document = repairTheme(draft.document, standardSeed(draft.document.base)).theme;
     const action = { type: "saveCustom", document, select: true };
-    if (draft.savedId && !asCopy) action.id = draft.savedId;
+    if (editing) action.id = draft.savedId;
     if (draft.basedOn && catalog.has(draft.basedOn)) action.basedOn = draft.basedOn;
+    // Consent names the sanitized hash of exactly this CSS and is written with the theme in one
+    // commit, so a failed save leaves nothing behind and Retry cannot add a second theme. Turning
+    // Enable off revokes it.
+    const css = cssSummary(document);
+    if (draft.cssEnabled && css?.ok) action.cssConsent = { hash: css.hash, sanitizerVersion: css.sanitizerVersion };
+    else if (editing && settings.cssConsent?.[draft.savedId]) action.cssConsent = null;
     say("Saving…");
     const before = new Set(settings.customThemes.map((t) => t.id));
     const reply = await host.commit(action, settings.revision);
     if (!reply?.ok) return saveFailed(reply, () => save({ asCopy }));
     settings = reply.settings;
     const id = action.id ?? settings.customThemes.find((t) => !before.has(t.id))?.id;
-    // Consent names the sanitized hash of exactly this CSS; turning it off revokes it.
-    const css = cssSummary(document);
-    const wanted = Boolean(draft.cssEnabled && css?.ok);
-    const has = consentMatches(id, document);
-    if (id && wanted !== has && (wanted || settings.cssConsent?.[id])) {
-      const consent = await host.commit(wanted ? { type: "setCssConsent", id, granted: true, hash: css.hash, sanitizerVersion: css.sanitizerVersion } : { type: "setCssConsent", id, granted: false }, settings.revision);
-      if (consent?.ok) settings = consent.settings;
-      else return saveFailed(consent, () => save({ asCopy: false }));
-    }
-    draft = { ...draft, document, savedId: id };
+    draft = { ...draft, document, savedId: id, fresh: false };
+    remixFrom = id;
     source = sourceFor(draft);
     await host.discardDraft().catch(() => {});
     lastPreviewed = null;
@@ -725,7 +901,21 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
       return;
     }
     const detail = reply?.issues?.find((i) => i?.message)?.message ?? "";
-    fail(/full|exceed|capacity/i.test(detail) ? COPY.full : COPY.saveFailed, { again, offerDownload: true });
+    const full = /full|exceed|capacity/i.test(detail);
+    fail(full ? COPY.full : COPY.saveFailed, { again, offerDownload: true, manage: full });
+  }
+
+  /** Three colors or remix: a new start for the draft, which Undo can take back. */
+  function startOver(kind) {
+    let next;
+    if (kind === "fresh") {
+      const name = draft.fresh || draft.savedId ? draft.document.name : "My theme";
+      next = createDraft({ document: freshDocument(draft.document, draft.savedId ? copyName(name) : name), basedOn: bundledBase(), fresh: true });
+    } else next = startFrom(remixTarget(), { remix: true });
+    accept(commitEdit(draft, next.document, { basedOn: next.basedOn, savedId: next.savedId, cssEnabled: next.cssEnabled, fresh: next.fresh }));
+    source = sourceFor(draft) ?? source;
+    render();
+    say(kind === "fresh" ? COPY.freshStarted : COPY.remixed(source?.bundledName ?? source?.name ?? ""));
   }
 
   function downloadDraft() {
@@ -733,6 +923,9 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
     download?.(file);
     say(COPY.downloaded(file.filename));
   }
+
+  // The draft with Enable advanced CSS off, in Undo's copy too.
+  const withoutCss = (d) => ({ ...d, cssEnabled: false, previous: d.previous && { ...d.previous, cssEnabled: false } });
 
   // ----- resume -----
   function dismissResume(discard) {
@@ -828,6 +1021,7 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
       fieldError("name", result.ok ? null : result.message);
       return void edit(result);
     }
+    if (target.name === "rb-start") return void startOver(target.value);
     if (target.name === "rb-base") {
       const result = switchBase(draft.document, target.value);
       if (edit(result).ok && result.note) say(result.note);
@@ -849,8 +1043,10 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
     if (target.dataset.slot) return void edit(setFlavorSlot(draft.document, target.dataset.slot, target.value));
     if (target.name === "rb-bg-target") {
       bgTarget = target.value;
+      closeOffer();
       return renderBackgrounds();
     }
+    if (target === part("image-file")) return void addImageFile(target.files?.[0] ?? null);
     if (target === part("css")) {
       win.clearTimeout(cssTimer);
       return checkCss();
@@ -869,9 +1065,13 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
       edit(checked(document));
       return;
     }
+    if (button.dataset.imageAction) return imageAction(button.dataset.imageAction, Number(button.dataset.index));
     if (button.dataset.removeLayer !== undefined) {
-      const result = removeLayer(draft.document, bgTarget, Number(button.dataset.removeLayer));
-      edit(result);
+      const index = Number(button.dataset.removeLayer);
+      const image = draft.document.backgrounds?.[bgTarget]?.layers?.[index]?.image;
+      const removed = image ? removeRasterLayer(draft.document, bgTarget, index) : null;
+      const result = removed ? (removed.ok ? checked(removed.theme) : removed) : removeLayer(draft.document, bgTarget, index);
+      if (edit(result).ok && image) say(COPY.imageRemoved);
       part("bg-add-gradient").focus();
       return;
     }
@@ -889,6 +1089,8 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
   listen(part("undo"), "click", () => {
     if (!draft.previous) return say(DRAFT_COPY.nothingToUndo);
     accept(undo(draft));
+    source = sourceFor(draft) ?? source;
+    render();
     say(DRAFT_COPY.undone);
   });
   listen(part("polarity-fix"), "click", () => {
@@ -918,6 +1120,12 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
     host.discardDraft().catch(() => {});
     say(COPY.discarded);
   });
+  listen(part("image-accept"), "click", acceptOffer);
+  listen(part("image-cancel"), "click", () => {
+    closeOffer();
+    part("image-file").value = "";
+    part("image-file").focus();
+  });
   listen(part("save"), "click", () => save());
   listen(part("save-copy"), "click", () => save({ asCopy: true }));
   listen(part("retry"), "click", () => retry?.());
@@ -925,11 +1133,13 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
   listen(part("keep-editing"), "click", async () => {
     const current = await host.read();
     if (current.ok) settings = current.settings;
-    // Keep this draft, now based on what is saved: the next Save is a deliberate overwrite.
+    // Keep this draft, now based on what is saved: the next Save is a deliberate overwrite. An
+    // approval revoked elsewhere stays off until Enable advanced CSS is chosen again.
     if (draft.savedId) {
       const stored = customTheme(draft.savedId);
       source = stored ? { ...sourceFor(draft) } : null;
       if (!stored) draft = { ...draft, savedId: null };
+      else if (!source.cssEnabled) draft = withoutCss(draft);
       source ??= sourceFor(draft);
     }
     part("conflict").hidden = true;
@@ -940,21 +1150,27 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
     const current = await host.read();
     if (current.ok) settings = current.settings;
     part("conflict").hidden = true;
-    const next = startFrom(draft.savedId && customTheme(draft.savedId) ? draft.savedId : settings.selectedThemeId);
+    remixFrom = draft.savedId && customTheme(draft.savedId) ? draft.savedId : settings.selectedThemeId;
+    const next = startFrom(remixFrom);
     source = sourceFor(next);
-    accept(commitEdit(draft, next.document, { cssEnabled: next.cssEnabled, savedId: next.savedId, basedOn: next.basedOn }));
+    accept(commitEdit(draft, next.document, { cssEnabled: next.cssEnabled, savedId: next.savedId, basedOn: next.basedOn, fresh: next.fresh }));
   });
-  listen(part("resume-draft"), "click", () => {
-    const restored = draftFromRecord(pendingRecord);
+  function resumeDraft() {
+    let restored = draftFromRecord(pendingRecord);
     pendingRecord = null;
     part("resume").hidden = true;
-    if (!restored) return;
+    if (!restored) return false;
+    // A saved theme's approval may have been revoked since this draft was kept.
+    const stored = restored.savedId ? customTheme(restored.savedId) : null;
+    if (stored && restored.cssEnabled && !consentMatches(stored.id, restored.document)) restored = withoutCss(restored);
     source = sourceFor(restored) ?? source;
     draft = restored;
     render();
     say(COPY.resumed);
     part("name").focus();
-  });
+    return true;
+  }
+  listen(part("resume-draft"), "click", resumeDraft);
   listen(part("resume-saved"), "click", () => {
     dismissResume(true);
     part("name").focus();
@@ -1041,11 +1257,21 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
     settings = current.settings;
     if (pristine && !draft.savedId) {
       // An untouched draft follows the selected theme.
-      draft = startFrom(settings.selectedThemeId);
+      remixFrom = settings.selectedThemeId;
+      draft = startFrom(remixFrom);
       source = sourceFor(draft);
     } else if (draft?.savedId && !customTheme(draft.savedId)) {
       draft = { ...draft, savedId: null };
       source = sourceFor(draft);
+    } else if (draft?.savedId && source?.cssEnabled) {
+      const stored = customTheme(draft.savedId);
+      if (!consentMatches(stored.id, stored.document)) {
+        // Another window revoked this theme's CSS approval. The draft follows, and only a fresh
+        // Enable advanced CSS grants it again.
+        source = { ...source, cssEnabled: false };
+        if (draft.cssEnabled || draft.previous?.cssEnabled) say(COPY.cssRevoked);
+        draft = withoutCss(draft);
+      }
     }
     lastPreviewed = null;
     render();
@@ -1055,7 +1281,8 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
     const current = await host.read();
     if (destroyed) return;
     settings = current.ok ? current.settings : null;
-    draft = startFrom(settings?.selectedThemeId ?? catalog.ids[0]);
+    remixFrom = settings?.selectedThemeId ?? catalog.ids[0];
+    draft = startFrom(remixFrom);
     source = sourceFor(draft);
     render();
     const stored = await host.loadDraft().catch(() => null);
@@ -1071,10 +1298,39 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
   return {
     ready,
     state: () => ({ draft, source, settings }),
+    // For Backup & help: the stored draft not yet resumed, or this page's unsaved changes.
+    draftStatus: () => ({ pending: draftFromRecord(pendingRecord)?.document ?? null, dirty: Boolean(draft && dirty()), name: draft?.document.name ?? "" }),
+    resumeDraft,
+    // After Reset all: a new start from the theme now selected, with no draft kept.
+    async restart() {
+      const current = await host.read();
+      if (current.ok) settings = current.settings;
+      win?.clearTimeout(autosave);
+      dismissResume(false);
+      clearError();
+      part("conflict").hidden = true;
+      remixFrom = settings?.selectedThemeId ?? catalog.ids[0];
+      draft = startFrom(remixFrom);
+      source = sourceFor(draft);
+      lastPreviewed = null;
+      render();
+    },
+    downloadDraft: () => {
+      const record = draftFromRecord(pendingRecord);
+      if (record) download?.(exportFile(record.document));
+      else downloadDraft();
+    },
+    discardDraft() {
+      if (pendingRecord) return dismissResume(true);
+      win?.clearTimeout(autosave);
+      if (source) accept(commitEdit(draft, structuredClone(source.document), { cssEnabled: source.cssEnabled }), { save: false });
+      host.discardDraft().catch(() => {});
+    },
     destroy() {
       destroyed = true;
       win?.clearTimeout(autosave);
       win?.clearTimeout(cssTimer);
+      images.cancelAll();
       unsubscribe();
       for (const cleanup of cleanups.splice(0)) cleanup();
       preview?.destroy();

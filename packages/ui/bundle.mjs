@@ -9,12 +9,19 @@
 // css-tree sanitizer: a saved theme can hold Advanced CSS or a gradientCss layer, and settings
 // validation in the background, the content script and every page checks it, so no entry can be
 // without the parser once the builder saves one. Bundled CSS is still admitted from the proofs.
-// The content script and background have whitespace and syntax minified, names kept, so the three
-// copies of the parser fit the 5 MiB unpacked package. The page script stays as written: the
-// artifact scan admits the preview's one packaged-file read by its exact source text.
+// All three have whitespace and syntax minified, names kept, so the three copies of the parser, the
+// mode data and the bundled fonts fit the 5 MiB unpacked package (check:artifacts enforces it), and
+// the artifact scan still finds the preview's one packaged-file read by its reviewed text. Minified
+// output carries no module path comments, and dependencies resolve through their symlinked path, so
+// a rebuild from the source archive, whose node_modules is a link, writes the same bytes.
+// The background and the pages carry Primer's mode data (vendor/primer/modes.json, about 700 KB)
+// deflated, and inflate it once when they load; the content script keeps it as plain data, so a
+// GitHub page never waits on that. Compression uses fflate, a pinned pure-JS dependency the format
+// entry already ships, so the bytes never depend on the machine's zlib.
 // Reads only checked-in files and lockfile-installed packages; same inputs, same bytes.
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { strToU8, zlibSync } from "fflate";
 import { cssProofs } from "../format/authoring.js";
 import { createCatalogSource } from "../settings/catalog.js";
 import { standardCard } from "./renderer.js";
@@ -24,7 +31,28 @@ export const BUNDLES = Object.freeze({
   "background.js": "extension/pages/background.mjs",
   "pages/pages.js": "extension/pages/main.mjs",
 });
-const MINIFIED = Object.freeze(["content.js", "background.js"]);
+const PACKED_MODES = Object.freeze(["background.js", "pages/pages.js"]);
+
+/** The mode data as a module that inflates its deflated, base64 JSON when it loads. */
+export function packedModesModule(json) {
+  const packed = Buffer.from(zlibSync(strToU8(JSON.stringify(JSON.parse(json))), { level: 9 })).toString("base64");
+  return [
+    'import { strFromU8, unzlibSync } from "fflate";',
+    `const packed = atob(${JSON.stringify(packed)});`,
+    "const bytes = new Uint8Array(packed.length);",
+    "for (let i = 0; i < packed.length; i++) bytes[i] = packed.charCodeAt(i);",
+    "export default JSON.parse(strFromU8(unzlibSync(bytes)));",
+  ].join("\n");
+}
+
+function packModes(root) {
+  return {
+    name: "reskin-packed-modes",
+    setup(build) {
+      build.onLoad({ filter: /[\\/]vendor[\\/]primer[\\/]modes\.json$/ }, async (args) => ({ contents: packedModesModule(await readFile(args.path, "utf8")), loader: "js", resolveDir: root }));
+    },
+  };
+}
 
 const readJson = async (root, path) => JSON.parse(await readFile(join(root, path), "utf8"));
 
@@ -65,7 +93,7 @@ function virtualModules(modules) {
   };
 }
 
-async function bundle(root, entry, modules, { minify = false } = {}) {
+async function bundle(root, entry, modules, { packed = false } = {}) {
   const { build } = await import("esbuild");
   const result = await build({
     entryPoints: [entry],
@@ -76,11 +104,12 @@ async function bundle(root, entry, modules, { minify = false } = {}) {
     target: ["chrome120", "firefox140"],
     charset: "utf8",
     legalComments: "inline",
-    minifyWhitespace: minify,
-    minifySyntax: minify,
+    minifyWhitespace: true,
+    minifySyntax: true,
+    preserveSymlinks: true,
     write: false,
     logLevel: "silent",
-    plugins: [virtualModules(modules)],
+    plugins: [virtualModules(modules), ...(packed ? [packModes(root)] : [])],
   });
   return Buffer.from(result.outputFiles[0].contents);
 }
@@ -94,7 +123,7 @@ export async function build({ root, entry }) {
   const modules = { "reskin:catalog": catalogData(entries), "reskin:cards": catalogCards(entries) };
   const files = {};
   for (const path of entry.generated) {
-    if (Object.hasOwn(BUNDLES, path)) files[path] = await bundle(root, BUNDLES[path], modules, { minify: MINIFIED.includes(path) });
+    if (Object.hasOwn(BUNDLES, path)) files[path] = await bundle(root, BUNDLES[path], modules, { packed: PACKED_MODES.includes(path) });
     else if (/^(assets\/fonts|packages\/preview\/fixture\/assets)\//.test(path)) files[path] = await readFile(join(root, path));
     else throw new Error(`packages/ui/bundle.mjs does not generate ${path}`);
   }

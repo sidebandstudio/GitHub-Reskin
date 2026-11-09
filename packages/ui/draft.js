@@ -140,24 +140,35 @@ export function removeLayer(document, target, index) {
 }
 
 /**
- * The draft state: the document, the one previous valid document, and where it came from.
- * `basedOn` is the bundled theme a new local theme records; `savedId` the local theme it edits.
+ * A new theme from three colors: the name, base, Background, Text and Accent, and nothing else,
+ * so no page paint, graph, link or effect of the theme the colors came from outweighs them. The
+ * engine derives the graph and every other color from these three.
  */
-export function createDraft({ document, basedOn = null, savedId = null, cssEnabled = false }) {
-  return { document, previous: null, basedOn, savedId, cssEnabled };
+export function freshDocument({ base, colors }, name = "My theme") {
+  return { schemaVersion: 1, name, base, colors: { background: colors.background, text: colors.text, accent: colors.accent } };
+}
+
+/**
+ * The draft state: the document, the one previous valid document, and where it came from.
+ * `basedOn` is the bundled theme a new local theme records; `savedId` the local theme it edits;
+ * `fresh` marks a new three-color theme that took only its starting colors from `basedOn`.
+ */
+export function createDraft({ document, basedOn = null, savedId = null, cssEnabled = false, fresh = false }) {
+  return { document, previous: null, basedOn, savedId, cssEnabled, fresh };
 }
 
 /** Accepts a completed edit: the current document becomes the one Undo restores. */
 export function commitEdit(draft, document, patch = {}) {
   if (JSON.stringify(document) === JSON.stringify(draft.document) && !Object.keys(patch).length) return draft;
-  return { ...draft, ...patch, previous: { document: draft.document, cssEnabled: draft.cssEnabled, savedId: draft.savedId }, document };
+  const previous = { document: draft.document, cssEnabled: draft.cssEnabled, savedId: draft.savedId, basedOn: draft.basedOn, fresh: draft.fresh };
+  return { ...draft, ...patch, previous, document };
 }
 
 /** Undo restores the previous document once, then becomes unavailable. There is no Redo. */
 export function undo(draft) {
   if (!draft.previous) return draft;
-  const { document, cssEnabled, savedId } = draft.previous;
-  return { ...draft, document, cssEnabled, savedId, previous: null };
+  const { document, cssEnabled, savedId, basedOn = draft.basedOn, fresh = draft.fresh } = draft.previous;
+  return { ...draft, document, cssEnabled, savedId, basedOn, fresh, previous: null };
 }
 
 /** The record the background keeps as the recoverable draft. No Undo history is stored. */
@@ -165,6 +176,7 @@ export function draftRecord(draft, { baseRevision, now = Date.now() } = {}) {
   const record = { draftVersion: DRAFT_VERSION, document: draft.document, cssEnabled: Boolean(draft.cssEnabled), updatedAt: now };
   if (draft.basedOn) record.basedOn = draft.basedOn;
   if (draft.savedId) record.savedId = draft.savedId;
+  if (draft.fresh) record.fresh = true;
   if (Number.isSafeInteger(baseRevision)) record.baseRevision = baseRevision;
   return record;
 }
@@ -179,6 +191,7 @@ export function draftFromRecord(record) {
       basedOn: typeof record.basedOn === "string" ? record.basedOn : null,
       savedId: typeof record.savedId === "string" ? record.savedId : null,
       cssEnabled: record.cssEnabled === true,
+      fresh: record.fresh === true,
     }),
     baseRevision: Number.isSafeInteger(record.baseRevision) ? record.baseRevision : null,
     updatedAt: Number.isFinite(record.updatedAt) ? record.updatedAt : null,

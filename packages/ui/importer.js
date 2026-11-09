@@ -151,7 +151,7 @@ export function importFailure(result, text = null) {
   const missing = issues.find((issue) => issue.code === ISSUE_CODES.missingField && /^\/colors\/(background|text|accent)$/.test(issue.path));
   if (missing) {
     const role = missing.path.split("/")[2];
-    return { ...view, message: `Add a ${role === "background" ? "background" : role} color like ${role === "background" ? "#18212b" : role === "text" ? "#e6edf3" : "#ff806c"}.`, fixRequest: fixRequest(issues), missingColor: missing.path };
+    return { ...view, message: `Add ${role === "accent" ? "an" : "a"} ${role} color like ${role === "background" ? "#18212b" : role === "text" ? "#e6edf3" : "#ff806c"}.`, fixRequest: fixRequest(issues), missingColor: missing.path };
   }
   if (hasCode(issues, ISSUE_CODES.noCandidate)) return { ...view, message: COPY.noTheme };
   if (hasCode(issues, ISSUE_CODES.parseError, ISSUE_CODES.invalidUtf8, ISSUE_CODES.duplicateKey, ISSUE_CODES.tooDeep, ISSUE_CODES.nonFiniteNumber, ISSUE_CODES.forbiddenKey)) return { ...view, message: issues[0].message };

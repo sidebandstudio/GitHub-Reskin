@@ -10,6 +10,7 @@
 import { compileAppearance, imageAssets, mountAppearance, roleFontFaceCss } from "../appearance/index.js";
 import { CSS_MARKERS, SANITIZER_VERSION } from "../contracts/index.js";
 import { repairTheme, resolveTheme } from "../engine/index.js";
+import { rasterHash, rasterIssues, rasterLayers, rasterTotals } from "../format/raster.js";
 import { admitCss } from "../format/viewer.js";
 import { compileGitHub, coveredModes, CSS_TARGET_REGISTRY, MODE_INDEX, seedFor, selectMode, standardSeed } from "../primer/index.js";
 import { themeCard } from "./catalog.js";
@@ -150,6 +151,20 @@ export const CSS_ADMISSION = Object.freeze({
 });
 
 /**
+ * The settings ImageAdmission (packages/settings/admission.js) from C2b's raster admission: a saved
+ * theme's images are stored only when each passes header admission and all of them fit the
+ * document's byte and pixel caps, counting repeats.
+ */
+export const IMAGE_ADMISSION = Object.freeze({
+  inspect(document) {
+    const issues = rasterIssues(document).filter((issue) => issue.severity !== "warning");
+    if (issues.length) return { ok: false, issues };
+    const { bytes, pixels } = rasterTotals(document);
+    return { ok: true, bytes, pixels, hashes: rasterLayers(document).map(({ image }) => rasterHash(image.data)) };
+  },
+});
+
+/**
  * The background's callbacks for settings: the boot snapshot is the selected source resolved for
  * the common page (standard seed of its base, themed, motion allowed), source repair runs against
  * the same standard seed, and saved themes' CSS goes through C2b's sanitizer.
@@ -159,6 +174,7 @@ export function backgroundRendering(index = MODE_INDEX) {
     snapshot: (theme) => resolveTheme(theme, { seed: standardSeed(index, theme.base), policy: "themed", reducedMotion: false, forcedColors: false }),
     repair: (theme) => repairTheme(theme, standardSeed(index, theme.base)),
     css: CSS_ADMISSION,
+    images: IMAGE_ADMISSION,
   };
 }
 

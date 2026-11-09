@@ -38,7 +38,8 @@ export const RECOVERY_KEY = "reskin.recovery";
 
 // TODO(C2b): commit actions beyond the frozen union. setCssConsent records an explicit approval of
 // one sanitized CSS hash, completeOnboarding records first-run completion and dismissMigration
-// clears migration notices and the recovery copy.
+// clears migration notices and the recovery copy. saveCustom also takes an optional cssConsent
+// (that grant, or null to revoke), so the builder writes a theme and its consent in one commit.
 export const EXTRA_COMMIT_ACTION_TYPES = freeze(["setCssConsent", "completeOnboarding", "dismissMigration"]);
 // TODO(C2b): the recovery request reads or dismisses reskin.recovery from an extension page.
 export const EXTRA_REQUEST_TYPES = freeze(["recovery"]);

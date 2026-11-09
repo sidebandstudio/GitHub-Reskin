@@ -1,10 +1,11 @@
-// The settings tab: Themes, Make a theme and Preferences as views a link away, so the switches
+// The settings tab: Themes, Make a theme, Preferences and Backup & help as views a link away, so the switches
 // never sit behind the gallery. The address's #fragment names the view, Preferences by default,
 // since the popup already holds the themes. Make a theme is the builder, with C5's shared offline
 // preview painted by the same engine, Primer compiler and appearance as github.com.
 import { fontFaceCss } from "../../packages/appearance/index.js";
 import { configurePreview, mountPreview } from "../../packages/preview/index.js";
 import * as primer from "../../packages/primer/index.js";
+import { mountBackup } from "../../packages/ui/backup.js";
 import { mountBuilder } from "../../packages/ui/builder.js";
 import { dormantSlots } from "../content/github/index.js";
 import { catalog, host, mountPage, resources } from "./common.mjs";
@@ -26,7 +27,7 @@ export function mountSettings() {
   addEventListener("hashchange", show);
   show();
   configurePreview({ primer, modeIndex: primer.MODE_INDEX, resources, dormantSlots: dormantSlots() });
-  mountBuilder(document, {
+  const builder = mountBuilder(document, {
     host,
     catalog,
     standardSeed: (base) => primer.standardSeed(primer.MODE_INDEX, base),
@@ -34,6 +35,7 @@ export function mountSettings() {
     fontFace: (id) => fontFaceCss(id, resources.fontUrl(id)),
     download,
   });
+  mountBackup(document, { host, catalog, download, builder });
   return mountPage();
 }
 

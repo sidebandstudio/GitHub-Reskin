@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import { basePolarityIssue } from "../../packages/engine/index.js";
-import { COPY, addLayer, commitEdit, copyName, createDraft, draftFromRecord, draftRecord, fixBase, removeLayer, setCss, setEffect, setField, setFlavorSlot, setGraphLevel, switchBase, undo, valueAt, withValue } from "../../packages/ui/draft.js";
+import { COPY, addLayer, commitEdit, copyName, createDraft, draftFromRecord, draftRecord, fixBase, freshDocument, removeLayer, setCss, setEffect, setField, setFlavorSlot, setGraphLevel, switchBase, undo, valueAt, withValue } from "../../packages/ui/draft.js";
 
 const fixture = (name) => JSON.parse(readFileSync(new URL(`../fixtures/schema/valid/${name}`, import.meta.url), "utf8"));
 const RICH = fixture("ai-rich.reskin.json");
@@ -129,4 +129,28 @@ test("a copy's suggested name", () => {
   assert.equal(copyName("Choom Circuit"), "My Choom Circuit");
   assert.equal(copyName("My Choom Circuit"), "My Choom Circuit");
   assert.equal(copyName("x".repeat(64)).length, 64);
+});
+
+test("a new three-color theme carries only its three colors, so nothing of the theme they came from outweighs them", async () => {
+  const { resolveTheme } = await import("../../packages/engine/index.js");
+  const seed = JSON.parse(readFileSync(new URL("../fixtures/seeds/standard-dark.json", import.meta.url), "utf8"));
+  const fresh = freshDocument(CHOOM);
+  assert.deepEqual(fresh, { schemaVersion: 1, name: "My theme", base: CHOOM.base, colors: { background: CHOOM.colors.background, text: CHOOM.colors.text, accent: CHOOM.colors.accent } });
+  const mine = withValue(withValue(withValue(fresh, "/colors/background", "#161421"), "/colors/text", "#f5ecff"), "/colors/accent", "#ff9fbf");
+  const options = { seed, policy: "themed", reducedMotion: false, forcedColors: false };
+  const resolved = resolveTheme(mine, options);
+  assert.equal(resolved.tokens.canvas, "#161421");
+  assert.equal(resolved.tokens.accent, "#ff9fbf");
+  assert.deepEqual(resolved.effects, {});
+  // Its graph follows Accent; a remix of Choom keeps Choom's own, whatever Accent says.
+  const remix = resolveTheme(withValue(CHOOM, "/colors/accent", "#ff9fbf"), options);
+  assert.notDeepEqual(resolved.graph, remix.graph);
+  assert.deepEqual(remix.graph, resolveTheme(CHOOM, options).graph);
+  assert.notDeepEqual(resolved.graph, resolveTheme(withValue(mine, "/colors/accent", "#33ccaa"), options).graph);
+  // The draft remembers it is new through Undo and a kept record.
+  const draft = commitEdit(createDraft({ document: fresh, basedOn: "anime.cyberpunk-edgerunners", fresh: true }), CHOOM, { fresh: false });
+  assert.equal(undo(draft).fresh, true);
+  const record = draftRecord(createDraft({ document: fresh, basedOn: "anime.cyberpunk-edgerunners", fresh: true }), { now: 1 });
+  assert.equal(record.fresh, true);
+  assert.equal(draftFromRecord(JSON.parse(JSON.stringify(record))).fresh, true);
 });

@@ -12,7 +12,7 @@ const SHAPES = {
   selectTheme: ["id"],
   setEnabled: ["enabled"],
   setPreference: ["key", "value"],
-  saveCustom: ["id", "document", "basedOn", "select"],
+  saveCustom: ["id", "document", "basedOn", "select", "cssConsent"],
   deleteCustom: ["id"],
   resetPreferences: [],
   resetAll: [],
@@ -32,6 +32,8 @@ export class ActionError extends Error {
 const reject = (message, path = "/action") => {
   throw new ActionError("invalid", [issue(ISSUE_CODES.invalid, path, message)]);
 };
+
+const validGrant = (grant) => typeof grant.hash === "string" && SHA256_HEX.test(grant.hash) && Number.isSafeInteger(grant.sanitizerVersion) && grant.sanitizerVersion > 0;
 
 /** Shape problems with an action, before any state is consulted. */
 export function actionIssues(action) {
@@ -57,6 +59,7 @@ export function actionIssues(action) {
       if ("basedOn" in action && (typeof action.basedOn !== "string" || action.basedOn.startsWith(LOCAL_THEME_ID_PREFIX))) problems.push("basedOn must be a bundled theme ID");
       if (typeof action.select !== "boolean") problems.push("select must be true or false");
       if (!isPlainObject(action.document)) problems.push("document must be a theme");
+      if ("cssConsent" in action && action.cssConsent !== null && !(isPlainObject(action.cssConsent) && Object.keys(action.cssConsent).every((key) => key === "hash" || key === "sanitizerVersion") && validGrant(action.cssConsent))) problems.push("cssConsent must be null or the sanitized CSS hash and sanitizer version");
       break;
     case "deleteCustom":
       if (!localId(action.id)) problems.push("id must be local:<uuid>");
@@ -64,10 +67,18 @@ export function actionIssues(action) {
     case "setCssConsent":
       if (!localId(action.id)) problems.push("id must be local:<uuid>");
       if (typeof action.granted !== "boolean") problems.push("granted must be true or false");
-      if (action.granted && !(typeof action.hash === "string" && SHA256_HEX.test(action.hash) && Number.isSafeInteger(action.sanitizerVersion) && action.sanitizerVersion > 0)) problems.push("a grant needs the sanitized CSS hash and sanitizer version");
+      if (action.granted && !validGrant(action)) problems.push("a grant needs the sanitized CSS hash and sanitizer version");
       break;
   }
   return problems.map((message) => issue(ISSUE_CODES.invalid, "/action", `${action.type}: ${message}.`));
+}
+
+// A grant names the sanitized hash of exactly this theme's CSS under this sanitizer.
+function approveCss(entry, grant, css, path) {
+  const result = css.inspect(entry.document).css;
+  if (css.sanitizerVersion === null || !result?.ok || result.hash !== grant.hash || result.sanitizerVersion !== grant.sanitizerVersion) {
+    reject("This advanced CSS cannot be approved: it is missing, changed or not sanitized by this version of Reskin.", path);
+  }
 }
 
 /**
@@ -116,6 +127,13 @@ export function reduceAction(settings, action, { catalog, newId, css = NO_CSS_SA
         if (before?.hash !== after?.hash) delete next.cssConsent[entry.id];
         next.customThemes[index] = entry;
       }
+      // The builder's Enable advanced CSS choice travels with the document it approves, so the
+      // theme and its consent are written together or not at all. null revokes it.
+      if (action.cssConsent === null) delete next.cssConsent[entry.id];
+      else if (action.cssConsent) {
+        approveCss(entry, action.cssConsent, css, "/action/cssConsent/hash");
+        next.cssConsent[entry.id] = { hash: action.cssConsent.hash, sanitizerVersion: action.cssConsent.sanitizerVersion };
+      }
       if (next.customThemes.length > STORAGE_LIMITS.maxCustomThemes) throw new ActionError("storage", [issue(ISSUE_CODES.capacity, "/customThemes", "Your theme collection is full. Export or remove a saved theme, then try again.")]);
       if (customSourceBytes(next.customThemes) > STORAGE_LIMITS.maxCustomSourceBytes) throw new ActionError("storage", [issue(ISSUE_CODES.capacity, "/customThemes", "Saved themes would exceed 4 MiB. Export or remove a saved theme, then try again.")]);
       if (action.select) next.selectedThemeId = entry.id;
@@ -142,10 +160,7 @@ export function reduceAction(settings, action, { catalog, newId, css = NO_CSS_SA
         delete next.cssConsent[action.id];
         return next;
       }
-      const result = css.inspect(next.customThemes[index].document).css;
-      if (css.sanitizerVersion === null || !result?.ok || result.hash !== action.hash || result.sanitizerVersion !== action.sanitizerVersion) {
-        reject("This advanced CSS cannot be approved: it is missing, changed or not sanitized by this version of Reskin.", "/action/hash");
-      }
+      approveCss(next.customThemes[index], action, css, "/action/hash");
       next.cssConsent[action.id] = { hash: action.hash, sanitizerVersion: action.sanitizerVersion };
       return next;
     }

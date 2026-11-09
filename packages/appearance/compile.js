@@ -115,8 +115,12 @@ export function compileAppearance(resolved, prefs, target, { css: source = null,
   const effective = effectiveAppearance(resolved, prefs);
   const plan = structuredPlan(resolved, prefs, images);
   const structured = structuredCss(plan, resolved, target, viewport);
-  const owned = effective.text || effective.effects ? ownedThemeCss(resolved, prefs, source, cssAllowed, registry) : null;
-  if (!effective.text && !effective.effects && !plan.banner) return structured ? `/* GitHub Reskin appearance, renderer 1 */\n${structured}\n` : "";
+  // The theme's own CSS depends on the host's consent decision and Full, never on whether the theme
+  // also asks for flavor text or effects: a theme can be colors and CSS alone. compileCss keeps the
+  // Calm, Effects, policy and forced-color gates.
+  const full = resolved?.policy === "themed" && Boolean(prefs?.enabled && prefs?.extras);
+  const owned = full && cssAllowed ? ownedThemeCss(resolved, prefs, source, cssAllowed, registry) : null;
+  if (!effective.text && !effective.effects && !plan.banner && !owned) return structured ? `/* GitHub Reskin appearance, renderer 1 */\n${structured}\n` : "";
   const t = colors(resolved.tokens);
   const font = effective.fonts ? FONT_BY_ID[resolved.font] : null;
   const heading = effective.fonts && resolved.appearance?.fonts?.heading?.source === "native-stack" ? resolved.appearance.fonts.heading.fallback : null;

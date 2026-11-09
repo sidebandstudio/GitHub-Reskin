@@ -9,6 +9,7 @@ import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { unzipSync } from "fflate";
+import { BUDGETS } from "../packages/contracts/index.js";
 import { ROOT, entrySourcePaths, extensionManifest, licenseFiles, licenseTargets, loadEntry, loadReleaseConfig, manifestPaths, manifestProblems, noticeProblems, readSource, sha256 } from "./build.mjs";
 import { artifactName } from "./package.mjs";
 
@@ -30,9 +31,19 @@ const REMOTE = [
 export const REVIEWED_PACKAGED_READS = Object.freeze([
   // C5's preview (packages/preview/mount.js): reads one packaged font or image by the resource
   // adapter's runtime.getURL path, only for .woff2/.webp/.svg, to embed it as data in the
-  // scriptless preview frame.
+  // scriptless preview frame. The bundles are minified, names kept, so it ships in this form.
   'win.fetch\u0028url, { credentials: "omit" })',
+  'win.fetch\u0028url,{credentials:"omit"})',
 ]);
+
+// The release budgets for one browser package: its files unpacked, and the ZIP.
+export function packageBudgetProblems(name, files, zipBytes) {
+  const problems = [];
+  const unpacked = Object.values(files).reduce((sum, data) => sum + data.length, 0);
+  if (unpacked > BUDGETS.unpackedRuntimeBytes) problems.push(`${name}: ${unpacked} bytes unpacked, over the ${BUDGETS.unpackedRuntimeBytes}-byte budget by ${unpacked - BUDGETS.unpackedRuntimeBytes}`);
+  if (zipBytes > BUDGETS.runtimeZipBytes) problems.push(`${name}: the ZIP is ${zipBytes} bytes, over the ${BUDGETS.runtimeZipBytes}-byte budget by ${zipBytes - BUDGETS.runtimeZipBytes}`);
+  return problems;
+}
 
 // Runtime files that could load code or data from the network, as messages.
 export function remoteResourceProblems(files) {
@@ -154,6 +165,8 @@ export async function verifyArtifacts(dir = "artifacts") {
     expect(JSON.stringify(paths) === JSON.stringify(allowed), `${name}: files ${paths.join(", ")} differ from the entry allowlist ${allowed.join(", ")}`);
     licensesIn(name, files);
     for (const problem of remoteResourceProblems(files)) fail(`${name}: ${problem}`);
+    const over = packageBudgetProblems(name, files, bytes[name].length);
+    expect(!over.length, over.join("; "));
   }
   // The two packages hold the same files; only the manifest may differ.
   const [chrome, firefox] = ["chrome", "firefox"].map((b) => contents[artifactName(version, b)]);

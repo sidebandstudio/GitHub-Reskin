@@ -114,6 +114,8 @@ test("cut-off, two themes, newer version, missing color and too large each get t
   const missing = analyzeImport(JSON.stringify({ ...THREE, colors: { text: "#ffffff", accent: "#ff0000" } }), "text", { standardSeed });
   assert.equal(missing.message, "Add a background color like #18212b.");
   assert.match(missing.fixRequest, /colors\/background/);
+  assert.equal(missing.missingColor, "/colors/background");
+  assert.equal(analyzeImport(JSON.stringify({ ...THREE, colors: { background: "#000000", text: "#ffffff" } }), "text", { standardSeed }).message, "Add an accent color like #ff806c.");
   const big = analyzeImport("x".repeat(LIMITS.pastedUtf8Bytes + 1), "text", { standardSeed });
   assert.equal(big.message, COPY.tooLarge);
 });

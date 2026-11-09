@@ -414,3 +414,29 @@ test("the Choom stand-in resolves and its snapshot carries no resource or CSS te
   assert.equal(boot.validatedTokenSnapshot.flavor.slots["profile.tag"], CHOOM.flavor.slots["profile.tag"]);
   assert.equal(/data:|url\(|@import/.test(JSON.stringify(boot)), false);
 });
+
+test("saveCustom writes a theme and its CSS consent in one commit, or neither", async () => {
+  const hashOf = (document) => (document.description?.startsWith("css:") ? document.description.slice(4).padEnd(64, "0") : null);
+  const css = { sanitizerVersion: 1, inspect: (document) => ({ css: hashOf(document) ? { ok: true, hash: hashOf(document), sanitizerVersion: 1 } : null }) };
+  let failNext = false;
+  const { storage, repository } = await ready({}, { set: async () => { if (failNext) { failNext = false; throw new Error("QUOTA_BYTES quota exceeded"); } } }, { css });
+  const grant = { hash: "a".padEnd(64, "0"), sanitizerVersion: 1 };
+  // A failed write leaves no theme behind, so trying again saves exactly one.
+  failNext = true;
+  const failed = await repository.commit({ type: "saveCustom", document: { ...nord, description: "css:a" }, select: true, cssConsent: grant }, 0);
+  assert.equal(failed.ok, false);
+  assert.equal(stored(storage).customThemes.length, 0);
+  assert.deepEqual(stored(storage).cssConsent, {});
+  const saved = await repository.commit({ type: "saveCustom", document: { ...nord, description: "css:a" }, select: true, cssConsent: grant }, 0);
+  assert.equal(saved.ok, true);
+  const id = saved.settings.selectedThemeId;
+  assert.equal(stored(storage).customThemes.length, 1);
+  assert.deepEqual(stored(storage).cssConsent[id], grant);
+  // A grant for other CSS is refused with the document; null revokes while saving.
+  const wrong = await repository.commit({ type: "saveCustom", id, document: { ...nord, description: "css:a" }, select: true, cssConsent: { hash: "b".padEnd(64, "0"), sanitizerVersion: 1 } }, 1);
+  assert.equal(wrong.code, "invalid");
+  assert.equal((await repository.commit({ type: "saveCustom", id, document: { ...nord, name: "Kept", description: "css:a" }, select: true, cssConsent: null }, 1)).ok, true);
+  assert.equal(stored(storage).cssConsent[id], undefined);
+  assert.equal(stored(storage).customThemes[0].document.name, "Kept");
+  assert.equal((await repository.commit({ type: "saveCustom", document: nord, select: true, cssConsent: { hash: "x" } }, 2)).code, "invalid", "a malformed grant is refused");
+});

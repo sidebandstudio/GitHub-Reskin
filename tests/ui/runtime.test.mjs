@@ -10,7 +10,7 @@ import { coveredModes, MODE_INDEX, selectMode, standardSeed } from "../../packag
 import { bootRecordProblems, buildBootRecord, createCatalogSource, defaultSettings, effectivePreferences, usableSnapshot } from "../../packages/settings/index.js";
 import { catalogCards, catalogData, readCatalogEntries } from "../../packages/ui/bundle.mjs";
 import { catalogFromData } from "../../packages/ui/catalog.js";
-import { backgroundRendering, createRenderer, CSS_ADMISSION, standardCard } from "../../packages/ui/renderer.js";
+import { backgroundRendering, createRenderer, CSS_ADMISSION, IMAGE_ADMISSION, standardCard } from "../../packages/ui/renderer.js";
 import { ROOT } from "../../scripts/build.mjs";
 
 const entries = await readCatalogEntries(ROOT);
@@ -259,6 +259,32 @@ test("a saved theme's CSS compiles only with consent for its sanitized hash unde
   assert.deepEqual(CSS_ADMISSION.inspect(SAVED), { css: { ok: true, hash: SAVED_HASH, sanitizerVersion: SANITIZER_VERSION } });
   assert.equal(CSS_ADMISSION.inspect({ css: "@import url(x);" }).css.ok, false);
   assert.equal(backgroundRendering().css, CSS_ADMISSION);
+});
+
+test("the background stores a saved theme's images once they pass admission and fit the caps together", async () => {
+  const { readFileSync } = await import("node:fs");
+  const { createRepository, documentAdmissionIssues } = await import("../../packages/settings/index.js");
+  const images = JSON.parse(readFileSync(new URL("../fixtures/schema/valid/embedded-images.reskin.json", import.meta.url), "utf8"));
+  assert.equal(backgroundRendering().images, IMAGE_ADMISSION);
+  const admitted = IMAGE_ADMISSION.inspect(images);
+  assert.equal(admitted.ok, true);
+  assert.equal(admitted.hashes.length, 3);
+  assert.ok(admitted.bytes > 0 && admitted.pixels === 3);
+  assert.deepEqual(documentAdmissionIssues(images, { css: CSS_ADMISSION, images: IMAGE_ADMISSION }), []);
+  // An image that fails header admission is refused with its location.
+  const bad = structuredClone(images);
+  bad.backgrounds.page.layers[0].image.data = "data:image/png;base64,AAAA";
+  const refused = IMAGE_ADMISSION.inspect(bad);
+  assert.equal(refused.ok, false);
+  assert.match(refused.issues[0].path, /^\/backgrounds\/page\/layers\/0\/image/);
+  // Through the background's repository, the theme saves.
+  const data = new Map();
+  const storage = { get: async (keys) => Object.fromEntries(keys.filter((k) => data.has(k)).map((k) => [k, structuredClone(data.get(k))])), set: async (record) => Object.entries(record).forEach(([k, v]) => data.set(k, structuredClone(v))), remove: async (keys) => keys.forEach((k) => data.delete(k)), subscribe: () => () => {} };
+  const repository = createRepository(storage, { catalog, newId: () => "00000000-0000-4000-8000-000000000001", ...backgroundRendering() });
+  await repository.initialize();
+  const reply = await repository.commit({ type: "saveCustom", document: images, select: true }, 0);
+  assert.equal(reply.ok, true, JSON.stringify(reply.issues));
+  assert.equal(reply.settings.customThemes[0].document.backgrounds.page.layers[0].image.data, images.backgrounds.page.layers[0].image.data);
 });
 
 test("admission runs while the theme's CSS may apply, with the plan's covered modes, and the scope marker leaves under forced colors", () => {

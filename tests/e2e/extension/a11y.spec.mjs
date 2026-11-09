@@ -171,3 +171,32 @@ test("the builder works by keyboard alone and names every control @a11y", async 
   await expect(dialog).toBeHidden();
   await expect(page.getByRole("button", { name: "Import", exact: true })).toBeFocused();
 });
+
+// Backup & help with a saved theme listed, and an import missing its Background with the picker
+// that fixes it: no serious or critical axe violation, named controls, no page-wide scrolling.
+for (const viewport of [{ width: 1280, height: 900 }, { width: 390, height: 844 }]) {
+  test(`Backup & help and the missing-color picker at ${viewport.width}px have no serious or critical axe violations @a11y`, async ({ extension }) => {
+    const page = await openMake(extension, viewport);
+    await page.getByRole("textbox", { name: "Theme name" }).fill("Kept theme");
+    await page.getByRole("textbox", { name: "Theme name" }).press("Tab");
+    await page.getByRole("button", { name: "Save as theme" }).click();
+    await expect(page.locator('[data-rb="status"]')).toHaveText("Saved Kept theme and applied it to GitHub.");
+
+    await page.getByRole("button", { name: "Import", exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: "Import a theme" });
+    await dialog.getByRole("textbox", { name: "Chatbot answer" }).fill('Here:\n```json\n{"schemaVersion":1,"name":"Fog","base":"dark","colors":{"text":"#e6edf3","accent":"#ff806c"}}\n```');
+    await dialog.getByRole("button", { name: "Preview theme" }).click();
+    await expect(dialog.getByRole("textbox", { name: "Background", exact: true })).toBeVisible();
+    await expect(dialog.getByRole("textbox", { name: "Background", exact: true })).toHaveAccessibleDescription(/Choose background here/);
+    expect(await axe(page)).toEqual([]);
+    await page.keyboard.press("Escape");
+
+    await page.getByRole("link", { name: "Backup & help" }).click();
+    const backup = page.locator('[data-rk="backup"]');
+    await expect(backup.getByRole("button", { name: "Remove Kept theme" })).toBeVisible();
+    await expect(backup.getByRole("button", { name: "Export Kept theme" })).toBeVisible();
+    await expect(backup.getByRole("button", { name: "Reset all" })).toHaveAccessibleDescription(/Reset all removes your saved themes/);
+    expect(await axe(page)).toEqual([]);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  });
+}

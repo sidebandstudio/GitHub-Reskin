@@ -41,6 +41,7 @@
         <a href="#themes" data-rs-view="themes">Themes</a>
         <a href="#make" data-rs-view="make">Make a theme</a>
         <a href="#preferences" data-rs-view="preferences">Preferences</a>
+        <a href="#backup" data-rs-view="backup">Backup &amp; help</a>
       </nav>
 
       <section id="themes" class="rs-section" data-rs-section aria-labelledby="rs-themes-title">
@@ -78,6 +79,7 @@
           <span class="rs-actions">
             <button type="button" class="rs-link-button" data-rb="retry" hidden>Retry</button>
             <button type="button" class="rs-link-button" data-rb="download-draft" hidden>Download</button>
+            <a class="rs-link-button" href="#backup" data-rb="manage" hidden>Remove a saved theme in Backup &amp; help</a>
           </span>
         </div>
 
@@ -148,6 +150,15 @@
           </section>
 
           <form class="rb-controls" data-rb="controls" aria-label="Theme controls" novalidate>
+            <fieldset class="rs-segmented rs-segmented--start" data-rb="start" aria-describedby="rb-start-note">
+              <legend>Start from</legend>
+              <span class="rs-segments">
+                <label><input type="radio" name="rb-start" value="fresh" />Three colors</label>
+                <label><input type="radio" name="rb-start" value="remix" /><span data-rb="start-remix">Remix</span></label>
+              </span>
+            </fieldset>
+            <p class="rs-note" id="rb-start-note" data-rb="start-note"></p>
+
             <div class="rb-field">
               <label for="rb-name">Theme name</label>
               <input id="rb-name" class="rb-input" type="text" maxlength="64" autocomplete="off" spellcheck="false" data-rb="name" aria-describedby="rb-name-error" />
@@ -222,8 +233,27 @@
                 <button type="button" class="rs-button" data-rb="bg-add-gradient">Add gradient</button>
                 <button type="button" class="rs-button" data-rb="bg-add-pattern">Add pattern</button>
               </div>
-              <p class="rs-note">Images arrive with imported theme files; set their fit, position and opacity in the layer list.</p>
-              <p class="rb-field-error" data-rb-error-for="backgrounds" hidden></p>
+              <div class="rb-field rb-image-add">
+                <label for="rb-image-file">Add an image</label>
+                <input id="rb-image-file" class="rb-input" type="file" accept="image/png,image/jpeg,image/webp,image/gif,.png,.jpg,.jpeg,.webp,.gif" data-rb="image-file" aria-describedby="rb-image-limits rb-image-usage" />
+              </div>
+              <p class="rs-note" id="rb-image-limits" data-rb="image-limits"></p>
+              <p class="rs-note" id="rb-image-usage" data-rb="image-usage"></p>
+              <div class="rb-panel" data-rb="image-offer" hidden role="group" aria-labelledby="rb-image-offer-title">
+                <p class="rb-panel-title" id="rb-image-offer-title" data-rb="image-offer-title"></p>
+                <dl class="rb-sizes">
+                  <dt>Before</dt>
+                  <dd data-rb="image-before"></dd>
+                  <dt>After</dt>
+                  <dd data-rb="image-after"></dd>
+                </dl>
+                <p class="rs-note" data-rb="image-note"></p>
+                <div class="rs-actions">
+                  <button type="button" class="rs-button rs-button--primary" data-rb="image-accept">Use converted image</button>
+                  <button type="button" class="rs-button" data-rb="image-cancel">Cancel</button>
+                </div>
+              </div>
+              <p class="rb-field-error" data-rb-error-for="backgrounds" role="alert" hidden></p>
             </details>
 
             <details class="rb-more" data-rb-section="shape">
@@ -394,6 +424,55 @@
           <label class="rs-switch"><input type="checkbox" role="switch" data-rs="effects" aria-describedby="rs-effects-note" />Effects</label>
           <p class="rs-note rs-pref-note" id="rs-effects-note">Glows, rails and textures in Full.</p>
         </div>
+      </section>
+
+      <section id="backup" class="rs-section rk" data-rs-section aria-labelledby="rs-backup-title" data-rk="backup">
+        <h2 id="rs-backup-title">Backup &amp; help</h2>
+        <div class="rs-status-row">
+          <p class="rs-status" role="status" aria-live="polite" data-rk="status"></p>
+        </div>
+        <p class="rs-error" role="alert" data-rk="error" hidden></p>
+
+        <section class="rk-part" aria-labelledby="rk-saved-title">
+          <h3 id="rk-saved-title" tabindex="-1" data-rk="saved-title">Your saved themes</h3>
+          <p class="rs-note" data-rk="capacity"></p>
+          <ul class="rk-list" data-rk="saved" aria-labelledby="rk-saved-title"></ul>
+          <div class="rk-empty" data-rk="empty" hidden>
+            <p>Your saved themes will appear here.</p>
+            <button type="button" class="rs-button" data-rk="make">Make a theme</button>
+          </div>
+          <p class="rs-note">Export saves one theme as a .reskin.json file you can import again here or share.</p>
+        </section>
+
+        <section class="rk-part" aria-labelledby="rk-draft-title">
+          <h3 id="rk-draft-title" tabindex="-1" data-rk="draft-title">Unsaved draft</h3>
+          <p data-rk="draft-text"></p>
+          <div class="rs-actions" data-rk="draft-actions" hidden>
+            <button type="button" class="rs-button" data-rk="draft-open">Resume in Make a theme</button>
+            <button type="button" class="rs-button" data-rk="draft-download">Download draft</button>
+            <button type="button" class="rs-button" data-rk="draft-discard">Discard draft</button>
+          </div>
+        </section>
+
+        <section class="rk-part" aria-labelledby="rk-reset-title">
+          <h3 id="rk-reset-title">Reset</h3>
+          <p class="rs-note" id="rk-reset-note">Reset all removes your saved themes, your unsaved draft and your Advanced CSS approvals, and turns every preference back to its default. Export the themes you want to keep first.</p>
+          <button type="button" class="rs-button" data-rk="reset-all" aria-describedby="rk-reset-note">Reset all</button>
+        </section>
+
+        <section class="rk-part" aria-labelledby="rk-help-title">
+          <h3 id="rk-help-title">Help</h3>
+          <dl class="rk-help">
+            <dt>GitHub looks unchanged</dt>
+            <dd>Reload GitHub once to see your theme. If it still doesn't change, allow GitHub access in your browser's extension settings, then reload the page.</dd>
+            <dt>GitHub accessibility colors are active</dt>
+            <dd>High contrast or forced colors keep GitHub's own colors. Your theme choice stays saved and returns when they are off.</dd>
+            <dt>A chatbot's theme won't import</dt>
+            <dd>Use Copy AI prompt in Make a theme, then paste the chatbot's whole answer, including the lines with { and }.</dd>
+            <dt>Something looks wrong on a GitHub page</dt>
+            <dd><a href="https://github.com/sidebandstudio/GitHub-Reskin/issues" target="_blank" rel="noopener noreferrer">Report it on GitHub Reskin's Issues page</a>. Colors keep working where it is safe.</dd>
+          </dl>
+        </section>
       </section>
     </main>
 
