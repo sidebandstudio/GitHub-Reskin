@@ -34,12 +34,14 @@ const FORCED_COLORS = "(forced-colors: active)";
  */
 export function createRenderer({ github, resources, catalog = null, index = MODE_INDEX, slotTimeLimitMs = null }) {
   const bundled = new Map((catalog?.ids ?? []).map((id) => [catalog.sourceHash(id), catalog.document(id)]));
-  // The theme's CSS and whether the host allows it: packaged with a bundled theme, or consented
-  // to for exactly this sanitized hash and sanitizer version. Calm, forced colors and native
-  // policy are refused again where it compiles and is admitted.
-  const themeCss = (resolved, { source = null, consent = null } = {}) => {
-    const packaged = bundled.get(resolved.sourceHash)?.css;
-    if (packaged !== undefined) return { css: packaged, cssAllowed: true, registry: CSS_TARGET_REGISTRY };
+  // The theme's CSS and whether the host allows it: packaged with the bundled theme that is
+  // selected, or consented to for exactly this sanitized hash and sanitizer version. The bundled
+  // exception follows the selected ID, never the source alone: a saved theme whose source equals a
+  // catalog theme's, such as an imported export of it, still needs its own consent. Calm, forced
+  // colors and native policy are refused again where it compiles and is admitted.
+  const themeCss = (resolved, { themeId = null, source = null, consent = null } = {}) => {
+    const selected = typeof themeId === "string" && catalog?.has(themeId) && catalog.sourceHash(themeId) === resolved.sourceHash ? catalog.document(themeId) : null;
+    if (selected) return { css: selected.css ?? null, cssAllowed: typeof selected.css === "string", registry: CSS_TARGET_REGISTRY };
     const css = typeof source?.css === "string" ? source.css : null;
     return { css, cssAllowed: css !== null && consented(css, consent), registry: CSS_TARGET_REGISTRY };
   };
@@ -57,7 +59,8 @@ export function createRenderer({ github, resources, catalog = null, index = MODE
       return { plan, seed: seedFor(index, plan) };
     },
     resolve: resolveTheme,
-    // `context` is {source, consent}: the selected source document and the settings' consent for it.
+    // `context` is {themeId, source, consent}: the selected theme's ID, its source document and the
+    // settings' consent for it.
     compile(resolved, plan, prefs, context) {
       const primer = compileGitHub(resolved, plan, prefs, index);
       if (!primer.css) return { css: "", fingerprint: primer.fingerprint };

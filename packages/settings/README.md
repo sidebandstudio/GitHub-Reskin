@@ -56,12 +56,21 @@ CSS approval is decided in one place, `consent.js`, which every commit and the i
 run. `settings.cssConsent[id]` exists only for the canonical sanitized hash and current sanitizer
 version of the stored theme `id`. It is created only by redeeming a ticket that `approveCss` (the
 explicit Enable advanced CSS choice) issued to that editor for that target and exactly that CSS.
+An editor is its token bound to the builder document the browser names as the sender:
+`commit(action, expectedRevision, {document})` takes that identity from the background, which
+gives it only for the settings page (Chrome's `documentId`, otherwise Firefox's tab, frame and
+page) and null for the popup, the first-run page, content scripts and every other sender. Without
+it a ticket is neither issued nor redeemed, so the same token and ticket from another document
+redeem nothing. `approveCss` needs the current `expectedRevision`.
 `approveCss` and `withdrawCss` change neither settings nor their revision; the reply to
 `approveCss` carries `approval {ticket, target, hash, sanitizerVersion}`. A ticket is used once,
 and is dropped when its editor withdraws or saves, when its target is removed, revoked or given
 other CSS, on Reset all and when the sanitizer changes. An approval otherwise survives only while its
 theme keeps exactly that CSS and nothing revokes it, so no copy, re-add, Undo, Reset, resume,
 import, rename, second window, retried write or migration can create, restore, widen or move one.
+At startup a stored approval stays only when it names a saved local theme, the canonical hash of
+that theme's stored CSS and the current sanitizer version. The extension's own storage is the
+trust root for these records ([SECURITY.md](../../SECURITY.md)).
 A refused ticket gets `code:'invalid'` with an issue whose `reason` is `approval`. The request types are `get`, `commit`, `draft`, `open-page` and `recovery`
 (`load` or `lastGood`). `setPreference` accepts `appearance: 'full'|'calm'` and sets extras with it.
 Setting `extras` sets appearance with it, and the child switches never change.

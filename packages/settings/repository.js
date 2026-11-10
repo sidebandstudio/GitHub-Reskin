@@ -6,7 +6,7 @@ import { ActionError, actionIssues, reduceState } from "./actions.js";
 import { capacityIssues, NO_CSS_SANITIZER } from "./admission.js";
 import { bootRecordProblems, buildBootRecord } from "./boot.js";
 import { selectedSource } from "./catalog.js";
-import { digest, mintApproval, readApprovals, settleConsent, withdrawApprovals } from "./consent.js";
+import { APPROVAL_ISSUE, digest, mintApproval, readApprovals, settleConsent, withdrawApprovals } from "./consent.js";
 import { APPROVAL_ACTION_TYPES, APPROVALS_KEY, NOTICES, RECOVERY_KEY, STORAGE_LIMITS } from "./constants.js";
 import { boundRecovery, hasLegacyKeys, migrateLegacy } from "./migrate.js";
 import { defaultSettings, isPlainObject, issue, salvageSettings, validateSettings } from "./model.js";
@@ -175,11 +175,25 @@ export function createRepository(storage, context) {
     }
   }
 
+  // The digest of an editor's token bound to the builder document the browser says sent it, or
+  // null. Approval tickets are issued to and redeemed by this pair only, so the same token sent
+  // from another document, page or content script names a different editor.
+  const boundEditor = (origin, editor) => (typeof origin?.document === "string" && origin.document && typeof editor === "string" ? digest(`${origin.document}\n${editor}`) : null);
+  const builderOnly = (current) => ({
+    ok: false,
+    code: "invalid",
+    current,
+    issues: [{ ...issue(ISSUE_CODES.invalid, "/action/approval", "Advanced CSS can be approved only in Reskin's theme builder."), reason: APPROVAL_ISSUE }],
+  });
+
   /**
    * Applies one action. Checks expectedRevision against storage, reduces onto the latest state,
    * writes settings, boot and lastGood in one set, and replies only after the write resolves.
+   * `origin.document` is the browser-provided identity of the builder document that sent it (the
+   * background supplies it, and null for any other sender); only that document can ask for or
+   * redeem an approval ticket.
    */
-  function commit(action, expectedRevision) {
+  function commit(action, expectedRevision, origin = null) {
     const ready = initialize();
     return serialize(async () => {
       const init = await ready;
@@ -194,15 +208,16 @@ export function createRepository(storage, context) {
       if (!result.ok) return { ok: false, code: "invalid", issues: result.issues };
       const current = result.settings;
       const approvals = readApprovals(raw[APPROVALS_KEY]);
-      if (APPROVAL_ACTION_TYPES.includes(action?.type)) return approve(raw, current, approvals, action);
+      if (APPROVAL_ACTION_TYPES.includes(action?.type)) return approve(raw, current, approvals, action, expectedRevision, origin);
       if (expectedRevision !== current.revision) {
         return { ok: false, code: "conflict", current, issues: [issue(ISSUE_CODES.conflict, "/revision", "Settings changed in another window. Review the current settings and try again.")] };
       }
       let next;
       let nextApprovals;
       try {
-        const redeem = typeof action?.approval === "string" && typeof action.editor === "string" ? { ticket: await digest(action.approval), editor: await digest(action.editor) } : null;
-        const editor = typeof action?.editor === "string" ? await digest(action.editor) : null;
+        const editor = await boundEditor(origin, action?.editor);
+        if (typeof action?.approval === "string" && !editor && typeof action.editor === "string") return builderOnly(current);
+        const redeem = typeof action?.approval === "string" && editor ? { ticket: await digest(action.approval), editor } : null;
         ({ settings: next, approvals: nextApprovals } = reduceState(current, approvals, action, { ...context, redeem, editor }));
       } catch (error) {
         if (error instanceof ActionError) return { ok: false, code: error.code, current, issues: error.issues };
@@ -227,12 +242,17 @@ export function createRepository(storage, context) {
     });
   }
 
-  // approveCss issues a ticket for the explicit Enable advanced CSS choice; withdrawCss drops an
-  // editor's tickets. Neither changes settings, so neither needs or bumps the revision.
-  async function approve(raw, current, approvals, action) {
+  // approveCss issues a ticket for the explicit Enable advanced CSS choice in the builder document
+  // that sent it, for the settings it saw; withdrawCss drops that document's editor's tickets.
+  // Neither changes settings, so neither bumps the revision.
+  async function approve(raw, current, approvals, action, expectedRevision, origin) {
     const shape = actionIssues(action);
     if (shape.length) return { ok: false, code: "invalid", current, issues: shape };
-    const editor = await digest(action.editor);
+    const editor = await boundEditor(origin, action.editor);
+    if (!editor) return builderOnly(current);
+    if (action.type === "approveCss" && expectedRevision !== current.revision) {
+      return { ok: false, code: "conflict", current, issues: [issue(ISSUE_CODES.conflict, "/revision", "Settings changed in another window. Review the current settings and try again.")] };
+    }
     let next = withdrawApprovals(approvals, editor);
     let reply = { ok: true, settings: current };
     if (action.type === "approveCss") {

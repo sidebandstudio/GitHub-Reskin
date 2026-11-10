@@ -12,13 +12,16 @@
 //   and removal; the draft kept after the page closes; the export round trip through the file, the
 //   share code and the preview link; Backup & help's export, removal and Reset all; and the round 2
 //   review's reproductions: removal and Save a copy, Undo after a revocation, a stale draft resumed
-//   and an upload that needs Resize.
+//   and an upload that needs Resize; and the round 3 review's: an exact export of a bundled theme
+//   imported with its CSS off stays off on GitHub, and an approval ticket belongs to the settings
+//   page document that asked for it (Chromium, whose senders carry a documentId).
 import { readFileSync } from "node:fs";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { firefox } from "@playwright/test";
-import { STORAGE_KEYS } from "../../../packages/contracts/index.js";
+import { DEFAULT_THEME_ID, STORAGE_KEYS } from "../../../packages/contracts/index.js";
+import { sourceHash } from "../../../packages/engine/index.js";
 import { admitCss, encodeShare, makeAiPrompt } from "../../../packages/format/index.js";
 import { SHARE_PAGE } from "../../../packages/ui/importer.js";
 import { CLIPBOARD_STAND_IN, expect, firefoxPages, PROFILE_URL, storage, test } from "./helpers.mjs";
@@ -40,6 +43,8 @@ const TILE = (() => {
   const data = Object.values(theme.backgrounds).flatMap((b) => b.layers ?? []).find((layer) => layer.image?.data.startsWith("data:image/png"))?.image.data;
   return Buffer.from(data.split(",")[1], "base64");
 })();
+// The bundled default theme's own file, as a person would export or paste it.
+const CHOOM_FILE = JSON.parse(readFileSync(new URL("themes/anime/choom-circuit.reskin.json", ROOT), "utf8"));
 const SHARED = { schemaVersion: 1, name: "Moss and parchment", base: "light", colors: { background: "#f4efe2", text: "#26301f", accent: "#4f7a3a" }, shape: { corners: { style: "rounded", radius: 12 } } };
 
 const hex = (page, name) => page.getByRole("textbox", { name, exact: true });
@@ -704,6 +709,67 @@ async function backupAndHelp(env) {
   await page.close();
 }
 
+// Review 3, finding 1: an exact export of a bundled theme, imported with Enable advanced CSS left
+// off, saved and selected, is a saved theme like any other: GitHub gets none of its CSS, and the
+// builder shows Enable off. `onSaved(records)` checks GitHub.
+async function bundledExport(env, { onSaved }) {
+  const page = await openBuilder(env);
+  const dialog = await openImport(page);
+  await dialog.getByRole("textbox", { name: "Chatbot answer" }).fill(JSON.stringify(CHOOM_FILE, null, 2));
+  await dialog.getByRole("button", { name: "Preview theme" }).click();
+  await expect(dialog.getByRole("checkbox", { name: "Enable advanced CSS" })).not.toBeChecked();
+  await dialog.getByRole("button", { name: "Use theme" }).click();
+  await page.getByRole("button", { name: "Save as theme" }).click();
+  await expect(status(page)).toHaveText(/^Saved .* and applied it to GitHub\.$/);
+  const records = await env.records();
+  const id = settingsOf(records).selectedThemeId;
+  expect(id).toMatch(/^local:/);
+  const theme = settingsOf(records).customThemes.find((t) => t.id === id);
+  expect(sourceHash(theme.document), "the saved copy has the bundled theme's source hash").toBe(sourceHash(CHOOM_FILE));
+  expect(settingsOf(records).cssConsent[id]).toBeUndefined();
+  await expect(page.locator('[data-rb="css-enable"]')).not.toBeChecked();
+  await onSaved(records);
+  await page.close();
+  const reopened = await openBuilder(env);
+  await expect(reopened.locator('[data-rb="css-enable"]')).not.toBeChecked();
+  await reopened.close();
+}
+
+// Review 3, finding 3: only the settings page document that asked for an approval ticket can
+// redeem it, at the revision it saw; the popup can neither ask for nor redeem one.
+async function ticketSenders(extension) {
+  const send = (page, request) => page.evaluate((request) => chrome.runtime.sendMessage({ requestId: crypto.randomUUID().replace(/-/g, ""), ...request }), request);
+  const revision = async (page) => (await send(page, { type: "get" })).settings.revision;
+  const act = async (page, action, expected) => send(page, { type: "commit", expectedRevision: expected ?? (await revision(page)), action });
+  const open = async (name) => {
+    const page = await extension.context.newPage();
+    await page.goto(extension.url(name));
+    return page;
+  };
+  const [first, second, popup] = [await open("settings"), await open("settings"), await open("popup")];
+  const saved = await act(first, { type: "saveCustom", document: { ...CSS_THEME, name: "Ticket glow" }, select: true });
+  expect(saved.ok, JSON.stringify(saved.issues ?? null)).toBe(true);
+  const id = saved.settings.selectedThemeId;
+  const editor = "ticket-editor-000000000001";
+  const approve = { type: "approveCss", editor, target: id, css: CSS_THEME.css };
+  const redeem = (ticket) => ({ type: "setCssConsent", id, granted: true, editor, approval: ticket });
+  // The popup asks; settings then redeems with the same strings.
+  const fromPopup = await act(popup, approve);
+  expect(fromPopup.ok).toBe(false);
+  expect(fromPopup.approval).toBeUndefined();
+  // A stale expected revision gets no ticket.
+  expect((await act(first, approve, saved.settings.revision - 1)).code).toBe("conflict");
+  // The first settings page's ticket, replayed from the second and from the popup.
+  const ticket = await act(first, approve);
+  expect(ticket.ok, JSON.stringify(ticket.issues ?? null)).toBe(true);
+  for (const page of [second, popup]) expect((await act(page, redeem(ticket.approval.ticket))).ok).toBe(false);
+  expect(settingsOf(await storage(extension.worker)).cssConsent[id]).toBeUndefined();
+  const own = await act(first, redeem(ticket.approval.ticket));
+  expect(own.ok, JSON.stringify(own.issues ?? null)).toBe(true);
+  expect(settingsOf(await storage(extension.worker)).cssConsent[id]).toEqual({ hash: CSS_HASH, sanitizerVersion: 1 });
+  for (const page of [first, second, popup]) await page.close();
+}
+
 // What a GitHub page shows of the theme's own CSS on the registry fixture.
 const cssState = (page) =>
   page.evaluate(() => {
@@ -781,6 +847,18 @@ test.describe("Chromium builder", () => {
   test("Undo after an import never restores an approval revoked in another window (review 2, finding 2)", async ({ extension }) => undoAfterRevocation(await chromiumEnv(extension)));
   test("resuming a draft whose saved theme changed asks before overwriting it (review 2, finding 3)", async ({ extension }) => staleResume(await chromiumEnv(extension)));
   test("an upload still too big after compression offers a working Resize (review 2, finding 4)", async ({ extension }) => oversizedUpload(await chromiumEnv(extension)));
+  test("an exact export of a bundled theme imported with its CSS off stays off on GitHub (review 3, finding 1)", async ({ extension }) => {
+    const env = await chromiumEnv(extension);
+    extension.serve("/octo-registry", REGISTRY_HTML);
+    const github = await extension.context.newPage();
+    await github.setViewportSize({ width: 1280, height: 900 });
+    await github.goto(REGISTRY_URL);
+    expect(settingsOf(await env.records()).selectedThemeId).toBe(DEFAULT_THEME_ID);
+    await expectCss(github, true, "the bundled theme's own CSS");
+    // The open tab follows the selection to the saved copy without a reload.
+    await bundledExport(env, { onSaved: () => expectCss(github, false, "the saved copy without consent") });
+  });
+  test("an approval ticket belongs to the settings page document that asked for it (review 3, finding 3)", async ({ extension }) => ticketSenders(extension));
   test("Backup & help resumes the draft, exports and removes themes, and resets all", async ({ extension }) => {
     const env = await chromiumEnv(extension);
     await threeColors(env);
@@ -846,6 +924,16 @@ test("Firefox builder: every scenario on the built add-on's pages, and its conte
     await undoAfterRevocation(env);
     await staleResume(env);
     await oversizedUpload(env);
+    await bundledExport(env, {
+      async onSaved(records) {
+        const github = await firefoxGitHub(harness.contentScript, records);
+        try {
+          await expectCss(github.page, false, "firefox: the saved copy of a bundled theme without consent");
+        } finally {
+          await github.close();
+        }
+      },
+    });
     await backupAndHelp(env);
   } finally {
     await harness.close();

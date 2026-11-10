@@ -1,26 +1,35 @@
 // A model-based test of the advanced CSS approval invariant. Seeded random sequences of every
-// builder and repository action run against the real settings repository, with in-memory storage,
-// several editor windows, failing writes, restarts and sanitizer updates. The simulated editors are
-// careless on purpose: they replay any approval ticket they ever saw (their own stale ones and other
-// windows'), save copies, re-add removed themes, undo past revocations, resume drafts in new
-// windows, import, export and send the earlier build's direct grants. After every step the test
-// checks the invariant against a reference model of what the person actually approved:
+// builder and repository action run against the real background and settings repository, with
+// in-memory storage, several editor windows, failing writes, restarts and sanitizer updates. Every
+// message goes through the background's dispatch with a browser-style sender. The simulated
+// editors are careless on purpose: they replay any approval ticket they ever saw (their own stale
+// ones and other windows'), save copies, re-add removed themes, undo past revocations, resume
+// drafts in new windows, import, export and send the earlier build's direct grants. A hostile
+// actor sends any message, with any editor token and ticket seen so far, from any sender: every
+// builder document, a fresh one, the popup, the first-run page, a settings page the browser does
+// not name, and a content script. After every step the test checks the invariant against a
+// reference model of what the person actually approved:
 //
 //   every stored approval names a saved theme, its current sanitizer version and exactly the
-//   sanitized hash of that theme's CSS; and an approval that was not there, unchanged, before a
-//   step was created by that step redeeming a ticket the same editor got from an explicit Enable
-//   for that target and that exact CSS, unused and not withdrawn, removed, revoked or changed since.
+//   sanitized hash of that theme's CSS; a ticket is issued only to a builder document the browser
+//   names, at the current revision; and an approval that was not there, unchanged, before a step
+//   was created by that step redeeming, from that same document, a ticket that document's editor
+//   got from an explicit Enable for that target and that exact CSS, unused and not withdrawn,
+//   removed, revoked or changed since.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { LEGACY_STORAGE_KEYS, STORAGE_KEYS } from "../../packages/contracts/index.js";
 import * as settingsPackage from "../../packages/settings/index.js";
-import { catalog, CLASSICS, context, counter, memoryStorage, snapshot, standInCss } from "../settings/helpers.mjs";
+import { createBackground } from "../../extension/background/host.js";
+import { builderSender, catalog, CLASSICS, contentSender, context, counter, fakeApi, memoryStorage, pageSender, snapshot, standInCss } from "../settings/helpers.mjs";
 
 // A namespace import, so this file also loads, and fails, against a build without approval tickets.
 const { createRepository, STORAGE_LIMITS } = settingsPackage;
 const APPROVALS_KEY = settingsPackage.APPROVALS_KEY ?? "reskin.cssApprovals";
 const SEQUENCES = Number(process.env.RESKIN_MODEL_SEQUENCES ?? 3000);
 const STEPS = 18;
+// How often an editor's message goes out from some other sender instead of its own document.
+const HOSTILE = 0.2;
 const SEED = 0x5eed2026;
 
 const nord = CLASSICS.find((t) => t.id === "nord").document;
@@ -67,9 +76,30 @@ async function runSequence(seed, failures) {
     },
   });
   const newId = counter(`${(seed >>> 0).toString(16).padStart(8, "0").slice(-8)}-0000-4000-8000-`);
-  const open = () => createRepository(storage, context({ css: standInCss(version), newId, snapshot: withBoot ? snapshot : undefined }));
-  let repository = open();
-  await repository.initialize();
+  const api = fakeApi();
+  const open = () => createBackground({ api, storage, ...context({ css: standInCss(version), newId, snapshot: withBoot ? snapshot : undefined }) });
+  let background = open();
+  await background.initialize();
+  let requests = 0;
+  const send = (request, sender) => background.dispatch({ requestId: `m${++requests}`, ...request }, sender);
+
+  // Senders, as the browser describes them. `label` is the model's name for a builder document,
+  // and null for every sender that is not one.
+  const documentOf = new Map();
+  let documents = 0;
+  const builderDocument = () => {
+    const n = ++documents;
+    const sender = rng.chance(0.5) ? builderSender(api, { documentId: `d${seed.toString(36)}-${n}`, hash: rng.pick(["", "#make", "#backup"]) }) : builderSender(api, { documentId: null, tab: 100 + n, frameId: rng.int(2) });
+    documentOf.set(sender, `builder-${n}`);
+    return sender;
+  };
+  const otherSenders = [
+    { id: api.runtime.id, url: api.runtime.getURL("pages/popup.html"), documentId: `popup-${seed}` },
+    { ...pageSender(api, "pages/onboarding.html"), documentId: `first-run-${seed}`, tab: { id: 3 }, frameId: 0 },
+    builderSender(api, { documentId: null, tab: null }),
+    contentSender(api),
+  ];
+  const label = (sender) => documentOf.get(sender) ?? null;
 
   const hashOf = (document) => {
     const result = standInCss(version).inspect({ css: document?.css }).css;
@@ -82,23 +112,34 @@ async function runSequence(seed, failures) {
   const issued = [];
   const editors = [];
   const openEditor = (draft = { savedId: null, document: documentWith({ css: rng.pick([null, ...CSS]) }) }) => {
-    const editor = { id: `e${seed.toString(36)}x${editors.length}`.padEnd(20, "0"), tickets: [], draft, history: [] };
+    const editor = { id: `e${seed.toString(36)}x${editors.length}`.padEnd(20, "0"), tickets: [], draft, history: [], sender: builderDocument() };
     editors.push(editor);
     return editor;
   };
   openEditor();
   const log = [];
 
+  // Who sends an editor's message: usually its own document, sometimes anyone else.
+  const hostileSender = () => rng.pick([...editors.map((e) => e.sender), ...otherSenders, builderDocument()]);
+  const via = (editor) => (rng.chance(HOSTILE) ? hostileSender() : editor.sender);
+  // Actions with no editor come from any extension page, or a content script, which is refused.
+  const anyPage = () => rng.pick([...editors.map((e) => e.sender), ...otherSenders]);
+
   // One commit, then the invariant. `grant` describes a ticket the action carries.
-  async function commit(action, { revision = settings().revision, grant = null } = {}) {
+  async function commit(action, { revision = settings().revision, grant = null, sender = anyPage() } = {}) {
     // Storage replaces a record on every write and never mutates it, so this is the earlier state.
     const before = settings();
     const legitBefore = legit.slice();
-    const reply = await repository.commit(action, revision);
+    const reply = await send({ type: "commit", expectedRevision: revision, action }, sender);
     const after = settings();
-    log.push([action.type, action.id ?? action.target ?? "", reply.ok ? "ok" : reply.code]);
+    const from = label(sender);
+    log.push([action.type, action.id ?? action.target ?? "", from ?? sender.url.split("/").pop(), reply.ok ? "ok" : reply.code]);
     if (action.type === "approveCss" || action.type === "withdrawCss") {
       assert.deepEqual(after, before, "an approval request never changes settings");
+    }
+    if (action.type === "approveCss" && reply.ok) {
+      assert.ok(from, `a ticket went to a sender that is not a builder document: ${sender.url}`);
+      assert.equal(revision, before.revision, "a ticket was issued for a stale revision");
     }
     // Structural: an approval names a saved theme, this sanitizer and exactly its CSS hash.
     for (const [id, consent] of Object.entries(after.cssConsent)) {
@@ -121,12 +162,12 @@ async function runSequence(seed, failures) {
       const target = action.type === "saveCustom" ? (action.id ?? "new") : action.id;
       const forThis = action.type === "saveCustom" ? (action.id ? action.id === id : created.includes(id)) : action.type === "setCssConsent" && action.id === id;
       assert.ok(grant && forThis, `an approval appeared without a ticket: ${action.type} ${id}`);
-      const stands = legitBefore.some((l) => l.editor === action.editor && l.ticket === grant.ticket && l.target === target && l.hash === consent.hash && l.version === version);
+      const stands = from !== null && legitBefore.some((l) => l.document === from && l.editor === action.editor && l.ticket === grant.ticket && l.target === target && l.hash === consent.hash && l.version === version);
       assert.ok(stands, `an approval appeared from a ticket the person did not give for this theme and text: ${action.type} ${id}`);
     }
     // The model follows what invalidates a ticket.
     if (reply.ok && grant) legit = legit.filter((l) => l.ticket !== grant.ticket);
-    if (action.type === "resetAll") legit = [];
+    if (action.type === "resetAll" && reply.ok) legit = [];
     for (const theme of before.customThemes) {
       const now = after.customThemes.find((t) => t.id === theme.id);
       if (!now || hashOf(now.document) !== hashOf(theme.document) || revokes(theme.id) || (before.cssConsent[theme.id] && !after.cssConsent[theme.id])) legit = legit.filter((l) => l.target !== theme.id);
@@ -162,12 +203,13 @@ async function runSequence(seed, failures) {
     if (id) action.id = id;
     const grant = typeof choice.approval === "string" ? { ticket: choice.approval } : null;
     const before = new Set(ids());
-    const reply = await commit(action, { grant });
+    const sender = via(editor);
+    const reply = await commit(action, { grant, sender });
     if (reply.ok) {
       editor.history.push(structuredClone(editor.draft));
       editor.draft = { savedId: id ?? ids().find((x) => !before.has(x)), document };
     }
-    return { action, grant, reply };
+    return { action, grant, reply, sender };
   }
 
   const steps = {
@@ -175,18 +217,20 @@ async function runSequence(seed, failures) {
     async enable(editor = rng.pick(editors)) {
       const css = rng.chance(0.9) ? (editor.draft.document.css ?? rng.pick(CSS)) : "INVALID {";
       const target = rng.chance(0.9) ? (editor.draft.savedId ?? "new") : anyId();
-      const reply = await commit({ type: "approveCss", editor: editor.id, target, css });
+      const sender = via(editor);
+      const reply = await commit({ type: "approveCss", editor: editor.id, target, css }, { sender });
       if (reply.ok) {
         const ticket = { ticket: reply.approval.ticket, target, hash: reply.approval.hash };
         editor.tickets.push(ticket);
         issued.push(ticket);
-        legit.push({ ...ticket, editor: editor.id, version });
+        legit.push({ ...ticket, editor: editor.id, version, document: label(sender) });
       }
     },
     // Turning Enable off, or changing the CSS: the builder withdraws this editor's tickets.
     async disable(editor = rng.pick(editors)) {
-      await commit({ type: "withdrawCss", editor: editor.id });
-      legit = legit.filter((l) => l.editor !== editor.id);
+      const sender = via(editor);
+      const reply = await commit({ type: "withdrawCss", editor: editor.id }, { sender });
+      if (reply.ok) legit = legit.filter((l) => !(l.editor === editor.id && l.document === label(sender)));
     },
     async editColor() {
       const editor = rng.pick(editors);
@@ -277,7 +321,51 @@ async function runSequence(seed, failures) {
       const pool = rng.chance(0.7) ? editor.tickets : issued;
       if (!pool.length) return;
       const { ticket } = rng.pick(pool);
-      await commit({ type: "setCssConsent", id, granted: true, editor: editor.id, approval: ticket }, { grant: { ticket } });
+      await commit({ type: "setCssConsent", id, granted: true, editor: editor.id, approval: ticket }, { grant: { ticket }, sender: via(editor) });
+    },
+    // Any message from any sender, carrying any editor token and ticket seen so far. Messages that
+    // are not commits never change settings or approvals.
+    async hostile() {
+      const sender = hostileSender();
+      const editor = rng.pick(editors).id;
+      const ticket = issued.length && rng.chance(0.8) ? rng.pick(issued).ticket : `forged-${rng.int(1e9)}`.padEnd(24, "x");
+      const id = anyId();
+      const roll = rng.int(8);
+      if (roll === 0) {
+        const reply = await commit({ type: "approveCss", editor, target: rng.pick([id, "new"]), css: rng.pick(CSS) }, { sender });
+        if (reply.ok) issued.push({ ticket: reply.approval.ticket });
+        // A builder document's own request is that document's explicit Enable for that token.
+        if (reply.ok) legit.push({ ticket: reply.approval.ticket, target: reply.approval.target, hash: reply.approval.hash, editor, version, document: label(sender) });
+        return;
+      }
+      if (roll === 1) return void (await commit({ type: "setCssConsent", id, granted: true, editor, approval: ticket }, { grant: { ticket }, sender }));
+      if (roll === 2) {
+        const document = settings().customThemes.find((t) => t.id === id)?.document ?? documentWith({ css: rng.pick(CSS) });
+        const action = { type: "saveCustom", document, select: true, editor, approval: ticket, ...(rng.chance(0.5) && ids().includes(id) ? { id } : {}) };
+        return void (await commit(action, { grant: { ticket }, sender }));
+      }
+      if (roll === 3) {
+        const reply = await commit({ type: "withdrawCss", editor }, { sender });
+        if (reply.ok) legit = legit.filter((l) => !(l.editor === editor && l.document === label(sender)));
+        return;
+      }
+      if (roll === 4) {
+        const reply = await commit({ type: "approveCss", editor, target: rng.pick([id, "new"]), css: rng.pick(CSS) }, { sender, revision: settings().revision - 1 - rng.int(2) });
+        assert.notEqual(reply.ok, true, "a ticket request with a stale revision is refused");
+        return;
+      }
+      const before = storage.snapshot();
+      const request = rng.pick([
+        { type: "get" },
+        { type: "draft", action: { type: rng.pick(["load", "discard"]) } },
+        { type: "recovery", action: { type: rng.pick(["load", "lastGood"]) } },
+        { type: "open-page", action: { page: rng.pick(["settings", "onboarding"]) } },
+      ]);
+      await send(request, sender);
+      log.push([request.type, label(sender) ?? sender.url.split("/").pop()]);
+      const after = storage.snapshot();
+      assert.deepEqual(after[STORAGE_KEYS.settings], before[STORAGE_KEYS.settings], `${request.type} changed settings`);
+      assert.deepEqual(after[APPROVALS_KEY], before[APPROVALS_KEY], `${request.type} changed approvals`);
     },
     async secondWindow() {
       if (editors.length < 4) openEditor({ savedId: rng.chance(0.7) && ids().length ? rng.pick(ids()) : null, document: rng.pick(settings().customThemes)?.document ?? documentWith({ css: rng.pick(CSS) }) });
@@ -309,14 +397,14 @@ async function runSequence(seed, failures) {
       const first = await save(editor);
       if (!first.reply.ok) {
         const before = new Set(ids());
-        const reply = await commit(first.action, { grant: first.grant });
+        const reply = await commit(first.action, { grant: first.grant, sender: first.sender });
         if (reply.ok) editor.draft = { savedId: first.action.id ?? ids().find((x) => !before.has(x)), document: first.action.document };
       }
     },
     async staleRevision() {
       const editor = rng.pick(editors);
       const choice = approvalFor(editor, editor.draft.document);
-      const reply = await commit({ type: "saveCustom", document: editor.draft.document, select: true, editor: editor.id, ...choice }, { revision: rng.chance(0.5) && settings().revision > 0 ? rng.int(settings().revision) : settings().revision + 1 + rng.int(3), grant: typeof choice.approval === "string" ? { ticket: choice.approval } : null });
+      const reply = await commit({ type: "saveCustom", document: editor.draft.document, select: true, editor: editor.id, ...choice }, { revision: rng.chance(0.5) && settings().revision > 0 ? rng.int(settings().revision) : settings().revision + 1 + rng.int(3), grant: typeof choice.approval === "string" ? { ticket: choice.approval } : null, sender: via(editor) });
       assert.notEqual(reply.ok, true, "a stale revision never commits");
     },
     // The background restarting, or the other window's: storage is the only authority.
@@ -333,12 +421,12 @@ async function runSequence(seed, failures) {
   // Initialization (a restart, an update's migration) keeps or drops approvals, never adds one.
   async function reopen() {
     const before = structuredClone(settings().cssConsent);
-    repository = open();
-    await repository.initialize();
+    background = open();
+    await background.initialize();
     for (const [id, consent] of Object.entries(settings().cssConsent)) assert.deepEqual(consent, before[id], `initialization created an approval: ${id}`);
     await commit({ type: "completeOnboarding" });
   }
-  const weights = { enable: 14, disable: 4, editColor: 5, editCss: 4, rename: 3, save: 14, saveCopy: 6, undo: 6, reset: 3, importTheme: 5, exportRoundTrip: 3, remove: 4, removeAndReadd: 4, revoke: 5, grantDirectly: 4, secondWindow: 3, resume: 3, preferences: 3, resetAll: 1, failedWrite: 3, staleRevision: 2, restart: 2, sanitizerUpdate: 1 };
+  const weights = { enable: 14, disable: 4, editColor: 5, editCss: 4, rename: 3, save: 14, saveCopy: 6, undo: 6, reset: 3, importTheme: 5, exportRoundTrip: 3, remove: 4, removeAndReadd: 4, revoke: 5, grantDirectly: 4, hostile: 8, secondWindow: 3, resume: 3, preferences: 3, resetAll: 1, failedWrite: 3, staleRevision: 2, restart: 2, sanitizerUpdate: 1 };
   const table = Object.entries(weights).flatMap(([name, weight]) => Array(weight).fill(name));
 
   try {
@@ -381,8 +469,9 @@ test("the model's sequences grant approvals through tickets, not only refuse the
     await repository.initialize();
     const editor = "model-editor-0000000000";
     const css = rng.pick(CSS);
-    const ticket = (await repository.commit({ type: "approveCss", editor, target: "new", css }, 0)).approval.ticket;
-    const reply = await repository.commit({ type: "saveCustom", document: documentWith({ css }), select: true, editor, approval: ticket }, 0);
+    const builder = { document: "document:model-builder" };
+    const ticket = (await repository.commit({ type: "approveCss", editor, target: "new", css }, 0, builder)).approval.ticket;
+    const reply = await repository.commit({ type: "saveCustom", document: documentWith({ css }), select: true, editor, approval: ticket }, 0, builder);
     if (reply.ok && Object.keys(reply.settings.cssConsent).length === 1) granted++;
   }
   assert.equal(granted, 200);

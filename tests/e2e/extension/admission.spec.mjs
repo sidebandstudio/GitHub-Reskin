@@ -243,8 +243,9 @@ test("Chromium: forced colors take theme CSS off GitHub's own elements", async (
 test("Chromium: a saved theme's CSS applies only with consent, and revoking it turns the CSS off without a reload", async ({ extension }) => {
   const page = await openRegistry(extension);
   await expectAdmitted(page, "chromium built-in");
-  const popup = await openPage(extension, "popup");
-  await consentScenario(page, (action) => commit(popup, action), "chromium");
+  // Approval tickets are issued to and redeemed by the builder's settings page only.
+  const builder = await openPage(extension, "settings", { width: 1280, height: 900 });
+  await consentScenario(page, (action) => commit(builder, action), "chromium");
 });
 
 test("Firefox: the installed add-on admits the same subjects, refuses protected UI, inserted or moved, and follows forced colors", async () => {
@@ -308,7 +309,7 @@ test("Firefox: the built content script never applies theme CSS in Calm, and a s
     };
     const repository = createRepository(memory, { catalog, css: CSS_ADMISSION, newId: () => `00000000-0000-4000-8000-${String(++ids).padStart(12, "0")}` });
     const act = async (action) => {
-      const reply = await repository.commit(action, data.get(STORAGE_KEYS.settings).revision);
+      const reply = await repository.commit(action, data.get(STORAGE_KEYS.settings).revision, { document: "firefox-content-builder" });
       if (reply.ok && !reply.approval) {
         settings = reply.settings;
         await page.evaluate(([key, value]) => globalThis.__reskinWrite(key, value), [STORAGE_KEYS.settings, settings]);

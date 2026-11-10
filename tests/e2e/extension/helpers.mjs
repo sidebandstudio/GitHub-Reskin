@@ -192,10 +192,12 @@ const MEDIA_TYPES = { ".html": "text/html", ".js": "text/javascript", ".css": "t
 
 // A stand-in extension namespace for an add-on page in plain Gecko. storage.local lives in the test
 // process, so it survives closing the page; runtime.sendMessage reaches the built background.js,
-// which the same init script runs in the page, with the page as its sender.
+// which the same init script runs in the page, with the page as its sender. The sender carries a
+// tab and frame per document, as Firefox's does, so the builder's approval tickets are bound to it.
 const PAGE_STAND_IN = `(() => {
   const listeners = new Set();
   let onMessage = null;
+  const sender = { id: "e2e", url: location.href, tab: { id: 1 + Math.floor(Math.random() * 2 ** 30) }, frameId: 0 };
   const call = (op, arg) => globalThis.__reskinStorage(op, arg ?? null);
   const notify = (changes) => { if (Object.keys(changes).length) for (const listener of listeners) listener(changes, "local"); };
   globalThis.browser = {
@@ -206,7 +208,7 @@ const PAGE_STAND_IN = `(() => {
       getURL: (path) => (path.endsWith(".woff2") ? "/" : ${JSON.stringify(FIREFOX_PAGES_ORIGIN)} + "/") + path,
       onInstalled: { addListener() {} },
       onMessage: { addListener(listener) { onMessage = listener; } },
-      sendMessage: (message) => new Promise((resolve) => onMessage(structuredClone(message), { id: "e2e", url: location.href }, (reply) => resolve(structuredClone(reply)))),
+      sendMessage: (message) => new Promise((resolve) => onMessage(structuredClone(message), { ...sender, url: location.href }, (reply) => resolve(structuredClone(reply)))),
     },
     storage: {
       local: {

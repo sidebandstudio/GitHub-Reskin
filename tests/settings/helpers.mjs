@@ -124,7 +124,14 @@ export function fakeApi({ id = "reskin-test-id", origin = "chrome-extension://re
 }
 
 export const pageSender = (api, page = "pages/settings.html") => ({ id: api.runtime.id, url: api.runtime.getURL(page) });
-export const contentSender = (api) => ({ id: api.runtime.id, url: "https://github.com/whoisaldo", tab: { id: 4 } });
+export const contentSender = (api) => ({ id: api.runtime.id, url: "https://github.com/whoisaldo", tab: { id: 4 }, frameId: 0, documentId: "content-document" });
+/** The builder's settings page as Chrome names it (a documentId) or Firefox does (tab and frame). */
+export const builderSender = (api, { documentId = "builder-document-1", tab = 7, frameId = 0, hash = "#make" } = {}) => ({
+  id: api.runtime.id,
+  url: `${api.runtime.getURL("pages/settings.html")}${hash}`,
+  ...(documentId === null ? {} : { documentId }),
+  ...(tab === null ? {} : { tab: { id: tab }, frameId }),
+});
 
 // ---------------------------------------------------------------------------------------------
 // A small DOM for the lifecycle: elements, attribute and childList mutation observers, events,

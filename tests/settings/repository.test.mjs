@@ -20,6 +20,8 @@ import { catalog, CHOOM, CLASSICS, context, deferred, memoryStorage, standInCss 
 const nord = CLASSICS.find((t) => t.id === "nord").document;
 const EDITOR = "editor-aaaaaaaaaaaaaaaa";
 const OTHER_EDITOR = "editor-bbbbbbbbbbbbbbbb";
+// The builder document the background names as an approval request's sender.
+const BUILDER = { document: "document:builder-1" };
 const CSS_A = ".AppHeader { box-shadow: 0 1px 0 var(--reskin-accent); }";
 const CSS_B = ".AppHeader { box-shadow: none; }";
 
@@ -231,10 +233,10 @@ test("the current build rejects advanced CSS, images and CSS consent safely", as
   assert.equal(NO_CSS_SANITIZER.inspect(withCss).css.ok, false);
   const saved = await repository.commit({ type: "saveCustom", document: nord, select: true }, 0);
   const id = saved.settings.selectedThemeId;
-  const approval = await repository.commit({ type: "approveCss", editor: EDITOR, target: id, css: ".Header { color: red }" }, 1);
+  const approval = await repository.commit({ type: "approveCss", editor: EDITOR, target: id, css: ".Header { color: red }" }, 1, BUILDER);
   assert.equal(approval.ok, false);
   assert.equal(approval.code, "invalid");
-  const consent = await repository.commit({ type: "setCssConsent", id, granted: true, editor: EDITOR, approval: "a".repeat(32) }, 1);
+  const consent = await repository.commit({ type: "setCssConsent", id, granted: true, editor: EDITOR, approval: "a".repeat(32) }, 1, BUILDER);
   assert.equal(consent.ok, false);
   assert.equal(consent.code, "invalid");
   assert.deepEqual(stored(storage).cssConsent, {});
@@ -245,31 +247,31 @@ test("the current build rejects advanced CSS, images and CSS consent safely", as
 test("consent is keyed by sanitized hash and version, and a CSS change needs a fresh choice", async () => {
   const css = standInCss();
   const { storage, repository } = await ready({}, undefined, { css });
-  const saved = await repository.commit({ type: "saveCustom", document: { ...nord, css: CSS_A }, select: true, editor: EDITOR }, 0);
+  const saved = await repository.commit({ type: "saveCustom", document: { ...nord, css: CSS_A }, select: true, editor: EDITOR }, 0, BUILDER);
   const id = saved.settings.selectedThemeId;
   assert.deepEqual(stored(storage).cssConsent, {}, "saving alone approves nothing");
   // A ticket is issued for exactly the text approved, and redeems only for that CSS.
-  const other = await repository.commit({ type: "approveCss", editor: EDITOR, target: id, css: CSS_B }, 1);
+  const other = await repository.commit({ type: "approveCss", editor: EDITOR, target: id, css: CSS_B }, 1, BUILDER);
   assert.equal(other.settings.revision, 1, "an approval request leaves settings alone");
-  const wrong = await repository.commit({ type: "setCssConsent", id, granted: true, editor: EDITOR, approval: other.approval.ticket }, 1);
+  const wrong = await repository.commit({ type: "setCssConsent", id, granted: true, editor: EDITOR, approval: other.approval.ticket }, 1, BUILDER);
   assert.equal(wrong.code, "invalid", "a ticket for other CSS is refused");
   assert.equal(wrong.issues[0].reason, APPROVAL_ISSUE);
-  const ticket = (await repository.commit({ type: "approveCss", editor: EDITOR, target: id, css: CSS_A }, 1)).approval.ticket;
-  assert.equal((await repository.commit({ type: "setCssConsent", id, granted: true, editor: OTHER_EDITOR, approval: ticket }, 1)).code, "invalid", "another editor cannot redeem it");
-  assert.equal((await repository.commit({ type: "setCssConsent", id, granted: true, editor: EDITOR, approval: ticket }, 1)).ok, true);
+  const ticket = (await repository.commit({ type: "approveCss", editor: EDITOR, target: id, css: CSS_A }, 1, BUILDER)).approval.ticket;
+  assert.equal((await repository.commit({ type: "setCssConsent", id, granted: true, editor: OTHER_EDITOR, approval: ticket }, 1, BUILDER)).code, "invalid", "another editor cannot redeem it");
+  assert.equal((await repository.commit({ type: "setCssConsent", id, granted: true, editor: EDITOR, approval: ticket }, 1, BUILDER)).ok, true);
   const hash = css.inspect({ css: CSS_A }).css.hash;
   assert.deepEqual(storage.data.get(STORAGE_KEYS.boot).cssConsent, { hash, sanitizerVersion: 1 });
   assert.deepEqual(storage.data.get(APPROVALS_KEY), [], "the ticket is used up");
   assert.equal(JSON.stringify(storage.snapshot()).includes(ticket), false, "storage never holds a redeemable ticket");
   // Renaming keeps the approval; changing the CSS drops it, and the old text needs a new choice.
-  await repository.commit({ type: "saveCustom", id, document: { ...nord, name: "Renamed", css: CSS_A }, select: true, editor: EDITOR }, 2);
+  await repository.commit({ type: "saveCustom", id, document: { ...nord, name: "Renamed", css: CSS_A }, select: true, editor: EDITOR }, 2, BUILDER);
   assert.ok(stored(storage).cssConsent[id]);
-  await repository.commit({ type: "saveCustom", id, document: { ...nord, css: CSS_B }, select: true, editor: EDITOR }, 3);
+  await repository.commit({ type: "saveCustom", id, document: { ...nord, css: CSS_B }, select: true, editor: EDITOR }, 3, BUILDER);
   assert.equal(stored(storage).cssConsent[id], undefined);
-  await repository.commit({ type: "saveCustom", id, document: { ...nord, css: CSS_A }, select: true, editor: EDITOR }, 4);
+  await repository.commit({ type: "saveCustom", id, document: { ...nord, css: CSS_A }, select: true, editor: EDITOR }, 4, BUILDER);
   assert.equal(stored(storage).cssConsent[id], undefined);
   // A sanitizer update drops approvals made under the old one when the background starts.
-  await repository.commit({ type: "saveCustom", id, document: { ...nord, css: CSS_A }, select: true, editor: EDITOR, approval: (await repository.commit({ type: "approveCss", editor: EDITOR, target: id, css: CSS_A }, 5)).approval.ticket }, 5);
+  await repository.commit({ type: "saveCustom", id, document: { ...nord, css: CSS_A }, select: true, editor: EDITOR, approval: (await repository.commit({ type: "approveCss", editor: EDITOR, target: id, css: CSS_A }, 5, BUILDER)).approval.ticket }, 5, BUILDER);
   assert.ok(stored(storage).cssConsent[id]);
   const updated = createRepository(storage, context({ css: standInCss(2) }));
   await updated.initialize();
@@ -438,27 +440,93 @@ test("saveCustom writes a theme and its CSS approval in one commit, or neither",
   const css = standInCss();
   let failNext = false;
   const { storage, repository } = await ready({}, { set: async () => { if (failNext) { failNext = false; throw new Error("QUOTA_BYTES quota exceeded"); } } }, { css });
-  const ticket = (await repository.commit({ type: "approveCss", editor: EDITOR, target: "new", css: CSS_A }, 0)).approval.ticket;
+  const ticket = (await repository.commit({ type: "approveCss", editor: EDITOR, target: "new", css: CSS_A }, 0, BUILDER)).approval.ticket;
   const save = { type: "saveCustom", document: { ...nord, css: CSS_A }, select: true, editor: EDITOR, approval: ticket };
   // A failed write leaves no theme behind and the ticket still good, so trying again saves exactly one.
   failNext = true;
-  const failed = await repository.commit(save, 0);
+  const failed = await repository.commit(save, 0, BUILDER);
   assert.equal(failed.ok, false);
   assert.equal(stored(storage).customThemes.length, 0);
   assert.deepEqual(stored(storage).cssConsent, {});
-  const saved = await repository.commit(save, 0);
+  const saved = await repository.commit(save, 0, BUILDER);
   assert.equal(saved.ok, true);
   const id = saved.settings.selectedThemeId;
   assert.equal(stored(storage).customThemes.length, 1);
   assert.deepEqual(stored(storage).cssConsent[id], { hash: css.inspect({ css: CSS_A }).css.hash, sanitizerVersion: 1 });
   // The same ticket never approves a second theme.
-  const again = await repository.commit(save, 1);
+  const again = await repository.commit(save, 1, BUILDER);
   assert.equal(again.code, "invalid");
   assert.equal(stored(storage).customThemes.length, 1);
   // null revokes while saving.
-  assert.equal((await repository.commit({ type: "saveCustom", id, document: { ...nord, name: "Kept", css: CSS_A }, select: true, editor: EDITOR, approval: null }, 1)).ok, true);
+  assert.equal((await repository.commit({ type: "saveCustom", id, document: { ...nord, name: "Kept", css: CSS_A }, select: true, editor: EDITOR, approval: null }, 1, BUILDER)).ok, true);
   assert.equal(stored(storage).cssConsent[id], undefined);
   assert.equal(stored(storage).customThemes[0].document.name, "Kept");
   assert.equal((await repository.commit({ type: "saveCustom", document: nord, select: true, approval: "x" }, 2)).code, "invalid", "a malformed approval is refused");
   assert.equal((await repository.commit({ type: "saveCustom", document: nord, select: true, approval: "a".repeat(32) }, 2)).code, "invalid", "a ticket needs its editor");
+});
+
+test("an approval ticket is issued and redeemed only for the builder document the background names, at the current revision", async () => {
+  const css = standInCss();
+  const { storage, repository } = await ready({}, undefined, { css });
+  const id = (await repository.commit({ type: "saveCustom", document: { ...nord, css: CSS_A }, select: true, editor: EDITOR }, 0, BUILDER)).settings.selectedThemeId;
+  const before = storage.snapshot();
+  // No sender document: the popup, the first-run page, a content script or any other caller.
+  for (const origin of [undefined, null, {}, { document: null }, { document: "" }]) {
+    const refused = await repository.commit({ type: "approveCss", editor: EDITOR, target: id, css: CSS_A }, 1, origin);
+    assert.equal(refused.ok, false, JSON.stringify(origin));
+    assert.equal(refused.issues[0].reason, APPROVAL_ISSUE);
+  }
+  assert.deepEqual(storage.snapshot(), before, "a refused request stores no ticket");
+  // A stale expected revision is refused before any ticket exists.
+  const stale = await repository.commit({ type: "approveCss", editor: EDITOR, target: id, css: CSS_A }, 0, BUILDER);
+  assert.equal(stale.code, "conflict");
+  assert.equal(stale.approval, undefined);
+  assert.deepEqual(storage.snapshot(), before);
+  // The same editor and ticket strings from another document, or with no document, redeem nothing.
+  const ticket = (await repository.commit({ type: "approveCss", editor: EDITOR, target: id, css: CSS_A }, 1, BUILDER)).approval.ticket;
+  for (const origin of [{ document: "document:builder-2" }, null]) {
+    const replay = await repository.commit({ type: "setCssConsent", id, granted: true, editor: EDITOR, approval: ticket }, 1, origin);
+    assert.equal(replay.ok, false, JSON.stringify(origin));
+    assert.equal(replay.issues[0].reason, APPROVAL_ISSUE);
+  }
+  // Another document's withdrawal leaves this document's ticket alone.
+  await repository.commit({ type: "withdrawCss", editor: EDITOR }, 1, { document: "document:builder-2" });
+  assert.deepEqual(stored(storage).cssConsent, {});
+  assert.equal((await repository.commit({ type: "setCssConsent", id, granted: true, editor: EDITOR, approval: ticket }, 1, BUILDER)).ok, true);
+  assert.ok(stored(storage).cssConsent[id]);
+});
+
+test("startup keeps a stored approval only for a saved theme's exact sanitized CSS under the current sanitizer", async () => {
+  const css = standInCss();
+  const { storage, repository } = await ready({}, undefined, { css });
+  const save = async (name, document, revision) => (await repository.commit({ type: "saveCustom", document: { ...document, name }, select: true }, revision)).settings.selectedThemeId;
+  const exact = await save("Exact", { ...nord, css: CSS_A }, 0);
+  const other = await save("Other CSS", { ...nord, css: CSS_B }, 1);
+  const plain = await save("No CSS", nord, 2);
+  const old = await save("Other sanitizer", { ...nord, css: CSS_A }, 3);
+  const hashA = css.inspect({ css: CSS_A }).css.hash;
+  // Records written straight into the extension's storage, not through an approval.
+  const settings = stored(storage);
+  settings.cssConsent = {
+    [exact]: { hash: hashA, sanitizerVersion: 1 },
+    [other]: { hash: hashA, sanitizerVersion: 1 },
+    [plain]: { hash: hashA, sanitizerVersion: 1 },
+    [old]: { hash: hashA, sanitizerVersion: 2 },
+  };
+  settings.selectedThemeId = plain;
+  storage.data.set(STORAGE_KEYS.settings, settings);
+  const restarted = createRepository(storage, context({ css }));
+  assert.equal((await restarted.initialize()).state, "current");
+  assert.deepEqual(stored(storage).cssConsent, { [exact]: { hash: hashA, sanitizerVersion: 1 } }, "only the record matching its stored theme's CSS and this sanitizer stays");
+  assert.equal(stored(storage).revision, settings.revision + 1, "dropping records is a written change");
+  assert.equal(storage.data.get(STORAGE_KEYS.boot)?.cssConsent ?? null, null, "the selected theme without CSS boots without approval");
+  // A record naming a bundled theme, or a theme that is not saved, is dropped with the salvage.
+  const salvaged = stored(storage);
+  salvaged.cssConsent = { ...salvaged.cssConsent, nord: { hash: hashA, sanitizerVersion: 1 }, "local:00000000-0000-4000-8000-0000000000ff": { hash: hashA, sanitizerVersion: 1 } };
+  storage.data.set(STORAGE_KEYS.settings, salvaged);
+  assert.equal((await createRepository(storage, context({ css })).initialize()).state, "recovered");
+  assert.deepEqual(stored(storage).cssConsent, { [exact]: { hash: hashA, sanitizerVersion: 1 } });
+  // A sanitizer change drops the remaining one.
+  await createRepository(storage, context({ css: standInCss(2) })).initialize();
+  assert.deepEqual(stored(storage).cssConsent, {});
 });
