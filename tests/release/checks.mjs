@@ -6,7 +6,7 @@
 //                release versions, the candidate commit and the hashes in artifacts/SHA256SUMS. It
 //                makes no live GitHub request and starts no deploy or store submission.
 //   budgets      check:budgets with no surface: ARCHITECTURE.md's release budgets, measured from
-//                dist/, artifacts/ and a fresh bundle of the engine, then the site's own route
+//                dist/, artifacts/ and a fresh bundle of content.js, then the site's own route
 //                (budgets --surface=site) and the timings in artifacts/reports/release-timings.json.
 //                Writes artifacts/reports/budgets.json. A measurement that is missing fails. Owned
 //                DOM nodes and effects are check:effects' and fonts per file check:fonts'.
@@ -168,19 +168,27 @@ async function filesUnder(dir) {
 const sum = (files) => files.reduce((n, [, bytes]) => n + bytes, 0);
 const sizeOf = async (path) => (await stat(path).catch(() => null))?.size ?? null;
 
-// The engine as an adapter bundles it, and css-tree's chunk alone: minified, gzip level 9, the
-// measurement THEME-EXPANSION.md budgets (tests/engine/bundle.test.mjs asserts the same).
+// ARCHITECTURE.md's content engine/bootstrap: content.js as the build bundles it, with the frozen
+// mode data left out and everything else it carries, the catalog included. css-tree's chunk alone
+// is minified, as THEME-EXPANSION.md measured it. Both gzip at level 9.
+const NO_MODE_DATA = { name: "no-mode-data", setup: (build) => build.onLoad({ filter: /[\\/]vendor[\\/]primer[\\/]modes\.json$/ }, () => ({ contents: "export default {};", loader: "js" })) };
+
 async function measureEngine(root) {
   const { build } = await import("esbuild");
-  const measure = async (contents) => {
-    const result = await build({ stdin: { contents, resolveDir: root, loader: "js" }, absWorkingDir: root, bundle: true, format: "esm", platform: "neutral", target: ["chrome120", "firefox140"], minify: true, write: false, logLevel: "silent" });
-    const bytes = result.outputFiles[0].contents;
-    return { raw: bytes.length, gzip: gzipSync(bytes, { level: 9 }).length };
-  };
-  return {
-    engine: await measure('export * from "./packages/format/index.js"; export * from "./packages/engine/index.js";'),
-    parser: await measure('export { parse, walk, generate, lexer, fork, tokenize, ident, clone, List, toPlainObject } from "css-tree/dist/csstree.esm";'),
-  };
+  const { bundleFile } = await import("../../packages/ui/bundle.mjs");
+  const size = (bytes) => ({ raw: bytes.length, gzip: gzipSync(bytes, { level: 9 }).length });
+  const parser = await build({
+    stdin: { contents: 'export { parse, walk, generate, lexer, fork, tokenize, ident, clone, List, toPlainObject } from "css-tree/dist/csstree.esm";', resolveDir: root, loader: "js" },
+    absWorkingDir: root,
+    bundle: true,
+    format: "esm",
+    platform: "neutral",
+    target: ["chrome120", "firefox140"],
+    minify: true,
+    write: false,
+    logLevel: "silent",
+  });
+  return { engine: size(await bundleFile(root, "content.js", { plugins: [NO_MODE_DATA] })), parser: size(parser.outputFiles[0].contents) };
 }
 
 // The browser-measured gates, as the release surface records them in release-timings.json:
@@ -219,8 +227,8 @@ export async function checkBudgets({ args = [], root, outDir = join(root, "dist"
   const fonts = existsSync(join(outDir, "chrome", "assets", "fonts")) ? (await filesUnder(join(outDir, "chrome", "assets", "fonts"))).filter(([path]) => path.endsWith(".woff2")) : null;
   measure("bundled fonts (WOFF2)", fonts && sum(fonts), LIMITS.fontTotalWoff2Bytes);
   const { engine: bundle, parser } = await engine(root);
-  measure("content engine with the CSS sanitizer, raw", bundle.raw, BUDGETS.contentEngineRawBytes);
-  measure("content engine with the CSS sanitizer, gzip", bundle.gzip, BUDGETS.contentEngineGzipBytes);
+  measure("content script without mode data, raw", bundle.raw, BUDGETS.contentEngineRawBytes);
+  measure("content script without mode data, gzip", bundle.gzip, BUDGETS.contentEngineGzipBytes);
   measure("CSS parser chunk, raw", parser.raw, BUDGETS.cssParserRawBytes);
   measure("CSS parser chunk, gzip", parser.gzip, BUDGETS.cssParserGzipBytes);
   measure("frozen mode data (vendor/primer/modes.json)", await sizeOf(join(root, "vendor", "primer", "modes.json")), BUDGETS.modeDataRawBytes);

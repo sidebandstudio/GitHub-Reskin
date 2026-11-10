@@ -93,7 +93,7 @@ function virtualModules(modules) {
   };
 }
 
-async function bundle(root, entry, modules, { packed = false } = {}) {
+async function bundle(root, entry, modules, { packed = false, plugins = [] } = {}) {
   const { build } = await import("esbuild");
   const result = await build({
     entryPoints: [entry],
@@ -109,9 +109,20 @@ async function bundle(root, entry, modules, { packed = false } = {}) {
     preserveSymlinks: true,
     write: false,
     logLevel: "silent",
-    plugins: [virtualModules(modules), ...(packed ? [packModes(root)] : [])],
+    plugins: [...plugins, virtualModules(modules), ...(packed ? [packModes(root)] : [])],
   });
   return Buffer.from(result.outputFiles[0].contents);
+}
+
+/**
+ * One of BUNDLES as build() makes it, with `plugins` first. check:budgets measures content.js
+ * this way with the mode data left out.
+ * @returns {Promise<Buffer>}
+ */
+export async function bundleFile(root, path, { plugins = [] } = {}) {
+  const entries = await readCatalogEntries(root);
+  const modules = { "reskin:catalog": catalogData(entries), "reskin:cards": catalogCards(entries) };
+  return bundle(root, BUNDLES[path], modules, { packed: PACKED_MODES.includes(path), plugins });
 }
 
 /**
