@@ -7,9 +7,10 @@
 // preview fixture's images. No @require, no remote @icon, nothing
 // fetched at runtime. Reads only checked-in files and lockfile-installed packages; same inputs,
 // same bytes.
-//   node userscript/build.mjs            writes userscript/github-reskin.user.js
+//   node userscript/build.mjs            writes dist/userscript/github-reskin.user.js
+// The site build publishes the same script at <site>/downloads/, its @updateURL.
 import { realpathSync } from "node:fs";
-import { readdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { FONTS } from "../packages/appearance/registry.js";
@@ -17,8 +18,11 @@ import { catalogCards, catalogData, readCatalogEntries } from "../packages/ui/bu
 import { CSS_NOTE, IMPORT_CSS_NOTE } from "./copy.js";
 
 export const ROOT = fileURLToPath(new URL("..", import.meta.url));
-// The committed copy, which 1.1.0 installs still check for updates (their @updateURL).
-export const COMMITTED = "userscript/github-reskin.user.js";
+// Where the build writes the script. Pages serves it at updateUrl().
+export const OUTPUT = "dist/userscript/github-reskin.user.js";
+// A frozen copy, not regenerated. The first userscripts check this path on main for updates, and
+// this copy's @updateURL moves those installs to the Pages download.
+export const BRIDGE = "userscript/github-reskin.user.js";
 export const ENTRY = "userscript/main.mjs";
 export const MATCHES = Object.freeze(["https://github.com/*", "https://gist.github.com/*"]);
 export const GRANTS = Object.freeze([
@@ -298,6 +302,7 @@ export async function build({ root = ROOT } = {}) {
 
 if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const script = await build();
-  await writeFile(join(ROOT, COMMITTED), script);
-  console.log(`Wrote ${COMMITTED}: ${script.length} characters, ${Buffer.byteLength(script)} bytes`);
+  await mkdir(join(ROOT, "dist/userscript"), { recursive: true });
+  await writeFile(join(ROOT, OUTPUT), script);
+  console.log(`Wrote ${OUTPUT}: ${script.length} characters, ${Buffer.byteLength(script)} bytes`);
 }

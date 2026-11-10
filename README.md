@@ -23,7 +23,7 @@ A build from source doesn't update itself. Pull and build again to update.
 Safari can't load the extension, and Firefox drops an unsigned one when it restarts. For those browsers, GitHub Reskin also comes as a userscript built from the same code as the extension. It has the same themes, Full and Calm, the same picker card and the same theme builder, and it stays installed.
 
 1. Install a userscript manager. In Firefox, use [Violentmonkey](https://violentmonkey.github.io) or [Tampermonkey](https://www.tampermonkey.net). In Safari on a Mac, iPhone or iPad, use [Userscripts](https://github.com/quoid/userscripts) or Tampermonkey. Safari asks you to turn the extension on in its settings and allow it on github.com.
-2. Open [github-reskin.user.js](https://raw.githubusercontent.com/sidebandstudio/GitHub-Reskin/main/userscript/github-reskin.user.js) and install it from your manager's prompt. In Userscripts, the prompt is under its toolbar button.
+2. Open [github-reskin.user.js](https://sidebandstudio.github.io/GitHub-Reskin/downloads/github-reskin.user.js) and install it from your manager's prompt. In Userscripts, the prompt is under its toolbar button.
 3. Reload any GitHub or Gist tabs you already had open.
 
 To pick a theme, choose Open GitHub Reskin from your manager's menu. Userscripts has no menu, so open `https://github.com/#reskin` instead. A theme applies as soon as you click it, and Undo puts the previous one back. Press Escape, click Close or click the page to close the card.
@@ -88,7 +88,7 @@ Themes live in `themes/anime` and `themes/classics` as `.reskin.json` files, lis
 
 GitHub's standard mode colors live in `vendor/primer`, a frozen snapshot. `node scripts/refresh-primer.mjs` fetches a newer one for review.
 
-The userscript in `userscript/github-reskin.user.js` is generated from the same packages by `userscript/build.mjs`. After changing anything it embeds, run `node userscript/build.mjs`. `npm test` fails while the userscript is out of date. Userscript managers only install an update when its version goes up, so raise `version` in `release.config.json` when you change what users see.
+The userscript is generated from the same packages by `userscript/build.mjs`. `npm run build:userscript` writes it to `dist/userscript/`, and the site build publishes it on Pages at the address its `@updateURL` names. `userscript/github-reskin.user.js` is a frozen copy, version 1.1.1, that moves installs of the first userscripts (1.0.0 and 1.1.0) to that address, so leave it as it is. Userscript managers only install an update when its version goes up, so raise `version` in `release.config.json` when you change what users see.
 
 ## Contribution graph for your profile
 

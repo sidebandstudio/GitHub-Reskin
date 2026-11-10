@@ -4,6 +4,11 @@
 extension get the same runtime, picker and theme builder. There is no second engine here: only the manager host,
 the frame shell and the build.
 
+`github-reskin.user.js` in this folder is a frozen copy, not regenerated. Versions 1.0.0 and 1.1.0
+first shipped from that path on `main` and check it for updates. This copy is 1.1.1, above both, and
+its `@updateURL` moves those installs to the Pages download, which they take from the next release
+above 1.1.1. Don't rebuild it.
+
 | File | Contents |
 | --- | --- |
 | `main.mjs` | The entry. At document start it adds the extension's boot gate, initializes C4's repository over GM storage (first-run defaults, or the 1.1.0 userscript's `theme`, `enabled` and `custom` migrated once), then starts C4's lifecycle with C6's renderer (C3's adapter and Primer compiler, the engine, C5's appearance) and embedded fonts. Sign-in and the other authentication routes stay native. It registers the menu command and opens the panel when the address it loaded with, or a navigation the browser reports as the person's own, ends in `#reskin`; a page script setting the hash opens nothing. The panel has its controls only when `isolation.js` shows the script runs apart from GitHub's JavaScript; otherwise the script gets session storage only, so the manager's storage stays out of reach of page code that patches built-ins, the card shows the theme and why, and `menu.js` changes settings until the page reloads. With controls, the card's Make a theme and Backup & help open C6's `mountBuilder` and `mountBackup` in the builder's frame over the same host, with C5's offline preview configured once from the embedded fixture images. No approval reaches the renderer, so only a bundled theme's own CSS applies. The CSS sanitizer is installed (`packages/format/authoring.js`), so a saved or imported theme that carries CSS validates and keeps it. The theme's fonts are added from their embedded bytes (`fonts.js`). |
@@ -16,8 +21,8 @@ the frame shell and the build.
 | `raster.js` | `xrayRasterEnv`: image conversion for the builder behind Firefox's Xrays, where the encoder's bytes are copied into the script's realm before C5's checks read them. |
 | `fonts.js` | Adds the bundled faces a theme or picker card uses to `document.fonts` as `FontFace` objects made from the embedded WOFF2. |
 | `frame.css` | The card's frame layout, after the extension's `ui.css` and `popup.css`, and the builder frame's, after `ui.css` and `page.css`. |
-| `build.mjs` | `build()` returns the script: metadata, the upstream notices, and one esbuild IIFE with the catalog, cards, fonts, boot CSS, the card document, the builder document and the preview fixture's images embedded. The builder document is `settings.html`'s Make a theme and Backup & help under the frame's header, with each Enable advanced CSS replaced by an inert hidden input and the userscript's note; the build fails if that markup changes shape. `node userscript/build.mjs` writes the committed copy, which 1.1.0 installs check for updates. |
-| `verify.mjs`, `checks.mjs` | `check:userscript` (static checks of the artifact, freshness, unit tests) and the `userscript` E2E/a11y surface. The scan for network calls removes exactly one reviewed text first: the preview's read of a resource URL, which never runs here because every URL the userscript's adapter gives is data. |
+| `build.mjs` | `build()` returns the script: metadata, the upstream notices, and one esbuild IIFE with the catalog, cards, fonts, boot CSS, the card document, the builder document and the preview fixture's images embedded. The builder document is `settings.html`'s Make a theme and Backup & help under the frame's header, with each Enable advanced CSS replaced by an inert hidden input and the userscript's note; the build fails if that markup changes shape. `node userscript/build.mjs` and `npm run build:userscript` write `dist/userscript/github-reskin.user.js`, and the site build publishes the same script at `downloads/github-reskin.user.js` on Pages, the address its `@updateURL` names. |
+| `verify.mjs`, `checks.mjs` | `check:userscript` (static checks of the artifact, the bridge copy's update address, unit tests) and the `userscript` E2E/a11y surface. The scan for network calls removes exactly one reviewed text first: the preview's read of a resource URL, which never runs here because every URL the userscript's adapter gives is data. |
 
 ## Manager differences
 

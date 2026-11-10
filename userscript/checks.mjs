@@ -2,8 +2,8 @@
 // which resolves to {exitCode, testCount}:
 //   userscript  check:userscript: builds the script twice (same bytes), checks the generated
 //               artifact (metadata, no remote code or icon, no network or page-storage API, every
-//               font and notice embedded, the 3.5 MiB budget), that the committed copy 1.1.0
-//               installs update from is fresh, then runs the userscript unit tests.
+//               font and notice embedded, the 3.5 MiB budget), that the frozen bridge copy still
+//               sends its installs to the Pages download, then runs the userscript unit tests.
 //   test:e2e    the userscript surface: userscript-chromium and userscript-firefox.
 //   a11y        the same projects' @a11y tests.
 // Direct use: node userscript/checks.mjs userscript
@@ -13,7 +13,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { runSurface } from "../scripts/check-a11y.mjs";
-import { build, COMMITTED, MAX_BYTES } from "./build.mjs";
+import { build, BRIDGE, MAX_BYTES, updateUrl } from "./build.mjs";
 import { scriptProblems } from "./verify.mjs";
 
 const DEFAULT_ROOT = fileURLToPath(new URL("..", import.meta.url));
@@ -44,8 +44,9 @@ async function checkUserscript(root) {
   check(first === second, "two builds from the same inputs differ");
   const problems = await scriptProblems(first, { config, root });
   check(problems.length === 0, problems.join("\n  "));
-  const committed = (await readFile(join(root, COMMITTED), "utf8").catch(() => "")).replace(/\r\n/g, "\n");
-  check(committed === first, `${COMMITTED} is out of date. Run node userscript/build.mjs`);
+  // The frozen bridge copy must keep sending the first userscript's installs to Pages.
+  const bridge = await readFile(join(root, BRIDGE), "utf8").catch(() => "");
+  check(bridge.includes(`// @updateURL    ${updateUrl(config)}\n`), `${BRIDGE} must keep its @updateURL at ${updateUrl(config)}`);
   const bytes = Buffer.byteLength(first);
   console.log(`github-reskin.user.js: ${bytes} bytes (${(bytes / 1024 / 1024).toFixed(2)} MiB of the ${MAX_BYTES / 1024 / 1024} MiB budget)`);
   for (const failure of failures) console.error(`  FAIL ${failure}`);
