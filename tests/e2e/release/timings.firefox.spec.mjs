@@ -13,7 +13,7 @@ import { CSS_ADMISSION } from "../../../packages/ui/renderer.js";
 import { build, ROOT } from "../../../scripts/build.mjs";
 import { CHOOM, PROFILE_HTML, PROFILE_URL } from "../extension/helpers.mjs";
 import { expect, test } from "../../helpers/e2e.mjs";
-import { record, summary } from "./helpers.mjs";
+import { FIXTURE, record, summary } from "./helpers.mjs";
 
 const SWITCHES = 40;
 const STAND_IN = `(() => {
@@ -92,7 +92,7 @@ test("a settings write reaches the page's style in Firefox, timed for the releas
     }
     expect(times).toHaveLength(SWITCHES);
     const result = summary(times);
-    await record(info, "storage", { storageToStyleP95Ms: result.p95, storageToStyle: result }, `firefox ${browser.version()}`);
+    await record(info, "storage", { storageToStyleP95Ms: result.p95, storageToStyle: result, fixture: FIXTURE }, `firefox ${browser.version()}`);
     await context.close();
   } finally {
     await rm(out, { recursive: true, force: true });

@@ -1,25 +1,29 @@
 // Chromium timings of the installed extension, for check:budgets: settings to style (a theme
 // commit from the popup until the GitHub tab's computed colors change), the longest task that runs
 // extension code, from a DevTools trace of loading the tab and the popup and switching themes, and
-// the tab's main-thread time over 30 idle seconds. The same switches and the preview's resolve are
-// also reported at a 4x CPU slowdown, which no budget gates.
+// over 30 idle seconds the CPU time of the tab's main thread and of the extension's own process,
+// which must run no timer or animation. The same switches and the preview's resolve are also
+// reported at a 4x CPU slowdown, which no budget gates. Each trace is saved with the timings.
 import { CHOOM, CHOOM_CANVAS, expect, openPage, PROFILE_URL, painted, test, waitPainted } from "../extension/helpers.mjs";
-import { catalogThemes, record, resolvePage, summary, timeResolves } from "./helpers.mjs";
+import { catalogThemes, FIXTURE, record, resolvePage, saveTrace, summary, timeResolves } from "./helpers.mjs";
 
 const OTHER = "dracula";
 const SWITCHES = 40;
+
+// Tracing covers the whole browser. The disabled-by-default timeline categories make every task
+// several milliseconds longer, so they stay off.
+const startTrace = (cdp) =>
+  cdp.send("Tracing.start", {
+    transferMode: "ReturnAsStream",
+    traceConfig: { recordMode: "recordAsMuchAsPossible", includedCategories: ["toplevel", "devtools.timeline"] },
+  });
 
 /** A GitHub profile tab, with a DevTools session on it, once the lifecycle has painted it. */
 async function openTab(extension, { trace = false } = {}) {
   const page = await extension.context.newPage();
   await page.setViewportSize({ width: 1280, height: 900 });
   const cdp = await extension.context.newCDPSession(page);
-  if (trace) {
-    await cdp.send("Tracing.start", {
-      transferMode: "ReturnAsStream",
-      traceConfig: { recordMode: "recordAsMuchAsPossible", includedCategories: ["toplevel", "devtools.timeline"] },
-    });
-  }
+  if (trace) await startTrace(cdp);
   await page.goto(PROFILE_URL);
   await waitPainted(page, (now) => now.boot === "ready" && now.styled);
   return { page, cdp };
@@ -87,6 +91,9 @@ async function readTrace(cdp) {
 // Chromium records each task as ThreadControllerImpl::RunTask, older builds as RunTask, and some
 // builds as both, nested; the longest is the same either way.
 const TASKS = new Set(["RunTask", "ThreadControllerImpl::RunTask"]);
+const thread = (event) => `${event.pid}:${event.tid}`;
+// Chromium names the process that holds the extension's pages and service worker.
+const extensionProcesses = (events) => new Set(events.filter((e) => e.ph === "M" && e.name === "process_name" && e.args?.name === "Extension Renderer").map((e) => e.pid));
 
 /**
  * The tasks that ran extension code: every task on the main thread of a process showing an
@@ -95,10 +102,9 @@ const TASKS = new Set(["RunTask", "ThreadControllerImpl::RunTask"]);
  */
 export function extensionTasks(events, id) {
   const origin = `chrome-extension://${id}/`;
-  const thread = (event) => `${event.pid}:${event.tid}`;
   const main = new Set(events.filter((e) => e.ph === "M" && e.name === "thread_name" && e.args?.name === "CrRendererMain").map(thread));
-  // Chromium names the process that holds extension pages; frame records name it too when traced.
-  const pages = new Set(events.filter((e) => e.ph === "M" && e.name === "process_name" && e.args?.name === "Extension Renderer").map((e) => e.pid));
+  // Frame records name the extension's process too when traced.
+  const pages = extensionProcesses(events);
   for (const event of events) {
     const data = event.args?.data;
     for (const frame of [data, ...(data?.frames ?? [])]) if (typeof frame?.url === "string" && frame.url.startsWith(origin) && frame.processId) pages.add(frame.processId);
@@ -120,6 +126,33 @@ export function extensionTasks(events, id) {
   return { count, longest, extensionPageProcesses: pages.size, threadsWithExtensionScript: marks.size };
 }
 
+// What runs a timer or an animation frame callback.
+const TIMERS = new Set(["TimerFire", "FireAnimationFrame", "FireIdleCallback"]);
+// The extension process's threads that run its code: its pages' main thread and its workers.
+const SCRIPT_THREADS = new Set(["CrRendererMain", "ServiceWorker thread", "DedicatedWorker thread"]);
+
+/**
+ * Extension work in an idle trace: every timer or animation frame callback for the tab's frame or
+ * in the extension's process, and the CPU seconds of the top-level tasks on that process's main and
+ * worker threads. Thread time, so a busy machine descheduling a task does not count as work; a task
+ * Chromium recorded without thread time counts at its wall time.
+ */
+export function idleWork(events, frameId) {
+  const processes = extensionProcesses(events);
+  const threads = new Set(events.filter((e) => e.ph === "M" && e.name === "thread_name" && processes.has(e.pid) && SCRIPT_THREADS.has(e.args?.name)).map(thread));
+  const timers = events.filter((e) => TIMERS.has(e.name) && (e.args?.data?.frame === frameId || processes.has(e.pid))).map((e) => `${e.name} on ${processes.has(e.pid) ? "the extension's process" : "the tab"}`);
+  const tasks = events.filter((e) => TASKS.has(e.name) && e.ph === "X" && threads.has(thread(e))).sort((a, b) => a.ts - b.ts || (b.dur ?? 0) - (a.dur ?? 0));
+  const ends = new Map();
+  let micros = 0;
+  for (const task of tasks) {
+    // A task inside the one before it on its thread is nested and already counted.
+    if (task.ts < (ends.get(thread(task)) ?? -Infinity)) continue;
+    ends.set(thread(task), task.ts + (task.dur ?? 0));
+    micros += task.tdur ?? task.dur ?? 0;
+  }
+  return { timers, extensionProcesses: processes.size, extensionSeconds: micros / 1e6 };
+}
+
 test("settings reach a GitHub tab's style, and no task that runs extension code takes 50 ms, timed for the release budget", async ({ extension }, info) => {
   test.setTimeout(180000);
   const { page, cdp } = await openTab(extension, { trace: true });
@@ -133,7 +166,8 @@ test("settings reach a GitHub tab's style, and no task that runs extension code 
   expect(tasks.threadsWithExtensionScript).toBeGreaterThan(0);
   expect(tasks.count).toBeGreaterThan(SWITCHES);
   const result = summary(times);
-  await record(info, "settings", { settingsToStyleP95Ms: result.p95, settingsToStyle: result, longestTaskMs: tasks.longest, extensionTasks: tasks.count }, await version(cdp));
+  const trace = await saveTrace(info, "settings", events);
+  await record(info, "settings", { settingsToStyleP95Ms: result.p95, settingsToStyle: result, longestTaskMs: tasks.longest, extensionTasks: tasks.count, trace, fixture: FIXTURE }, await version(cdp));
 });
 
 test("at a 4x CPU slowdown, settings to style and the preview's resolve are reported", async ({ extension, serveDir }, info) => {
@@ -155,19 +189,29 @@ test("at a 4x CPU slowdown, settings to style and the preview's resolve are repo
   }
 });
 
-test("a themed GitHub tab left idle for 30 s spends at most a sliver of one core, measured for the release budget", async ({ extension }, info) => {
+test("a themed GitHub tab left idle for 30 s runs no extension timer or animation and spends at most a sliver of one core on the extension, measured for the release budget", async ({ extension }, info) => {
   test.setTimeout(120000);
   const { page, cdp } = await openTab(extension);
   // Settle first: fonts, decorations and the boot attribute's last writes.
   await page.waitForTimeout(3000);
-  await cdp.send("Performance.enable");
+  const frameId = (await cdp.send("Page.getFrameTree")).frameTree.frame.id;
+  // The tab's main thread in thread time, which counts the content script and the page alike.
+  await cdp.send("Performance.enable", { timeDomain: "threadTicks" });
   const metric = async () => Object.fromEntries((await cdp.send("Performance.getMetrics")).metrics.map((m) => [m.name, m.value]));
+  await startTrace(cdp);
   const before = await metric();
   await page.waitForTimeout(30000);
   const after = await metric();
+  const events = await readTrace(cdp);
+  const work = idleWork(events, frameId);
   const seconds = after.Timestamp - before.Timestamp;
-  const busy = after.TaskDuration - before.TaskDuration;
+  const tab = after.TaskDuration - before.TaskDuration;
   expect(seconds).toBeGreaterThan(29);
   expect((await painted(page)).boot).toBe("ready");
-  await record(info, "idle", { idleCpuPercent: (busy / seconds) * 100, idle: { seconds, taskSeconds: busy, scriptSeconds: after.ScriptDuration - before.ScriptDuration, layouts: after.LayoutCount - before.LayoutCount, styleRecalcs: after.RecalcStyleCount - before.RecalcStyleCount } }, await version(cdp));
+  expect(work.extensionProcesses).toBeGreaterThan(0);
+  expect(work.timers, "timers or animation frames while idle").toEqual([]);
+  expect(await page.evaluate(() => document.getAnimations().filter((animation) => animation.playState === "running").length), "running animations").toBe(0);
+  const trace = await saveTrace(info, "idle", events);
+  const idle = { seconds, tabSeconds: tab, extensionSeconds: work.extensionSeconds, scriptSeconds: after.ScriptDuration - before.ScriptDuration, layouts: after.LayoutCount - before.LayoutCount, styleRecalcs: after.RecalcStyleCount - before.RecalcStyleCount };
+  await record(info, "idle", { idleCpuPercent: ((tab + work.extensionSeconds) / seconds) * 100, idle, trace, fixture: FIXTURE }, await version(cdp));
 });

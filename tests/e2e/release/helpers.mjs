@@ -1,14 +1,18 @@
 // Shared setup for C9's release surface: cross-product timings that check:budgets gates, and the
 // release-only accessibility checks, the add-on's pages at 320px in both engines. Each timing test
 // writes what it measured with record(), one file per project and measurement under
-// RESKIN_RELEASE_TIMINGS (artifacts/reports/release-timings by default); tests/release/checks.mjs
-// merges them into release-timings.json after the run.
+// RESKIN_RELEASE_TIMINGS (artifacts/reports/release-timings by default), with its raw trace beside
+// it when it took one; tests/release/checks.mjs merges the measurements into release-timings.json
+// after the run.
+import { createHash } from "node:crypto";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { cpus, loadavg, tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { gzipSync } from "node:zlib";
 import { readCatalogEntries } from "../../../packages/ui/bundle.mjs";
+import { PROFILE_HTML, PROFILE_URL } from "../extension/helpers.mjs";
 import { adapterPaths } from "../../fixture-app/product/build.mjs";
 import { axeViolations, blocking } from "../../helpers/a11y.mjs";
 import { expect } from "../../helpers/e2e.mjs";
@@ -32,6 +36,17 @@ export async function record(info, name, values, browser) {
   await writeFile(join(TIMINGS_DIR, `${info.project.name}.${name}.json`), `${JSON.stringify({ project: info.project.name, browser, machine, ...values }, null, 2)}\n`);
   info.annotations.push({ type: "timing", description: `${name}: ${JSON.stringify(values)}` });
 }
+
+/** Saves a DevTools trace beside this project's timings, gzipped, and returns its file name. */
+export async function saveTrace(info, name, events) {
+  await mkdir(TIMINGS_DIR, { recursive: true });
+  const file = `${info.project.name}.${name}.trace.json.gz`;
+  await writeFile(join(TIMINGS_DIR, file), gzipSync(JSON.stringify({ traceEvents: events })));
+  return file;
+}
+
+// The GitHub page the timings run on, C3's guarded profile fixture, for the report.
+export const FIXTURE = Object.freeze({ url: PROFILE_URL, file: "tests/primer/fixtures/profile.html", bytes: Buffer.byteLength(PROFILE_HTML), sha256: createHash("sha256").update(PROFILE_HTML).digest("hex") });
 
 /** The bundled catalog's theme documents, anime first. */
 export const catalogThemes = async () => (await readCatalogEntries(ROOT)).map((entry) => entry.document);
