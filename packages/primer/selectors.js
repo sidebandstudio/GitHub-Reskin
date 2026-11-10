@@ -183,3 +183,81 @@ export function islandScope(covered, known, baseOf, branch) {
     deep: `:is(${below(NESTING)})`,
   };
 }
+
+/**
+ * Roots of text people wrote: READMEs and rendered Markdown, comments, issue, pull request,
+ * discussion and commit titles, files, code and diffs, and the names people choose. The content
+ * adapter never anchors an owned node inside one, and the heading role's case and a capitals-only
+ * heading face never reach one. Names and titles: profile display name and username, organization
+ * name, repository name and the owner and repository in the signed-in header, file and directory
+ * names in the file heading, breadcrumbs, tree and listing, commit rows, release names, and the
+ * gist author, name and file names (github.com, 2026-11-09). Also, from a second logged-out pass
+ * on github.com on 2026-11-09: issue and pull request list titles, pinned discussion titles, the
+ * user, organization and repository a hovercard link names (discussion post and reply authors,
+ * fork owners, the sponsored account, a search result's repository), search result headings,
+ * the project's own name in the project app's top bar, its board column and card titles, wiki
+ * page titles, milestone names, a discussion category's heading, the branches in a comparison's
+ * branch buttons, the editor in a comment's edit history button, and a profile's repository list
+ * (itemprop "name codeRepository").
+ */
+export const AUTHORED_ROOTS = Object.freeze([
+  ".markdown-body",
+  ".comment-body",
+  ".js-comment-body",
+  ".markdown-title",
+  ".js-issue-title",
+  "[data-testid='issue-title']",
+  "[data-testid='issue-body']",
+  ".file",
+  ".gist-file",
+  ".blob-wrapper",
+  ".blob-code",
+  ".react-code-file-contents",
+  ".react-code-lines",
+  ".diff-table",
+  ".js-diff-table",
+  "[data-testid='diff-view']",
+  "pre",
+  "code",
+  "textarea",
+  "#readme",
+  ".readme",
+  ".user-profile-bio",
+  ".p-note",
+  ".vcard-names",
+  "[itemprop~='name']",
+  ".orghead h1",
+  "[data-testid='repo-name-wrapper']",
+  ".AppHeader-context-item",
+  "#file-name-id",
+  "#file-name-id-wide",
+  "#sticky-file-name-id",
+  "[data-testid='breadcrumbs']",
+  "[data-testid='breadcrumbs-filename']",
+  "#repos-file-tree [role='tree']",
+  ".react-directory-filename-column",
+  ".commit-title",
+  "[data-testid='commit-row-item']",
+  "[data-release-anchor]",
+  "[data-pjax='#repo-content-pjax-container'] > h1",
+  ".gist-blob-name",
+  ".author",
+  "[data-testid='issue-listitem-title-link']",
+  "[data-testid='listitem-title-link']",
+  "[data-target='discussion-spotlight-container.mainLink']",
+  "[data-hovercard-type='user']",
+  "[data-hovercard-type='organization']",
+  "[data-hovercard-type='repository']",
+  "[data-testid='results-list'] h3",
+  // The project app's top bar names the project; GitHub's own React page titles are elsewhere.
+  "projects-v2 [role='navigation'][aria-label='Project'] h1",
+  "[data-board-column] h2",
+  "[id^='board-card-title-']",
+  "#wiki-wrapper .gh-header-title",
+  "a[href*='/milestone/']",
+  ".Subhead #discussions-list",
+  "summary.branch [data-menu-button]",
+  // A comment's edit history button reads "edited by" and the editor's login, with no element
+  // around the login.
+  "[data-target='edit-history.menuTrigger']",
+]);

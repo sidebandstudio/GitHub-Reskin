@@ -6,8 +6,9 @@
 // subjects also require the revocable [data-reskin-css-native="active"] gate on the scope and
 // [data-reskin-css-kind="<kind>"] on the subject itself. Owned decorations require the host's
 // [data-reskin-owned] node with its exact slot. A rule that can reach several kinds gets the
-// intersection of their policies, or the whole input fails. Without a valid registry every
-// native rule fails closed and only owned decorations compile.
+// intersection of their policies, or the whole input fails. A subject the registry marks authored
+// shows text people wrote, a name or a title, and no rule that reaches it may set text-transform.
+// Without a valid registry every native rule fails closed and only owned decorations compile.
 import { CSS_MARKERS, CSS_REGISTRY_VERSION, CSS_TARGET_KINDS, FLAVOR_SLOT_IDS, ISSUE_CODES, SANITIZER_VERSION } from "../../contracts/index.js";
 import { POLICY, POLICY_HASH, has } from "./policy.js";
 
@@ -64,6 +65,7 @@ export function registryProblems(registry) {
         problems.push(`${at} predicates must be exact data-testid, data-component or aria-current values`);
       }
       if (!Array.isArray(subject.routes) || !subject.routes.length || !subject.routes.every((r) => typeof r === "string" && r)) problems.push(`${at} needs its reviewed routes`);
+      if (subject.authored !== undefined && subject.authored !== true) problems.push(`${at} authored must be true or absent`);
     }
   if (registry.rootKind !== null && !(registry.rootKind === "page-backing" && Object.hasOwn(kinds, "page-backing"))) problems.push("rootKind must be null or page-backing, defined in kinds");
   if (!isObject(registry.invalidation) || !Array.isArray(registry.invalidation.attributes) || !Array.isArray(registry.invalidation.events) || !registry.invalidation.attributes.length || !registry.invalidation.events.length) {
@@ -189,6 +191,7 @@ export function compileCss(sanitized, { registry = null, cssAllowed, preferences
   for (const rule of sanitized.rules) {
     const selectors = [];
     const kinds = new Set();
+    let authored = false;
     let owned = 0;
     let textSlot = false;
     for (const selector of rule.selectors) {
@@ -225,6 +228,7 @@ export function compileCss(sanitized, { registry = null, cssAllowed, preferences
           fail(`${renderSelector(concrete)} is not a reviewed GitHub target, so no imported CSS can reach it.`);
           continue;
         }
+        if (matches.some((m) => m.authored)) authored = true;
         for (const kind of new Set(matches.map((m) => m.kind))) {
           kinds.add(kind);
           selectors.push(`:where(${SCOPE}${NATIVE_GATE}) ${ancestors}${renderCompound(subject)}[${M.kind}=${quote(kind)}]${EXCLUDE}`);
@@ -232,6 +236,7 @@ export function compileCss(sanitized, { registry = null, cssAllowed, preferences
       }
     }
     for (const decl of rule.declarations) {
+      if (authored && decl.property === "text-transform") fail(`${rule.selectors.map(renderSelector).join(",")}: text-transform would change how a name people wrote reads.`);
       for (const kind of kinds) {
         const problem = kindProblem(decl, kind, usable.kinds[kind]);
         if (problem) fail(`${rule.selectors.map(renderSelector).join(",")}: ${problem}.`);

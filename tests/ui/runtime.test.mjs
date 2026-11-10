@@ -115,8 +115,10 @@ test("a bundled heading font is loaded from the packaged path in Full and Calm w
   const { plan, seed } = renderer.plan(renderer.readPage(null, null), document.base);
   const resolved = renderer.resolve(document, { seed, policy: "themed", reducedMotion: false, forcedColors: false });
   assert.notEqual(resolved.font, "system");
-  // One face per reviewed weight; the browser fetches only the weights its text uses.
-  const faces = FONT_BY_ID[resolved.font].weights.map((weight) => `${resolved.font} ${weight}`);
+  // One face per reviewed weight of the heading and body families; the browser fetches only the
+  // weights its text uses.
+  const faces = [document.fonts.heading, document.fonts.body].flatMap((id) => FONT_BY_ID[id].weights.map((weight) => `${id} ${weight}`));
+  assert.equal(resolved.font, document.fonts.heading);
   fontUrls.length = 0;
   assert.match(renderer.compile(resolved, plan, prefs()).css, /@font-face/);
   assert.deepEqual(fontUrls, faces);
@@ -159,7 +161,9 @@ test("cards carry what Full adds, at miniature scale: wallpaper, heading face, t
   assert.equal(choom.font.id, null, "a native stack needs no file");
   assert.match(choom.font.stack, /^"Roboto Condensed", /);
   const frieren = cards.find((card) => card.id === "anime.frieren").mini;
-  assert.deepEqual([frieren.font.id, frieren.wallpaper, frieren.tag, frieren.glow], ["alegreya", null, "// travel journal", false]);
+  assert.deepEqual([frieren.font.id, frieren.tag, frieren.glow], ["alegreya", "// travel journal", false]);
+  // Frieren's contour lines, sage haze and linen weave reach its card too.
+  assert.ok(frieren.wallpaper.image.startsWith("repeating-radial-gradient("));
   for (const card of cards.filter((c) => c.group === "classics")) {
     assert.deepEqual([card.mini.tag, card.mini.flourish, card.mini.wallpaper, card.mini.font], [null, null, null, null], card.id);
   }

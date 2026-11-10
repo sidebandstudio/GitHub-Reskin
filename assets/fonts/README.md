@@ -10,6 +10,11 @@ Each family ships exactly the weights its schema registry entry reviews (`weight
 Oxanium ship one weight. Body fonts are IBM Plex Sans, Source Sans 3, Nunito Sans, Atkinson
 Hyperlegible and Barlow; every family can be a heading. Code keeps native monospace.
 
+Bungee, Bebas Neue and Cinzel have no lowercase forms: their lowercase letters are capitals or
+small capitals, with no ascenders or descenders. The renderer's registry marks them `capsOnly`,
+check:fonts measures every file's glyph outlines to confirm it, and the heading role keeps them
+off names and titles people wrote.
+
 | ID | Family | Roles | Bytes by weight | Family bytes |
 | --- | --- | --- | --- | --- |
 | rajdhani | Rajdhani | heading | 600: 8,996, 700: 8,856 | 17,852 |

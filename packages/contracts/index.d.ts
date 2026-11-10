@@ -384,6 +384,8 @@ export interface CssSubjectSignature {
   predicates?: { name: CssPredicateName; value: string }[];
   /** Reviewed route patterns where C3 issues this kind's marker. */
   routes: string[];
+  /** The subject shows a name or title people wrote; no rule that reaches it may set text-transform. */
+  authored?: true;
 }
 /**
  * The registry C3 supplies (registryVersion 1). Imported metadata never extends it. Without a

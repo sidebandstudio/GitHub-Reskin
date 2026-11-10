@@ -192,13 +192,15 @@ export const HOST_SUBJECTS = freeze([
     maxDescendants: 8,
   },
   {
-    // The repository name above the file list, outside the global navigation.
+    // The repository name above the file list, outside the global navigation. The name is the
+    // owner's, so theme CSS may give it ink, glow and type but never change its case.
     id: "title.repository",
     key: { withinId: "repo-title-component" },
     kind: "heading-chrome",
     select: '#repo-title-component [itemprop="name"][data-testid="repo-name-wrapper"] > strong > a[data-testid="repo-name-link"]',
     routes: ["repository", "pull-files", "commit"],
     signature: { element: "a", classes: [], predicates: [{ name: "data-testid", value: "repo-name-link" }] },
+    authored: true,
     descendants: "",
     maxDescendants: 0,
   },
@@ -353,6 +355,7 @@ export const CSS_TARGET_REGISTRY = freeze({
     classes: [...s.signature.classes],
     ...(s.signature.predicates ? { predicates: s.signature.predicates.map((p) => ({ ...p })) } : {}),
     routes: [...s.routes],
+    ...(s.authored ? { authored: true } : {}),
   })),
   rootKind: "page-backing",
   invalidation: { attributes: [...INVALIDATION.attributes], events: [...INVALIDATION.events] },

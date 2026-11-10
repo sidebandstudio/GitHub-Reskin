@@ -1,40 +1,168 @@
 {
   "$schema": "https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json",
   "author": "sidebandstudio",
+  "backgrounds": {
+    "header": {
+      "color": "#d9d0ae",
+      "layers": [
+        {
+          "gradientCss": {
+            "value": "linear-gradient(0deg,#717653 2px,transparent 2px)"
+          }
+        },
+        {
+          "gradientCss": {
+            "value": "repeating-linear-gradient(90deg,transparent 0 158px,#c3b994 158px 160px)"
+          }
+        },
+        {
+          "gradientCss": {
+            "value": "linear-gradient(180deg,#e4dcbd,#d9d0ae 55%,#cfc6a2)"
+          }
+        }
+      ]
+    },
+    "page": {
+      "color": "#182019",
+      "layers": [
+        {
+          "gradientCss": {
+            "value": "repeating-linear-gradient(0deg,transparent 0 79px,#d6d0b70d 79px 81px)"
+          }
+        },
+        {
+          "gradientCss": {
+            "size": "100% 100vh",
+            "value": "linear-gradient(97deg,transparent 0 3.3%,#0a0f0a99 3.3% 3.5%,#d9d0ae2e 3.5% 3.72%,transparent 3.72% 95.88%,#d9d0ae2e 95.88% 96.1%,#0a0f0a99 96.1% 96.3%,transparent 96.3%)"
+          }
+        },
+        {
+          "gradientCss": {
+            "size": "100% 100vh",
+            "value": "linear-gradient(125deg,#2c3a27,#182019 62%)"
+          }
+        }
+      ]
+    }
+  },
   "base": "dark",
+  "code": {
+    "ansi": {
+      "black": "#bdc8b0",
+      "blue": "#b5d3e8",
+      "brightBlack": "#c0c7b4",
+      "brightBlue": "#d0e4f2",
+      "brightCyan": "#d0f0e4",
+      "brightGreen": "#c9ffe0",
+      "brightMagenta": "#f3d6ee",
+      "brightRed": "#ffccd2",
+      "brightWhite": "#ffffff",
+      "brightYellow": "#fff0c8",
+      "cyan": "#b5e1ce",
+      "green": "#a4edc2",
+      "magenta": "#e8c2e2",
+      "red": "#ffb3bb",
+      "white": "#e0e5d3",
+      "yellow": "#ffe0a0"
+    },
+    "background": "#10170f",
+    "diff": {
+      "addedBackground": "#123529",
+      "addedText": "#c9ffe0",
+      "removedBackground": "#401c2b",
+      "removedText": "#ffd5df",
+      "wordAddedBackground": "#255b42",
+      "wordAddedText": "#c9ffe0",
+      "wordRemovedBackground": "#6b3044",
+      "wordRemovedText": "#ffd5df"
+    },
+    "syntax": {
+      "attribute": "#ebd7b3",
+      "comment": "#bdc8b0",
+      "constant": "#eeb8ac",
+      "deleted": "#ffb3bb",
+      "escape": "#efcd94",
+      "function": "#dfdfa5",
+      "inserted": "#a4edc2",
+      "invalid": "#ffb3bb",
+      "keyword": "#e0c29b",
+      "markupEmphasis": "#f4efdd",
+      "markupHeading": "#dfdfa5",
+      "markupLink": "#e1e8bc",
+      "markupList": "#e0c29b",
+      "markupQuote": "#bdc8b0",
+      "number": "#efcd94",
+      "operator": "#e0c29b",
+      "punctuation": "#e0e5d3",
+      "regex": "#d1e6ad",
+      "string": "#d1e6ad",
+      "tag": "#b5e1ce",
+      "type": "#c1d6df",
+      "variable": "#f4efdd"
+    },
+    "text": "#f4efdd"
+  },
   "colors": {
-    "accent": "#b7c991",
-    "background": "#161a16",
-    "contribution": "#dfe9b8",
-    "text": "#f0eddf"
+    "accent": "#d6df9d",
+    "background": "#182019",
+    "contribution": "#e0e9b8",
+    "text": "#f4efdd"
   },
   "contributions": {
+    "cellBoundary": "#a5b18e",
+    "cellRadius": 1,
+    "cellStyle": "square",
     "levels": [
-      "#2b3328",
-      "#738455",
-      "#97a86c",
-      "#bbcd8b",
-      "#dfe9b8"
+      "#354333",
+      "#64734a",
+      "#889761",
+      "#b4c180",
+      "#e0e9b8"
     ]
   },
-  "description": "Olive field notes, pale limestone details and fine cable lines give GitHub an expedition-ready look.",
-  "effects": {
-    "drift": {
-      "count": 2,
-      "distance": 8,
-      "durationMs": 900,
-      "opacity": 0.06,
-      "shape": "wisp"
+  "css": ".AppHeader,.Header,.HeaderMktg,.GlobalNav{box-shadow:0 1px 0#46513d,0 5px 0 color-mix(in srgb,#0e160e 80%,transparent)}.UnderlineNav-item[aria-current=\"page\"],.tabnav-tab[aria-current=\"page\"]{border-bottom-color:var(--reskin-accent);font-family:var(--reskin-font-heading);font-weight:700;letter-spacing:.06em;text-transform:uppercase}.UnderlineNav-item[aria-current=\"page\"],.tabnav-tab[aria-current=\"page\"],a[aria-current=\"page\"]{box-shadow:0 3px 0 color-mix(in srgb,var(--reskin-accent) 80%,transparent)}.btn-primary{font-family:var(--reskin-font-heading);font-weight:700;letter-spacing:.06em;text-transform:uppercase}h2.h4.mb-2,h2[data-component=\"Heading\"]{letter-spacing:.06em;text-transform:uppercase;text-shadow:2px 2px 0 color-mix(in srgb,var(--reskin-inset) 80%,transparent)}a[data-testid=\"repo-name-link\"]{font-family:var(--reskin-font-heading);font-weight:700;letter-spacing:.05em}[data-reskin-slot=\"profile.tag\"]{width:fit-content;margin:0 0 8px;padding:3px 8px 2px;font-family:ui-monospace,monospace;font-weight:700;font-size:11px;line-height:1.45;letter-spacing:.2em;text-transform:uppercase;color:var(--reskin-accent);background-color:var(--reskin-inset);border:2px solid var(--reskin-accent);box-shadow:4px 4px 0 color-mix(in srgb,#0e160e 80%,transparent)}[data-reskin-slot=\"profile.pinned.heading\"],[data-reskin-slot=\"profile.activity.heading\"],[data-reskin-slot=\"profile.organizations.heading\"],[data-reskin-slot=\"profile.achievements.heading\"]{font-family:var(--reskin-font-heading);font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--reskin-accent)}[data-reskin-slot=\"contributions.caption\"],[data-reskin-slot=\"footer.signoff\"],[data-reskin-slot=\"empty.pinned.caption\"]{font-family:var(--reskin-font-heading);letter-spacing:.06em;text-transform:uppercase;color:var(--reskin-muted-text)}[data-reskin-slot=\"error.notFound.caption\"]{position:absolute;right:6%;bottom:10%;max-width:340px;padding:6px 14px;font-family:var(--reskin-font-heading);font-weight:700;font-size:26px;line-height:1.15;letter-spacing:.06em;text-transform:uppercase;color:var(--reskin-text);background-color:var(--reskin-surface);border:2px solid var(--reskin-accent);transform:rotate(-3deg);box-shadow:5px 5px 0 color-mix(in srgb,#0e160e 80%,transparent)}@media (max-width:1099px){[data-reskin-slot=\"error.notFound.caption\"]{font-size:22px}}@media (max-width:799px){[data-reskin-slot=\"error.notFound.caption\"]{font-size:18px}}@media (max-width:599px){[data-reskin-slot=\"error.notFound.caption\"]{font-size:16px}}",
+  "description": "An olive expedition case under a limestone header: masonry courses, taut cable diagonals, square braced panels, condensed field headings and a pale olive graph.",
+  "details": {
+    "headerText": "#263024",
+    "labels": {
+      "background": "#3c4634",
+      "border": "#a5b18e",
+      "fill": "tinted",
+      "style": "sharp",
+      "text": "#f4efdd"
     },
-    "orbit": {
-      "count": 1,
-      "opacity": 0.1,
-      "shape": "arc"
+    "scrollbar": {
+      "thumb": "#a5b18e",
+      "track": "#10170f",
+      "width": "auto"
+    },
+    "selection": {
+      "background": "#d9d0ae",
+      "text": "#263024"
+    },
+    "topics": {
+      "background": "#3c4634",
+      "border": "#a5b18e",
+      "fill": "tinted",
+      "style": "sharp",
+      "text": "#e1e8bc"
+    }
+  },
+  "effects": {
+    "paper": {
+      "opacity": 0.06,
+      "scale": 6,
+      "texture": "grain"
     },
     "rail": {
-      "opacity": 0.2,
+      "opacity": 0.4,
       "shape": "slash",
       "thickness": 2
+    },
+    "rules": {
+      "opacity": 0.15,
+      "spacing": 14,
+      "style": "ticks"
     }
   },
   "flavor": {
@@ -45,6 +173,8 @@
       "empty.issues.caption": "No field notes in this view.",
       "empty.pinned.caption": "A shelf for future expeditions.",
       "error.notFound.caption": "No route here. Return to familiar ground.",
+      "footer.signoff": "// expedition log closed",
+      "profile.achievements.heading": "Field honors",
       "profile.activity.heading": "Expedition log",
       "profile.organizations.heading": "Field outposts",
       "profile.pinned.heading": "Selected expeditions",
@@ -52,33 +182,70 @@
     }
   },
   "fonts": {
-    "accent": "barlow-condensed"
+    "body": "ibm-plex-sans",
+    "heading": "barlow-condensed"
   },
   "inspiredBy": "Attack on Titan",
   "name": "Wallward Scout",
   "overrides": {
-    "accentMuted": "#30362a",
-    "border": "#727d69",
-    "controlBorder": "#7e8875",
-    "danger": "#f28e83",
-    "focus": "#d5e3b8",
-    "hover": "#30332e",
-    "inset": "#10130f",
-    "link": "#d0dbae",
-    "mutedText": "#b1b6a5",
-    "primaryBackground": "#b7c991",
-    "primaryText": "#151a11",
-    "raised": "#272b26",
-    "selectionBackground": "#b7c991",
-    "selectionText": "#151a11",
-    "success": "#aad39a",
-    "surface": "#20261f",
-    "warning": "#e3c274"
+    "accentMuted": "#3c4634",
+    "border": "#667059",
+    "controlBorder": "#a5b18e",
+    "danger": "#ffb3bb",
+    "done": "#dcc6f2",
+    "focus": "#d6df9d",
+    "hover": "#414b38",
+    "inset": "#10170f",
+    "link": "#e6ecc6",
+    "mutedText": "#ccd3c1",
+    "primaryBackground": "#d9d0ae",
+    "primaryText": "#263024",
+    "raised": "#35402f",
+    "selectionBackground": "#d9d0ae",
+    "selectionText": "#263024",
+    "success": "#a4edc2",
+    "surface": "#273126",
+    "warning": "#ffe0a0"
   },
   "schemaVersion": 1,
+  "shape": {
+    "avatar": {
+      "frame": {
+        "color": "#d6df9d",
+        "style": "solid",
+        "width": 3
+      },
+      "shape": "square"
+    },
+    "borders": {
+      "color": "#a5b18e",
+      "style": "solid",
+      "width": 2
+    },
+    "buttons": {
+      "radius": 0,
+      "style": "filled"
+    },
+    "corners": {
+      "radius": 0,
+      "style": "sharp"
+    },
+    "shadows": {
+      "blur": 0,
+      "color": "#0e160e",
+      "offset": 4,
+      "opacity": 0.8,
+      "style": "hard"
+    }
+  },
   "tags": [
     "anime",
+    "military",
     "dark"
   ],
-  "version": "1.0.0"
+  "typography": {
+    "headingLetterSpacing": 0.06,
+    "uppercaseHeadings": true
+  },
+  "version": "2.0.0"
 }
