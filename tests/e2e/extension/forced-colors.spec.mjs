@@ -25,9 +25,10 @@ const state = (page) =>
 async function expectForcedColorsGate(page, label) {
   // Full Choom: the theme's reviewed CSS is scoped on, with its decoration.
   const themed = { forced: false, boot: "ready", scope: "active", styled: true, canvas: CHOOM_CANVAS };
-  const first = await waitFor(page, state, (now) => Object.entries(themed).every(([key, value]) => now[key] === value));
+  // Decoration follows the stylesheet, so the first themed state is the one with both.
+  const first = await waitFor(page, state, (now) => Object.entries(themed).every(([key, value]) => now[key] === value) && now.owned > 0);
   expect(first, `${label} themed`).toMatchObject(themed);
-  expect((await state(page)).owned, label).toBeGreaterThan(0);
+  expect(first.owned, label).toBeGreaterThan(0);
 
   await page.emulateMedia({ forcedColors: "active" });
   await expect.poll(() => state(page), { message: `${label} forced` }).toMatchObject({ forced: true, boot: "native", scope: null, styled: false, owned: 0 });
