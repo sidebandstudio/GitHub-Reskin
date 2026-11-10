@@ -4,6 +4,10 @@
 extension get the same runtime and picker. There is no second engine here: only the manager host,
 the frame shell and the build.
 
+`github-reskin.user.js` in this folder is a frozen copy, not regenerated. The first userscript checks
+that path on `main` for updates, and this copy's `@updateURL` moves those installs to the Pages
+download. Don't rebuild it.
+
 | File | Contents |
 | --- | --- |
 | `main.mjs` | The entry. At document start it adds the extension's boot gate, initializes C4's repository over GM storage (first-run defaults, or the 1.1.0 userscript's `theme`, `enabled` and `custom` migrated once), then starts C4's lifecycle with C6's renderer (C3's adapter and Primer compiler, the engine, C5's appearance) and embedded fonts. Sign-in and the other authentication routes stay native. It registers the menu command and opens the panel when the address it loaded with, or a navigation the browser reports as the person's own, ends in `#reskin`; a page script setting the hash opens nothing. The panel has its controls only when `isolation.js` shows the script runs apart from GitHub's JavaScript; otherwise the card shows the theme and why, and `menu.js` carries every setting. No approval reaches the renderer, so only a bundled theme's own CSS applies. The theme's fonts are added from their embedded bytes (`fonts.js`). |
@@ -14,7 +18,7 @@ the frame shell and the build.
 | `panel.js` | The panel: the popup's card in an iframe, inside a closed shadow root page scripts cannot reach, in the top layer as a manual popover, one at a time, sized to the card by a `ResizeObserver`, closed by Escape, Close, a page click or the menu. Escape and Close return focus to the element that had it. Closing disconnects the observer and every listener. |
 | `fonts.js` | Adds the bundled faces a theme or picker card uses to `document.fonts` as `FontFace` objects made from the embedded WOFF2. |
 | `frame.css` | The card's frame layout, after the extension's `ui.css` and `popup.css`. |
-| `build.mjs` | `build()` returns the script: metadata, the upstream notices, and one esbuild IIFE with the catalog, cards, fonts, boot CSS and the card document embedded. `node userscript/build.mjs` writes the committed copy, which 1.1.0 installs check for updates. |
+| `build.mjs` | `build()` returns the script: metadata, the upstream notices, and one esbuild IIFE with the catalog, cards, fonts, boot CSS and the card document embedded. `node userscript/build.mjs` and `npm run build:userscript` write `dist/userscript/github-reskin.user.js`, and the site build publishes the same script at `downloads/github-reskin.user.js` on Pages, the address its `@updateURL` names. |
 | `verify.mjs`, `checks.mjs` | `check:userscript` (static checks of the artifact, freshness, unit tests) and the `userscript` E2E/a11y surface. |
 
 ## Manager differences
