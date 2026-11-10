@@ -27,10 +27,10 @@
     <div class="shot">
       <div id="pp-shot-1" class="clip layer" data-start="0" data-duration="2" data-track-index="1"><img id="pp-img-1" class="page" src="assets/captures/P07-V.png" alt="" /></div>
       <div id="pp-shot-2" class="clip layer" data-start="2" data-duration="2" data-track-index="1"><img id="pp-img-2" class="page" src="assets/captures/P08-V.png" alt="" /></div>
-      <!-- Popup crop: CSS 400x300 from y=50 at 1.4 output px per CSS px. -->
-      <div id="pp-popup" class="clip" data-start="2" data-duration="1" data-track-index="3" style="position: absolute; left: 115px; top: 296px; width: 560px; height: 420px">
-        <div id="pp-popup-card" class="popup" style="left: 0; top: 0; width: 560px; height: 420px">
-          <img src="assets/captures/POP-classics.png" alt="" style="width: 560px; top: -70px" />
+      <!-- Popup crop: its top CSS 400x180 (Editing Suite applied, Classics 12) at 1.9 output px per CSS px. -->
+      <div id="pp-popup" class="clip" data-start="2" data-duration="1" data-track-index="3" style="position: absolute; left: 15px; top: 20px; width: 760px; height: 342px">
+        <div id="pp-popup-card" class="popup" style="left: 0; top: 0; width: 760px; height: 342px">
+          <img src="assets/captures/POP-classics.png" alt="" style="width: 760px" />
         </div>
       </div>
     </div>
@@ -45,8 +45,8 @@
     tl.fromTo("#pp-img-2", { scale: 1 }, { scale: 1.03, duration: f(60), ease: "none", transformOrigin: "50% 0%" }, f(60));
     tl.fromTo("#pp-head-1 .title", { y: 18, opacity: 0.4 }, { y: 0, opacity: 1, duration: f(6), ease: "power3.out" }, 0);
     tl.fromTo("#pp-head-2 .title", { y: 18, opacity: 0.4 }, { y: 0, opacity: 1, duration: f(6), ease: "power3.out" }, f(60));
-    tl.fromTo("#pp-popup-card", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: f(5), ease: "power3.out" }, f(60));
-    tl.to("#pp-popup-card", { opacity: 0, y: 24, duration: f(5), ease: "power2.in" }, f(85));
+    tl.fromTo("#pp-popup-card", { opacity: 0, y: -24 }, { opacity: 1, y: 0, duration: f(5), ease: "power3.out" }, f(60));
+    tl.to("#pp-popup-card", { opacity: 0, y: -24, duration: f(5), ease: "power2.in" }, f(85));
     window.__timelines["people"] = tl;
   </script>
 </template>

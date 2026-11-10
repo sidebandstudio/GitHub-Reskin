@@ -5,7 +5,7 @@ GitHub Reskin, 22-second vertical film. Visual transcript; there is no speech.
 0:03 The same profile in Neon Genesis Evangelion (Violet Synchrony), then Dandadan (Occult Orbit), then Frieren: Beyond Journey's End (Longroad Petals), each in Full.
 0:09 "13 anime-inspired themes": github.com/Alitleis123 in Choom Circuit.
 0:11 "12 Classics": github.com/torvalds in Editing Suite, with the popup's Classics group.
-0:13 Back on whoisaldo: the // CHOOM profile tag and yellow controls, then the cyan contribution calendar and legend with the native count.
+0:13 "Graph and activity too": back on whoisaldo, the cyan contribution calendar and legend with the native count, then a pan down the same page to the activity overview with its yellow repository links and cyan chart.
 0:15 "13 anime-inspired themes": the same profile in Demon Slayer (Wisteria Emberline), Chainsaw Man (Ripcord Bureau), One Piece (Sunward Voyage) and Spy x Family (Peanut Dossier), one second each.
 0:19 End card: the GitHub Reskin mark, "Free. Link in bio.", "For your desktop browser.", "Fan-made. Independent of GitHub."
 

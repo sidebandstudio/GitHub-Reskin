@@ -12,7 +12,7 @@
   <div id="root" data-composition-id="hook" data-width="1920" data-height="1080">
     <div id="hk-bg-plain-a" class="clip backdrop" data-layout-ignore data-start="0" data-duration="0.5667" data-track-index="0"><img src="assets/backdrops/P01-D.jpg" alt="" /></div>
     <div id="hk-bg-choom-a" class="clip backdrop" data-layout-ignore data-start="0.3667" data-duration="0.6333" data-track-index="0"><div id="hk-bg-choom-a-w" class="layer"><img src="assets/backdrops/P02-D.jpg" alt="" /></div></div>
-    <div id="hk-bg-plain-b" class="clip backdrop" data-layout-ignore data-start="1" data-duration="0.6667" data-track-index="0"><img src="assets/backdrops/P01-D.jpg" alt="" /></div>
+    <div id="hk-bg-plain-b" class="clip backdrop" data-layout-ignore data-start="1" data-duration="0.8667" data-track-index="0"><img src="assets/backdrops/P01-D.jpg" alt="" /></div>
     <div id="hk-bg-choom-b" class="clip backdrop" data-layout-ignore data-start="1.6667" data-duration="2.3333" data-track-index="0"><div id="hk-bg-choom-b-w" class="layer"><img src="assets/backdrops/P02-D.jpg" alt="" /></div></div>
     <div class="scrim"></div>
 
@@ -33,19 +33,20 @@
       <div id="hk-choom-a" class="clip layer" data-start="0.3667" data-duration="0.6333" data-track-index="1">
         <div id="hk-choom-a-w" class="layer"><img id="hk-choom-a-img" class="page" src="assets/captures/P02-D.png" alt="" /></div>
       </div>
-      <div id="hk-plain-b" class="clip layer" data-start="1" data-duration="0.6667" data-track-index="1"><img class="page" src="assets/captures/P01-D.png" alt="" /></div>
+      <div id="hk-plain-b" class="clip layer" data-start="1" data-duration="0.8667" data-track-index="1"><img class="page" src="assets/captures/P01-D.png" alt="" /></div>
       <div id="hk-choom-b" class="clip layer" data-start="1.6667" data-duration="2.3333" data-track-index="1">
         <div id="hk-choom-b-w" class="layer"><img id="hk-choom-b-img" class="page" src="assets/captures/P02-D.png" alt="" /></div>
       </div>
       <div id="hk-edge-a" class="edge"></div>
       <div id="hk-edge-b" class="edge"></div>
-      <!-- Popup crop: CSS 400x330 at 1.2 output px per CSS px, at the window's top right. -->
-      <div id="hk-popup" class="clip" data-start="1" data-duration="1.7" data-track-index="3" style="position: absolute; left: 1040px; top: 16px; width: 480px; height: 396px">
-        <div id="hk-popup-card" class="popup" style="left: 0; top: 0; width: 480px; height: 396px">
+      <!-- Popup crop: its top CSS 400x182 (switch, chosen theme, groups) at 2 output px per CSS px,
+           so a native 15 px label renders at 30 px. -->
+      <div id="hk-popup" class="clip" data-start="1" data-duration="1.7" data-track-index="3" style="position: absolute; left: 720px; top: 16px; width: 800px; height: 364px">
+        <div id="hk-popup-card" class="popup" style="left: 0; top: 0; width: 800px; height: 364px">
           <img src="assets/captures/POP-off.png" alt="" />
           <img id="hk-pop-on" src="assets/captures/POP-on.png" alt="" style="opacity: 0" />
         </div>
-        <div id="hk-tap" class="tap" style="left: 420px; top: 41px"></div>
+        <div id="hk-tap" class="tap" style="left: 670px; top: 66px"></div>
       </div>
     </div>
   </div>

@@ -63,7 +63,7 @@ TikTok/Reels, `tiktok/index.html`:
 | 225-285 | worlds | hard cut (whoosh) to Longroad Petals with its wallpaper | Frieren: Beyond Journey's End |
 | 285-345 | people | Alitleis123 in Choom Circuit | 13 anime-inspired themes eyebrow |
 | 345-405 | people | torvalds in Editing Suite, Classics popup inset 345-374 | 12 Classics / Editing Suite |
-| 405-465 | details | // CHOOM tag and controls, then the cyan calendar and legend | Full transformation, Contribution graph too |
+| 405-465 | details | the cyan calendar, legend and native count, then a pan (432-440) down to the activity overview's yellow links and cyan chart | Graph and activity too |
 | 465-585 | more | 30-frame wipes through Wisteria Emberline, Ripcord Bureau, Sunward Voyage, Peanut Dossier | 13 anime-inspired themes: Demon Slayer, Chainsaw Man, One Piece, Spy x Family |
 | 585-660 | end | Peel mark, held 75 frames (whoosh at 585) | GitHub Reskin, Free. Link in bio., For your desktop browser., Fan-made. Independent of GitHub. |
 
@@ -104,8 +104,10 @@ It loads `dist/chrome` unpacked in a fresh logged-out Chromium profile and picks
 setting with the popup page's own controls. Presets are V (390x844 CSS px, DPR 3), D
 (1440x1000, DPR 2) and the popup (400x600, DPR 3). Each `<id>.png` has `<id>.json` beside it with
 the URL, theme and its source hash, Full or Calm, extension commit, viewport, scroll rule and
-resolved scroll, date and the PNG's SHA-256. Crops stay above the owner's README image, which is
-third-party art.
+resolved scroll, date and the PNG's SHA-256. The current set was taken on November 9, 2026 from the
+extension as built on this branch after merging main at fb010c6 (all 13 anime themes). Vertical
+crops stay above the owner's README image so the theme carries the frame; the landscape shots show
+it as ordinary page content. Popup crops are scaled so native 15 px labels render at 28 px or more.
 
 After recapturing, run `npm run check:video`: it fails if a PNG no longer matches its manifest.
 
