@@ -276,10 +276,11 @@ export { expect };
  * as Violentmonkey's content mode and Greasemonkey do there: an Xray sandbox apart from the page's
  * JavaScript. Playwright cannot run a script in an isolated world in Firefox, so the stand-in is a
  * temporary add-on installed through Firefox's remote debugging protocol. Its grants are the shim's,
- * with no test hooks and no report of where it runs, so only the browser can show the isolation.
+ * with no report of where it runs, so only the browser can show the isolation, and no test hooks
+ * unless `hooks`: then, inside the content script only, the panel's root is open for the locators.
  * Values live in the routed origin's localStorage, as in `manager`.
  */
-export async function firefoxContentManager(userscript, { kind = "sync", pages = {} } = {}) {
+export async function firefoxContentManager(userscript, { kind = "sync", pages = {}, hooks = false } = {}) {
   const { firefox } = await import("@playwright/test");
   const { connectWithMaxRetries } = await import(new URL("../../../node_modules/web-ext/lib/firefox/remote.js", import.meta.url).href);
   const addon = await mkdtemp(join(tmpdir(), "reskin-e2e-manager-addon-"));
@@ -293,7 +294,7 @@ export async function firefoxContentManager(userscript, { kind = "sync", pages =
     content_scripts: [{ matches: ["https://github.com/*"], js: ["manager.js"], run_at: "document_start" }],
   };
   await writeFile(join(addon, "manifest.json"), JSON.stringify(manifest));
-  await writeFile(join(addon, "manager.js"), injection(kind, userscript, { hooks: false, report: null }));
+  await writeFile(join(addon, "manager.js"), injection(kind, userscript, { hooks, report: null }));
   const context = await firefox.launchPersistentContext(profile, {
     headless: true,
     viewport: { width: 1280, height: 900 },

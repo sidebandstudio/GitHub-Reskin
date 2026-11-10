@@ -8,7 +8,8 @@
 // through it to a real control is dropped.
 import { CHOOM, CHOOM_CANVAS, FRIEREN, FRIEREN_CANVAS, HOST, PANEL, PROFILE_HTML, PROFILE_URL, chooseMenu, expect, firefoxContentManager, menuNames, openPanel, painted, settingsOf, test, waitSettled } from "./helpers.mjs";
 
-const MENU_ONLY = "Your userscript manager runs this script inside GitHub's page, where GitHub's code could reach this panel, so change settings from the manager's menu. Advanced CSS in your own themes stays off in the userscript.";
+import { COPY } from "../../../userscript/copy.js";
+const MENU_ONLY = COPY.menuOnly;
 
 // The review's page-context manager: GM.* in a closure only the automation client can reach, the
 // userscript run in the page's own world after load.

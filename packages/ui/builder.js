@@ -79,6 +79,15 @@ function base64(bytes) {
   for (let i = 0; i < bytes.length; i += 0x8000) text += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
   return btoa(text);
 }
+// A file's bytes as a Uint8Array of this script's own realm. In a Firefox content script (the
+// userscript) a file from the page's input is read through an Xray, and a view made on its
+// ArrayBuffer belongs to the page, which no check here accepts as bytes; a copy does.
+async function fileBytes(file) {
+  const view = new Uint8Array(await file.arrayBuffer());
+  const bytes = new Uint8Array(view.length);
+  bytes.set(view);
+  return bytes;
+}
 // Saved documents come back from storage in canonical key order; compare themes the same way.
 const same = (a, b) => (a && b ? canonicalize(a) === canonicalize(b) : a === b);
 const el = (doc, tag, props = {}, children = []) => {
@@ -581,7 +590,7 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
     if (file.size > UPLOAD_SOURCE_BYTES) return imageError(COPY.imageTooLarge(file.size));
     const target = bgTarget;
     if (layerCount(draft.document, target) >= LIMITS.maxBackgroundLayers) return imageError(`A background holds up to ${LIMITS.maxBackgroundLayers} layers. Remove one first.`);
-    const bytes = new Uint8Array(await file.arrayBuffer());
+    const bytes = await fileBytes(file);
     const source = rasterSourceInfo(bytes);
     if (!source.ok) return imageError(source.message);
     if (!source.animated && !source.metadata) {
@@ -837,7 +846,7 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
         if (!file) return importError({ ok: false, message: "Choose a theme file first.", details: [], actions: [] });
         if (!acceptsFileName(file.name)) return importError({ ok: false, message: COPY.fileType, details: [], actions: [] });
         if (file.size > LIMITS.fileUtf8Bytes) return importError({ ok: false, message: COPY.fileTooLarge, details: [], actions: [] });
-        value = new Uint8Array(await file.arrayBuffer());
+        value = await fileBytes(file);
       }
     }
     if (typeof value === "string" && !value.trim()) return importError({ ok: false, message: kind === "code" ? "Paste a share code first." : "Paste the chatbot's answer first.", details: [], actions: [] });
