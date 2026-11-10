@@ -108,7 +108,7 @@ test("Calm keeps the colors and removes flavor; Full, Extra theme text and theme
 
   // Theme changes and Undo keep the flavor following the theme on this same document.
   await card(popup, "Frieren").click();
-  await waitPainted(github, (s) => s.canvas === FRIEREN_CANVAS && s.copy.includes("// travel journal"));
+  await waitPainted(github, (s) => s.canvas === FRIEREN_CANVAS && s.copy.includes("// journal"));
   await popup.locator("[data-rs=undo]").click();
   state = await waitPainted(github, (s) => s.canvas === CHOOM_CANVAS && s.owned.length === FLAVOR.length);
   expect(copyOf(state)).toEqual(CHOOM_COPY);

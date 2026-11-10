@@ -174,9 +174,9 @@
       "footer.signoff": "// the last page, for now",
       "profile.achievements.heading": "Marked pages",
       "profile.activity.heading": "Entry log",
-      "profile.organizations.heading": "Archive outposts",
-      "profile.pinned.heading": "Selected notebooks",
-      "profile.tag": "// notebook view"
+      "profile.organizations.heading": "Archives",
+      "profile.pinned.heading": "Selected notes",
+      "profile.tag": "// notebook"
     }
   },
   "fonts": {
