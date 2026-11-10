@@ -33,8 +33,10 @@ const SERIF = 'Georgia, "Times New Roman", serif';
 const SANS = "system-ui, -apple-system, \"Segoe UI\", sans-serif";
 const DISPLAY = 'Impact, "Arial Black", system-ui, sans-serif';
 
-// cssFamily is the @font-face name. Josefin Sans, Orbitron, IBM Plex Sans and Source Sans 3
-// declare Reserved Font Names, so their subsets and CSS families carry neutral names. Roboto
+// cssFamily is the @font-face name. capsOnly marks a family with no lowercase forms: its lowercase
+// letters are capitals or small capitals, nothing rising above or falling below the others, so a
+// name set in it reads in capitals whatever its case; check:fonts measures this in every file.
+// Josefin Sans, Orbitron, IBM Plex Sans and Source Sans 3 declare Reserved Font Names, so their subsets and CSS families carry neutral names. Roboto
 // Condensed takes its own name: Choom's native stack names it after the owner's Bahnschrift and
 // DIN Alternate, so the face stands in only where those are missing. See assets/fonts/README.md.
 const RENDER = {
@@ -44,10 +46,10 @@ const RENDER = {
   alegreya: { cssFamily: "Reskin Alegreya", fallback: SERIF },
   "cormorant-garamond": { cssFamily: "Reskin Cormorant Garamond", fallback: SERIF },
   "josefin-sans": { cssFamily: "Reskin Geometric Accent", fallback: SANS },
-  bungee: { cssFamily: "Reskin Bungee", fallback: DISPLAY },
+  bungee: { cssFamily: "Reskin Bungee", fallback: DISPLAY, capsOnly: true },
   "space-grotesk": { cssFamily: "Reskin Space Grotesk", fallback: SANS },
-  "bebas-neue": { cssFamily: "Reskin Bebas Neue", fallback: CONDENSED },
-  cinzel: { cssFamily: "Reskin Cinzel", fallback: SERIF },
+  "bebas-neue": { cssFamily: "Reskin Bebas Neue", fallback: CONDENSED, capsOnly: true },
+  cinzel: { cssFamily: "Reskin Cinzel", fallback: SERIF, capsOnly: true },
   orbitron: { cssFamily: "Reskin Wide Display", fallback: DISPLAY },
   oxanium: { cssFamily: "Reskin Oxanium", fallback: CONDENSED },
   "ibm-plex-sans": { cssFamily: "Reskin Industrial Sans", fallback: SANS },
@@ -72,6 +74,7 @@ export const FONTS = freeze(
     weight: font.weight,
     weights: [...font.weights],
     minimumAccentPx: font.minimumAccentPx,
+    capsOnly: false,
     ...RENDER[font.id],
     path: fontPath(font.id, font.weight, font.weight),
     files: font.weights.map((weight) => ({ weight, path: fontPath(font.id, weight, font.weight) })),

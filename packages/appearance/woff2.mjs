@@ -99,3 +99,136 @@ export function names(tables) {
   }
   return out;
 }
+
+/** The glyph index the font's Windows Unicode cmap (format 4) maps each BMP code point to. */
+export function glyphIndices(tables) {
+  const cmap = tables.cmap;
+  const glyphs = new Map();
+  const count = cmap.readUInt16BE(2);
+  for (let i = 0; i < count; i++) {
+    const offset = cmap.readUInt32BE(8 + i * 8);
+    if (cmap.readUInt16BE(4 + i * 8) !== 3 || cmap.readUInt16BE(offset) !== 4) continue;
+    const segments = cmap.readUInt16BE(offset + 6) / 2;
+    const ends = offset + 14;
+    const starts = ends + segments * 2 + 2;
+    const deltas = starts + segments * 2;
+    const ranges = deltas + segments * 2;
+    for (let s = 0; s < segments; s++) {
+      const start = cmap.readUInt16BE(starts + s * 2);
+      const delta = cmap.readInt16BE(deltas + s * 2);
+      const range = cmap.readUInt16BE(ranges + s * 2);
+      for (let c = start; c <= cmap.readUInt16BE(ends + s * 2) && c !== 0xffff; c++) {
+        const raw = range ? cmap.readUInt16BE(ranges + s * 2 + range + (c - start) * 2) : c;
+        const glyph = range && !raw ? 0 : (raw + delta) & 0xffff;
+        if (glyph && !glyphs.has(c)) glyphs.set(c, glyph);
+      }
+    }
+  }
+  return glyphs;
+}
+
+// WOFF2's 255UInt16.
+function uint255(bytes, at) {
+  const code = bytes[at.offset++];
+  if (code === 253) return (at.offset += 2), bytes.readUInt16BE(at.offset - 2);
+  if (code === 255) return bytes[at.offset++] + 253;
+  if (code === 254) return bytes[at.offset++] + 506;
+  return code;
+}
+
+// One point of WOFF2's glyf triplet encoding, as [dx, dy, data bytes].
+function triplet(flag, data, at) {
+  const signed = (bit, value) => (bit & 1 ? value : -value);
+  const b = (i) => data[at + i];
+  if (flag < 10) return [0, signed(flag, ((flag & 14) << 7) + b(0)), 1];
+  if (flag < 20) return [signed(flag, (((flag - 10) & 14) << 7) + b(0)), 0, 1];
+  if (flag < 84) {
+    const b0 = flag - 20;
+    return [signed(flag, 1 + (b0 & 0x30) + (b(0) >> 4)), signed(flag >> 1, 1 + ((b0 & 0x0c) << 2) + (b(0) & 0x0f)), 1];
+  }
+  if (flag < 120) {
+    const b0 = flag - 84;
+    return [signed(flag, 1 + (Math.floor(b0 / 12) << 8) + b(0)), signed(flag >> 1, 1 + (((b0 % 12) >> 2) << 8) + b(1)), 2];
+  }
+  if (flag < 124) return [signed(flag, (b(0) << 4) + (b(1) >> 4)), signed(flag >> 1, ((b(1) & 0x0f) << 8) + b(2)), 3];
+  return [signed(flag, (b(0) << 8) + b(1)), signed(flag >> 1, (b(2) << 8) + b(3)), 4];
+}
+
+/**
+ * Each glyph's outline bounds as [xMin, yMin, xMax, yMax], or null for an empty glyph, from a
+ * WOFF2 transformed glyf table (WOFF2 section 5.1): explicit bounds where the bbox bitmap has them,
+ * otherwise the extremes of the decoded points.
+ */
+export function glyphBounds(tables) {
+  const glyf = tables.glyf;
+  const glyphs = glyf.readUInt16BE(4);
+  let offset = 36;
+  const streams = Array.from({ length: 7 }, (_, i) => {
+    const stream = glyf.subarray(offset, offset + glyf.readUInt32BE(8 + i * 4));
+    offset += stream.length;
+    return stream;
+  });
+  const [contours, points, flags, data, composites, boxes] = streams;
+  const at = { points: { offset: 0 }, flags: 0, data: { offset: 0 }, composites: 0, boxes: 4 * Math.floor((glyphs + 31) / 32) };
+  const out = [];
+  for (let g = 0; g < glyphs; g++) {
+    const count = contours.readInt16BE(g * 2);
+    let box = null;
+    if (boxes[g >> 3] & (0x80 >> (g & 7))) {
+      box = [0, 2, 4, 6].map((i) => boxes.readInt16BE(at.boxes + i));
+      at.boxes += 8;
+    }
+    if (count > 0) {
+      let total = 0;
+      for (let c = 0; c < count; c++) total += uint255(points, at.points);
+      let x = 0, y = 0;
+      const bounds = [Infinity, Infinity, -Infinity, -Infinity];
+      for (let p = 0; p < total; p++) {
+        const [dx, dy, size] = triplet(flags[at.flags++] & 0x7f, data, at.data.offset);
+        at.data.offset += size;
+        x += dx;
+        y += dy;
+        bounds[0] = Math.min(bounds[0], x);
+        bounds[1] = Math.min(bounds[1], y);
+        bounds[2] = Math.max(bounds[2], x);
+        bounds[3] = Math.max(bounds[3], y);
+      }
+      uint255(data, at.data); // instruction length; the instructions are in their own stream
+      box ??= bounds;
+    } else if (count === -1) {
+      // A composite always has explicit bounds; its records only say whether instructions follow.
+      let more = true, instructions = false;
+      while (more) {
+        const f = composites.readUInt16BE(at.composites);
+        at.composites += 4 + (f & 1 ? 4 : 2) + (f & 8 ? 2 : f & 0x40 ? 4 : f & 0x80 ? 8 : 0);
+        more = Boolean(f & 0x20);
+        instructions ||= Boolean(f & 0x100);
+      }
+      if (instructions) uint255(data, at.data);
+    }
+    out.push(box);
+  }
+  // Every stream read to its end, or the decoding went wrong somewhere.
+  if (at.flags !== flags.length || at.data.offset !== data.length || at.composites !== composites.length || at.boxes !== boxes.length) throw new Error("WOFF2 glyf streams do not decode to their stated lengths");
+  return out;
+}
+
+const ASCENDERS = "bdfhkl";
+const XHEIGHT = "acemnorsuvwxz";
+const DESCENDERS = "gpqy";
+
+/**
+ * Whether the font draws lowercase forms: its ascender letters rise above its x-height letters and
+ * its descender letters fall below the baseline, each by at least 5% of the em. A font whose
+ * lowercase letters are capitals or small capitals has neither.
+ */
+export function hasLowercaseForms(tables) {
+  const em = tables.head.readUInt16BE(18);
+  const glyphs = glyphIndices(tables);
+  const bounds = glyphBounds(tables);
+  const box = (c) => bounds[glyphs.get(c.codePointAt(0))];
+  const median = (values) => values.sort((a, b) => a - b)[Math.floor(values.length / 2)];
+  const top = (letters) => median([...letters].map((c) => box(c)[3]));
+  const bottom = median([...DESCENDERS].map((c) => box(c)[1]));
+  return top(ASCENDERS) - top(XHEIGHT) >= 0.05 * em && bottom <= -0.05 * em;
+}

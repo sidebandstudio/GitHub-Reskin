@@ -32,6 +32,14 @@ test("without the override, every Classic and fixture compiles in Full and Calm 
     assert.notEqual(hashes[key].appearance, pinned[key].appearance, key);
     hashes[key] = { ...hashes[key], appearance: pinned[key].appearance };
   }
+  // The rich fixture asks for uppercase headings, which no longer reach names and titles people
+  // wrote, so its appearance differs from main in Full and Calm. Its Primer output does not.
+  const UPPERCASE = "tests/fixtures/schema/valid/ai-rich.reskin.json";
+  assert.equal(readJson(UPPERCASE).typography.uppercaseHeadings, true);
+  for (const key of Object.keys(pinned).filter((k) => k.startsWith(`${UPPERCASE} `))) {
+    assert.notEqual(hashes[key].appearance, pinned[key].appearance, key);
+    hashes[key] = { ...hashes[key], appearance: pinned[key].appearance };
+  }
   assert.deepEqual(hashes, pinned);
 });
 
