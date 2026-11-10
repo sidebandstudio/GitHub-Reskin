@@ -3,7 +3,7 @@
 // storage start clean. GitHub pages are C3's guarded profile fixture, or a page a test serves at a
 // path, served as github.com through request routing; nothing reaches the network.
 import { readFileSync } from "node:fs";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -160,10 +160,128 @@ export const painted = (page) =>
     copy: [...document.querySelectorAll("[data-reskin-owned] .rs-copy")].map((node) => node.textContent),
   }));
 
-/** Waits until the GitHub tab's painted state satisfies `check`. */
-export async function waitPainted(page, check) {
-  await expect.poll(async () => check(await painted(page)), { timeout: 5000 }).toBe(true);
-  return painted(page);
+/**
+ * Waits until `read(page)` satisfies `check`, reading again each time the page's DOM changes (the
+ * content script's own signal: its boot attribute, stylesheet and owned nodes), and at least every
+ * 250 ms. Only the test's timeout bounds it: a loaded machine makes it slower, never wrong.
+ */
+export async function waitFor(page, read, check) {
+  for (;;) {
+    const state = await read(page);
+    if (check(state)) return state;
+    await page.evaluate(
+      () =>
+        new Promise((resolve) => {
+          const observer = new MutationObserver(() => done());
+          const timer = setTimeout(() => done(), 250);
+          const done = () => (observer.disconnect(), clearTimeout(timer), resolve());
+          observer.observe(document, { subtree: true, childList: true, attributes: true, characterData: true });
+        }),
+    );
+  }
 }
 
+/** Waits until the GitHub tab's painted state satisfies `check`. */
+export const waitPainted = (page, check) => waitFor(page, painted, check);
+
 export { expect };
+
+// The origin the Firefox page harness serves the built add-on's files from.
+export const FIREFOX_PAGES_ORIGIN = "https://reskin-pages.test";
+const MEDIA_TYPES = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png", ".webp": "image/webp", ".woff2": "font/woff2", ".json": "application/json" };
+
+// A stand-in extension namespace for an add-on page in plain Gecko. storage.local lives in the test
+// process, so it survives closing the page; runtime.sendMessage reaches the built background.js,
+// which the same init script runs in the page, with the page as its sender. The sender carries a
+// tab and frame per document, as Firefox's does, so the builder's approval tickets are bound to it.
+const PAGE_STAND_IN = `(() => {
+  const listeners = new Set();
+  let onMessage = null;
+  const sender = { id: "e2e", url: location.href, tab: { id: 1 + Math.floor(Math.random() * 2 ** 30) }, frameId: 0 };
+  const call = (op, arg) => globalThis.__reskinStorage(op, arg ?? null);
+  const notify = (changes) => { if (Object.keys(changes).length) for (const listener of listeners) listener(changes, "local"); };
+  globalThis.browser = {
+    runtime: {
+      id: "e2e",
+      // Packaged fonts as root paths, which the resource adapters accept for a page origin; the
+      // rest, including the background's own origin check, as full URLs.
+      getURL: (path) => (path.endsWith(".woff2") ? "/" : ${JSON.stringify(FIREFOX_PAGES_ORIGIN)} + "/") + path,
+      onInstalled: { addListener() {} },
+      onMessage: { addListener(listener) { onMessage = listener; } },
+      sendMessage: (message) => new Promise((resolve) => onMessage(structuredClone(message), { ...sender, url: location.href }, (reply) => resolve(structuredClone(reply)))),
+    },
+    storage: {
+      local: {
+        get: (keys) => call("get", keys),
+        set: async (record) => notify(await call("set", record)),
+        remove: async (keys) => notify(await call("remove", keys)),
+      },
+      onChanged: { addListener: (l) => listeners.add(l), removeListener: (l) => listeners.delete(l) },
+    },
+    tabs: { create: async () => ({}) },
+  };
+})();`;
+
+/**
+ * The built Firefox add-on's own pages in plain Gecko. Playwright's Firefox cannot open
+ * moz-extension pages, so the package's files are served at FIREFOX_PAGES_ORIGIN, and an init
+ * script installs a stand-in browser namespace and runs the package's background.js in each page
+ * before its pages.js. `records()` reads the stored records; `contentScript` is the built
+ * content.js for a GitHub page over the same records.
+ */
+export async function firefoxPages() {
+  requireBrowser("firefox");
+  const out = await mkdtemp(join(tmpdir(), "reskin-e2e-firefox-pages-"));
+  const built = await build({ target: "firefox", outDir: out });
+  const browser = await firefox.launch({ headless: true });
+  const store = {};
+  const context = await browser.newContext({ acceptDownloads: true });
+  await context.exposeBinding("__reskinStorage", (_source, op, arg) => {
+    const keys = arg === null ? Object.keys(store) : Array.isArray(arg) ? arg : typeof arg === "string" ? [arg] : Object.keys(arg);
+    if (op === "get") return structuredClone(Object.fromEntries(keys.filter((key) => key in store).map((key) => [key, store[key]])));
+    const changes = {};
+    for (const key of keys) {
+      const newValue = op === "set" ? structuredClone(arg[key]) : undefined;
+      changes[key] = { oldValue: store[key], newValue };
+      if (op === "set") store[key] = newValue;
+      else delete store[key];
+    }
+    return structuredClone(changes);
+  });
+  await context.route(`${FIREFOX_PAGES_ORIGIN}/**`, async (route) => {
+    const path = decodeURIComponent(new URL(route.request().url()).pathname).replace(/^\/+/, "");
+    try {
+      const body = await readFile(join(built.dir, path));
+      await route.fulfill({ body, contentType: MEDIA_TYPES[path.slice(path.lastIndexOf("."))] ?? "application/octet-stream" });
+    } catch {
+      await route.abort();
+    }
+  });
+  const background = await readFile(join(built.dir, "background.js"), "utf8");
+  await context.addInitScript({ content: `if (window === window.top && location.origin === ${JSON.stringify(FIREFOX_PAGES_ORIGIN)}) {\n${PAGE_STAND_IN}\n${background}\n}` });
+  return {
+    browser,
+    context,
+    url: (page) => `${FIREFOX_PAGES_ORIGIN}/pages/${page}.html`,
+    records: async () => structuredClone(store),
+    contentScript: await readFile(join(built.dir, "content.js"), "utf8"),
+    async close() {
+      await browser.close();
+      await rm(out, { recursive: true, force: true });
+    },
+  };
+}
+
+// A clipboard that records what was copied, or refuses while __clipboardRefuse is set, so a test
+// knows what the page copied and when the page was told it failed.
+export const CLIPBOARD_STAND_IN = `(() => {
+  const copied = [];
+  const clipboard = {
+    writeText: async (text) => {
+      if (globalThis.__clipboardRefuse) throw new DOMException("Write permission denied.", "NotAllowedError");
+      copied.push(String(text));
+    },
+  };
+  Object.defineProperty(Navigator.prototype, "clipboard", { get: () => clipboard, configurable: true });
+  globalThis.__copied = copied;
+})();`;

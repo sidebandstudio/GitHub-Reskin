@@ -9,7 +9,7 @@ import { join } from "node:path";
 import { firefox } from "@playwright/test";
 import { build } from "../../../scripts/build.mjs";
 import { requireBrowser } from "../../helpers/browsers.mjs";
-import { CHOOM_CANVAS, PROFILE_HTML, PROFILE_URL, expect, openGitHub, test } from "./helpers.mjs";
+import { CHOOM_CANVAS, PROFILE_HTML, PROFILE_URL, expect, openGitHub, test, waitFor } from "./helpers.mjs";
 
 // What forced colors may leave: GitHub's own page with no theme CSS, marker or owned node.
 const state = (page) =>
@@ -24,8 +24,11 @@ const state = (page) =>
 
 async function expectForcedColorsGate(page, label) {
   // Full Choom: the theme's reviewed CSS is scoped on, with its decoration.
-  await expect.poll(() => state(page), { timeout: 10000, message: `${label} themed` }).toMatchObject({ forced: false, boot: "ready", scope: "active", styled: true, canvas: CHOOM_CANVAS });
-  expect((await state(page)).owned, label).toBeGreaterThan(0);
+  const themed = { forced: false, boot: "ready", scope: "active", styled: true, canvas: CHOOM_CANVAS };
+  // Decoration follows the stylesheet, so the first themed state is the one with both.
+  const first = await waitFor(page, state, (now) => Object.entries(themed).every(([key, value]) => now[key] === value) && now.owned > 0);
+  expect(first, `${label} themed`).toMatchObject(themed);
+  expect(first.owned, label).toBeGreaterThan(0);
 
   await page.emulateMedia({ forcedColors: "active" });
   await expect.poll(() => state(page), { message: `${label} forced` }).toMatchObject({ forced: true, boot: "native", scope: null, styled: false, owned: 0 });

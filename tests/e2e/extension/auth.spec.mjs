@@ -6,13 +6,14 @@ import { readFileSync } from "node:fs";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { isDeepStrictEqual } from "node:util";
 import { chromium, firefox } from "@playwright/test";
 import { STORAGE_KEYS } from "../../../packages/contracts/index.js";
 import { createCatalogSource, defaultSettings } from "../../../packages/settings/index.js";
 import { readCatalogEntries } from "../../../packages/ui/bundle.mjs";
 import { build, ROOT as BUILD_ROOT } from "../../../scripts/build.mjs";
 import { requireBrowser } from "../../helpers/browsers.mjs";
-import { CHOOM_CANVAS, PROFILE_HTML, PROFILE_URL, commit, expect, firefoxExtension, openGitHub, openPage, test } from "./helpers.mjs";
+import { CHOOM_CANVAS, PROFILE_HTML, PROFILE_URL, commit, expect, firefoxExtension, openGitHub, openPage, test, waitFor } from "./helpers.mjs";
 
 const primer = ["light", "dark"].map((id) => readFileSync(new URL(`../../../vendor/primer/source/${id}.css`, import.meta.url), "utf8")).join("\n");
 const STYLE = `<style>${primer}</style>
@@ -111,7 +112,7 @@ async function expectNative(context, act, native, label, appearances = ["full", 
       const page = await context.newPage();
       await page.setViewportSize({ width: 1280, height: 900 });
       await page.goto(`https://github.com${path}`);
-      await expect.poll(() => touched(page), { timeout: 10000, message: `${label} ${appearance} ${path}` }).toEqual(UNTOUCHED);
+      expect(await waitFor(page, touched, (now) => isDeepStrictEqual(now, UNTOUCHED)), `${label} ${appearance} ${path}`).toEqual(UNTOUCHED);
       // A stylesheet that arrived late would show here.
       await page.waitForTimeout(300);
       expect(await touched(page), `${label} ${appearance} ${path} stays untouched`).toEqual(UNTOUCHED);
@@ -125,7 +126,8 @@ async function expectNative(context, act, native, label, appearances = ["full", 
 // head, swaps the body and fires turbo:render. Sign-in is native in the frame that first paints it.
 async function expectNavigation(page, label) {
   const themed = async () => page.evaluate(() => ({ boot: document.documentElement.getAttribute("data-reskin-boot"), styled: Boolean(document.getElementById("reskin-style")?.isConnected), canvas: getComputedStyle(document.documentElement).getPropertyValue("--bgColor-default").trim() }));
-  await expect.poll(themed, { timeout: 10000, message: `${label} profile` }).toEqual({ boot: "ready", styled: true, canvas: CHOOM_CANVAS });
+  const isThemed = (now) => now.boot === "ready" && now.styled && now.canvas === CHOOM_CANVAS;
+  expect(await waitFor(page, themed, isThemed), `${label} profile`).toEqual({ boot: "ready", styled: true, canvas: CHOOM_CANVAS });
   const first = await page.evaluate((html) => new Promise((resolve) => {
     const next = new DOMParser().parseFromString(html, "text/html");
     window.__profile = document.body;
@@ -153,7 +155,7 @@ async function expectNavigation(page, label) {
     document.dispatchEvent(new Event("turbo:render"));
     document.dispatchEvent(new Event("turbo:load"));
   });
-  await expect.poll(themed, { timeout: 10000, message: `${label} back on the profile` }).toEqual({ boot: "ready", styled: true, canvas: CHOOM_CANVAS });
+  expect(await waitFor(page, themed, isThemed), `${label} back on the profile`).toEqual({ boot: "ready", styled: true, canvas: CHOOM_CANVAS });
 }
 
 test("Chromium: sign-in and sign-up look exactly like GitHub in Full and Calm, with no stylesheet, marker or owned node", async ({ extension }) => {

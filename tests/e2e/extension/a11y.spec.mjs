@@ -93,3 +93,112 @@ test("settings reach Preferences directly, and its switches explain what they ch
   // The selected show stays above every view.
   await expect(page.locator("[data-rs=summary-show]")).toBeVisible();
 });
+
+// The builder: axe with every disclosure open and with the import dialog open, at desktop and
+// phone widths; a keyboard-only edit, Undo and import; and the names a screen reader announces.
+async function openMake(extension, viewport) {
+  const page = await openPage(extension, "settings", viewport);
+  await page.getByRole("link", { name: "Make a theme" }).click();
+  // The link shows its section on hashchange; the draft's origin line fills in separately.
+  await expect(page.locator("#make")).toBeVisible();
+  await expect(page.locator('[data-rb="based-on"]')).not.toBeEmpty();
+  return page;
+}
+
+for (const viewport of [{ width: 1280, height: 900 }, { width: 390, height: 844 }]) {
+  test(`Make a theme at ${viewport.width}px, every disclosure and the import dialog, has no serious or critical axe violations @a11y`, async ({ extension }) => {
+    const page = await openMake(extension, viewport);
+    await page.evaluate(() => document.querySelectorAll('[data-rb="builder"] details').forEach((details) => (details.open = true)));
+    expect(await axe(page)).toEqual([]);
+    await page.getByRole("button", { name: "Import", exact: true }).click();
+    await expect(page.getByRole("dialog", { name: "Import a theme" })).toBeVisible();
+    expect(await axe(page)).toEqual([]);
+    // No page-wide horizontal scrolling at phone width.
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  });
+}
+
+test("the builder works by keyboard alone and names every control @a11y", async ({ extension }) => {
+  const page = await openMake(extension, { width: 1280, height: 900 });
+  const snapshot = await page.locator('[data-rb="builder"]').ariaSnapshot();
+  for (const name of ['button "Import"', 'button "Copy AI prompt"', 'textbox "Theme name"', 'textbox "Background"', 'textbox "Text"', 'textbox "Accent"', 'button "Undo last change" [disabled]', 'radio "Light"', 'radio "Dark"', 'combobox "Heading font"', 'combobox "Body font"', 'button "Save as theme"', 'button "Discard draft" [disabled]', 'region "Preview of your theme on GitHub, scrollable"']) {
+    expect(snapshot, name).toContain(name);
+  }
+  // Each color has a picker and a hex field with its own name.
+  await expect(page.getByLabel("Background color picker", { exact: true })).toHaveAttribute("type", "color");
+
+  // Tab to Background's hex field, type a color, and leave it: the draft takes it.
+  const reached = [];
+  for (let i = 0; i < 40; i++) {
+    await page.keyboard.press("Tab");
+    const name = await page.evaluate(() => document.activeElement?.id ?? "");
+    reached.push(name);
+    if (name === "rb-colors-background") break;
+  }
+  expect(reached.at(-1), reached.join(" ")).toBe("rb-colors-background");
+  const focus = await page.evaluate(() => {
+    const style = getComputedStyle(document.activeElement);
+    return { outline: style.outlineStyle !== "none" && parseFloat(style.outlineWidth) >= 2, height: document.activeElement.getBoundingClientRect().height };
+  });
+  expect(focus.outline).toBe(true);
+  expect(focus.height).toBeGreaterThanOrEqual(44);
+  await page.keyboard.press("ControlOrMeta+a");
+  await page.keyboard.type("#202a44");
+  await page.keyboard.press("Tab");
+  await expect(page.locator('[data-rb="dirty"]')).toBeVisible();
+
+  // Undo by keyboard, announced in the polite status.
+  await page.getByRole("button", { name: "Undo last change" }).focus();
+  await page.keyboard.press("Enter");
+  await expect(page.locator('[data-rb="status"]')).toHaveText("Last change undone.");
+  await expect(page.locator('[data-rb="status"]')).toHaveAttribute("role", "status");
+  await expect(page.getByRole("textbox", { name: "Background", exact: true })).not.toHaveValue("#202a44");
+
+  // A disclosure opens by keyboard; an invalid hex is announced with its field.
+  await page.locator('[data-rb-section="code"] > summary').focus();
+  await page.keyboard.press("Enter");
+  const code = page.getByRole("textbox", { name: "Code background", exact: true });
+  await code.focus();
+  await page.keyboard.press("ControlOrMeta+a");
+  await page.keyboard.type("#12");
+  await expect(code).toHaveAttribute("aria-invalid", "true");
+  await expect(code).toHaveAccessibleDescription(/Use a color like #18212b\./);
+
+  // The import dialog opens and closes by keyboard, and focus returns to Import.
+  await page.getByRole("button", { name: "Import", exact: true }).focus();
+  await page.keyboard.press("Enter");
+  const dialog = page.getByRole("dialog", { name: "Import a theme" });
+  await expect(dialog.getByRole("textbox", { name: "Chatbot answer" })).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+  await expect(page.getByRole("button", { name: "Import", exact: true })).toBeFocused();
+});
+
+// Backup & help with a saved theme listed, and an import missing its Background with the picker
+// that fixes it: no serious or critical axe violation, named controls, no page-wide scrolling.
+for (const viewport of [{ width: 1280, height: 900 }, { width: 390, height: 844 }]) {
+  test(`Backup & help and the missing-color picker at ${viewport.width}px have no serious or critical axe violations @a11y`, async ({ extension }) => {
+    const page = await openMake(extension, viewport);
+    await page.getByRole("textbox", { name: "Theme name" }).fill("Kept theme");
+    await page.getByRole("textbox", { name: "Theme name" }).press("Tab");
+    await page.getByRole("button", { name: "Save as theme" }).click();
+    await expect(page.locator('[data-rb="status"]')).toHaveText("Saved Kept theme and applied it to GitHub.");
+
+    await page.getByRole("button", { name: "Import", exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: "Import a theme" });
+    await dialog.getByRole("textbox", { name: "Chatbot answer" }).fill('Here:\n```json\n{"schemaVersion":1,"name":"Fog","base":"dark","colors":{"text":"#e6edf3","accent":"#ff806c"}}\n```');
+    await dialog.getByRole("button", { name: "Preview theme" }).click();
+    await expect(dialog.getByRole("textbox", { name: "Background", exact: true })).toBeVisible();
+    await expect(dialog.getByRole("textbox", { name: "Background", exact: true })).toHaveAccessibleDescription(/Choose background here/);
+    expect(await axe(page)).toEqual([]);
+    await page.keyboard.press("Escape");
+
+    await page.getByRole("link", { name: "Backup & help" }).click();
+    const backup = page.locator('[data-rk="backup"]');
+    await expect(backup.getByRole("button", { name: "Remove Kept theme" })).toBeVisible();
+    await expect(backup.getByRole("button", { name: "Export Kept theme" })).toBeVisible();
+    await expect(backup.getByRole("button", { name: "Reset all" })).toHaveAccessibleDescription(/Reset all removes your saved themes/);
+    expect(await axe(page)).toEqual([]);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  });
+}

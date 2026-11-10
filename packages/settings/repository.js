@@ -2,16 +2,17 @@
 // background creates a writing repository. Every commit re-reads storage first, so a restarted
 // worker and an empty in-memory queue lose nothing; storage is the only authority.
 import { ISSUE_CODES, LEGACY_STORAGE_KEYS, LOCAL_THEME_ID_PREFIX, STORAGE_KEYS } from "../contracts/index.js";
-import { ActionError, reduceAction } from "./actions.js";
-import { capacityIssues } from "./admission.js";
+import { ActionError, actionIssues, reduceState } from "./actions.js";
+import { capacityIssues, NO_CSS_SANITIZER } from "./admission.js";
 import { bootRecordProblems, buildBootRecord } from "./boot.js";
 import { selectedSource } from "./catalog.js";
-import { NOTICES, RECOVERY_KEY, STORAGE_LIMITS } from "./constants.js";
+import { APPROVAL_ISSUE, digest, mintApproval, readApprovals, settleConsent, withdrawApprovals } from "./consent.js";
+import { APPROVAL_ACTION_TYPES, APPROVALS_KEY, NOTICES, RECOVERY_KEY, STORAGE_LIMITS } from "./constants.js";
 import { boundRecovery, hasLegacyKeys, migrateLegacy } from "./migrate.js";
 import { defaultSettings, isPlainObject, issue, salvageSettings, validateSettings } from "./model.js";
 import { sourceHash } from "../engine/index.js";
 
-const ALL_KEYS = [...Object.values(STORAGE_KEYS), RECOVERY_KEY];
+const ALL_KEYS = [...Object.values(STORAGE_KEYS), RECOVERY_KEY, APPROVALS_KEY];
 const jsonBytes = (value) => new TextEncoder().encode(JSON.stringify(value)).length;
 const storageIssue = (error) => issue(ISSUE_CODES.storage, "", `Storage failed: ${error?.message ?? String(error)}`);
 
@@ -48,6 +49,7 @@ export async function readSettings(storage, { catalog, newId = () => "00000000-0
  */
 export function createRepository(storage, context) {
   const { catalog, snapshot } = context;
+  const css = context.css ?? NO_CSS_SANITIZER;
   let queue = Promise.resolve();
   // Serializes writer work in this context. Errors never poison the queue.
   const serialize = (task) => {
@@ -115,6 +117,13 @@ export function createRepository(storage, context) {
     const result = validateSettings(stored, catalog);
     if (result.ok) {
       const changes = {};
+      // An approval this sanitizer no longer matches (an update, or a record written elsewhere) goes.
+      const pruned = settledConsent(raw, result.settings);
+      if (pruned.approvals) changes[APPROVALS_KEY] = pruned.approvals;
+      if (pruned.settings) {
+        result.settings = { ...pruned.settings, revision: pruned.settings.revision + 1 };
+        result.upgraded = true;
+      }
       if (result.upgraded) Object.assign(changes, { [STORAGE_KEYS.settings]: result.settings, [STORAGE_KEYS.boot]: boot(result.settings) });
       else if (staleBoot(raw[STORAGE_KEYS.boot], result.settings)) changes[STORAGE_KEYS.boot] = boot(result.settings);
       if (Object.keys(changes).length) await write(raw, changes);
@@ -131,9 +140,21 @@ export function createRepository(storage, context) {
     const recovery = previous ? { ...previous, salvaged: [...(Array.isArray(previous.salvaged) ? previous.salvaged : []), copy] } : copy;
     const notices = [...settings.migration.notices, NOTICES.settingsRecovered, ...(bounded.truncated ? [NOTICES.recoveryTruncated] : [])];
     settings.migration = { ...settings.migration, notices: [...new Set(notices)].slice(0, STORAGE_LIMITS.maxNotices) };
-    settings.revision += 1;
-    await write(raw, { [STORAGE_KEYS.settings]: settings, [STORAGE_KEYS.boot]: boot(settings), [RECOVERY_KEY]: recovery });
-    return { state: "recovered", settings, issues: result.issues };
+    const pruned = settledConsent(raw, settings);
+    const salvaged = { ...(pruned.settings ?? settings), revision: settings.revision + 1 };
+    await write(raw, { [STORAGE_KEYS.settings]: salvaged, [STORAGE_KEYS.boot]: boot(salvaged), [RECOVERY_KEY]: recovery, [APPROVALS_KEY]: pruned.approvals ?? readApprovals(raw[APPROVALS_KEY]) });
+    return { state: "recovered", settings: salvaged, issues: result.issues };
+  }
+
+  // Stored settings and approvals through consent.js with no action: what changed, or nulls.
+  function settledConsent(raw, settings) {
+    const approvals = readApprovals(raw[APPROVALS_KEY]);
+    const settled = settleConsent(settings, settings, approvals, { css });
+    const sameConsent = JSON.stringify(settled.cssConsent) === JSON.stringify(settings.cssConsent);
+    return {
+      settings: sameConsent ? null : { ...settings, cssConsent: settled.cssConsent },
+      approvals: JSON.stringify(settled.approvals) === JSON.stringify(raw[APPROVALS_KEY] ?? []) ? null : settled.approvals,
+    };
   }
 
   // A boot record is stale when it is missing for enabled settings, malformed, or from other
@@ -154,11 +175,25 @@ export function createRepository(storage, context) {
     }
   }
 
+  // The digest of an editor's token bound to the builder document the browser says sent it, or
+  // null. Approval tickets are issued to and redeemed by this pair only, so the same token sent
+  // from another document, page or content script names a different editor.
+  const boundEditor = (origin, editor) => (typeof origin?.document === "string" && origin.document && typeof editor === "string" ? digest(`${origin.document}\n${editor}`) : null);
+  const builderOnly = (current) => ({
+    ok: false,
+    code: "invalid",
+    current,
+    issues: [{ ...issue(ISSUE_CODES.invalid, "/action/approval", "Advanced CSS can be approved only in Reskin's theme builder."), reason: APPROVAL_ISSUE }],
+  });
+
   /**
    * Applies one action. Checks expectedRevision against storage, reduces onto the latest state,
    * writes settings, boot and lastGood in one set, and replies only after the write resolves.
+   * `origin.document` is the browser-provided identity of the builder document that sent it (the
+   * background supplies it, and null for any other sender); only that document can ask for or
+   * redeem an approval ticket.
    */
-  function commit(action, expectedRevision) {
+  function commit(action, expectedRevision, origin = null) {
     const ready = initialize();
     return serialize(async () => {
       const init = await ready;
@@ -172,21 +207,30 @@ export function createRepository(storage, context) {
       const result = validateSettings(raw[STORAGE_KEYS.settings], catalog);
       if (!result.ok) return { ok: false, code: "invalid", issues: result.issues };
       const current = result.settings;
+      const approvals = readApprovals(raw[APPROVALS_KEY]);
+      if (APPROVAL_ACTION_TYPES.includes(action?.type)) return approve(raw, current, approvals, action, expectedRevision, origin);
       if (expectedRevision !== current.revision) {
         return { ok: false, code: "conflict", current, issues: [issue(ISSUE_CODES.conflict, "/revision", "Settings changed in another window. Review the current settings and try again.")] };
       }
       let next;
+      let nextApprovals;
       try {
-        next = reduceAction(current, action, context);
+        const editor = await boundEditor(origin, action?.editor);
+        if (typeof action?.approval === "string" && !editor && typeof action.editor === "string") return builderOnly(current);
+        const redeem = typeof action?.approval === "string" && editor ? { ticket: await digest(action.approval), editor } : null;
+        ({ settings: next, approvals: nextApprovals } = reduceState(current, approvals, action, { ...context, redeem, editor }));
       } catch (error) {
         if (error instanceof ActionError) return { ok: false, code: error.code, current, issues: error.issues };
         throw error;
       }
       next.revision = current.revision + 1;
       const changes = { [STORAGE_KEYS.settings]: next, [STORAGE_KEYS.boot]: boot(next) };
+      // Approvals change in the same set as the settings they belong to, so a failed write leaves
+      // the ticket for a retry and a successful one never leaves it redeemable.
+      if (JSON.stringify(nextApprovals) !== JSON.stringify(approvals)) changes[APPROVALS_KEY] = nextApprovals;
       const notices = [];
       Object.assign(changes, lastGoodChanges(raw[STORAGE_KEYS.lastGood], current, next, notices));
-      if (action.type === "resetAll") Object.assign(changes, { [STORAGE_KEYS.draft]: null, [RECOVERY_KEY]: null, [STORAGE_KEYS.lastGood]: null });
+      if (action.type === "resetAll") Object.assign(changes, { [STORAGE_KEYS.draft]: null, [RECOVERY_KEY]: null, [STORAGE_KEYS.lastGood]: null, [APPROVALS_KEY]: null });
       if (action.type === "dismissMigration") changes[RECOVERY_KEY] = null;
       try {
         await write(raw, changes);
@@ -196,6 +240,39 @@ export function createRepository(storage, context) {
       }
       return notices.length ? { ok: true, settings: next, notices } : { ok: true, settings: next };
     });
+  }
+
+  // approveCss issues a ticket for the explicit Enable advanced CSS choice in the builder document
+  // that sent it, for the settings it saw; withdrawCss drops that document's editor's tickets.
+  // Neither changes settings, so neither bumps the revision.
+  async function approve(raw, current, approvals, action, expectedRevision, origin) {
+    const shape = actionIssues(action);
+    if (shape.length) return { ok: false, code: "invalid", current, issues: shape };
+    const editor = await boundEditor(origin, action.editor);
+    if (!editor) return builderOnly(current);
+    if (action.type === "approveCss" && expectedRevision !== current.revision) {
+      return { ok: false, code: "conflict", current, issues: [issue(ISSUE_CODES.conflict, "/revision", "Settings changed in another window. Review the current settings and try again.")] };
+    }
+    let next = withdrawApprovals(approvals, editor);
+    let reply = { ok: true, settings: current };
+    if (action.type === "approveCss") {
+      const secret = context.newId();
+      try {
+        const minted = mintApproval(current, next, { editor, ticket: await digest(secret), target: action.target, text: action.css }, css);
+        next = minted.approvals;
+        reply = { ok: true, settings: current, approval: { ticket: secret, target: action.target, hash: minted.hash, sanitizerVersion: minted.sanitizerVersion } };
+      } catch (error) {
+        if (error instanceof ActionError) return { ok: false, code: error.code, current, issues: error.issues };
+        throw error;
+      }
+    }
+    try {
+      await write(raw, { [APPROVALS_KEY]: next });
+    } catch (error) {
+      if (error instanceof ActionError) return { ok: false, code: error.code, current, issues: error.issues };
+      throw error;
+    }
+    return reply;
   }
 
   // lastGood is one recoverable prior selection, by theme ID and source hash. Deleting its local

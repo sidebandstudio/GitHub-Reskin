@@ -41,6 +41,7 @@
         <a href="#themes" data-rs-view="themes">Themes</a>
         <a href="#make" data-rs-view="make">Make a theme</a>
         <a href="#preferences" data-rs-view="preferences">Preferences</a>
+        <a href="#backup" data-rs-view="backup">Backup &amp; help</a>
       </nav>
 
       <section id="themes" class="rs-section" data-rs-section aria-labelledby="rs-themes-title">
@@ -58,12 +59,342 @@
         </div>
       </section>
 
-      <section id="make" class="rs-section" data-rs-section aria-labelledby="rs-make-title">
-        <h2 id="rs-make-title">Make a theme</h2>
-        <p class="rs-note" id="rs-make-note">The theme builder and theme import arrive in the next update. Your saved themes will appear in My themes.</p>
-        <div class="rs-actions">
-          <button type="button" class="rs-button" disabled aria-describedby="rs-make-note">Import theme</button>
+      <section id="make" class="rs-section rb" data-rs-section aria-labelledby="rs-make-title" data-rb="builder">
+        <div class="rb-head">
+          <div class="rb-head-text">
+            <h2 id="rs-make-title">Make a theme</h2>
+            <p class="rb-origin"><span data-rb="based-on"></span> <span class="rb-dirty" data-rb="dirty" hidden>Unsaved draft</span></p>
+          </div>
+          <div class="rb-head-actions">
+            <button type="button" class="rs-button" data-rb="import-open" aria-haspopup="dialog">Import</button>
+            <button type="button" class="rs-button" data-rb="prompt-copy">Copy AI prompt</button>
+          </div>
         </div>
+
+        <div class="rb-status-row">
+          <p class="rs-status" role="status" aria-live="polite" data-rb="status"></p>
+        </div>
+        <div class="rs-error rb-error" role="alert" data-rb="error" hidden>
+          <span data-rb-text></span>
+          <span class="rs-actions">
+            <button type="button" class="rs-link-button" data-rb="retry" hidden>Retry</button>
+            <button type="button" class="rs-link-button" data-rb="download-draft" hidden>Download</button>
+            <a class="rs-link-button" href="#backup" data-rb="manage" hidden>Remove a saved theme in Backup &amp; help</a>
+          </span>
+        </div>
+
+        <div class="rb-panel" data-rb="prompt-steps" hidden>
+          <p class="rb-panel-title" data-rb="prompt-result" hidden></p>
+          <ol class="rb-steps">
+            <li>Paste into your chatbot</li>
+            <li>Describe your theme</li>
+            <li>Paste its answer here <button type="button" class="rs-link-button" data-rb="import-paste">Paste answer</button></li>
+          </ol>
+          <p class="rs-note">Any chatbot works, including the free web versions of ChatGPT, Gemini, Claude and Copilot. Reskin never contacts them.</p>
+          <div class="rb-fallback" data-rb="prompt-fallback" hidden>
+            <label for="rb-prompt-text">AI prompt</label>
+            <textarea id="rb-prompt-text" class="rb-textarea rb-textarea--short" readonly data-rb="prompt-text"></textarea>
+            <button type="button" class="rs-button" data-rb="prompt-select">Select prompt</button>
+          </div>
+        </div>
+
+        <div class="rb-panel" data-rb="resume" hidden role="group" aria-labelledby="rb-resume-title">
+          <p class="rb-panel-title" id="rb-resume-title">You have an unsaved draft: <span data-rb="resume-name"></span>.</p>
+          <div class="rs-actions">
+            <button type="button" class="rs-button rs-button--primary" data-rb="resume-draft">Resume your draft</button>
+            <button type="button" class="rs-button" data-rb="resume-saved">Start with your saved theme</button>
+          </div>
+        </div>
+
+        <div class="rb-panel rb-panel--alert" data-rb="conflict" hidden role="group" aria-labelledby="rb-conflict-title">
+          <p class="rb-panel-title" id="rb-conflict-title" data-rb="conflict-title">Your settings changed in another window, so this draft was not saved.</p>
+          <div class="rs-actions">
+            <button type="button" class="rs-button rs-button--primary" data-rb="keep-editing">Keep editing this draft</button>
+            <button type="button" class="rs-button" data-rb="load-saved">Load saved theme</button>
+          </div>
+        </div>
+
+        <div class="rb-layout">
+          <section class="rs-stage rb-stage" aria-labelledby="rb-preview-title">
+            <div class="rs-stage-bar">
+              <h3 id="rb-preview-title" class="rs-stage-title">Preview</h3>
+              <fieldset class="rs-segmented" data-rb="before">
+                <legend class="rs-visually-hidden">Compare</legend>
+                <span class="rs-segments">
+                  <label><input type="radio" name="rb-compare" value="before" />Before</label>
+                  <label><input type="radio" name="rb-compare" value="after" checked />After</label>
+                </span>
+              </fieldset>
+            </div>
+            <div class="rb-views" role="group" aria-label="Preview page" data-rb="views">
+              <button type="button" class="rs-group" data-view="profile" aria-pressed="true">Profile</button>
+              <button type="button" class="rs-group" data-view="repo" aria-pressed="false">Repository</button>
+              <button type="button" class="rs-group" data-view="diff" aria-pressed="false">Diff</button>
+              <button type="button" class="rs-group" data-view="empty" aria-pressed="false">Empty</button>
+              <button type="button" class="rs-group" data-view="404" aria-pressed="false">404</button>
+            </div>
+            <div class="rs-preview" data-rb="preview" tabindex="0" role="region" aria-label="Preview of your theme on GitHub, scrollable"></div>
+            <div class="rb-polarity" data-rb="polarity" hidden>
+              <p data-rb-text></p>
+              <button type="button" class="rs-button rs-button--primary" data-rb="polarity-fix"></button>
+            </div>
+            <div class="rb-repairs" data-rb="repairs" hidden>
+              <p data-rb-text></p>
+              <details class="rb-changes">
+                <summary>See changes</summary>
+                <div data-rb="repair-list"></div>
+              </details>
+            </div>
+            <p class="rs-note">A fixed offline copy of GitHub pages, with no network or account. GitHub changes only when you save.</p>
+            <p class="rs-note" data-rb="text-off" hidden>Text is off in Preferences, so the preview leaves out flavor text.</p>
+          </section>
+
+          <form class="rb-controls" data-rb="controls" aria-label="Theme controls" novalidate>
+            <fieldset class="rs-segmented rb-start" data-rb="start" aria-describedby="rb-start-note">
+              <legend>Start from</legend>
+              <span class="rs-segments">
+                <label><input type="radio" name="rb-start" value="fresh" />Three colors</label>
+                <label><input type="radio" name="rb-start" value="remix" /><span data-rb="start-remix">Remix</span></label>
+              </span>
+            </fieldset>
+            <p class="rs-note" id="rb-start-note" data-rb="start-note"></p>
+
+            <div class="rb-field">
+              <label for="rb-name">Theme name</label>
+              <input id="rb-name" class="rb-input" type="text" maxlength="64" autocomplete="off" spellcheck="false" data-rb="name" aria-describedby="rb-name-error" />
+              <p class="rb-field-error" id="rb-name-error" data-rb-error-for="name" hidden></p>
+            </div>
+
+            <fieldset class="rb-group" data-rb-colors="core">
+              <legend>Colors</legend>
+            </fieldset>
+
+            <div class="rb-draft-actions">
+              <button type="button" class="rs-button" data-rb="undo" disabled>Undo last change</button>
+              <button type="button" class="rs-button" data-rb="reset"></button>
+            </div>
+
+            <fieldset class="rs-segmented rs-segmented--start" data-rb="base">
+              <legend>Light or dark</legend>
+              <span class="rs-segments">
+                <label><input type="radio" name="rb-base" value="light" />Light</label>
+                <label><input type="radio" name="rb-base" value="dark" />Dark</label>
+              </span>
+            </fieldset>
+
+            <div class="rb-group">
+              <div class="rb-field">
+                <label for="rb-heading">Heading font</label>
+                <select id="rb-heading" class="rb-input" data-rb="font-heading"></select>
+              </div>
+              <p class="rb-sample" data-rb="heading-sample" aria-hidden="true">Pinned repositories</p>
+              <div class="rb-field">
+                <label for="rb-body">Body font</label>
+                <select id="rb-body" class="rb-input" data-rb="font-body" aria-describedby="rb-body-note"></select>
+              </div>
+              <p class="rb-sample rb-sample--body" data-rb="body-sample" aria-hidden="true">Popular repositories and readable prose.</p>
+              <p class="rs-note" id="rb-body-note">Body changes GitHub text and rendered prose. Code and source editors keep their usual fonts.</p>
+            </div>
+
+            <details class="rb-more" data-rb-section="effects">
+              <summary>Effects</summary>
+              <p class="rs-note" id="rb-effects-note">Choose up to 3. They show in Full when Effects is on in Preferences.</p>
+              <div class="rb-switches" data-rb="effects" role="group" aria-describedby="rb-effects-note"></div>
+              <p class="rb-field-error" data-rb-error-for="effects" hidden></p>
+            </details>
+
+            <details class="rb-more" data-rb-section="flavor">
+              <summary>Flavor text</summary>
+              <label class="rs-switch"><input type="checkbox" role="switch" data-rb="flavor-enabled" />Flavor text</label>
+              <div class="rb-field">
+                <label for="rb-flavor-tag">Profile tag</label>
+                <input id="rb-flavor-tag" class="rb-input" type="text" autocomplete="off" data-rb-slot="profile.tag" aria-describedby="rb-flavor-note" />
+              </div>
+              <p class="rs-note" id="rb-flavor-note">Decorative words beside GitHub's own headings. Empty leaves the slot out.</p>
+              <details class="rb-more rb-more--nested">
+                <summary>More flavor text</summary>
+                <div data-rb="flavor-slots"></div>
+              </details>
+            </details>
+
+            <details class="rb-more" data-rb-section="backgrounds">
+              <summary>Backgrounds</summary>
+              <fieldset class="rs-segmented rs-segmented--start" data-rb="bg-target">
+                <legend class="rs-visually-hidden">Background area</legend>
+                <span class="rs-segments">
+                  <label><input type="radio" name="rb-bg-target" value="page" checked />Page</label>
+                  <label><input type="radio" name="rb-bg-target" value="profileBanner" />Banner</label>
+                  <label><input type="radio" name="rb-bg-target" value="header" />Header</label>
+                </span>
+              </fieldset>
+              <div data-rb="bg-color"></div>
+              <ol class="rb-layers" data-rb="bg-layers" aria-label="Layers, nearest first"></ol>
+              <div class="rs-actions">
+                <button type="button" class="rs-button" data-rb="bg-add-gradient">Add gradient</button>
+                <button type="button" class="rs-button" data-rb="bg-add-pattern">Add pattern</button>
+              </div>
+              <div class="rb-field rb-image-add">
+                <label for="rb-image-file">Add an image</label>
+                <input id="rb-image-file" class="rb-input" type="file" accept="image/png,image/jpeg,image/webp,image/gif,.png,.jpg,.jpeg,.webp,.gif" data-rb="image-file" aria-describedby="rb-image-limits rb-image-usage" />
+              </div>
+              <p class="rs-note" id="rb-image-limits" data-rb="image-limits"></p>
+              <p class="rs-note" id="rb-image-usage" data-rb="image-usage"></p>
+              <div class="rb-panel" data-rb="image-offer" hidden role="group" aria-labelledby="rb-image-offer-title">
+                <p class="rb-panel-title" id="rb-image-offer-title" data-rb="image-offer-title"></p>
+                <dl class="rb-sizes">
+                  <dt>Before</dt>
+                  <dd data-rb="image-before"></dd>
+                  <dt>After</dt>
+                  <dd data-rb="image-after"></dd>
+                </dl>
+                <p class="rs-note" data-rb="image-note"></p>
+                <div class="rs-actions">
+                  <button type="button" class="rs-button rs-button--primary" data-rb="image-accept">Use converted image</button>
+                  <button type="button" class="rs-button" data-rb="image-cancel">Cancel</button>
+                </div>
+              </div>
+              <p class="rb-field-error" data-rb-error-for="backgrounds" role="alert" hidden></p>
+              <div class="rs-actions" data-rb="image-retry" hidden>
+                <button type="button" class="rs-button" data-rb="image-resize"></button>
+              </div>
+            </details>
+
+            <details class="rb-more" data-rb-section="shape">
+              <summary>Shape and type</summary>
+              <div class="rb-grid" data-rb="shape"></div>
+            </details>
+
+            <details class="rb-more" data-rb-section="graph">
+              <summary>Graph</summary>
+              <p class="rs-note">Five activity levels, from no contributions to the most. A new theme takes them from Accent.</p>
+              <div data-rb-colors="graph"></div>
+              <div class="rb-grid" data-rb="graph-style"></div>
+            </details>
+
+            <details class="rb-more" data-rb-section="code">
+              <summary>Code and diffs</summary>
+              <div data-rb-colors="code"></div>
+              <details class="rb-more rb-more--nested">
+                <summary>Syntax colors</summary>
+                <div data-rb-colors="syntax"></div>
+              </details>
+              <details class="rb-more rb-more--nested">
+                <summary>Diff colors</summary>
+                <div data-rb-colors="diff"></div>
+              </details>
+              <details class="rb-more rb-more--nested">
+                <summary>Terminal (ANSI) colors</summary>
+                <div data-rb-colors="ansi"></div>
+              </details>
+            </details>
+
+            <details class="rb-more" data-rb-section="details">
+              <summary>Details</summary>
+              <div data-rb-colors="details"></div>
+              <div class="rb-grid" data-rb="details-style"></div>
+            </details>
+
+            <details class="rb-more" data-rb-section="css">
+              <summary>Advanced CSS</summary>
+              <p class="rb-warning" id="rb-css-warning" data-rb="css-warning"></p>
+              <label for="rb-css">CSS</label>
+              <textarea id="rb-css" class="rb-textarea rb-code" spellcheck="false" autocomplete="off" data-rb="css" aria-describedby="rb-css-meter rb-css-warning"></textarea>
+              <p class="rs-note" id="rb-css-meter" data-rb="css-meter"></p>
+              <ul class="rb-findings" data-rb="css-findings" aria-label="CSS problems" hidden></ul>
+              <label class="rb-check"><input type="checkbox" data-rb="css-enable" aria-describedby="rb-css-warning" />Enable advanced CSS</label>
+            </details>
+          </form>
+        </div>
+
+        <details class="rb-export rb-more" data-rb="export">
+          <summary>Export and share</summary>
+          <div class="rb-export-body">
+            <p class="rs-badge" data-rb="export-css" hidden>Advanced CSS</p>
+            <p class="rs-note" data-rb="export-css-note" hidden></p>
+            <p class="rs-note" data-rb="export-images" hidden></p>
+            <div class="rs-actions">
+              <button type="button" class="rs-button" data-rb="download">Download .reskin.json</button>
+              <button type="button" class="rs-button" data-rb="copy-json">Copy theme JSON</button>
+              <button type="button" class="rs-button" data-rb="copy-code">Copy share code</button>
+              <button type="button" class="rs-button" data-rb="copy-link">Copy preview link</button>
+            </div>
+            <p class="rs-note" data-rb="export-note"></p>
+            <div class="rb-fallback" data-rb="export-fallback" hidden>
+              <label for="rb-export-text" data-rb="export-label">Theme</label>
+              <textarea id="rb-export-text" class="rb-textarea rb-textarea--short rb-code" readonly data-rb="export-text"></textarea>
+              <button type="button" class="rs-button" data-rb="export-select">Select text</button>
+            </div>
+          </div>
+        </details>
+
+        <div class="rb-bar" data-rb="bar">
+          <span class="rb-bar-end">
+            <button type="button" class="rs-button" data-rb="discard">Discard draft</button>
+            <button type="button" class="rs-button" data-rb="save-copy" hidden>Save a copy</button>
+            <button type="button" class="rs-button rs-button--primary" data-rb="save">Save as theme</button>
+          </span>
+        </div>
+
+        <dialog class="rb-dialog" data-rb="import" aria-labelledby="rb-import-title">
+          <div class="rb-dialog-head">
+            <h3 id="rb-import-title">Import a theme</h3>
+            <button type="button" class="rs-button" data-rb="import-close">Close</button>
+          </div>
+          <div class="rb-views" role="group" aria-label="Import from" data-rb="import-kinds">
+            <button type="button" class="rs-group" data-kind="text" aria-pressed="true">Paste answer</button>
+            <button type="button" class="rs-group" data-kind="file" aria-pressed="false">Choose file</button>
+            <button type="button" class="rs-group" data-kind="code" aria-pressed="false">Share code</button>
+          </div>
+          <div data-rb-kind="text">
+            <label for="rb-paste">Chatbot answer</label>
+            <textarea id="rb-paste" class="rb-textarea" spellcheck="false" autocomplete="off" data-rb="paste" aria-describedby="rb-paste-note"></textarea>
+            <p class="rs-note" id="rb-paste-note">Paste the chatbot's full answer here. Comments and code fences are okay.</p>
+          </div>
+          <div data-rb-kind="file" hidden>
+            <label for="rb-file">Theme file (.json or .reskin.json)</label>
+            <input id="rb-file" class="rb-input" type="file" accept=".json,.reskin.json,application/json" data-rb="file" />
+          </div>
+          <div data-rb-kind="code" hidden>
+            <label for="rb-code">Share code or link</label>
+            <input id="rb-code" class="rb-input" type="text" autocomplete="off" spellcheck="false" placeholder="RS1." data-rb="code" />
+          </div>
+          <button type="button" class="rs-button" data-rb="import-preview">Preview theme</button>
+
+          <div class="rs-error rb-error" role="alert" data-rb="import-error" hidden>
+            <p data-rb-text></p>
+            <ul class="rb-findings" data-rb="import-details"></ul>
+            <div class="rs-actions" data-rb="import-choices"></div>
+          </div>
+
+          <div class="rb-result" data-rb="import-result" hidden>
+            <p class="rb-result-show" data-rb="import-show"></p>
+            <p class="rb-result-name" data-rb="import-name"></p>
+            <ul class="rb-messages" data-rb="import-messages"></ul>
+            <div class="rb-polarity" data-rb="import-polarity" hidden>
+              <button type="button" class="rs-button rs-button--primary" data-rb="import-polarity-fix"></button>
+            </div>
+            <details class="rb-changes" data-rb="import-changes" hidden>
+              <summary>See changes</summary>
+              <div data-rb="import-repair-list"></div>
+            </details>
+            <p class="rs-note" data-rb="import-images" hidden></p>
+            <div class="rb-css-review" data-rb="import-css" hidden>
+              <p class="rs-badge">Advanced CSS</p>
+              <p class="rb-warning" id="rb-import-css-warning" data-rb="import-css-warning"></p>
+              <p class="rs-note" data-rb="import-css-size"></p>
+              <details>
+                <summary>View CSS</summary>
+                <pre class="rb-code rb-source" data-rb="import-css-source" tabindex="0"></pre>
+              </details>
+              <label class="rb-check"><input type="checkbox" data-rb="import-css-enable" aria-describedby="rb-import-css-warning" />Enable advanced CSS</label>
+            </div>
+            <div class="rs-preview rb-import-preview" data-rb="import-frame" tabindex="0" role="region" aria-label="Preview of the imported theme, scrollable"></div>
+          </div>
+          <div class="rb-dialog-actions">
+            <button type="button" class="rs-button" data-rb="import-cancel">Cancel</button>
+            <button type="button" class="rs-button rs-button--primary" data-rb="import-use" disabled>Use theme</button>
+          </div>
+        </dialog>
       </section>
 
       <section id="preferences" class="rs-section" data-rs-section aria-labelledby="rs-prefs-title">
@@ -96,6 +427,55 @@
           <label class="rs-switch"><input type="checkbox" role="switch" data-rs="effects" aria-describedby="rs-effects-note" />Effects</label>
           <p class="rs-note rs-pref-note" id="rs-effects-note">Glows, rails and textures in Full.</p>
         </div>
+      </section>
+
+      <section id="backup" class="rs-section rk" data-rs-section aria-labelledby="rs-backup-title" data-rk="backup">
+        <h2 id="rs-backup-title">Backup &amp; help</h2>
+        <div class="rs-status-row">
+          <p class="rs-status" role="status" aria-live="polite" data-rk="status"></p>
+        </div>
+        <p class="rs-error" role="alert" data-rk="error" hidden></p>
+
+        <section class="rk-part" aria-labelledby="rk-saved-title">
+          <h3 id="rk-saved-title" tabindex="-1" data-rk="saved-title">Your saved themes</h3>
+          <p class="rs-note" data-rk="capacity"></p>
+          <ul class="rk-list" data-rk="saved" aria-labelledby="rk-saved-title"></ul>
+          <div class="rk-empty" data-rk="empty" hidden>
+            <p>Your saved themes will appear here.</p>
+            <button type="button" class="rs-button" data-rk="make">Make a theme</button>
+          </div>
+          <p class="rs-note">Export saves one theme as a .reskin.json file you can import again here or share.</p>
+        </section>
+
+        <section class="rk-part" aria-labelledby="rk-draft-title">
+          <h3 id="rk-draft-title" tabindex="-1" data-rk="draft-title">Unsaved draft</h3>
+          <p data-rk="draft-text"></p>
+          <div class="rs-actions" data-rk="draft-actions" hidden>
+            <button type="button" class="rs-button" data-rk="draft-open">Resume in Make a theme</button>
+            <button type="button" class="rs-button" data-rk="draft-download">Download draft</button>
+            <button type="button" class="rs-button" data-rk="draft-discard">Discard draft</button>
+          </div>
+        </section>
+
+        <section class="rk-part" aria-labelledby="rk-reset-title">
+          <h3 id="rk-reset-title">Reset</h3>
+          <p class="rs-note" id="rk-reset-note">Reset all removes your saved themes, your unsaved draft and your Advanced CSS approvals, and turns every preference back to its default. Export the themes you want to keep first.</p>
+          <button type="button" class="rs-button" data-rk="reset-all" aria-describedby="rk-reset-note">Reset all</button>
+        </section>
+
+        <section class="rk-part" aria-labelledby="rk-help-title">
+          <h3 id="rk-help-title">Help</h3>
+          <dl class="rk-help">
+            <dt>GitHub looks unchanged</dt>
+            <dd>Reload GitHub once to see your theme. If it still doesn't change, allow GitHub access in your browser's extension settings, then reload the page.</dd>
+            <dt>GitHub accessibility colors are active</dt>
+            <dd>High contrast or forced colors keep GitHub's own colors. Your theme choice stays saved and returns when they are off.</dd>
+            <dt>A chatbot's theme won't import</dt>
+            <dd>Use Copy AI prompt in Make a theme, then paste the chatbot's whole answer, including the lines with { and }.</dd>
+            <dt>Something looks wrong on a GitHub page</dt>
+            <dd><a href="https://github.com/sidebandstudio/GitHub-Reskin/issues" target="_blank" rel="noopener noreferrer">Report it on GitHub Reskin's Issues page</a>. Colors keep working where it is safe.</dd>
+          </dl>
+        </section>
       </section>
     </main>
 

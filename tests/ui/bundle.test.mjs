@@ -1,10 +1,14 @@
-// The extension entry's builder: exactly the generated files, the same bytes twice, the parser-free
-// viewer entries in every runtime bundle and no legacy runtime file in the package.
+// The extension entry's builder: exactly the generated files, the same bytes twice, C2b's CSS
+// sanitizer in every runtime bundle (saved themes can carry Advanced CSS, and the background, the
+// content script and every page validate them) and no legacy runtime file in the package.
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import test from "node:test";
-import { BUNDLES, build } from "../../packages/ui/bundle.mjs";
+import { runInNewContext } from "node:vm";
+import { strFromU8, unzlibSync } from "fflate";
+import { BUDGETS } from "../../packages/contracts/index.js";
+import { BUNDLES, build, packedModesModule } from "../../packages/ui/bundle.mjs";
 import { ROOT, extensionFiles, loadEntry, loadReleaseConfig, sha256 } from "../../scripts/build.mjs";
 
 const config = await loadReleaseConfig();
@@ -20,16 +24,18 @@ test("the builder generates exactly the entry's generated files, deterministical
   for (const path of entry.generated.filter((p) => !p.endsWith(".js"))) assert.ok(first[path].equals(await readFile(join(ROOT, path))), path);
 });
 
-test("runtime bundles leave out the css-tree parser and carry the bundled catalog and proofs", () => {
+test("runtime bundles install the css-tree sanitizer and carry the bundled catalog and proofs", () => {
   for (const path of Object.keys(BUNDLES)) {
     const text = first[path].toString("utf8");
-    assert.doesNotMatch(text, /node_modules\/css-tree/, path);
-    assert.doesNotMatch(text, /installCssSanitizer\(\{/, path);
+    // css-tree itself: its lexer error class survives minification, its file paths do not.
+    assert.match(text, /SyntaxMatchError/, path);
+    assert.match(text, /installCssSanitizer\(\{/, path);
     assert.match(text, /anime\.cyberpunk-edgerunners/, path);
     assert.match(text, /cssProofs/, path);
   }
   assert.match(first["content.js"].toString(), /reskin-style/);
   assert.match(first["pages/pages.js"].toString(), /mountPicker|rs-card/);
+  assert.match(first["pages/pages.js"].toString(), /mountBuilder/);
 });
 
 test("the packaged extension holds the new runtime and none of the 1.1.0 files", async () => {
@@ -43,4 +49,27 @@ test("the packaged extension holds the new runtime and none of the 1.1.0 files",
     assert.match(html, new RegExp(`data-page="${page}"`), page);
     assert.doesNotMatch(html, /<script(?![^>]*src=)/, `${page} has no inline script`);
   }
+});
+
+test("the background and pages inflate the exact mode data; the content script carries it plain; the package fits its budget", async () => {
+  const json = await readFile(join(ROOT, "vendor/primer/modes.json"), "utf8");
+  const module = packedModesModule(json);
+  assert.ok(module.length < json.length / 8, `${module.length} bytes packed`);
+  const context = { strFromU8, unzlibSync, atob, result: null };
+  runInNewContext(module.replace(/^import .*\n/, "").replace("export default", "result ="), context);
+  assert.equal(JSON.stringify(context.result), JSON.stringify(JSON.parse(json)));
+  // A token only the mode data holds, as plain JSON.
+  const plain = /accentEmphasis:"#0969da"/;
+  assert.match(first["content.js"].toString(), plain);
+  for (const path of ["background.js", "pages/pages.js"]) {
+    assert.doesNotMatch(first[path].toString(), plain, path);
+    assert.match(first[path].toString(), /unzlibSync|JSON\.parse\(strFromU8/, path);
+  }
+  const { files } = await extensionFiles("chrome", { config, entry });
+  const unpacked = Object.values(files).reduce((sum, data) => sum + data.length, 0);
+  assert.ok(unpacked <= BUDGETS.unpackedRuntimeBytes, `${unpacked} bytes unpacked`);
+});
+
+test("the bundles carry no module path comments, so a rebuild through a linked node_modules writes the same bytes", () => {
+  for (const path of Object.keys(BUNDLES)) assert.doesNotMatch(first[path].toString(), /^\/\/ (\.\.\/)*(node_modules|packages|extension)\//m, path);
 });

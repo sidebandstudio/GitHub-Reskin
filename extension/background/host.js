@@ -43,6 +43,21 @@ export function createBackground({ api, storage = createExtensionStorage(api), c
     }
   };
 
+  // The builder document a message came from, as the browser identifies it, or null. Only the
+  // settings page, where the builder lives, may ask for or redeem an advanced CSS approval ticket;
+  // the popup, the first-run page and content scripts never can. The identity is the sender's
+  // documentId where the browser provides one (Chrome), otherwise its tab, frame and page
+  // (Firefox), so a ticket is honoured only for the document that asked for it.
+  const builderPath = new URL(api.runtime.getURL(PAGE_PATHS.settings)).pathname;
+  const builderDocument = (sender) => {
+    if (!extensionPage(sender)) return null;
+    const url = new URL(sender.url);
+    if (url.pathname !== builderPath) return null;
+    if (typeof sender.documentId === "string" && sender.documentId) return `document:${sender.documentId}`;
+    if (Number.isSafeInteger(sender.tab?.id) && Number.isSafeInteger(sender.frameId)) return `frame:${sender.tab.id}:${sender.frameId}:${url.origin}${url.pathname}${url.search}`;
+    return null;
+  };
+
   async function openPage(page, query) {
     if (!INTERNAL_PAGES.includes(page) || queryIssues(query).length) throw new TypeError("Only internal pages with a safe query can be opened");
     const search = query && Object.keys(query).length ? `?${new URLSearchParams(query)}` : "";
@@ -61,7 +76,7 @@ export function createBackground({ api, storage = createExtensionStorage(api), c
         return result.ok ? { ok: true, settings: result.settings, notices: result.notices } : { ok: false, code: result.code, current: result.fallback, issues: result.issues };
       }
       case "commit":
-        return repository.commit(request.action, request.expectedRevision);
+        return repository.commit(request.action, request.expectedRevision, { document: builderDocument(sender) });
       case "draft":
         try {
           if (request.action.type === "load") return { ok: true, draft: await repository.loadDraft() };
