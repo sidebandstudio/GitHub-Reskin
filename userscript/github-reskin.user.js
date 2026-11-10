@@ -31074,8 +31074,8 @@ To keep your themes, choose Cancel, then Export each one.`,
     durable: `Saved by your userscript manager. Export a theme file to keep a copy or move it to the extension. ${NO_CSS}`,
     session: `This userscript manager can't save themes here. You can preview and export a file. ${NO_CSS}`,
     builderSession: "This userscript manager can't keep themes. What you save here lasts until this tab closes, so download the theme file to keep it.",
-    menuOnly: `Your userscript manager runs this script inside GitHub's page, where GitHub's code could reach this panel, so change settings from the manager's menu. Making and importing themes needs the extension or a manager that keeps scripts apart from the page. ${NO_CSS}`,
-    noControls: `Your userscript manager runs this script inside GitHub's page and has no menu, so settings can't be changed and themes can't be made or imported here. Use the extension or a manager that keeps scripts apart from the page. ${NO_CSS}`,
+    menuOnly: `Your userscript manager runs this script inside GitHub's page, where GitHub's code could reach saved settings, so nothing is saved here. Changes from the manager's menu last until you reload. Saving, making and importing themes needs the extension or a manager that keeps scripts apart from the page. ${NO_CSS}`,
+    noControls: `Your userscript manager runs this script inside GitHub's page and has no menu, so settings can't be changed or saved and themes can't be made or imported here. Use the extension or a manager that keeps scripts apart from the page. ${NO_CSS}`,
     sessionLabel: "Session preview",
     exported: "Theme file saved to your downloads.",
     exportFailed: "The theme file could not be saved. Try again."
@@ -31117,7 +31117,7 @@ To keep your themes, choose Cancel, then Export each one.`,
     root.prepend(gate);
     const catalog = catalogFromData(reskin_catalog_default);
     const bridge = isolation.method === "xray" && typeof scope2.exportFunction === "function" ? { exportFunction: (fn3) => scope2.exportFunction(fn3, view), Promise: view.Promise } : null;
-    const { storage, kind, capabilities } = createGmStorage(scope2, { document: document2, locks: view.navigator?.locks ?? null, bridge });
+    const { storage, kind, capabilities } = createGmStorage(isolation.isolated ? scope2 : {}, { document: document2, locks: view.navigator?.locks ?? null, bridge });
     const rendering = backgroundRendering();
     const repository2 = createRepository(storage, { catalog, ...rendering, newId: () => view.crypto.randomUUID() });
     const fonts = createFontLoader({ document: document2, view, fonts: reskin_fonts_default });

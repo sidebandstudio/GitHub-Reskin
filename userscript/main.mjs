@@ -7,7 +7,9 @@
 //   - the panel: the popup's card in a frame inside a closed shadow root, which page scripts
 //     cannot reach (panel.js), from the manager's menu or an address ending in #reskin. Only when
 //     the script is shown to run isolated from GitHub's JavaScript (isolation.js). Otherwise the
-//     panel only shows the theme and why, and settings change from the manager's menu (menu.js).
+//     script never reads or writes the manager's storage, since page code that patches a built-in
+//     like Array.prototype.map could capture the callbacks that hold it. The panel only shows the
+//     theme and why, and the manager's menu (menu.js) changes settings until the page reloads.
 //   - the builder: from the card, the settings page's Make a theme and Backup & help (C6's
 //     mountBuilder and mountBackup) in a wider frame over the same host and C5's offline preview,
 //     again only when isolated.
@@ -105,7 +107,8 @@ export function start(scope, { document, view }) {
   const catalog = catalogFromData(CATALOG);
   // Firefox content scripts (isolation.js's Xray) hand the lock manager page-compartment callbacks.
   const bridge = isolation.method === "xray" && typeof scope.exportFunction === "function" ? { exportFunction: (fn) => scope.exportFunction(fn, view), Promise: view.Promise } : null;
-  const { storage, kind, capabilities } = createGmStorage(scope, { document, locks: view.navigator?.locks ?? null, bridge });
+  // Not isolated: session storage only, with no GM grant in reach of the page's built-ins.
+  const { storage, kind, capabilities } = createGmStorage(isolation.isolated ? scope : {}, { document, locks: view.navigator?.locks ?? null, bridge });
   const rendering = backgroundRendering();
   const repository = createRepository(storage, { catalog, ...rendering, newId: () => view.crypto.randomUUID() });
   // The renderer writes no @font-face (GitHub's CSP would refuse its data: URL); the loader adds
@@ -160,7 +163,7 @@ export function start(scope, { document, view }) {
       // The hash still opens it.
     }
   } else if (register) {
-    // Not isolated: every durable change is a command in the manager's own menu.
+    // Not isolated: the manager's own menu changes this page's session settings.
     const customCard = (theme) => {
       try {
         return { ...standardCard({ id: theme.id, group: "mine", document: theme.document }), group: "mine" };
