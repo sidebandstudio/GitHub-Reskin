@@ -13,7 +13,7 @@
 // follows the Primer adapter's decision for the subject's nearest mode island.
 import { contrast, luminance, oklab } from "../engine/color.js";
 import { rasterHash } from "../format/raster.js";
-import { ATTRIBUTED } from "../primer/selectors.js";
+import { ATTRIBUTED, AUTHORED_ROOTS } from "../primer/selectors.js";
 import { FONT_BY_ID } from "./registry.js";
 import { num, rgba } from "./effects.js";
 
@@ -539,7 +539,8 @@ export function structuredPlan(resolved, prefs, images = null) {
     };
     const heading = stack(a.fonts.heading);
     const body = stack(a.fonts.body);
-    if (heading || body) fonts = { heading, body };
+    // A face with no lowercase forms reads every name in capitals, so it stays off authored text.
+    if (heading || body) fonts = { heading, body, capsOnly: Boolean(heading && FONT_BY_ID[a.fonts.heading.id]?.capsOnly) };
     const ty = a.typography;
     if (ty && (ty.uppercaseHeadings || ty.headingLetterSpacing || ty.bodyLetterSpacing)) typography = { ...ty };
   }
@@ -615,10 +616,18 @@ export function structuredCss(plan, resolved, target, viewport = null) {
   const notAuthored = `:not(${SURFACES.authored.map((s) => `${s} *`).join(",")})`;
   const headings = SURFACES.headings.map((s) => `${s}${notAuthored}${GUARD}`).join(",");
   const chrome = list(SURFACES.headingChrome);
+  // Names and titles people wrote keep how they read: the heading role's case, and a face with no
+  // lowercase forms, reach only GitHub's own headings and chrome, never an authored root or what
+  // is inside one (the content adapter's list). An authored root inside a treated heading takes
+  // back the body face and its own case below.
+  const named = AUTHORED_ROOTS.join(",");
+  const notNamed = `:not(:where(${named},:is(${named}) *))`;
+  const ownHeadings = `:is(${SURFACES.headings.join(",")})${notAuthored}${notNamed}${GUARD}`;
   const ty = plan.typography;
-  if (plan.fonts?.heading) rules.push(`${headings},${chrome}{font-family:${plan.fonts.heading}${mark}}`);
+  const capsOnly = plan.fonts?.capsOnly;
+  if (plan.fonts?.heading) rules.push(capsOnly ? `${ownHeadings},:is(${SURFACES.headingChrome.join(",")})${notNamed}${GUARD}{font-family:${plan.fonts.heading}${mark}}` : `${headings},${chrome}{font-family:${plan.fonts.heading}${mark}}`);
   if (ty?.headingLetterSpacing) rules.push(`${headings},${chrome}{letter-spacing:${num(ty.headingLetterSpacing)}em${mark}}`);
-  if (ty?.uppercaseHeadings) rules.push(`${headings}{text-transform:uppercase${mark}}`);
+  if (ty?.uppercaseHeadings) rules.push(`${ownHeadings}{text-transform:uppercase${mark}}`);
   if (plan.fonts?.body) rules.push(`${list([SURFACES.page])}{font-family:${plan.fonts.body}${mark}}`);
   if (ty?.bodyLetterSpacing) rules.push(`${list([SURFACES.page])}{letter-spacing:${num(ty.bodyLetterSpacing)}em${mark}}`);
 
@@ -633,6 +642,7 @@ export function structuredCss(plan, resolved, target, viewport = null) {
   const under = `:where(${headings},${chrome}) `;
   reset(under, boundary, [plan.fonts?.heading && family, ty?.headingLetterSpacing && "letter-spacing:normal", ty?.uppercaseHeadings && "text-transform:none"].filter(Boolean));
   reset(under, `:where(${code})`, [ty?.headingLetterSpacing && "letter-spacing:normal", ty?.uppercaseHeadings && "text-transform:none"].filter(Boolean));
+  reset(under, `:where(${named})`, [capsOnly && `font-family:${plan.fonts.body ?? `var(--fontStack-sansSerif,${GITHUB_SANS})`}`, ty?.uppercaseHeadings && "text-transform:none"].filter(Boolean));
   reset("", boundary, [plan.fonts?.body && family, ty?.bodyLetterSpacing && "letter-spacing:normal"].filter(Boolean));
   reset("", `:where(${code})`, [ty?.bodyLetterSpacing && "letter-spacing:normal"].filter(Boolean));
   return rules.length ? `${THEMED}{\n${rules.join("\n")}\n}` : "";

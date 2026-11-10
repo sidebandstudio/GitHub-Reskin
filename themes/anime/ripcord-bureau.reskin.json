@@ -1,38 +1,179 @@
 {
   "$schema": "https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json",
   "author": "sidebandstudio",
+  "backgrounds": {
+    "header": {
+      "color": "#b84112",
+      "layers": [
+        {
+          "gradientCss": {
+            "value": "linear-gradient(0deg,#272218 2px,transparent 2px)"
+          }
+        },
+        {
+          "gradientCss": {
+            "size": "12px 400px",
+            "value": "linear-gradient(135deg,#272218 4.3px,transparent 4.3px)"
+          }
+        },
+        {
+          "gradientCss": {
+            "size": "12px 400px",
+            "value": "linear-gradient(225deg,#272218 4.3px,transparent 4.3px)"
+          }
+        },
+        {
+          "gradientCss": {
+            "value": "repeating-linear-gradient(135deg,transparent 0 22px,#a83a0f 22px 30px)"
+          }
+        }
+      ]
+    },
+    "page": {
+      "color": "#e9e4d6",
+      "layers": [
+        {
+          "gradientCss": {
+            "value": "linear-gradient(90deg,#272218 2px,transparent 2px)"
+          }
+        },
+        {
+          "gradientCss": {
+            "value": "linear-gradient(90deg,transparent 0 6px,#c5613038 6px 16px,transparent 16px)"
+          }
+        },
+        {
+          "gradientCss": {
+            "value": "repeating-linear-gradient(135deg,transparent 0 44px,#53452e14 44px 45px)"
+          }
+        },
+        {
+          "gradientCss": {
+            "size": "100% 100vh",
+            "value": "linear-gradient(#efeadb,#e9e4d6)"
+          }
+        }
+      ]
+    }
+  },
   "base": "light",
+  "code": {
+    "ansi": {
+      "black": "#272218",
+      "blue": "#2f4a72",
+      "brightBlack": "#5b4e3f",
+      "brightBlue": "#283f61",
+      "brightCyan": "#174f4b",
+      "brightGreen": "#264628",
+      "brightMagenta": "#56415f",
+      "brightRed": "#79230f",
+      "brightWhite": "#3e3628",
+      "brightYellow": "#5a3e0c",
+      "cyan": "#1b5955",
+      "green": "#2f5530",
+      "magenta": "#5c4868",
+      "red": "#8f2a1b",
+      "white": "#504636",
+      "yellow": "#6b4a10"
+    },
+    "background": "#ded5c4",
+    "diff": {
+      "addedBackground": "#d3ecdc",
+      "addedText": "#153e29",
+      "removedBackground": "#f5d9dc",
+      "removedText": "#672130",
+      "wordAddedBackground": "#b3dbbe",
+      "wordAddedText": "#153e29",
+      "wordRemovedBackground": "#e8b5be",
+      "wordRemovedText": "#672130"
+    },
+    "syntax": {
+      "attribute": "#6c4825",
+      "comment": "#594f3e",
+      "constant": "#7f3943",
+      "deleted": "#952636",
+      "escape": "#744517",
+      "function": "#8b3510",
+      "inserted": "#22583b",
+      "invalid": "#952636",
+      "keyword": "#8d311b",
+      "markupEmphasis": "#272218",
+      "markupHeading": "#8b3510",
+      "markupLink": "#8d3114",
+      "markupList": "#8d311b",
+      "markupQuote": "#594f3e",
+      "number": "#744517",
+      "operator": "#8d311b",
+      "punctuation": "#443d31",
+      "regex": "#365834",
+      "string": "#365834",
+      "tag": "#195956",
+      "type": "#5c4868",
+      "variable": "#272218"
+    },
+    "text": "#272218"
+  },
   "colors": {
-    "accent": "#a33f12",
-    "background": "#f5f0e5",
-    "contribution": "#8f3d17",
-    "text": "#24221e"
+    "accent": "#a23c16",
+    "background": "#e9e4d6",
+    "contribution": "#79290e",
+    "text": "#272218"
   },
   "contributions": {
+    "cellBoundary": "#786853",
+    "cellRadius": 0,
+    "cellStyle": "square",
     "levels": [
-      "#e3dccf",
-      "#b37046",
-      "#ad5f2d",
-      "#a34f1f",
-      "#8f3d17"
+      "#eadfc7",
+      "#ac7750",
+      "#9b5d3a",
+      "#8a4324",
+      "#79290e"
     ]
   },
-  "description": "Bone paper, charcoal ink and rust-colored activity give GitHub the feel of an industrial case-file desk.",
-  "effects": {
-    "echo": {
-      "durationMs": 140,
-      "offset": 2,
-      "opacity": 0.1
+  "css": ".AppHeader,.Header,.HeaderMktg,.GlobalNav{box-shadow:0 1px 0#272218,0 5px 0 color-mix(in srgb,#272218 80%,transparent)}.UnderlineNav-item[aria-current=\"page\"],.tabnav-tab[aria-current=\"page\"]{border-bottom-color:var(--reskin-accent);font-family:var(--reskin-font-heading);font-weight:700;letter-spacing:.05em;text-transform:uppercase}.UnderlineNav-item[aria-current=\"page\"],.tabnav-tab[aria-current=\"page\"],a[aria-current=\"page\"]{box-shadow:0 3px 0 color-mix(in srgb,var(--reskin-accent) 80%,transparent)}.btn-primary{border-color:var(--reskin-control-border);font-family:var(--reskin-font-heading);font-weight:700;letter-spacing:.05em;text-transform:uppercase}h2.h4.mb-2,h2[data-component=\"Heading\"]{letter-spacing:.05em;text-transform:uppercase;text-shadow:2px 2px 0 color-mix(in srgb,#c56130 55%,transparent)}a[data-testid=\"repo-name-link\"]{font-family:var(--reskin-font-heading);font-weight:700;letter-spacing:.04em}[data-reskin-slot=\"profile.tag\"]{width:fit-content;margin:0 0 8px;padding:3px 8px 2px;font-family:ui-monospace,monospace;font-weight:700;font-size:11px;line-height:1.45;letter-spacing:.2em;text-transform:uppercase;color:var(--reskin-accent);background-color:var(--reskin-surface);border:2px solid var(--reskin-text);border-width:2px 2px 2px 4px;border-left-color:var(--reskin-accent);box-shadow:3px 3px 0 color-mix(in srgb,#272218 80%,transparent)}[data-reskin-slot=\"profile.pinned.heading\"],[data-reskin-slot=\"profile.activity.heading\"],[data-reskin-slot=\"profile.organizations.heading\"],[data-reskin-slot=\"profile.achievements.heading\"]{font-family:var(--reskin-font-heading);font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--reskin-accent)}[data-reskin-slot=\"contributions.caption\"],[data-reskin-slot=\"footer.signoff\"],[data-reskin-slot=\"empty.pinned.caption\"]{font-family:var(--reskin-font-heading);letter-spacing:.05em;text-transform:uppercase;color:var(--reskin-muted-text)}[data-reskin-slot=\"error.notFound.caption\"]{position:absolute;right:6%;bottom:10%;max-width:340px;padding:6px 14px;font-family:var(--reskin-font-heading);font-weight:700;font-size:30px;line-height:1.1;letter-spacing:.06em;text-transform:uppercase;color:var(--reskin-accent);background-color:var(--reskin-surface);border:3px solid var(--reskin-accent);transform:rotate(-5deg);box-shadow:4px 4px 0 color-mix(in srgb,#272218 80%,transparent)}@media (max-width:1099px){[data-reskin-slot=\"error.notFound.caption\"]{font-size:26px}}@media (max-width:799px){[data-reskin-slot=\"error.notFound.caption\"]{font-size:22px}}@media (max-width:599px){[data-reskin-slot=\"error.notFound.caption\"]{font-size:18px}}",
+  "description": "Orange industrial paperwork on bone stock: a serrated orange header, charcoal ink frames with hard offsets, condensed bureau stamps and a rust calendar.",
+  "details": {
+    "headerText": "#fff8e7",
+    "labels": {
+      "background": "#f4e1ce",
+      "border": "#786853",
+      "fill": "tinted",
+      "style": "sharp",
+      "text": "#272218"
     },
+    "scrollbar": {
+      "thumb": "#786853",
+      "track": "#ded5c4",
+      "width": "auto"
+    },
+    "selection": {
+      "background": "#a23c16",
+      "text": "#ffffff"
+    },
+    "topics": {
+      "background": "#272218",
+      "border": "#272218",
+      "fill": "solid",
+      "style": "sharp",
+      "text": "#fff8e7"
+    }
+  },
+  "effects": {
     "paper": {
-      "opacity": 0.04,
+      "opacity": 0.08,
       "scale": 6,
-      "texture": "grain"
+      "texture": "halftone"
     },
     "rail": {
-      "opacity": 0.2,
+      "opacity": 0.4,
       "shape": "tooth",
       "thickness": 2
+    },
+    "rules": {
+      "opacity": 0.15,
+      "spacing": 20,
+      "style": "margin"
     }
   },
   "flavor": {
@@ -43,6 +184,8 @@
       "empty.issues.caption": "No case files in this view.",
       "empty.pinned.caption": "Room for a first case file.",
       "error.notFound.caption": "No case file at this address.",
+      "footer.signoff": "// desk closed for the day",
+      "profile.achievements.heading": "Commendations",
       "profile.activity.heading": "Case log",
       "profile.organizations.heading": "Bureau outposts",
       "profile.pinned.heading": "Selected case files",
@@ -50,33 +193,70 @@
     }
   },
   "fonts": {
-    "accent": "barlow-condensed"
+    "body": "ibm-plex-sans",
+    "heading": "barlow-condensed"
   },
   "inspiredBy": "Chainsaw Man",
   "name": "Ripcord Bureau",
   "overrides": {
-    "accentMuted": "#e8d4c3",
-    "border": "#b8a997",
-    "controlBorder": "#6b6053",
-    "danger": "#a7292f",
-    "focus": "#6b6053",
-    "hover": "#dcd7cd",
-    "inset": "#e8e1d3",
-    "link": "#943f1b",
-    "mutedText": "#61574c",
-    "primaryBackground": "#84320f",
+    "accentMuted": "#f4e1ce",
+    "border": "#aba08e",
+    "controlBorder": "#786853",
+    "danger": "#962636",
+    "done": "#5e3f7a",
+    "focus": "#a23c16",
+    "hover": "#e0d2b8",
+    "inset": "#ded5c4",
+    "link": "#842d12",
+    "mutedText": "#574a3a",
+    "primaryBackground": "#a23c16",
     "primaryText": "#ffffff",
-    "raised": "#e4e0d5",
-    "selectionBackground": "#84320f",
+    "raised": "#e8dcc5",
+    "selectionBackground": "#a23c16",
     "selectionText": "#ffffff",
-    "success": "#356240",
-    "surface": "#fffcf5",
-    "warning": "#75530a"
+    "success": "#22583b",
+    "surface": "#fff8e7",
+    "warning": "#6e4c0d"
   },
   "schemaVersion": 1,
+  "shape": {
+    "avatar": {
+      "frame": {
+        "color": "#272218",
+        "style": "solid",
+        "width": 4
+      },
+      "shape": "square"
+    },
+    "borders": {
+      "color": "#272218",
+      "style": "solid",
+      "width": 2
+    },
+    "buttons": {
+      "radius": 0,
+      "style": "filled"
+    },
+    "corners": {
+      "radius": 0,
+      "style": "sharp"
+    },
+    "shadows": {
+      "blur": 0,
+      "color": "#272218",
+      "offset": 3,
+      "opacity": 0.8,
+      "style": "hard"
+    }
+  },
   "tags": [
     "anime",
+    "industrial",
     "light"
   ],
-  "version": "1.0.0"
+  "typography": {
+    "headingLetterSpacing": 0.05,
+    "uppercaseHeadings": true
+  },
+  "version": "2.0.0"
 }

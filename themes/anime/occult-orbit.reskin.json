@@ -1,37 +1,144 @@
 {
   "$schema": "https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json",
   "author": "sidebandstudio",
+  "backgrounds": {
+    "header": {
+      "color": "#f578b9",
+      "layers": [
+        {
+          "gradientCss": {
+            "size": "9px 9px",
+            "value": "radial-gradient(color-mix(in srgb,#260d26 12%,transparent) 1.5px,transparent 2px)"
+          }
+        }
+      ]
+    },
+    "page": {
+      "color": "#170d23",
+      "layers": [
+        {
+          "gradientCss": {
+            "size": "100% 100vh",
+            "value": "radial-gradient(ellipse 12% 44%at 97% 42%,transparent 0 94%,color-mix(in srgb,#f578b9 21%,transparent) 94% 99%,transparent 99%)"
+          }
+        },
+        {
+          "gradientCss": {
+            "size": "100% 100vh",
+            "value": "radial-gradient(ellipse 20% 30%at 99% 26%,transparent 0 94.5%,color-mix(in srgb,#d7f86a 14%,transparent) 94.5% 99%,transparent 99%)"
+          }
+        },
+        {
+          "gradientCss": {
+            "size": "auto",
+            "value": "linear-gradient(120deg,#2f113b,#170d23 65%)"
+          }
+        }
+      ]
+    }
+  },
   "base": "dark",
+  "code": {
+    "ansi": {
+      "black": "#d0bdd9",
+      "blue": "#c9c2ff",
+      "brightBlack": "#d5bbdb",
+      "brightBlue": "#e0dcff",
+      "brightCyan": "#c4f6eb",
+      "brightGreen": "#e6fb9f",
+      "brightMagenta": "#ffcdeb",
+      "brightRed": "#ffd5df",
+      "brightWhite": "#ffffff",
+      "brightYellow": "#fff0cf",
+      "cyan": "#97eddb",
+      "green": "#d7f86a",
+      "magenta": "#ffa9dc",
+      "red": "#ffb3c4",
+      "white": "#ead7ed",
+      "yellow": "#ffe0ad"
+    },
+    "background": "#10091a",
+    "diff": {
+      "addedBackground": "#123529",
+      "addedText": "#c9ffe0",
+      "removedBackground": "#401c2b",
+      "removedText": "#ffd5df",
+      "wordAddedBackground": "#255b42",
+      "wordAddedText": "#c9ffe0",
+      "wordRemovedBackground": "#6b3044",
+      "wordRemovedText": "#ffd5df"
+    },
+    "syntax": {
+      "attribute": "#ffe0ad",
+      "comment": "#d0bdd9",
+      "constant": "#ffbec5",
+      "function": "#d7f86a",
+      "keyword": "#ffa9dc",
+      "number": "#ffce9c",
+      "punctuation": "#ead7ed",
+      "string": "#dcf99b",
+      "tag": "#97eddb",
+      "type": "#c9c2ff"
+    },
+    "text": "#fff1fa"
+  },
   "colors": {
-    "accent": "#f68cc6",
-    "background": "#1a1020",
-    "contribution": "#f68cc6",
-    "text": "#fff0fa"
+    "accent": "#f578b9",
+    "background": "#170d23",
+    "contribution": "#ffb7df",
+    "text": "#fff1fa"
   },
   "contributions": {
+    "cellBoundary": "#c49acb",
+    "cellRadius": 1,
+    "cellStyle": "square",
     "levels": [
-      "#33213b",
-      "#9a527c",
-      "#b25687",
-      "#c86696",
-      "#f68cc6"
+      "#3c2047",
+      "#9f3c73",
+      "#bb4f8c",
+      "#e676b1",
+      "#ffb7df"
     ]
   },
-  "description": "Plum-black panels, pink signals and a small orbit give GitHub a paranormal-club atmosphere.",
+  "css": ".AppHeader,.Header,.HeaderMktg,.GlobalNav{box-shadow:0 3px 0 color-mix(in srgb,#7d3d5e 80%,transparent),0 7px 0 color-mix(in srgb,var(--reskin-inset) 80%,transparent)}.UnderlineNav-item[aria-current=\"page\"],.tabnav-tab[aria-current=\"page\"],a[aria-current=\"page\"]{border-bottom-color:var(--reskin-accent);font-weight:700;box-shadow:0 3px 0 color-mix(in srgb,var(--reskin-accent) 80%,transparent)}.btn-primary{border-radius:999px;font-family:var(--reskin-font-heading);box-shadow:3px 3px 0 color-mix(in srgb,var(--reskin-inset) 80%,transparent)}h2.h4.mb-2,h2[data-component=\"Heading\"]{font-family:var(--reskin-font-heading);letter-spacing:.01em;text-transform:uppercase;text-shadow:2px 2px 0 color-mix(in srgb,var(--reskin-accent) 45%,transparent)}a[data-testid=\"repo-name-link\"]{font-weight:700;text-shadow:2px 2px 0 color-mix(in srgb,var(--reskin-accent) 40%,transparent)}[data-reskin-slot=\"profile.tag\"]{width:fit-content;margin:0 0 8px;padding:3px 10px 2px;font-family:var(--reskin-font-body);font-weight:700;font-size:12px;line-height:1.45;letter-spacing:.16em;text-transform:uppercase;color:var(--reskin-primary-background);background-color:var(--reskin-inset);border:2px solid var(--reskin-primary-background);border-radius:999px;box-shadow:3px 3px 0 color-mix(in srgb,var(--reskin-accent) 80%,transparent)}[data-reskin-slot=\"profile.pinned.heading\"],[data-reskin-slot=\"profile.activity.heading\"],[data-reskin-slot=\"profile.organizations.heading\"],[data-reskin-slot=\"profile.achievements.heading\"]{font-family:var(--reskin-font-heading);letter-spacing:.01em;text-transform:uppercase;text-shadow:3px 3px 0 color-mix(in srgb,var(--reskin-accent) 55%,transparent)}[data-reskin-slot=\"profile.achievements.heading\"],[data-reskin-slot=\"profile.organizations.heading\"]{font-size:13px}[data-reskin-slot=\"error.notFound.caption\"]{position:absolute;right:5%;bottom:10%;max-width:360px;padding:10px 26px;font-family:var(--reskin-font-heading);font-size:24px;line-height:1.2;letter-spacing:.01em;text-transform:uppercase;color:var(--reskin-primary-text);background-color:var(--reskin-primary-background);border:3px solid var(--reskin-inset);border-radius:999px;transform:rotate(-5deg);box-shadow:7px 6px 0 color-mix(in srgb,var(--reskin-accent) 80%,transparent)}@media (max-width:1099px){[data-reskin-slot=\"error.notFound.caption\"]{font-size:21px}}@media (max-width:799px){[data-reskin-slot=\"error.notFound.caption\"]{font-size:18px}}@media (max-width:599px){[data-reskin-slot=\"error.notFound.caption\"]{font-size:15px}}",
+  "description": "A loud pink halftone header over plum midnight, acid-lime pill buttons, off-center orbit rings, chunky display headings and a pink contribution graph.",
+  "details": {
+    "headerText": "#260d26",
+    "labels": {
+      "fill": "tinted",
+      "style": "pill"
+    },
+    "scrollbar": {
+      "thumb": "#c49acb",
+      "track": "#10091a",
+      "width": "auto"
+    },
+    "selection": {
+      "background": "#d7f86a",
+      "text": "#24102b"
+    },
+    "topics": {
+      "background": "#411e47",
+      "border": "#c49acb",
+      "fill": "tinted",
+      "style": "pill",
+      "text": "#d7f86a"
+    }
+  },
   "effects": {
     "echo": {
-      "durationMs": 180,
-      "offset": 5,
-      "opacity": 0.16
+      "durationMs": 140,
+      "offset": 3,
+      "opacity": 0.24
     },
     "orbit": {
       "count": 2,
-      "opacity": 0.15,
+      "opacity": 0.25,
       "shape": "ellipse"
     },
     "paper": {
-      "opacity": 0.045,
-      "scale": 8,
+      "opacity": 0.08,
+      "scale": 16,
       "texture": "halftone"
     }
   },
@@ -43,40 +150,77 @@
       "empty.issues.caption": "No sightings in this view.",
       "empty.pinned.caption": "A quiet shelf for future sightings.",
       "error.notFound.caption": "No signal. Try another frequency.",
+      "footer.signoff": "// stay tuned to the weird",
+      "profile.achievements.heading": "Oddities",
       "profile.activity.heading": "Signal log",
-      "profile.organizations.heading": "Club outposts",
+      "profile.organizations.heading": "Outposts",
       "profile.pinned.heading": "Selected sightings",
       "profile.tag": "// signal club"
     }
   },
   "fonts": {
-    "accent": "bungee"
+    "body": "barlow",
+    "heading": "bungee"
   },
   "inspiredBy": "Dandadan",
   "name": "Occult Orbit",
   "overrides": {
-    "accentMuted": "#3d243b",
-    "border": "#5d3e67",
-    "controlBorder": "#c6a7c7",
-    "danger": "#ff9c98",
-    "focus": "#c6a7c7",
-    "hover": "#352b3a",
-    "inset": "#100a15",
-    "link": "#feb0da",
-    "mutedText": "#c6a7c7",
-    "primaryBackground": "#9c286d",
-    "primaryText": "#ffffff",
-    "raised": "#2c2231",
-    "selectionBackground": "#9c286d",
-    "selectionText": "#ffffff",
-    "success": "#bdd96a",
-    "surface": "#2a1a31",
-    "warning": "#f3d16e"
+    "accentEmphasis": "#a63672",
+    "accentMuted": "#411e47",
+    "border": "#765b7f",
+    "controlBorder": "#c49acb",
+    "danger": "#ffb3bb",
+    "focus": "#f578b9",
+    "hover": "#41254f",
+    "inset": "#10091a",
+    "link": "#ffbce2",
+    "mutedText": "#d2b7d9",
+    "primaryBackground": "#d7f86a",
+    "primaryText": "#24102b",
+    "raised": "#341b43",
+    "success": "#a4edc2",
+    "surface": "#281238",
+    "warning": "#ffe0a0"
   },
   "schemaVersion": 1,
+  "shape": {
+    "avatar": {
+      "frame": {
+        "color": "#f578b9",
+        "style": "solid",
+        "width": 3
+      },
+      "shape": "circle"
+    },
+    "borders": {
+      "color": "#c49acb",
+      "style": "solid",
+      "width": 2
+    },
+    "buttons": {
+      "radius": 999,
+      "style": "filled"
+    },
+    "corners": {
+      "radius": 16,
+      "style": "rounded"
+    },
+    "shadows": {
+      "blur": 0,
+      "color": "#0e0718",
+      "offset": 4,
+      "opacity": 0.8,
+      "style": "hard"
+    }
+  },
   "tags": [
     "anime",
-    "dark"
+    "dark",
+    "pink"
   ],
-  "version": "1.0.0"
+  "typography": {
+    "headingLetterSpacing": 0.01,
+    "uppercaseHeadings": false
+  },
+  "version": "2.0.0"
 }

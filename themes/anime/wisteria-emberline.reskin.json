@@ -1,38 +1,151 @@
 {
   "$schema": "https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json",
   "author": "sidebandstudio",
+  "backgrounds": {
+    "header": {
+      "color": "#251b2b",
+      "layers": [
+        {
+          "gradientCss": {
+            "size": "auto",
+            "value": "radial-gradient(ellipse 30% 140%at 100%0,color-mix(in srgb,#8a69ba 28%,transparent),transparent 70%)"
+          }
+        }
+      ]
+    },
+    "page": {
+      "color": "#0d1919",
+      "layers": [
+        {
+          "gradientCss": {
+            "size": "100% 100vh",
+            "value": "radial-gradient(ellipse 32px 54%at 94.4%0,#5a3f98 0 27%,transparent 27% 32%,#50388a 32% 48%,transparent 48% 53%,#46317b 53% 67%,transparent 67% 72%,#3b2a6a 72% 84%,transparent 84%)"
+          }
+        },
+        {
+          "gradientCss": {
+            "size": "100% 100vh",
+            "value": "radial-gradient(ellipse 25px 37%at 97.4%0,#5a3f98 0 27%,transparent 27% 33%,#50388a 33% 50%,transparent 50% 56%,#46317b 56% 70%,transparent 70% 76%,#3b2a6a 76% 87%,transparent 87%)"
+          }
+        },
+        {
+          "gradientCss": {
+            "size": "100% 100vh",
+            "value": "radial-gradient(ellipse 27px 46%at 99.6%0,#5a3f98 0 27%,transparent 27% 33%,#50388a 33% 50%,transparent 50% 56%,#46317b 56% 72%,transparent 72%)"
+          }
+        },
+        {
+          "gradientCss": {
+            "size": "100% 100vh",
+            "value": "radial-gradient(ellipse 130% 38%at 16% 116%,#163a3399 0,transparent 66% 80%,#26564f 80% 80.7%,transparent 80.7% 86%,#22504a 86% 86.7%,transparent 86.7% 92%,#1f4943 92% 92.7%,transparent 92.7%)"
+          }
+        }
+      ]
+    }
+  },
   "base": "dark",
+  "code": {
+    "ansi": {
+      "black": "#b8c7be",
+      "blue": "#c9d3ff",
+      "brightBlack": "#c8c4bc",
+      "brightBlue": "#e0e6ff",
+      "brightCyan": "#c2ecee",
+      "brightGreen": "#ccf2de",
+      "brightMagenta": "#e6d4ff",
+      "brightRed": "#ffd5df",
+      "brightWhite": "#ffffff",
+      "brightYellow": "#ffe4c2",
+      "cyan": "#95d9dc",
+      "green": "#a9e5c6",
+      "magenta": "#d5b6ff",
+      "red": "#f3b3be",
+      "white": "#dbe6db",
+      "yellow": "#e9d0a1"
+    },
+    "background": "#091212",
+    "diff": {
+      "addedBackground": "#123529",
+      "addedText": "#c9ffe0",
+      "removedBackground": "#401c2b",
+      "removedText": "#ffd5df",
+      "wordAddedBackground": "#255b42",
+      "wordAddedText": "#c9ffe0",
+      "wordRemovedBackground": "#6b3044",
+      "wordRemovedText": "#ffd5df"
+    },
+    "syntax": {
+      "attribute": "#e9d0a1",
+      "comment": "#b8c7be",
+      "constant": "#f3b3be",
+      "function": "#ffbc8a",
+      "keyword": "#d5b6ff",
+      "number": "#ffd09d",
+      "punctuation": "#dbe6db",
+      "string": "#a9e5c6",
+      "tag": "#95d9dc",
+      "type": "#c9d3ff"
+    },
+    "text": "#fff1df"
+  },
   "colors": {
-    "accent": "#ff9478",
-    "background": "#191317",
-    "contribution": "#ffd8a2",
-    "text": "#f8eee5"
+    "accent": "#ff9972",
+    "background": "#0d1919",
+    "contribution": "#ffd3a0",
+    "text": "#fff1df"
   },
   "contributions": {
+    "cellBoundary": "#a0b2a9",
+    "cellRadius": 1,
+    "cellStyle": "square",
     "levels": [
-      "#33242b",
-      "#b76c55",
-      "#d68a64",
-      "#f6af7b",
-      "#ffd8a2"
+      "#233a34",
+      "#8e553e",
+      "#bb7050",
+      "#e69b68",
+      "#ffd3a0"
     ]
   },
-  "description": "Warm ink, ember-colored activity and a small botanical mark give GitHub a quiet training-journal atmosphere.",
+  "css": ".AppHeader,.Header,.HeaderMktg,.GlobalNav{box-shadow:0 2px 0 color-mix(in srgb,var(--reskin-accent) 80%,transparent),0 5px 0 color-mix(in srgb,var(--reskin-header-background) 80%,transparent),0 7px 0 color-mix(in srgb,#3f9d8e 80%,transparent)}.UnderlineNav-item[aria-current=\"page\"],.tabnav-tab[aria-current=\"page\"],a[aria-current=\"page\"]{border-bottom-color:var(--reskin-accent);font-family:var(--reskin-font-heading);font-weight:700;letter-spacing:.01em;box-shadow:0 2px 0 color-mix(in srgb,var(--reskin-accent) 80%,transparent)}.btn-primary{border-radius:3px;font-family:var(--reskin-font-heading);font-weight:700;box-shadow:0 2px 0 color-mix(in srgb,var(--reskin-graph-0) 80%,transparent)}h2.h4.mb-2,h2[data-component=\"Heading\"]{font-family:var(--reskin-font-heading);font-weight:700;letter-spacing:.01em}a[data-testid=\"repo-name-link\"]{font-family:var(--reskin-font-heading);font-weight:700;letter-spacing:.01em}[data-reskin-slot=\"profile.tag\"]{width:fit-content;margin:0 0 8px;padding:3px 10px 2px;font-family:var(--reskin-font-body);font-weight:600;font-size:11px;line-height:1.45;letter-spacing:.12em;text-transform:uppercase;color:var(--reskin-link);background-color:var(--reskin-inset);border:1px solid var(--reskin-accent);border-radius:999px}[data-reskin-slot=\"profile.pinned.heading\"],[data-reskin-slot=\"profile.activity.heading\"],[data-reskin-slot=\"profile.organizations.heading\"],[data-reskin-slot=\"profile.achievements.heading\"]{font-family:var(--reskin-font-heading);font-weight:700;font-size:24px;letter-spacing:.01em}[data-reskin-slot=\"error.notFound.caption\"]{position:absolute;right:5%;bottom:10%;max-width:360px;padding:8px 22px;font-family:var(--reskin-font-heading);font-weight:700;font-size:34px;line-height:1.1;letter-spacing:.01em;color:var(--reskin-link);background-color:color-mix(in srgb,var(--reskin-canvas) 90%,transparent);border:3px double var(--reskin-accent);border-radius:3px 12px;transform:rotate(-3deg);box-shadow:0 6px 18px color-mix(in srgb,var(--reskin-inset) 80%,transparent)}@media (max-width:1099px){[data-reskin-slot=\"error.notFound.caption\"]{font-size:32px}}@media (max-width:799px){[data-reskin-slot=\"error.notFound.caption\"]{font-size:26px}}@media (max-width:599px){[data-reskin-slot=\"error.notFound.caption\"]{font-size:20px}}",
+  "description": "Black lacquer and deep jade water, a wisteria header with ember and jade rules, peach controls, serif headings and a warm ember contribution graph.",
+  "details": {
+    "headerText": "#fff1df",
+    "labels": {
+      "fill": "tinted",
+      "style": "rounded"
+    },
+    "scrollbar": {
+      "thumb": "#a0b2a9",
+      "track": "#091212",
+      "width": "auto"
+    },
+    "selection": {
+      "background": "#ff9972",
+      "text": "#27130c"
+    },
+    "topics": {
+      "background": "#30362e",
+      "border": "#a0b2a9",
+      "fill": "tinted",
+      "style": "rounded",
+      "text": "#ffd0ae"
+    }
+  },
   "effects": {
     "drift": {
-      "count": 2,
-      "distance": 10,
-      "durationMs": 800,
-      "opacity": 0.08,
-      "shape": "ember"
+      "count": 4,
+      "distance": 8,
+      "durationMs": 900,
+      "opacity": 0.16,
+      "shape": "petal"
     },
     "rail": {
-      "opacity": 0.18,
+      "opacity": 0.3,
       "shape": "wave",
-      "thickness": 1
+      "thickness": 2
     },
     "seal": {
-      "opacity": 0.3,
+      "opacity": 0.4,
       "shape": "sprig",
       "size": 24
     }
@@ -45,6 +158,8 @@
       "empty.issues.caption": "A quiet page in the journal.",
       "empty.pinned.caption": "This journal has room for a first pick.",
       "error.notFound.caption": "No path here. Return to the trail.",
+      "footer.signoff": "// keep the flame steady",
+      "profile.achievements.heading": "Earned marks",
       "profile.activity.heading": "Practice log",
       "profile.organizations.heading": "Training outposts",
       "profile.pinned.heading": "Treasured journals",
@@ -52,33 +167,68 @@
     }
   },
   "fonts": {
-    "accent": "cormorant-garamond"
+    "body": "source-sans-3",
+    "heading": "cormorant-garamond"
   },
   "inspiredBy": "Demon Slayer",
   "name": "Wisteria Emberline",
   "overrides": {
-    "accentMuted": "#3e2827",
-    "border": "#947883",
-    "controlBorder": "#957a84",
-    "danger": "#ff8ca7",
-    "focus": "#ffd3b5",
-    "hover": "#342d30",
-    "inset": "#110d10",
-    "link": "#ffb49c",
-    "mutedText": "#c6b0b9",
-    "primaryBackground": "#ff9478",
-    "primaryText": "#26120d",
-    "raised": "#2b2527",
-    "selectionBackground": "#ff9478",
-    "selectionText": "#26120d",
-    "success": "#98d7af",
-    "surface": "#2a1f27",
-    "warning": "#f4cb83"
+    "accentEmphasis": "#74559f",
+    "accentMuted": "#30362e",
+    "border": "#5e6d68",
+    "controlBorder": "#a0b2a9",
+    "danger": "#ffb3bb",
+    "focus": "#ff9972",
+    "hover": "#2e423e",
+    "inset": "#091212",
+    "link": "#ffd0ae",
+    "mutedText": "#c8c4bc",
+    "primaryBackground": "#ff9972",
+    "primaryText": "#27130c",
+    "raised": "#243633",
+    "success": "#a4edc2",
+    "surface": "#142825",
+    "warning": "#ffe0a0"
   },
   "schemaVersion": 1,
+  "shape": {
+    "avatar": {
+      "frame": {
+        "color": "#c5a5ff",
+        "style": "double",
+        "width": 4
+      },
+      "shape": "circle"
+    },
+    "borders": {
+      "color": "#5e6d68",
+      "style": "solid",
+      "width": 1
+    },
+    "buttons": {
+      "radius": 3,
+      "style": "filled"
+    },
+    "corners": {
+      "radius": 3,
+      "style": "rounded"
+    },
+    "shadows": {
+      "blur": 18,
+      "color": "#000000",
+      "offset": 6,
+      "opacity": 0.3,
+      "style": "soft"
+    }
+  },
   "tags": [
     "anime",
-    "dark"
+    "dark",
+    "jade"
   ],
-  "version": "1.0.0"
+  "typography": {
+    "headingLetterSpacing": 0.01,
+    "uppercaseHeadings": false
+  },
+  "version": "2.0.0"
 }

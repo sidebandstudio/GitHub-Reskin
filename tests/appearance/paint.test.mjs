@@ -11,6 +11,9 @@ import { rasterHash } from "../../packages/format/index.js";
 import { ownedThemeCss } from "../../packages/appearance/compile.js";
 import { GUARD, THEMED_SWITCH, gradientFills, layerCss, repeatPeriod, structuredCss, structuredPlan } from "../../packages/appearance/paint.js";
 import { MODE_INDEX, compileGitHub } from "../../packages/primer/index.js";
+import { AUTHORED_ROOTS } from "../../packages/primer/selectors.js";
+import { FONT_BY_ID } from "../../packages/appearance/registry.js";
+import { AUTHORED_ROOTS as ADAPTER_AUTHORED_ROOTS } from "../../extension/content/github/selectors.js";
 
 const ROOT = new URL("../../", import.meta.url).pathname;
 const read = (path) => JSON.parse(readFileSync(`${ROOT}${path}`, "utf8"));
@@ -285,9 +288,11 @@ test("a role's inherited type stops at islands, native and protected UI, and cod
   const typed = resolve({ ...choom, typography: { uppercaseHeadings: true, headingLetterSpacing: 0.1 } });
   const css = structuredCss(structuredPlan(typed, FULL), typed, "github");
   const resets = css.split("\n").filter((rule) => rule.startsWith(":where(h1"));
-  assert.equal(resets.length, 2);
+  assert.equal(resets.length, 3);
   assert.match(resets[0], /\) :where\(\[data-color-mode\]:is\(\[data-light-theme\],\[data-dark-theme\]\),\[data-reskin-native\],\[data-reskin-protected\]\):where\(:not\(pre,code,[^{]*\{font-family:var\(--fontStack-sansSerif,[^;]*;letter-spacing:normal;text-transform:none\}$/);
   assert.match(resets[1], /\) :where\(pre,code,kbd,samp,[^{]*\{letter-spacing:normal;text-transform:none\}$/);
+  // A name or title people wrote inside a heading keeps its own case.
+  assert.ok(resets[2].endsWith(`) :where(${AUTHORED_ROOTS.join(",")}){text-transform:none}`));
   // Resets only replace what is inherited: no specificity and no !important.
   for (const rule of resets) assert.doesNotMatch(rule, /!important/);
   // Tracking alone still keeps code's tracking, without a body role.
@@ -323,4 +328,63 @@ test("a gradient whose stops pass but whose middle fails is not drawn under text
   assert.ok(gradientFills("linear-gradient(90deg,#ff0000,#009900)").some((c) => c.hex === "#804d00"));
   // Each endpoint alone reads.
   for (const color of ["#ff0000", "#009900"]) assert.equal(structuredPlan(inked({ color: "#ffffff", layers: [{ kind: "gradientCss", value: `linear-gradient(${color},${color})`, size: "auto" }] }), FULL).page.dropped, null);
+});
+
+// The adapter's authored roots, in the form the structured rules write them.
+const NAMED = AUTHORED_ROOTS.join(",");
+const NOT_NAMED = `:not(:where(${NAMED},:is(${NAMED}) *))`;
+
+test("the heading role's case and capitals-only faces follow the content adapter's authored roots", () => {
+  // One list: the adapter's locator and the heading role read the same roots.
+  assert.equal(ADAPTER_AUTHORED_ROOTS, NAMED);
+  for (const root of [".vcard-names", ".orghead h1", "[itemprop~='name']", "[data-testid='repo-name-wrapper']", ".AppHeader-context-item", ".markdown-title", ".js-issue-title", "[data-testid='issue-title']", "#file-name-id", "#file-name-id-wide", "#sticky-file-name-id", "[data-testid='breadcrumbs']", "#repos-file-tree [role='tree']", ".react-directory-filename-column", ".commit-title", "[data-release-anchor]", ".gist-blob-name", ".markdown-body", "[data-testid='issue-listitem-title-link']", "[data-testid='listitem-title-link']", "[data-target='discussion-spotlight-container.mainLink']", "[data-hovercard-type='user']", "[data-hovercard-type='organization']", "[data-hovercard-type='repository']", "[data-testid='results-list'] h3", "projects-v2 [role='navigation'][aria-label='Project'] h1", "[data-board-column] h2", "[id^='board-card-title-']", "#wiki-wrapper .gh-header-title", "a[href*='/milestone/']", ".Subhead #discussions-list", "summary.branch [data-menu-button]", "[data-target='edit-history.menuTrigger']"]) {
+    assert.ok(AUTHORED_ROOTS.includes(root), root);
+  }
+});
+
+test("uppercase headings reach GitHub's own headings, never a name or title people wrote", () => {
+  const typed = resolve({ ...choom, typography: { uppercaseHeadings: true } });
+  for (const [target, mark] of [["github", "!important"], ["preview", ""]]) {
+    const rules = structuredCss(structuredPlan(typed, FULL), typed, target).split("\n");
+    const upper = rules.filter((rule) => rule.includes("text-transform:uppercase"));
+    assert.equal(upper.length, 1);
+    assert.ok(upper[0].startsWith(`:is(h1,h2,h3,.h1,.h2,.h3):not(.markdown-body *,.comment-body *,.js-comment-body *)${NOT_NAMED}${GUARD}{text-transform:uppercase${mark}}`), target);
+    // Chrome takes the heading role's tracking and face, never its case.
+    assert.ok(!upper[0].includes("UnderlineNav-item"));
+  }
+});
+
+test("a capitals-only heading face stays off names and titles people wrote, which keep the body face", () => {
+  for (const id of ["bungee", "bebas-neue", "cinzel"]) {
+    for (const body of ["system", "ibm-plex-sans"]) {
+      const typed = resolve({ ...choom, fonts: { heading: id, body } });
+      const plan = structuredPlan(typed, FULL);
+      assert.equal(plan.fonts.capsOnly, true, id);
+      const rules = structuredCss(plan, typed, "github").split("\n");
+      const face = `"${FONT_BY_ID[id].cssFamily}"`;
+      const heading = rules.filter((rule) => rule.includes(`{font-family:${face}`));
+      assert.equal(heading.length, 1, id);
+      assert.ok(heading[0].startsWith(`:is(h1,h2,h3,.h1,.h2,.h3):not(.markdown-body *,.comment-body *,.js-comment-body *)${NOT_NAMED}${GUARD},:is(.UnderlineNav-item,.AppHeader-context-item,.HeaderMenu-link,.btn,.Button)${NOT_NAMED}${GUARD}{`), id);
+      // An authored root inside a heading that keeps the face takes the body role, or GitHub's sans.
+      const reset = rules.find((rule) => rule.includes(`) :where(${NAMED}){font-family:${plan.fonts.body ?? "var(--fontStack-sansSerif,"}`));
+      assert.ok(reset && !reset.includes("!important"), `${id} ${body}`);
+    }
+    // Owned decoration keeps the display face.
+    const owned = compileAppearance(resolve({ ...choom, fonts: { heading: id } }), FULL, "github");
+    assert.match(owned, new RegExp(`\\.rs-box--strip\\{[^}]*font:\\d+ \\d+px/1 "${FONT_BY_ID[id].cssFamily}"`), id);
+  }
+});
+
+test("a case-preserving heading face reaches the headings it always did", () => {
+  for (const id of ["fraunces", "barlow-condensed", "orbitron"]) {
+    const typed = resolve({ ...choom, fonts: { heading: id } });
+    const plan = structuredPlan(typed, FULL);
+    assert.equal(plan.fonts.capsOnly, false, id);
+    const css = structuredCss(plan, typed, "github");
+    assert.ok(css.includes(`h1:not(.markdown-body *,.comment-body *,.js-comment-body *)${GUARD},`), id);
+    assert.ok(!css.includes(NOT_NAMED), id);
+  }
+  // Choom's native condensed stack too.
+  assert.equal(structuredPlan(r, FULL).fonts.capsOnly, false);
+  assert.ok(!structuredCss(structuredPlan(r, FULL), r, "github").includes(NOT_NAMED));
 });

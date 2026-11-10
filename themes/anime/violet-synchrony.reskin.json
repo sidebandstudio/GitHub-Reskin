@@ -1,37 +1,150 @@
 {
   "$schema": "https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json",
   "author": "sidebandstudio",
+  "backgrounds": {
+    "header": {
+      "color": "#3c2059",
+      "layers": [
+        {
+          "gradientCss": {
+            "size": "auto",
+            "value": "repeating-linear-gradient(135deg,transparent 0 46px,color-mix(in srgb,#7543ba 30%,transparent) 46px 54px,transparent 54px 80px)"
+          }
+        }
+      ]
+    },
+    "page": {
+      "color": "#140d20",
+      "layers": [
+        {
+          "gradientCss": {
+            "size": "auto",
+            "value": "repeating-linear-gradient(135deg,transparent 0 92px,color-mix(in srgb,#6d3da5 17%,transparent) 92px 110px,transparent 110px 160px)"
+          }
+        },
+        {
+          "gradientCss": {
+            "size": "64px 64px",
+            "value": "linear-gradient(color-mix(in srgb,#a18aad 6%,transparent) 1px,transparent 1px)"
+          }
+        },
+        {
+          "gradientCss": {
+            "size": "64px 64px",
+            "value": "linear-gradient(90deg,color-mix(in srgb,#a18aad 6%,transparent) 1px,transparent 1px)"
+          }
+        },
+        {
+          "gradientCss": {
+            "size": "auto",
+            "value": "linear-gradient(90deg,#241232,#140d20 72%)"
+          }
+        }
+      ]
+    }
+  },
   "base": "dark",
+  "code": {
+    "ansi": {
+      "black": "#c9c0d9",
+      "blue": "#c6d2ff",
+      "brightBlack": "#ccbedd",
+      "brightBlue": "#dde4ff",
+      "brightCyan": "#d3f5e6",
+      "brightGreen": "#c7ff73",
+      "brightMagenta": "#e6d1ff",
+      "brightRed": "#ffd5df",
+      "brightWhite": "#ffffff",
+      "brightYellow": "#fff0c4",
+      "cyan": "#b9e8d3",
+      "green": "#b4f05f",
+      "magenta": "#d6b6ff",
+      "red": "#ffb3c4",
+      "white": "#ddd5e8",
+      "yellow": "#ffe19d"
+    },
+    "background": "#0d0816",
+    "diff": {
+      "addedBackground": "#123529",
+      "addedText": "#c9ffe0",
+      "removedBackground": "#401c2b",
+      "removedText": "#ffd5df",
+      "wordAddedBackground": "#255b42",
+      "wordAddedText": "#c9ffe0",
+      "wordRemovedBackground": "#6b3044",
+      "wordRemovedText": "#ffd5df"
+    },
+    "syntax": {
+      "attribute": "#ffe19d",
+      "comment": "#c9c0d9",
+      "constant": "#ffbdd4",
+      "function": "#b4f05f",
+      "keyword": "#d6b6ff",
+      "number": "#ffc58a",
+      "punctuation": "#ddd5e8",
+      "string": "#c7f28a",
+      "tag": "#b9e8d3",
+      "type": "#c6d2ff"
+    },
+    "text": "#f5f0ff"
+  },
   "colors": {
-    "accent": "#bda0ff",
-    "background": "#15101f",
-    "contribution": "#b4f05f",
-    "text": "#f4eff9"
+    "accent": "#b4f05f",
+    "background": "#140d20",
+    "contribution": "#c7ff73",
+    "text": "#f5f0ff"
   },
   "contributions": {
+    "cellBoundary": "#a18aad",
+    "cellRadius": 1,
+    "cellStyle": "square",
     "levels": [
-      "#2b2335",
-      "#567038",
-      "#5c7f34",
-      "#79a937",
-      "#b4f05f"
+      "#31223e",
+      "#527737",
+      "#72a53e",
+      "#94cf4c",
+      "#c7ff73"
     ]
   },
-  "description": "Aubergine panels, violet emphasis and lime activity turn GitHub into a restrained operations desk.",
+  "css": ".AppHeader,.Header,.HeaderMktg,.GlobalNav{box-shadow:0 4px 0 color-mix(in srgb,var(--reskin-accent) 80%,transparent),0 8px 0 color-mix(in srgb,var(--reskin-inset) 80%,transparent)}.UnderlineNav-item[aria-current=\"page\"],.tabnav-tab[aria-current=\"page\"],a[aria-current=\"page\"]{border-bottom-color:var(--reskin-accent);border-radius:0;font-family:var(--reskin-font-heading);font-weight:700;letter-spacing:.06em;text-transform:uppercase;box-shadow:0 4px 0 color-mix(in srgb,var(--reskin-accent) 80%,transparent)}.btn-primary{border-radius:0;font-family:var(--reskin-font-heading);letter-spacing:.06em;text-transform:uppercase;box-shadow:5px 5px 0 color-mix(in srgb,var(--reskin-inset) 80%,transparent)}h2.h4.mb-2,h2[data-component=\"Heading\"]{font-family:var(--reskin-font-heading);letter-spacing:.06em;text-transform:uppercase}a[data-testid=\"repo-name-link\"]{font-family:var(--reskin-font-heading);font-weight:700;letter-spacing:.03em}[data-reskin-slot=\"profile.tag\"]{width:fit-content;margin:0 0 8px;padding:3px 8px 2px;font-family:var(--reskin-font-heading);font-weight:700;font-size:12px;line-height:1.45;letter-spacing:.2em;text-transform:uppercase;color:var(--reskin-accent);background-color:var(--reskin-inset);border:2px solid var(--reskin-accent);box-shadow:5px 5px 0 color-mix(in srgb,var(--reskin-raised) 80%,transparent)}[data-reskin-slot=\"profile.pinned.heading\"],[data-reskin-slot=\"profile.activity.heading\"],[data-reskin-slot=\"profile.organizations.heading\"],[data-reskin-slot=\"profile.achievements.heading\"]{font-family:var(--reskin-font-heading);font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:0 0 0 10px;box-shadow:inset 4px 0 0 var(--reskin-accent)}[data-reskin-slot=\"error.notFound.caption\"]{position:absolute;right:5%;bottom:10%;max-width:360px;padding:6px 18px;font-family:var(--reskin-font-heading);font-weight:700;font-size:34px;line-height:1.1;letter-spacing:.05em;text-transform:uppercase;color:var(--reskin-accent);background-color:color-mix(in srgb,var(--reskin-canvas) 90%,transparent);border:3px solid var(--reskin-accent);transform:rotate(-4deg);box-shadow:8px 8px 0 color-mix(in srgb,var(--reskin-raised) 80%,transparent)}@media (max-width:1099px){[data-reskin-slot=\"error.notFound.caption\"]{font-size:30px}}@media (max-width:799px){[data-reskin-slot=\"error.notFound.caption\"]{font-size:24px}}@media (max-width:599px){[data-reskin-slot=\"error.notFound.caption\"]{font-size:19px}}",
+  "description": "Violet control-room panels, a lime-striped header, square interlocks, broad diagonal rails, a lime contribution graph and condensed operations headings.",
+  "details": {
+    "headerText": "#faf5ff",
+    "labels": {
+      "fill": "tinted",
+      "style": "sharp"
+    },
+    "scrollbar": {
+      "thumb": "#a18aad",
+      "track": "#0d0816",
+      "width": "auto"
+    },
+    "selection": {
+      "background": "#b4f05f",
+      "text": "#14200d"
+    },
+    "topics": {
+      "background": "#322e33",
+      "border": "#a18aad",
+      "fill": "tinted",
+      "style": "sharp",
+      "text": "#c7f28a"
+    }
+  },
   "effects": {
     "grid": {
-      "opacity": 0.025,
-      "size": 32
+      "opacity": 0.08,
+      "size": 64
     },
     "rail": {
-      "opacity": 0.2,
+      "opacity": 0.4,
       "shape": "slash",
-      "thickness": 2
+      "thickness": 4
     },
-    "seal": {
-      "opacity": 0.28,
-      "shape": "diamond",
-      "size": 20
+    "rules": {
+      "opacity": 0.15,
+      "spacing": 12,
+      "style": "ticks"
     }
   },
   "flavor": {
@@ -42,6 +155,8 @@
       "empty.issues.caption": "No operations in this view.",
       "empty.pinned.caption": "An open sector for future picks.",
       "error.notFound.caption": "No signal from this sector.",
+      "footer.signoff": "// sync complete",
+      "profile.achievements.heading": "Sync records",
       "profile.activity.heading": "Operations log",
       "profile.organizations.heading": "Operations outposts",
       "profile.pinned.heading": "Selected sectors",
@@ -49,33 +164,68 @@
     }
   },
   "fonts": {
-    "accent": "barlow-condensed"
+    "body": "barlow",
+    "heading": "barlow-condensed"
   },
   "inspiredBy": "Neon Genesis Evangelion",
   "name": "Violet Synchrony",
   "overrides": {
-    "accentMuted": "#302743",
-    "border": "#50405f",
-    "controlBorder": "#b6a7c7",
-    "danger": "#ff8d98",
-    "focus": "#b6a7c7",
-    "hover": "#302b39",
-    "inset": "#0e0a16",
-    "link": "#c9aff7",
-    "mutedText": "#b6a7c7",
-    "primaryBackground": "#7045ad",
-    "primaryText": "#ffffff",
-    "raised": "#272230",
-    "selectionBackground": "#7045ad",
-    "selectionText": "#ffffff",
-    "success": "#9cd86d",
-    "surface": "#23192f",
-    "warning": "#ffc777"
+    "accentEmphasis": "#774aab",
+    "accentMuted": "#322e33",
+    "border": "#62526e",
+    "controlBorder": "#a18aad",
+    "danger": "#ffb3bb",
+    "focus": "#b4f05f",
+    "hover": "#3a294a",
+    "inset": "#0d0816",
+    "link": "#d8baff",
+    "mutedText": "#c9badb",
+    "primaryBackground": "#b4f05f",
+    "primaryText": "#14200d",
+    "raised": "#30203f",
+    "success": "#a4edc2",
+    "surface": "#20142d",
+    "warning": "#ffe0a0"
   },
   "schemaVersion": 1,
+  "shape": {
+    "avatar": {
+      "frame": {
+        "color": "#b4f05f",
+        "style": "solid",
+        "width": 3
+      },
+      "shape": "bevel"
+    },
+    "borders": {
+      "color": "#62526e",
+      "style": "solid",
+      "width": 2
+    },
+    "buttons": {
+      "radius": 0,
+      "style": "filled"
+    },
+    "corners": {
+      "radius": 0,
+      "style": "sharp"
+    },
+    "shadows": {
+      "blur": 0,
+      "color": "#0d0816",
+      "offset": 5,
+      "opacity": 0.8,
+      "style": "hard"
+    }
+  },
   "tags": [
     "anime",
-    "dark"
+    "dark",
+    "violet"
   ],
-  "version": "1.0.0"
+  "typography": {
+    "headingLetterSpacing": 0.06,
+    "uppercaseHeadings": false
+  },
+  "version": "2.0.0"
 }
