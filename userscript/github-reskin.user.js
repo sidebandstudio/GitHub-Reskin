@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GitHub Reskin
 // @namespace    https://github.com/sidebandstudio/GitHub-Reskin
-// @version      1.1.0
+// @version      1.1.1
 // @description  Anime-inspired and classic themes for GitHub, including the contribution graph. Changes only your own browser view.
 // @license      MIT
 // @homepageURL  https://github.com/sidebandstudio/GitHub-Reskin

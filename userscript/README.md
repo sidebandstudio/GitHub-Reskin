@@ -4,9 +4,10 @@
 extension get the same runtime, picker and theme builder. There is no second engine here: only the manager host,
 the frame shell and the build.
 
-`github-reskin.user.js` in this folder is a frozen copy, not regenerated. The first userscript checks
-that path on `main` for updates, and this copy's `@updateURL` moves those installs to the Pages
-download. Don't rebuild it.
+`github-reskin.user.js` in this folder is a frozen copy, not regenerated. Versions 1.0.0 and 1.1.0
+first shipped from that path on `main` and check it for updates. This copy is 1.1.1, above both, and
+its `@updateURL` moves those installs to the Pages download, which they take from the next release
+above 1.1.1. Don't rebuild it.
 
 | File | Contents |
 | --- | --- |

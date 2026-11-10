@@ -20,7 +20,7 @@ import { CSS_NOTE, IMPORT_CSS_NOTE } from "./copy.js";
 export const ROOT = fileURLToPath(new URL("..", import.meta.url));
 // Where the build writes the script. Pages serves it at updateUrl().
 export const OUTPUT = "dist/userscript/github-reskin.user.js";
-// A frozen copy, not regenerated. The first userscript checks this path on main for updates, and
+// A frozen copy, not regenerated. The first userscripts check this path on main for updates, and
 // this copy's @updateURL moves those installs to the Pages download.
 export const BRIDGE = "userscript/github-reskin.user.js";
 export const ENTRY = "userscript/main.mjs";

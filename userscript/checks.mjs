@@ -2,8 +2,8 @@
 // which resolves to {exitCode, testCount}:
 //   userscript  check:userscript: builds the script twice (same bytes), checks the generated
 //               artifact (metadata, no remote code or icon, no network or page-storage API, every
-//               font and notice embedded, the 3.5 MiB budget), that the committed copy 1.1.0
-//               installs update from is fresh, then runs the userscript unit tests.
+//               font and notice embedded, the 3.5 MiB budget), that the frozen bridge copy still
+//               sends its installs to the Pages download, then runs the userscript unit tests.
 //   test:e2e    the userscript surface: userscript-chromium and userscript-firefox.
 //   a11y        the same projects' @a11y tests.
 // Direct use: node userscript/checks.mjs userscript
