@@ -7,22 +7,38 @@
 //   - the panel: the popup's card in a frame inside a closed shadow root, which page scripts
 //     cannot reach (panel.js), from the manager's menu or an address ending in #reskin. Only when
 //     the script is shown to run isolated from GitHub's JavaScript (isolation.js). Otherwise the
-//     panel only shows the theme and why, and settings change from the manager's menu (menu.js).
+//     script never reads or writes the manager's storage, since page code that patches a built-in
+//     like Array.prototype.map could capture the callbacks that hold it. The panel only shows the
+//     theme and why, and the manager's menu (menu.js) changes settings until the page reloads.
+//   - the builder: from the card, the settings page's Make a theme and Backup & help (C6's
+//     mountBuilder and mountBackup) in a wider frame over the same host and C5's offline preview,
+//     again only when isolated.
 //   - a theme's own advanced CSS: a bundled theme's reviewed CSS applies, a saved theme's never
-//     does here, whatever approval its settings record, and nothing here offers approval.
+//     does here, whatever approval its settings record, and nothing here offers approval. The
+//     sanitizer is installed, so a theme that carries CSS imports and saves with it, and its CSS
+//     shows as present and off; the builder's host refuses every approval request.
 // No network at runtime: fonts and the icon are embedded, there is no @require, no update timer
 // and no request of any kind. The fonts are handed to the page as bytes (fonts.js), which
 // GitHub's CSP allows where it refuses font URLs. No page storage either; a manager without
 // durable storage gets an honestly labeled session preview with file export.
 /* global GM, GM_info, GM_getValue, GM_setValue, GM_deleteValue, GM_addValueChangeListener, GM_removeValueChangeListener, GM_registerMenuCommand, GM_unregisterMenuCommand, exportFunction */
+import ASSETS from "reskin:assets";
 import BOOT_CSS from "reskin:boot";
+import BUILDER from "reskin:builder";
 import CARD from "reskin:card";
 import CARDS from "reskin:cards";
 import CATALOG from "reskin:catalog";
 import FONTS from "reskin:fonts";
-import { noResources } from "../packages/appearance/index.js";
+import { embeddedResources, noResources } from "../packages/appearance/index.js";
+import { convertRaster } from "../packages/appearance/raster.js";
+// Installs C2b's CSS sanitizer, so saved and imported themes that carry Advanced CSS validate.
+import "../packages/format/authoring.js";
 import { exportTheme } from "../packages/format/index.js";
+import { configurePreview, mountPreview } from "../packages/preview/index.js";
+import * as primer from "../packages/primer/index.js";
 import { createRepository, selectedSource } from "../packages/settings/index.js";
+import { mountBackup } from "../packages/ui/backup.js";
+import { mountBuilder } from "../packages/ui/builder.js";
 import { catalogFromData } from "../packages/ui/catalog.js";
 import { mountPicker } from "../packages/ui/picker.js";
 import { backgroundRendering, createRenderer, standardCard } from "../packages/ui/renderer.js";
@@ -31,24 +47,16 @@ import { TIME_LIMIT_MS } from "../extension/content/github/slots.js";
 import { startContent } from "../extension/content/lifecycle/index.js";
 import { createFontLoader } from "./fonts.js";
 import { createGmHost } from "./host.js";
-import { detectIsolation } from "./isolation.js";
+import { detectIsolation, ownFields } from "./isolation.js";
 import { createMenu } from "./menu.js";
-import { createPanel, PANEL_HASH } from "./panel.js";
+import { BUILDER_MODES, createPanel, PANEL_HASH } from "./panel.js";
+import { xrayRasterEnv } from "./raster.js";
+import { COPY } from "./copy.js";
 import { createGmStorage } from "./storage.js";
 
 // The marker that keeps a second copy of this script (two managers, or a reinjection) from
 // running beside the first.
 const RUNNING = "data-reskin-userscript";
-const NO_CSS = "Advanced CSS in your own themes stays off in the userscript.";
-export const COPY = Object.freeze({
-  durable: `Saved by your userscript manager. Export a theme file to keep a copy or move it to the extension. ${NO_CSS}`,
-  session: `This userscript manager can't save themes here. You can preview and export a file. ${NO_CSS}`,
-  menuOnly: `Your userscript manager runs this script inside GitHub's page, where GitHub's code could reach this panel, so change settings from the manager's menu. ${NO_CSS}`,
-  noControls: `Your userscript manager runs this script inside GitHub's page and has no menu, so settings can't be changed here. Use the extension or a manager that keeps scripts apart from the page. ${NO_CSS}`,
-  sessionLabel: "Session preview",
-  exported: "Theme file saved to your downloads.",
-  exportFailed: "The theme file could not be saved. Try again.",
-});
 
 const scope = {
   GM: typeof GM === "object" ? GM : undefined,
@@ -64,7 +72,14 @@ const scope = {
   exportFunction: typeof exportFunction === "function" ? exportFunction : undefined,
 };
 
-whenRoot(document, () => start(scope, { document, view: window }));
+// The global object of this script's own realm, for isolation.js: a sloppy-mode function called
+// bare gets it as `this`, with no lookup a page script could answer. The bundle is a classic
+// script without "use strict"; where a manager makes it strict this is undefined and shows nothing.
+const realm = (function () {
+  return this;
+})();
+
+whenRoot(document, () => start(scope, { document, view: window, realm }));
 
 // Some managers run a document-start script before the parser has made <html>. The boot gate and
 // the lifecycle start as soon as it exists.
@@ -80,14 +95,21 @@ function whenRoot(document, run) {
 
 /**
  * @param {object} scope the manager's grants
- * @param {{document:Document, view:Window}} page
+ * @param {{document:Document, view:Window, realm?:object}} page
  */
-export function start(scope, { document, view }) {
+export function start(scope, { document, view, realm = null }) {
   const root = document.documentElement;
   if (!root || root.hasAttribute(RUNNING)) return null;
   root.setAttribute(RUNNING, "");
-  // Before any of GitHub's scripts run.
-  const isolation = detectIsolation({ view, info: scope.GM_info ?? scope.GM?.info ?? null, gm: scope.GM ?? null });
+  // Before any of GitHub's scripts run. The report is the one that comes with the storage the
+  // script would use: GM.info on the GM object for GM.*, otherwise GM_info. A page global could
+  // stand in only for a name the manager doesn't bind, and a manager binds the report it grants
+  // storage with. Fields are read from ownFields copies: a page getter on Object.prototype never
+  // sees the manager's objects or fills in a field they lack.
+  const gm = ownFields(scope.GM);
+  const sync = typeof scope.GM_getValue === "function" && typeof scope.GM_setValue === "function";
+  const report = !sync && typeof gm?.getValue === "function" ? ownFields(gm.info) : (ownFields(scope.GM_info) ?? ownFields(gm?.info));
+  const isolation = detectIsolation({ realm, report, gm });
 
   // The extension's boot.css, as a style node: GitHub stays hidden for at most 120 ms while
   // storage answers, and forced colors bypass it.
@@ -99,7 +121,8 @@ export function start(scope, { document, view }) {
   const catalog = catalogFromData(CATALOG);
   // Firefox content scripts (isolation.js's Xray) hand the lock manager page-compartment callbacks.
   const bridge = isolation.method === "xray" && typeof scope.exportFunction === "function" ? { exportFunction: (fn) => scope.exportFunction(fn, view), Promise: view.Promise } : null;
-  const { storage, kind, capabilities } = createGmStorage(scope, { document, locks: view.navigator?.locks ?? null, bridge });
+  // Not isolated: session storage only, with no GM grant in reach of the page's built-ins.
+  const { storage, kind, capabilities } = createGmStorage(isolation.isolated ? scope : {}, { document, locks: view.navigator?.locks ?? null, bridge });
   const rendering = backgroundRendering();
   const repository = createRepository(storage, { catalog, ...rendering, newId: () => view.crypto.randomUUID() });
   // The renderer writes no @font-face (GitHub's CSP would refuse its data: URL); the loader adds
@@ -130,14 +153,23 @@ export function start(scope, { document, view }) {
   const host = createGmHost({ storage, repository, capabilities, view, openPage: () => panel?.open() });
   // Tampermonkey, Violentmonkey and Greasemonkey list commands in their menu. Managers without a
   // menu (Userscripts for Safari) open the panel from an address ending in #reskin.
-  const register = scope.GM_registerMenuCommand ?? (typeof scope.GM?.registerMenuCommand === "function" ? scope.GM.registerMenuCommand.bind(scope.GM) : null);
+  // A closure rather than bind(): page code that patched Function.prototype.bind would be handed
+  // the whole GM object, storage included. The method is the GM object's own (gm is its ownFields
+  // copy), so calling it reads no inherited getter.
+  const register = scope.GM_registerMenuCommand ?? (typeof gm?.registerMenuCommand === "function" ? (name, onClick) => scope.GM.registerMenuCommand(name, onClick) : null);
   const unregister = scope.GM_unregisterMenuCommand ?? null;
   const note = isolation.isolated ? null : register ? COPY.menuOnly : COPY.noControls;
+  // Not isolated, every mode is the note on the card: no builder document is ever loaded.
+  const builder = !note && BUILDER_MODES;
   panel = createPanel({
     document,
     view,
-    srcdoc: CARD.srcdoc,
-    mount: (doc, mode, controls) => (note ? mountNote(doc, { host, kind, controls, note }) : mountCard(doc, mode, { host, catalog, kind, controls })),
+    srcdoc: (mode) => (builder && builder.includes(mode) ? BUILDER.srcdoc : CARD.srcdoc),
+    mount(doc, mode, controls) {
+      if (note) return mountNote(doc, { host, kind, controls, note });
+      if (builder.includes(mode)) return mountBuilderView(doc, mode, { host, catalog, kind, controls, xray: isolation.method === "xray" });
+      return mountCard(doc, { host, catalog, kind, controls });
+    },
   });
 
   let menu = null;
@@ -148,7 +180,7 @@ export function start(scope, { document, view }) {
       // The hash still opens it.
     }
   } else if (register) {
-    // Not isolated: every durable change is a command in the manager's own menu.
+    // Not isolated: the manager's own menu changes this page's session settings.
     const customCard = (theme) => {
       try {
         return { ...standardCard({ id: theme.id, group: "mine", document: theme.document }), group: "mine" };
@@ -190,7 +222,7 @@ export function start(scope, { document, view }) {
 // The card when the script shares GitHub's JavaScript: the current theme and why the panel has no
 // controls, and Close. Nothing in it changes a setting; the theme it names is painted on the page
 // anyway.
-const CONTROLS = [".rs-top-switch", "[data-rs=undo]", "[data-rs=error]", "[data-rs=notices]", ".rs-browse", "[data-rs=gallery]", "[data-rs=empty]", ".rs-prefs", ".us-storage-row"];
+const CONTROLS = [".rs-top-switch", "[data-rs=undo]", "[data-rs=error]", "[data-rs=notices]", ".rs-browse", "[data-rs=gallery]", "[data-rs=empty]", ".rs-prefs", ".us-storage-row", ".us-pages"];
 function mountNote(doc, { host, kind, controls, note }) {
   const part = (name) => doc.querySelector(`[data-us="${name}"]`);
   for (const node of doc.querySelectorAll(CONTROLS.join(","))) node.remove();
@@ -233,8 +265,8 @@ function mountNote(doc, { host, kind, controls, note }) {
 }
 
 // The card in the frame: the shared picker on the popup's controls, the storage note and Export,
-// and the Close button.
-function mountCard(doc, mode, { host, catalog, kind, controls }) {
+// Make a theme and Backup & help, and the Close button.
+function mountCard(doc, { host, catalog, kind, controls }) {
   const cleanups = [];
   const listen = (target, type, handler) => {
     if (!target) return;
@@ -262,21 +294,121 @@ function mountCard(doc, mode, { host, catalog, kind, controls }) {
   listen(part("export"), "click", async () => {
     const read = await host.read();
     const source = read.settings ? selectedSource(read.settings, catalog) : null;
-    const result = source ? await host.downloadFile(exportTheme(source)) : { ok: false };
+    const result = source ? await host.downloadFile(exportTheme(source), doc) : { ok: false };
     status.textContent = result.ok ? COPY.exported : COPY.exportFailed;
   });
   listen(part("close"), "click", () => controls.close());
-  // TODO(C8, PR #18): the builder and import. When packages/ui's builder lands on main, mount it
-  // here for mode "builder" or "import" through the same host (mountBuilder(doc, host)); the
-  // popup's Customize/Import buttons then call host.openPage("settings", {view}). Until then
-  // every mode shows the picker.
-  void mode;
+  listen(part("make"), "click", () => controls.show("make"));
+  listen(part("backup"), "click", () => controls.show("backup"));
 
   return {
     initialFocus: () => doc.querySelector('[data-rs="enabled"]'),
     destroy() {
       for (const cleanup of cleanups.splice(0)) cleanup();
       picker.destroy();
+    },
+  };
+}
+
+// The preview runs the same Primer compiler as github.com, once per page. Its frames inherit
+// GitHub's CSP, which refuses data: fonts, so the preview shows the system fallback while GitHub
+// itself gets the faces from their bytes. Its images are the fixture's, embedded by the build.
+let previewReady = false;
+function preparePreview() {
+  if (previewReady) return;
+  configurePreview({ primer, modeIndex: primer.MODE_INDEX, resources: embeddedResources({ fonts: {}, assets: ASSETS }), dormantSlots: github.dormantSlots() });
+  previewReady = true;
+}
+
+// The builder's host: the card's, except that no Advanced CSS approval is ever asked for or
+// carried here. The builder shows no Enable advanced CSS in this frame, and the repository grants
+// tickets only to the extension's own builder document; this keeps the rule here as well.
+const NO_APPROVAL = Object.freeze({ ok: false, code: "invalid", issues: [{ code: "invalid", path: "/css", message: "Advanced CSS can't be turned on in the userscript.", severity: "error" }] });
+function builderHost(host) {
+  return {
+    ...host,
+    commit(action, revision) {
+      if (action?.type === "approveCss") return Promise.resolve(NO_APPROVAL);
+      if (action?.type === "saveCustom" && typeof action.approval === "string") {
+        const { approval, ...rest } = action;
+        void approval;
+        return host.commit(rest, revision);
+      }
+      return host.commit(action, revision);
+    },
+  };
+}
+
+// Make a theme and Backup & help in the wider frame: C6's builder and backup views on the
+// settings page's markup (build.mjs), a view a link away as on that page, Themes back to the
+// card, the storage note and Close.
+function mountBuilderView(doc, mode, { host, catalog, kind, controls, xray }) {
+  const cleanups = [];
+  const listen = (target, type, handler) => {
+    if (!target) return;
+    target.addEventListener(type, handler);
+    cleanups.push(() => target.removeEventListener(type, handler));
+  };
+  const part = (name) => doc.querySelector(`[data-us="${name}"]`);
+  const win = doc.defaultView;
+  const durable = kind !== "session";
+  doc.documentElement.dataset.usStorage = kind;
+  part("storage-note").textContent = durable ? COPY.durable : COPY.builderSession;
+  const label = part("session-label");
+  label.hidden = durable;
+  label.textContent = COPY.sessionLabel;
+
+  // The views, as settings.mjs shows them: the frame's own #fragment names one.
+  const sections = [...doc.querySelectorAll("[data-rs-section]")];
+  const links = [...doc.querySelectorAll("[data-rs-view]")];
+  const show = () => {
+    const wanted = win.location.hash.slice(1);
+    const current = sections.some((section) => section.id === wanted) ? wanted : mode;
+    for (const section of sections) section.hidden = section.id !== current;
+    for (const link of links) {
+      if (link.dataset.rsView === current) link.setAttribute("aria-current", "page");
+      else link.removeAttribute("aria-current");
+    }
+  };
+  listen(win, "hashchange", show);
+  // A fragment link in a srcdoc frame resolves against GitHub's address, which would navigate the
+  // frame away; it changes the frame's own fragment instead, as backup.js does.
+  listen(doc, "click", (event) => {
+    const link = event.target.closest?.('a[href^="#"]');
+    if (!link) return;
+    event.preventDefault();
+    win.location.hash = link.getAttribute("href");
+  });
+  show();
+
+  preparePreview();
+  const fonts = createFontLoader({ document: doc, view: win, fonts: FONTS });
+  const own = builderHost(host);
+  const download = (file) => void host.downloadFile(file, doc);
+  const builder = mountBuilder(doc, {
+    host: own,
+    catalog,
+    standardSeed: (base) => primer.standardSeed(primer.MODE_INDEX, base),
+    mountPreview,
+    // The samples' faces come from their bytes, as the theme's do on GitHub.
+    fontFace: (id) => {
+      fonts.load(id);
+      return "";
+    },
+    download,
+    // Behind Firefox's Xrays images convert through userscript/raster.js; elsewhere the builder's own.
+    convertImage: xray ? (bytes, options) => convertRaster(bytes, options, xrayRasterEnv(win)) : null,
+  });
+  const backup = mountBackup(doc, { host: own, catalog, download, builder });
+  listen(part("themes"), "click", () => controls.show("picker"));
+  listen(part("close"), "click", () => controls.close());
+
+  return {
+    initialFocus: () => doc.querySelector(mode === "backup" ? '[data-rk="saved-title"]' : '[data-rb="name"]'),
+    destroy() {
+      for (const cleanup of cleanups.splice(0)) cleanup();
+      backup?.destroy();
+      builder?.destroy();
     },
   };
 }

@@ -79,6 +79,15 @@ function base64(bytes) {
   for (let i = 0; i < bytes.length; i += 0x8000) text += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
   return btoa(text);
 }
+// A file's bytes as a Uint8Array of this script's own realm. In a Firefox content script (the
+// userscript) a file from the page's input is read through an Xray, and a view made on its
+// ArrayBuffer belongs to the page, which no check here accepts as bytes; a copy does.
+async function fileBytes(file) {
+  const view = new Uint8Array(await file.arrayBuffer());
+  const bytes = new Uint8Array(view.length);
+  bytes.set(view);
+  return bytes;
+}
 // Saved documents come back from storage in canonical key order; compare themes the same way.
 const same = (a, b) => (a && b ? canonicalize(a) === canonicalize(b) : a === b);
 const el = (doc, tag, props = {}, children = []) => {
@@ -137,6 +146,8 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
   let bgTarget = "page";
   let layerKey = "";
   let destroyed = false;
+  // While Reset all runs: no autosave, not even the one destroy() flushes, may write the draft back.
+  let holding = false;
   // This editor's identity for CSS approval. It lives only in this page's memory: no draft record,
   // other window or later page has it, so none of them can redeem this editor's approval.
   const editor = (win?.crypto ?? globalThis.crypto).randomUUID().replace(/-/g, "");
@@ -279,16 +290,16 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
   }
 
   function scheduleAutosave() {
-    if (!win || pendingRecord) return;
+    if (!win || pendingRecord || holding) return;
     win.clearTimeout(autosave);
     autosave = win.setTimeout(saveDraftNow, AUTOSAVE_MS);
   }
   async function saveDraftNow() {
     autosave = 0;
-    if (destroyed || !draft || pendingRecord) return;
+    if (destroyed || holding || !draft || pendingRecord) return;
     if (!dirty()) return void host.discardDraft().catch(() => {});
     const reply = await host.saveDraft(draftRecord(draft)).catch((error) => ({ ok: false, issues: [{ message: String(error?.message ?? error) }] }));
-    if (!reply?.ok) fail(reply?.issues?.[0]?.message && /1\.25 MiB/.test(reply.issues[0].message) ? reply.issues[0].message : COPY.draftFailed, { offerDownload: true });
+    if (!reply?.ok && !destroyed) fail(reply?.issues?.[0]?.message && /1\.25 MiB/.test(reply.issues[0].message) ? reply.issues[0].message : COPY.draftFailed, { offerDownload: true });
   }
 
   // ----- preview -----
@@ -581,7 +592,7 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
     if (file.size > UPLOAD_SOURCE_BYTES) return imageError(COPY.imageTooLarge(file.size));
     const target = bgTarget;
     if (layerCount(draft.document, target) >= LIMITS.maxBackgroundLayers) return imageError(`A background holds up to ${LIMITS.maxBackgroundLayers} layers. Remove one first.`);
-    const bytes = new Uint8Array(await file.arrayBuffer());
+    const bytes = await fileBytes(file);
     const source = rasterSourceInfo(bytes);
     if (!source.ok) return imageError(source.message);
     if (!source.animated && !source.metadata) {
@@ -837,7 +848,7 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
         if (!file) return importError({ ok: false, message: "Choose a theme file first.", details: [], actions: [] });
         if (!acceptsFileName(file.name)) return importError({ ok: false, message: COPY.fileType, details: [], actions: [] });
         if (file.size > LIMITS.fileUtf8Bytes) return importError({ ok: false, message: COPY.fileTooLarge, details: [], actions: [] });
-        value = new Uint8Array(await file.arrayBuffer());
+        value = await fileBytes(file);
       }
     }
     if (typeof value === "string" && !value.trim()) return importError({ ok: false, message: kind === "code" ? "Paste a share code first." : "Paste the chatbot's answer first.", details: [], actions: [] });
@@ -1488,6 +1499,21 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
     // For Backup & help: the stored draft not yet resumed, or this page's unsaved changes.
     draftStatus: () => ({ pending: draftFromRecord(pendingRecord)?.document ?? null, dirty: Boolean(draft && dirty()), name: draft?.document.name ?? "" }),
     resumeDraft,
+    // Reset all is starting. An edit still inside the autosave delay is saved now, ahead of the
+    // reset's own write, so a reset that fails keeps it; then no draft write until restart(), or
+    // the returned resume if the reset fails. A builder closed while the reset ran writes nothing
+    // afterwards: a newer one may have saved its own draft by then.
+    holdDrafts() {
+      if (autosave) {
+        win.clearTimeout(autosave);
+        void saveDraftNow();
+      }
+      holding = true;
+      return () => {
+        holding = false;
+        if (!destroyed && draft && dirty()) scheduleAutosave();
+      };
+    },
     // After Reset all: a new start from the theme now selected, with no draft kept.
     async restart() {
       const current = await host.read();
@@ -1501,6 +1527,7 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
       draft = startFrom(remixFrom);
       source = sourceFor(draft);
       lastPreviewed = null;
+      holding = false;
       render();
     },
     downloadDraft: () => {
@@ -1516,6 +1543,11 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
       host.discardDraft().catch(() => {});
     },
     destroy() {
+      // An edit still inside the autosave delay is saved now, so closing right after it keeps it.
+      if (autosave) {
+        win.clearTimeout(autosave);
+        void saveDraftNow();
+      }
       dropApproval();
       destroyed = true;
       win?.clearTimeout(autosave);

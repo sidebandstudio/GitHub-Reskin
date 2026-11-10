@@ -75,7 +75,16 @@ export function createGmHost({ storage, repository, capabilities, view, openPage
       });
     },
     loadDraft: () => repository.loadDraft(),
-    saveDraft: (draft) => repository.saveDraft(draft),
+    // The UiHost's answer, as the extension's background gives it: {ok:true}, or the repository's
+    // issues (a draft over its size limit) or the storage failure.
+    async saveDraft(draft) {
+      try {
+        await repository.saveDraft(draft);
+        return { ok: true };
+      } catch (error) {
+        return { ok: false, issues: error?.issues ?? storageFailure(error).issues };
+      }
+    },
     discardDraft: () => repository.discardDraft(),
     async openPage(page, query) {
       openPage(page, query);
@@ -89,11 +98,12 @@ export function createGmHost({ storage, repository, capabilities, view, openPage
         return { ok: false };
       }
     },
-    // A local file download: a blob link clicked in the page. Nothing leaves the browser.
-    async downloadFile({ filename, mime, bytes }) {
+    // A local file download: a blob link clicked in `doc`, the panel's frame, so the file never
+    // passes through GitHub's own document (the page's by default). Nothing leaves the browser.
+    async downloadFile({ filename, mime, bytes }, doc = view.document) {
       try {
-        const doc = view.document;
-        const url = view.URL.createObjectURL(new view.Blob([bytes], { type: mime }));
+        const win = doc.defaultView ?? view;
+        const url = win.URL.createObjectURL(new win.Blob([bytes], { type: mime }));
         const link = doc.createElement("a");
         link.href = url;
         link.download = filename;
@@ -101,7 +111,7 @@ export function createGmHost({ storage, repository, capabilities, view, openPage
         doc.documentElement.append(link);
         link.click();
         link.remove();
-        view.setTimeout(() => view.URL.revokeObjectURL(url), 0);
+        win.setTimeout(() => win.URL.revokeObjectURL(url), 0);
         return { ok: true };
       } catch {
         return { ok: false };

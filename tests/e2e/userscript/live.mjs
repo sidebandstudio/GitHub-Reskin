@@ -97,7 +97,7 @@ const { values } = parseArgs({ options: { out: { type: "string" }, script: { typ
 if (!values.out) throw new Error("--out <dir> is required");
 const out = resolve(values.out);
 await mkdir(out, { recursive: true });
-const script = await readFile(values.script ? resolve(values.script) : join(ROOT, "userscript/github-reskin.user.js"), "utf8");
+const script = await readFile(values.script ? resolve(values.script) : join(ROOT, "dist/userscript/github-reskin.user.js"), "utf8");
 const result = {};
 for (const [name, launcher] of [["chromium", chromium], ["firefox", firefox]]) result[name] = await captureBrowser(name, launcher, script, out);
 await writeFile(join(out, "capture.json"), `${JSON.stringify({ script: { bytes: Buffer.byteLength(script) }, ...result }, null, 2)}\n`);
