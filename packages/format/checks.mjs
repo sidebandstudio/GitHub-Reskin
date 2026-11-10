@@ -28,6 +28,7 @@ import {
   THEME_SYNTAX_ROLES,
 } from "../contracts/index.js";
 import { ANIME_CATALOG, CLASSICS_CATALOG, catalogProblems, exportTheme, makeAiPrompt, parseImport, sanitizeCss, validateTheme } from "./index.js";
+import { POLICY } from "./css/policy.js";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const DEFAULT_ROOT = resolve(HERE, "../..");
@@ -147,7 +148,12 @@ async function checkPrompt(root) {
   for (const role of ["heading", "body"]) {
     for (const id of offeredFonts(role)) check(!parseImport(JSON.stringify({ schemaVersion: 1, name: "Font", base: "dark", colors: { background: "#111111", text: "#ffffff", accent: "#ffcc00" }, fonts: { [role]: id } }), "text").notes?.some((n) => n.severity === "warning"), `the offered ${role} font ${id} is not rendered as requested`);
   }
-  check(!/supports/i.test(prompt), "prompt mentions @supports, which this increment rejects");
+  // The at-rules offered are exactly the policy's, and each offered @supports form is admitted.
+  const offered = [...new Set([...prompt.split("Never use")[1].matchAll(/@([a-z-]+),/g)].map((m) => m[1]).filter((name) => !["import", "font-face", "namespace"].includes(name)))];
+  check(JSON.stringify(offered) === JSON.stringify(POLICY.atRules), `prompt offers the at-rules ${offered.join(", ")}, not ${POLICY.atRules.join(", ")}`);
+  for (const condition of ["(corner-shape: bevel)", "not (corner-shape: bevel)", "(corner-shape: bevel) and (border-radius: 6px 0)", "(corner-shape: bevel) or (corner-shape: notch)"]) {
+    check(sanitizeCss(`@supports ${condition}{[data-reskin-slot="profile.tag"]{border-radius:6px 0}}`).ok, `the prompt's @supports form ${condition} is not admitted`);
+  }
   check(!/data:image|base64/.test(prompt.split("Here is a valid rich example")[1] ?? ""), "the prompt's example carries image data");
   const example = /Here is a valid rich example with no images:\n(\{.+\})\n\nMy idea/s.exec(prompt)?.[1];
   const fixture = readFileSync(EXAMPLE_PATH, "utf8");

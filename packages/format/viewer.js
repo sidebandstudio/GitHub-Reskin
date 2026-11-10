@@ -24,7 +24,7 @@ export {
   SCHEMA_SHA256,
   TEXT_LIMITS,
 } from "./schema-registry.js";
-export { rasterInfo, rasterLayers } from "./raster.js";
+export { dataUrlBytes, rasterHash, rasterInfo, rasterLayers, rasterSourceInfo, rasterTotals, releaseRasters, UPLOAD_SOURCE_BYTES } from "./raster.js";
 export { CAPABILITIES, capabilityNotes, editorActionIssues } from "./capabilities.js";
 export { admitCss, admitGradientCss, cssSanitizerInstalled, registerCssProofs } from "./css/admission.js";
 export { compileCss, registryProblems } from "./css/compile.js";

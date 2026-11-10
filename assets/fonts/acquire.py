@@ -1,7 +1,7 @@
-"""One-time acquisition of the eight bundled accent fonts. Builds never run this.
+"""One-time acquisition of the eighteen bundled font families. Builds never run this.
 
 Downloads each family from the google/fonts repository at a pinned commit, pins variable fonts to
-the registered weight, subsets them to the schema's Latin range, writes WOFF2 and OFL.txt to
+each reviewed weight, subsets them to the schema's Latin range, writes WOFF2 and OFL.txt to
 assets/fonts/<id>/ and records every source and output hash in assets/fonts/provenance.json.
 
 Run from the repository root with fontTools and brotli in a throwaway virtual environment:
@@ -33,23 +33,40 @@ OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)))
 # The schema's x-reskin.fontBudget.subset.
 UNICODES = "U+0020-007E,U+00A0-00FF,U+0152-0153,U+0178,U+2010-2027,U+2030,U+2039-203A,U+20AC"
 
-# id, directory, file, weight, other axis pins, internal family name. The internal name is the
-# upstream family, except where the OFL declares a Reserved Font Name: a subset is a Modified
-# Version, so it may not carry that name.
+# id, directory, source, weights, other axis pins, internal family name. The source is one
+# variable file instanced at every weight, or a static file per weight. The first weight is the
+# registry weight and writes <id>.woff2; each other reviewed weight writes <id>-<weight>.woff2.
+# Every axis other than wght is pinned. The internal name is the upstream family, except where
+# the OFL declares a Reserved Font Name: a subset is a Modified Version, so it may not carry it.
 FONTS = [
-    ("rajdhani", "rajdhani", "Rajdhani-SemiBold.ttf", 600, {}, "Rajdhani"),
-    ("barlow-condensed", "barlowcondensed", "BarlowCondensed-SemiBold.ttf", 600, {}, "Barlow Condensed"),
+    ("rajdhani", "rajdhani", {600: "Rajdhani-SemiBold.ttf", 700: "Rajdhani-Bold.ttf"}, [600, 700], {}, "Rajdhani"),
+    ("barlow-condensed", "barlowcondensed", {600: "BarlowCondensed-SemiBold.ttf", 700: "BarlowCondensed-Bold.ttf"}, [600, 700], {}, "Barlow Condensed"),
     # Fraunces: plain shapes (no soft or wonky alternates) at the 24px optical size used for accents.
-    ("fraunces", "fraunces", "Fraunces[SOFT,WONK,opsz,wght].ttf", 600, {"SOFT": 0, "WONK": 0, "opsz": 24}, "Fraunces"),
-    ("alegreya", "alegreya", "Alegreya[wght].ttf", 600, {}, "Alegreya"),
-    ("cormorant-garamond", "cormorantgaramond", "CormorantGaramond[wght].ttf", 700, {}, "Cormorant Garamond"),
+    ("fraunces", "fraunces", "Fraunces[SOFT,WONK,opsz,wght].ttf", [600, 700], {"SOFT": 0, "WONK": 0, "opsz": 24}, "Fraunces"),
+    ("alegreya", "alegreya", "Alegreya[wght].ttf", [600, 700], {}, "Alegreya"),
+    ("cormorant-garamond", "cormorantgaramond", "CormorantGaramond[wght].ttf", [700, 600], {}, "Cormorant Garamond"),
     # Reserved Font Name "Josefin Sans".
-    ("josefin-sans", "josefinsans", "JosefinSans[wght].ttf", 600, {}, "Reskin Geometric Accent"),
-    ("bungee", "bungee", "Bungee-Regular.ttf", 400, {}, "Bungee"),
-    ("space-grotesk", "spacegrotesk", "SpaceGrotesk[wght].ttf", 600, {}, "Space Grotesk"),
+    ("josefin-sans", "josefinsans", "JosefinSans[wght].ttf", [600, 700], {}, "Reskin Geometric Accent"),
+    ("bungee", "bungee", {400: "Bungee-Regular.ttf"}, [400], {}, "Bungee"),
+    ("space-grotesk", "spacegrotesk", "SpaceGrotesk[wght].ttf", [600], {}, "Space Grotesk"),
+    ("bebas-neue", "bebasneue", {400: "BebasNeue-Regular.ttf"}, [400], {}, "Bebas Neue"),
+    ("cinzel", "cinzel", "Cinzel[wght].ttf", [600], {}, "Cinzel"),
+    # Reserved Font Name "Orbitron".
+    ("orbitron", "orbitron", "Orbitron[wght].ttf", [600], {}, "Reskin Wide Display"),
+    ("oxanium", "oxanium", "Oxanium[wght].ttf", [600], {}, "Oxanium"),
+    # Reserved Font Name "Plex". Normal width.
+    ("ibm-plex-sans", "ibmplexsans", "IBMPlexSans[wdth,wght].ttf", [400, 500, 600, 700], {"wdth": 100}, "Reskin Industrial Sans"),
+    # Reserved Font Name "Source".
+    ("source-sans-3", "sourcesans3", "SourceSans3[wght].ttf", [400, 600, 700], {}, "Reskin Humanist Sans"),
+    # Nunito Sans: default x-height and width at the 12pt text optical size.
+    ("nunito-sans", "nunitosans", "NunitoSans[YTLC,opsz,wdth,wght].ttf", [400, 700], {"YTLC": 500, "opsz": 12, "wdth": 100}, "Nunito Sans"),
+    ("atkinson-hyperlegible", "atkinsonhyperlegible", {400: "AtkinsonHyperlegible-Regular.ttf", 700: "AtkinsonHyperlegible-Bold.ttf"}, [400, 700], {}, "Atkinson Hyperlegible"),
+    ("roboto-condensed", "robotocondensed", "RobotoCondensed[wght].ttf", [600, 700], {}, "Roboto Condensed"),
+    ("barlow", "barlow", {400: "Barlow-Regular.ttf", 500: "Barlow-Medium.ttf", 600: "Barlow-SemiBold.ttf", 700: "Barlow-Bold.ttf"}, [400, 500, 600, 700], {}, "Barlow"),
 ]
-RESERVED = {"josefin-sans": "Josefin"}
-STYLES = {400: "Regular", 600: "SemiBold", 700: "Bold"}
+# The declared Reserved Font Name's distinctive word, which no family-bearing record may contain.
+RESERVED = {"josefin-sans": "Josefin", "orbitron": "Orbitron", "ibm-plex-sans": "Plex", "source-sans-3": "Source"}
+STYLES = {400: "Regular", 500: "Medium", 600: "SemiBold", 700: "Bold"}
 
 
 def sha256(data):
@@ -79,12 +96,14 @@ def set_names(font, family, weight, reserved):
         names.names = [r for r in names.names if r.nameID in (0, 13, 14) or reserved not in r.toUnicode()]
 
 
-def build(work, font_id, directory, file, weight, pins, internal):
-    source = fetch(RAW + directory + "/" + file)
-    license_text = fetch(RAW + directory + "/OFL.txt")
+def build(work, font_id, directory, file, weight, pins, internal, name):
+    url = RAW + directory + "/" + file
     path = os.path.join(work, file)
-    with open(path, "wb") as handle:
-        handle.write(source)
+    if not os.path.exists(path):
+        with open(path, "wb") as handle:
+            handle.write(fetch(url))
+    with open(path, "rb") as handle:
+        source = handle.read()
     font = TTFont(path, recalcTimestamp=False)
     version = font["name"].getDebugName(5)
     axes = {axis.axisTag for axis in font["fvar"].axes} if "fvar" in font else set()
@@ -93,6 +112,8 @@ def build(work, font_id, directory, file, weight, pins, internal):
         location = {tag: value for tag, value in pins.items() if tag in axes}
         if "wght" in axes:
             location["wght"] = weight
+        if set(location) != axes:
+            raise SystemExit(f"{font_id}: pin every axis of {file}, unpinned {sorted(axes - set(location))}")
         font = instancer.instantiateVariableFont(font, location, updateFontNames=False)
     font["OS/2"].usWeightClass = weight
 
@@ -114,31 +135,21 @@ def build(work, font_id, directory, file, weight, pins, internal):
 
     target = os.path.join(OUT, font_id)
     os.makedirs(target, exist_ok=True)
-    woff2 = os.path.join(target, font_id + ".woff2")
+    woff2 = os.path.join(target, name)
     font.flavor = "woff2"
     font.save(woff2, reorderTables=True)
     with open(woff2, "rb") as handle:
         output = handle.read()
-    with open(os.path.join(target, "OFL.txt"), "wb") as handle:
-        handle.write(license_text.replace(b"\r\n", b"\n"))
 
     return {
         "id": font_id,
         "weight": weight,
-        "file": font_id + "/" + font_id + ".woff2",
+        "file": font_id + "/" + name,
         "bytes": len(output),
         "sha256": sha256(output),
-        "license": "OFL-1.1",
-        "licenseFile": font_id + "/OFL.txt",
-        "licenseSha256": sha256(license_text.replace(b"\r\n", b"\n")),
-        "reservedFontName": font_id in RESERVED,
-        "internalFamily": internal,
         "source": {
-            "repository": "https://github.com/google/fonts",
-            "commit": COMMIT,
             "path": "ofl/" + directory + "/" + file,
-            "url": RAW + directory + "/" + file,
-            "licenseUrl": RAW + directory + "/OFL.txt",
+            "url": url,
             "sha256": sha256(source),
             "version": version,
             "instance": location,
@@ -146,12 +157,37 @@ def build(work, font_id, directory, file, weight, pins, internal):
     }
 
 
+def family(work, font_id, directory, sources, weights, pins, internal):
+    license_text = fetch(RAW + directory + "/OFL.txt").replace(b"\r\n", b"\n")
+    files = []
+    for weight in weights:
+        file = sources[weight] if isinstance(sources, dict) else sources
+        name = font_id + (".woff2" if weight == weights[0] else "-" + str(weight) + ".woff2")
+        files.append(build(work, font_id, directory, file, weight, pins, internal, name))
+    with open(os.path.join(OUT, font_id, "OFL.txt"), "wb") as handle:
+        handle.write(license_text)
+    return {
+        "id": font_id,
+        "weights": weights,
+        "bytes": sum(f["bytes"] for f in files),
+        "license": "OFL-1.1",
+        "licenseFile": font_id + "/OFL.txt",
+        "licenseSha256": sha256(license_text),
+        "licenseUrl": RAW + directory + "/OFL.txt",
+        "reservedFontName": RESERVED.get(font_id),
+        "internalFamily": internal,
+        "repository": "https://github.com/google/fonts",
+        "commit": COMMIT,
+        "files": files,
+    }
+
+
 def main():
     records = []
     with tempfile.TemporaryDirectory(prefix="reskin-fonts-") as work:
         for spec in FONTS:
-            record = build(work, *spec)
-            print(f"{record['id']}: {record['bytes']} bytes")
+            record = family(work, *spec)
+            print(f"{record['id']}: {record['bytes']} bytes in {len(record['files'])} files")
             records.append(record)
     manifest = {
         "subset": UNICODES,

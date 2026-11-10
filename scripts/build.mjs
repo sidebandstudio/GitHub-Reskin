@@ -10,7 +10,8 @@ import { mkdir, readFile, readdir, rm, stat, writeFile } from "node:fs/promises"
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
-import { BUILD_TARGETS, FONT_IDS, GECKO_ID, SHARED_BUILD_SCOPES as BUILD_SCOPES } from "../packages/contracts/index.js";
+import { FONTS } from "../packages/appearance/registry.js";
+import { BUILD_TARGETS, GECKO_ID, SHARED_BUILD_SCOPES as BUILD_SCOPES } from "../packages/contracts/index.js";
 
 export const ROOT = fileURLToPath(new URL("..", import.meta.url));
 // Files every browser package carries besides its entry and the entry's upstream notices.
@@ -261,11 +262,8 @@ export async function buildUserscriptFrom(root, { outDir, releaseConfig }) {
 // smaller; an empty one fails. Every input must be a nonempty regular file, and JSON must hold data.
 const ENGINE_PACKAGES = [["contracts", "C1"], ["format", "C2"], ["engine", "C2"]];
 const PRIMER_INPUTS = [["vendor/primer/modes.json", "C3"], ["licenses/primer-primitives.txt", "C1"]];
-// Each bundled family's one WOFF2 and its OFL notice. "system" ships no file.
-export const FONT_INPUTS = FONT_IDS.filter((id) => id !== "system").flatMap((id) => [
-  [`assets/fonts/${id}/${id}.woff2`, "C5"],
-  [`assets/fonts/${id}/OFL.txt`, "C5"],
-]);
+// Each bundled family's WOFF2 per reviewed weight and its OFL notice. "system" ships no file.
+export const FONT_INPUTS = FONTS.flatMap((font) => [...font.files.map((file) => [file.path, "C5"]), [font.license, "C5"]]);
 export const SHARED_SCOPES = {
   engine: { packages: ENGINE_PACKAGES, inputs: [] },
   primer: { packages: [...ENGINE_PACKAGES, ["primer", "C3"]], inputs: PRIMER_INPUTS },

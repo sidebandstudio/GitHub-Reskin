@@ -217,6 +217,114 @@
       "css": ".AppHeader { color: ???; }",
       "accept": false,
       "reason": "parser recovery/Raw/lexer mismatch"
+    },
+    {
+      "id": "supports-corner-shape",
+      "css": "@supports (corner-shape: bevel) { [data-reskin-slot=\"profile.tag\"] { border-radius: 6px 0; corner-shape: bevel; } }",
+      "accept": true,
+      "reason": "@supports over a permitted property and value"
+    },
+    {
+      "id": "supports-negated",
+      "css": "@supports not (corner-shape: bevel) { .AppHeader { border-color: var(--reskin-accent); } }",
+      "accept": true,
+      "reason": "negated single test"
+    },
+    {
+      "id": "supports-and-in-media",
+      "css": "@media (min-width: 768px) { @supports (corner-shape: bevel) and (border-radius: 4px 0) { [data-reskin-slot=\"profile.tag\"] { border-radius: 6px 0; corner-shape: bevel; } } }",
+      "accept": true,
+      "reason": "and-joined tests nested in an allowed @media"
+    },
+    {
+      "id": "supports-or",
+      "css": "@supports (corner-shape: bevel) or (corner-shape: notch) { [data-reskin-slot=\"profile.tag\"] { border-radius: 6px 0; corner-shape: bevel; } }",
+      "accept": true,
+      "reason": "or-joined tests"
+    },
+    {
+      "id": "supports-nested-supports",
+      "css": "@supports (corner-shape: bevel) { @supports not (corner-shape: notch) { [data-reskin-slot=\"profile.tag\"] { border-radius: 6px 0; corner-shape: bevel; } } }",
+      "accept": true,
+      "reason": "nested @supports rules within the at-rule depth"
+    },
+    {
+      "id": "supports-grouped",
+      "css": "@supports ((corner-shape: bevel) or (border-radius: 1px)) { [data-reskin-slot=\"profile.tag\"] { border-radius: 6px 0; corner-shape: bevel; } }",
+      "accept": false,
+      "reason": "parenthesized condition groups need parse recovery in css-tree 3.1.0"
+    },
+    {
+      "id": "supports-negated-group",
+      "css": "@supports (not (corner-shape: bevel)) or (border-radius: 1px) { [data-reskin-slot=\"profile.tag\"] { border-radius: 6px 0; corner-shape: bevel; } }",
+      "accept": false,
+      "reason": "parenthesized negation needs parse recovery"
+    },
+    {
+      "id": "supports-mixed-and-or",
+      "css": "@supports (corner-shape: bevel) and (border-radius: 1px) or (color: red) { [data-reskin-slot=\"profile.tag\"] { border-radius: 6px 0; corner-shape: bevel; } }",
+      "accept": false,
+      "reason": "and/or mixed without grouping"
+    },
+    {
+      "id": "supports-not-and",
+      "css": "@supports not (corner-shape: bevel) and (color: red) { [data-reskin-slot=\"profile.tag\"] { border-radius: 6px 0; corner-shape: bevel; } }",
+      "accept": false,
+      "reason": "not applies to exactly one test"
+    },
+    {
+      "id": "supports-selector",
+      "css": "@supports selector(:has(a)) { [data-reskin-slot=\"profile.tag\"] { border-radius: 6px 0; corner-shape: bevel; } }",
+      "accept": false,
+      "reason": "selector() test"
+    },
+    {
+      "id": "supports-font-tech",
+      "css": "@supports font-tech(color-colrv1) { [data-reskin-slot=\"profile.tag\"] { border-radius: 6px 0; corner-shape: bevel; } }",
+      "accept": false,
+      "reason": "font test"
+    },
+    {
+      "id": "supports-unlisted-property",
+      "css": "@supports (display: grid) { [data-reskin-slot=\"profile.tag\"] { border-radius: 6px 0; corner-shape: bevel; } }",
+      "accept": false,
+      "reason": "property a theme may not set"
+    },
+    {
+      "id": "supports-vendor-property",
+      "css": "@supports (-moz-appearance: none) { [data-reskin-slot=\"profile.tag\"] { border-radius: 6px 0; corner-shape: bevel; } }",
+      "accept": false,
+      "reason": "vendor property"
+    },
+    {
+      "id": "supports-custom-property",
+      "css": "@supports (--theme-edge: 1px) { [data-reskin-slot=\"profile.tag\"] { border-radius: 6px 0; corner-shape: bevel; } }",
+      "accept": false,
+      "reason": "custom property test"
+    },
+    {
+      "id": "supports-variable",
+      "css": "@supports (color: var(--reskin-accent)) { [data-reskin-slot=\"profile.tag\"] { border-radius: 6px 0; corner-shape: bevel; } }",
+      "accept": false,
+      "reason": "variable in a test"
+    },
+    {
+      "id": "supports-url",
+      "css": "@supports (background-image: url(x)) { [data-reskin-slot=\"profile.tag\"] { border-radius: 6px 0; corner-shape: bevel; } }",
+      "accept": false,
+      "reason": "resource in a test, even unapplied"
+    },
+    {
+      "id": "supports-body-still-checked",
+      "css": "@supports (corner-shape: bevel) { .AppHeader { display: none; } }",
+      "accept": false,
+      "reason": "rules inside @supports pass the same declaration policy"
+    },
+    {
+      "id": "supports-theme-variable",
+      "css": "@supports (corner-shape: bevel) { .AppHeader { --theme-edge: var(--reskin-accent); border-color: var(--theme-edge); } }",
+      "accept": false,
+      "reason": "theme-local variables cannot change inside a conditional rule"
     }
   ]
 }

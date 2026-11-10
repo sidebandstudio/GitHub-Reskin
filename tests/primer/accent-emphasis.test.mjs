@@ -2,7 +2,8 @@
 // states read --bgColor-accent-emphasis with --fgColor-onEmphasis (on 2026-11-09 the profile's
 // selected year link, the skip links and the page-load bar on github.com/whoisaldo), which the
 // mapping emits from tokens.accentEmphasis and tokens.emphasisText, in Full and Calm. Native
-// islands stay native, and a theme without the override compiles as main 127233c did.
+// islands stay native, and a theme without the override compiles as main 127233c did. The
+// art-additions fixture's hashes were recorded again when its body font, Barlow, gained files.
 import assert from "node:assert/strict";
 import test from "node:test";
 import { contrast, repairTheme, resolveTheme } from "../../packages/engine/index.js";
@@ -23,7 +24,23 @@ test("without the override, every Classic and fixture compiles in Full and Calm 
   const files = [...new Set(Object.keys(pinned).map((key) => key.split(" ")[0]))];
   assert.equal(files.length, 25);
   for (const file of files) assert.equal(readJson(file).overrides?.accentEmphasis, undefined, file);
-  assert.deepEqual(await compileHashes(ROOT, files), pinned);
+  const hashes = await compileHashes(ROOT, files);
+  // Since embedded images draw, the image fixture's Full appearance plans its requested banner
+  // region, which main left out with the image; its Calm output and every other theme are as on main.
+  const RASTER = "tests/fixtures/schema/valid/embedded-images.reskin.json";
+  for (const key of Object.keys(pinned).filter((k) => k.startsWith(`${RASTER} `) && k.endsWith(" full"))) {
+    assert.notEqual(hashes[key].appearance, pinned[key].appearance, key);
+    hashes[key] = { ...hashes[key], appearance: pinned[key].appearance };
+  }
+  // The rich fixture asks for uppercase headings, which no longer reach names and titles people
+  // wrote, so its appearance differs from main in Full and Calm. Its Primer output does not.
+  const UPPERCASE = "tests/fixtures/schema/valid/ai-rich.reskin.json";
+  assert.equal(readJson(UPPERCASE).typography.uppercaseHeadings, true);
+  for (const key of Object.keys(pinned).filter((k) => k.startsWith(`${UPPERCASE} `))) {
+    assert.notEqual(hashes[key].appearance, pinned[key].appearance, key);
+    hashes[key] = { ...hashes[key], appearance: pinned[key].appearance };
+  }
+  assert.deepEqual(hashes, pinned);
 });
 
 test("the override drives GitHub's emphasis fill and its ink in Full and Calm on every themed mode of its base", () => {

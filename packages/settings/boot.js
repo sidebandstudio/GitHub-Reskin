@@ -59,8 +59,8 @@ export function buildBootRecord(settings, { catalog, snapshot }) {
     ...RUNNING_VERSIONS,
     catalogHash: catalog.hash,
     selectedSourceHash: sourceHash(source),
-    // TODO(C2b): hashes of the selected theme's admitted image assets, never the bytes.
-    assetHashes: [],
+    // Hashes of the selected theme's admitted images, never their bytes.
+    assetHashes: [...new Set(Object.values(resolved.appearance?.paints ?? {}).flatMap((paint) => (paint?.layers ?? []).filter((l) => l.kind === "image").map((l) => l.asset)))],
     cssConsent: selectedConsent(settings),
     validatedTokenSnapshot: resolved,
     effectivePreferences: effectivePreferences(settings),

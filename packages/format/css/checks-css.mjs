@@ -330,6 +330,24 @@ export async function runCssChecks(root, { check, done }) {
   for (const testCase of policyCases) check(pipeline(testCase.css, registry).ok === testCase.accept, `policy case ${testCase.id} should be ${testCase.accept ? "accepted" : "rejected"} (${testCase.reason})`);
   console.log(`  css-policy: ${policyCases.length} cases`);
 
+  // An @supports rule is no way around the policy: every case keeps its outcome inside one, except
+  // that theme-local variables cannot be declared there, and so do the review corpus' rejections
+  // that the pipeline itself makes (runtime cases are judged on the page, above).
+  let wrapped = 0;
+  for (const testCase of policyCases) {
+    if (!testCase.css.trim()) continue;
+    const accept = testCase.accept && !/--theme-/.test(testCase.css);
+    check(pipeline(`@supports (corner-shape:bevel){${testCase.css}}`, registry).ok === accept, `policy case ${testCase.id} inside @supports should be ${accept ? "accepted" : "rejected"}`);
+    wrapped++;
+  }
+  for (const testCase of review.cases) {
+    if (testCase.accept || typeof testCase.css !== "string" || !testCase.css.trim()) continue;
+    if (pipeline(testCase.css, registryFor(registry, testCase)).ok) continue;
+    check(!pipeline(`@supports (corner-shape:bevel){${testCase.css}}`, registryFor(registry, testCase)).ok, `${testCase.id} inside @supports should be rejected`);
+    wrapped++;
+  }
+  console.log(`  @supports: ${wrapped} cases rechecked inside a supports rule`);
+
   // Rejections are located and the whole input is refused.
   for (const css of [".AppHeader{display:none}", "body{display:none}", ".AppHeader{border-color:red}\n@import url(x);"]) {
     const result = sanitizeCss(css);

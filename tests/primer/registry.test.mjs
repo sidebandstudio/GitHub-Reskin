@@ -143,6 +143,21 @@ test("Choom's CSS for GitHub's own elements compiles against registry version 1"
   assert.equal(compile(readText("tests/primer/fixtures/choom-native-proposed.css"), CSS_TARGET_REGISTRY, { ...PREFS, appearance: "calm" }).css, "");
 });
 
+test("theme CSS may give a repository name ink, glow and type but never change its case", () => {
+  // The two staged themes uppercased the name; the review found it misreads case-sensitive names.
+  for (const css of ['a[data-testid="repo-name-link"]{text-transform:uppercase}', 'a[data-testid="repo-name-link"]{font-weight:700;text-transform:none}', 'h2.h4.mb-2,a[data-testid="repo-name-link"]{text-transform:uppercase}']) {
+    const result = compile(css);
+    assert.equal(result.ok, false, css);
+    assert.match(result.issues[0].message, /text-transform would change how a name people wrote reads/);
+  }
+  assert.deepEqual(CSS_TARGET_REGISTRY.subjects.filter((s) => s.authored).map((s) => s.predicates?.[0]?.value), ["repo-name-link"]);
+  const allowed = compile('a[data-testid="repo-name-link"]{font-family:var(--reskin-font-heading);font-weight:700;letter-spacing:.05em;text-shadow:0 0 8px color-mix(in srgb,var(--reskin-accent) 55%,transparent)}');
+  assert.equal(allowed.ok, true, JSON.stringify(allowed.issues));
+  // GitHub's own headings keep the case a theme gives them.
+  assert.equal(compile('h2.h4.mb-2,h2[data-component="Heading"]{text-transform:uppercase}').ok, true);
+  assert.deepEqual(registryProblems({ ...CSS_TARGET_REGISTRY, subjects: [{ ...CSS_TARGET_REGISTRY.subjects[0], authored: false }] }), ["subject 0 authored must be true or absent"]);
+});
+
 test("unregistered, protected and mixed targets fail closed", () => {
   const refused = (css, why) => {
     const result = compile(css);

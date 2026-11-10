@@ -8,7 +8,7 @@ import { FLAVOR_SLOT_IDS, FONT_IDS } from "../contracts/index.js";
 import { repairTheme, resolveTheme } from "../engine/index.js";
 import { BOX_EFFECTS, EFFECTS, FONTS, LIMITS, compileAppearance, effectCss, fontFaceCss, planAppearance, registryProblems } from "./index.js";
 import { EFFECT_PARAMETERS } from "./registry.js";
-import { codePoints, names, readWoff2, weightClass } from "./woff2.mjs";
+import { codePoints, hasLowercaseForms, names, readWoff2, weightClass } from "./woff2.mjs";
 import { SLOTS } from "../../extension/content/github/selectors.js";
 
 // The slots one GitHub page can hold. The adapter places each slot on one route class, so the
@@ -26,61 +26,94 @@ function tally() {
   return { problems, check, result: () => ({ problems, count }) };
 }
 
-// Printable ASCII must be complete. Some upstream families lack a few Latin-1 signs (Rajdhani has
-// no currency sign, Cormorant no micro sign); the unicode-range and font stack fall back natively.
+// Printable ASCII must be complete, except a sign upstream never drew: Orbitron has no circumflex
+// accent. Some upstream families also lack a few Latin-1 signs (Rajdhani has no currency sign,
+// Cormorant no micro sign); the unicode-range and font stack fall back natively, per character.
 const REQUIRED_RANGE = [[0x20, 0x7e]];
+const UPSTREAM_GAPS = { orbitron: [0x5e] };
 const FONT_FILES = new Set(["acquire.py", "provenance.json", "README.md"]);
+const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+const sorted = (list) => [...(list ?? [])].sort();
 
-/** The bundled fonts: files, budget, licenses, provenance hashes, weights, coverage and names. */
+/**
+ * The bundled fonts: every family the schema registers, one file per reviewed weight, the file,
+ * family and total budgets, licenses, Reserved Font Names, provenance hashes, weights, coverage
+ * and names.
+ */
 export async function fontAudit(root) {
   const { check, result } = tally();
   const dir = join(root, "assets/fonts");
   const schema = JSON.parse(await readFile(join(root, "packages/format/theme-v1.schema.json"), "utf8"))["x-reskin"];
+  const budget = schema.fontBudget;
   const provenance = JSON.parse(await readFile(join(dir, "provenance.json"), "utf8"));
   const recorded = Object.fromEntries(provenance.fonts.map((font) => [font.id, font]));
-  check(provenance.subset.replace(/\s/g, "") === schema.fontBudget.subset.replace(/^Latin\s*/, "").replace(/\s/g, ""), "provenance subset differs from the schema's");
-  // The schema budgets every family a theme may name; this increment bundles only FONT_IDS.
+  check(provenance.subset.replace(/\s/g, "") === budget.subset.replace(/^Latin\s*/, "").replace(/\s/g, ""), "provenance subset differs from the schema's");
   const bundled = FONT_IDS.filter((id) => id !== "system");
-  check(FONTS.length === bundled.length && FONTS.every((font) => bundled.includes(font.id)), `${FONTS.length} families, the bundled set is ${bundled.length}`);
-  check(FONTS.length <= schema.fontBudget.families, `${FONTS.length} families, schema allows ${schema.fontBudget.families}`);
+  check(same(FONTS.map((font) => font.id), bundled), `the registry's ${FONTS.length} families differ from the bundled set of ${bundled.length}`);
+  check(same(schema.fonts.map((font) => font.id), bundled), "the schema registers a family that is not bundled");
+  check(FONTS.length === budget.families, `${FONTS.length} families, the schema budgets ${budget.families}`);
+  check(same(provenance.fonts.map((font) => font.id), bundled), "provenance.json does not record exactly the bundled families");
   for (const entry of await readdir(dir, { withFileTypes: true })) {
     check(entry.isDirectory() ? FONTS.some((font) => font.id === entry.name) : FONT_FILES.has(entry.name), `unexpected assets/fonts/${entry.name}`);
   }
   let total = 0;
   for (const font of FONTS) {
     const spec = schema.fonts.find((f) => f.id === font.id);
-    check(spec && spec.family === font.family && spec.weight === font.weight && spec.minimumAccentPx === font.minimumAccentPx, `${font.id} differs from the schema registry`);
-    const path = join(root, font.path);
-    if (!check(existsSync(path), `${font.path} is missing`)) continue;
-    const bytes = await readFile(path);
-    total += bytes.length;
-    check(bytes.length <= schema.fontBudget.maxPerFamilyBytes, `${font.id} is ${bytes.length} bytes, over ${schema.fontBudget.maxPerFamilyBytes}`);
+    check(spec && spec.family === font.family && spec.weight === font.weight && spec.minimumAccentPx === font.minimumAccentPx && same(spec.weights ?? [spec.weight], font.weights), `${font.id} differs from the schema registry`);
     const record = recorded[font.id];
-    check(record?.sha256 === createHash("sha256").update(bytes).digest("hex") && record.bytes === bytes.length, `${font.id} does not match provenance.json`);
-    check(/^https:\/\/raw\.githubusercontent\.com\/google\/fonts\/[0-9a-f]{40}\/ofl\//.test(record?.source?.url ?? "") && /^[0-9a-f]{64}$/.test(record?.source?.sha256 ?? ""), `${font.id} provenance lacks a pinned google/fonts source and hash`);
+    check(same(sorted(record?.weights), sorted(font.weights)) && same(sorted(record?.files?.map((f) => `assets/fonts/${f.file}`)), sorted(font.files.map((f) => f.path))), `${font.id} files differ from provenance.json`);
+    const held = existsSync(join(dir, font.id)) ? (await readdir(join(dir, font.id))).sort() : [];
+    check(same(held, [...font.files.map((f) => f.path.split("/").pop()), "OFL.txt"].sort()), `assets/fonts/${font.id} holds ${held.join(", ")}`);
     const license = await readFile(join(root, font.license), "utf8").catch(() => "");
     check(/SIL OPEN FONT LICENSE Version 1\.1/.test(license) && /^Copyright/m.test(license), `${font.license} is not the family's OFL 1.1 notice`);
     check(record?.licenseSha256 === createHash("sha256").update(license).digest("hex"), `${font.license} does not match provenance.json`);
-    let tables;
-    try {
-      tables = readWoff2(bytes);
-    } catch (error) {
-      check(false, `${font.id}: ${error.message}`);
-      continue;
+    // The notice's header declares any Reserved Font Name; the subset must not carry it.
+    const reserved = /Reserved Font Name:?\s*["'\u2018\u201c]([^"'\u2019\u201d]+)/.exec(license.split("SIL OPEN FONT LICENSE")[0])?.[1] ?? null;
+    check(Boolean(reserved) === Boolean(record?.reservedFontName) && (!reserved || reserved.includes(record.reservedFontName)), `${font.id} records Reserved Font Name ${record?.reservedFontName}, its notice declares ${reserved}`);
+    let bytesInFamily = 0;
+    for (const file of font.files) {
+      const label = `${font.id} ${file.weight}`;
+      const path = join(root, file.path);
+      if (!check(existsSync(path), `${file.path} is missing`)) continue;
+      const bytes = await readFile(path);
+      bytesInFamily += bytes.length;
+      check(bytes.length <= budget.maxPerFileBytes, `${file.path} is ${bytes.length} bytes, over ${budget.maxPerFileBytes}`);
+      const entry = record?.files?.find((f) => `assets/fonts/${f.file}` === file.path);
+      check(entry?.weight === file.weight && entry.sha256 === createHash("sha256").update(bytes).digest("hex") && entry.bytes === bytes.length, `${file.path} does not match provenance.json`);
+      check(/^[0-9a-f]{40}$/.test(record?.commit ?? "") && entry?.source?.url === `https://raw.githubusercontent.com/google/fonts/${record.commit}/${entry.source.path}` && entry.source.path.startsWith("ofl/") && /^[0-9a-f]{64}$/.test(entry.source.sha256 ?? ""), `${file.path} provenance lacks a pinned google/fonts source and hash`);
+      let tables;
+      try {
+        tables = readWoff2(bytes);
+      } catch (error) {
+        check(false, `${label}: ${error.message}`);
+        continue;
+      }
+      check(weightClass(tables) === file.weight, `${label} has weight class ${weightClass(tables)}`);
+      // The registry's capsOnly flag is what the glyphs draw, so authored text never meets a face
+      // that reads it in capitals.
+      let lowercase = null;
+      try {
+        lowercase = hasLowercaseForms(tables);
+      } catch (error) {
+        check(false, `${label}: ${error.message}`);
+      }
+      if (lowercase !== null) check(lowercase === !font.capsOnly, `${label} ${lowercase ? "draws lowercase forms" : "has no lowercase forms"}, but the registry's capsOnly is ${font.capsOnly}`);
+      const points = codePoints(tables);
+      const missing = REQUIRED_RANGE.flatMap(([a, b]) => Array.from({ length: b - a + 1 }, (_, i) => a + i)).filter((c) => !points.has(c) && !UPSTREAM_GAPS[font.id]?.includes(c));
+      check(!missing.length, `${label} lacks ${missing.length} Latin code points, first U+${missing[0]?.toString(16)}`);
+      check([...points].every((c) => c < 0x2100 || c === 0x20ac), `${label} carries glyphs outside the Latin subset`);
+      const familyNames = names(tables).filter((n) => [1, 3, 4, 6, 16, 17, 21, 22].includes(n.nameID)).map((n) => n.value);
+      if (record?.reservedFontName) check(!familyNames.some((n) => n.toLowerCase().includes(record.reservedFontName.toLowerCase())), `${label} still carries its Reserved Font Name`);
+      check(names(tables).some((n) => n.nameID === 0 && /Copyright|\u00a9/.test(n.value)), `${label} lost its copyright record`);
+      check(fontFaceCss(font.id, `/${file.path}`, file.weight).includes(`font-weight:${file.weight}`), `${label} @font-face weight`);
     }
-    check(weightClass(tables) === font.weight, `${font.id} weight ${weightClass(tables)}, registry ${font.weight}`);
-    const points = codePoints(tables);
-    const missing = REQUIRED_RANGE.flatMap(([a, b]) => Array.from({ length: b - a + 1 }, (_, i) => a + i)).filter((c) => !points.has(c));
-    check(!missing.length, `${font.id} lacks ${missing.length} Latin code points, first U+${missing[0]?.toString(16)}`);
-    check([...points].every((c) => c < 0x2100 || c === 0x20ac), `${font.id} carries glyphs outside the Latin subset`);
-    const familyNames = names(tables).filter((n) => [1, 3, 4, 6, 16, 17, 21, 22].includes(n.nameID)).map((n) => n.value);
-    if (record?.reservedFontName) check(!familyNames.some((n) => /Josefin/i.test(n)), `${font.id} subset still carries its Reserved Font Name`);
-    check(names(tables).some((n) => n.nameID === 0 && /Copyright/.test(n.value)), `${font.id} lost its copyright record`);
-    check(fontFaceCss(font.id, `/${font.path}`).includes(`font-weight:${font.weight}`), `${font.id} @font-face weight`);
+    check(bytesInFamily <= Math.min(budget.maxPerFamilyBytes, spec?.maxBytes ?? 0), `${font.id} is ${bytesInFamily} bytes, over ${Math.min(budget.maxPerFamilyBytes, spec?.maxBytes ?? 0)}`);
+    check(record?.bytes === bytesInFamily, `${font.id} family bytes in provenance.json are stale`);
+    total += bytesInFamily;
   }
-  check(total <= schema.fontBudget.totalWoff2Bytes, `fonts total ${total} bytes, over ${schema.fontBudget.totalWoff2Bytes}`);
+  check(total <= budget.totalWoff2Bytes, `fonts total ${total} bytes, over ${budget.totalWoff2Bytes}`);
   check(provenance.totalBytes === total, "provenance totalBytes is stale");
-  return { ...result(), total };
+  return { ...result(), total, families: FONTS.length, files: FONTS.reduce((n, font) => n + font.files.length, 0) };
 }
 
 // Distinct colors per role, so every color in effect CSS can be traced to the role it came from.

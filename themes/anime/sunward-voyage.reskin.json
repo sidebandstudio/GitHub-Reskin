@@ -1,36 +1,138 @@
 {
   "$schema": "https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json",
   "author": "sidebandstudio",
+  "backgrounds": {
+    "header": {
+      "color": "#061e32"
+    },
+    "page": {
+      "color": "#092b45",
+      "layers": [
+        {
+          "gradientCss": {
+            "size": "100% 100%",
+            "value": "linear-gradient(90deg,transparent 0 9px,#655426 9px 11px,transparent 11px)"
+          }
+        },
+        {
+          "gradientCss": {
+            "size": "100% 100vh",
+            "value": "repeating-radial-gradient(ellipse at 90% 110%,transparent 0 45px,#6bbfc52e 46px 48px,transparent 49px 82px)"
+          }
+        },
+        {
+          "gradientCss": {
+            "size": "100% 100vh",
+            "value": "radial-gradient(ellipse at 10% 90%,#29789c40,transparent 60%)"
+          }
+        },
+        {
+          "gradientCss": {
+            "size": "100% 100vh",
+            "value": "linear-gradient(#0b3553,#092b45)"
+          }
+        }
+      ]
+    }
+  },
   "base": "dark",
+  "code": {
+    "ansi": {
+      "black": "#b3c8d3",
+      "blue": "#a8e7ff",
+      "brightBlack": "#c6d4dc",
+      "brightBlue": "#c9d5ff",
+      "brightCyan": "#a9ecdc",
+      "brightGreen": "#c9ffe0",
+      "brightMagenta": "#ffd6e6",
+      "brightRed": "#ffd5df",
+      "brightWhite": "#ffffff",
+      "brightYellow": "#ffe49a",
+      "cyan": "#8ce7e1",
+      "green": "#a4edc2",
+      "magenta": "#f5c0d6",
+      "red": "#ffb5bc",
+      "white": "#e1edf1",
+      "yellow": "#ffcf4a"
+    },
+    "background": "#061e32",
+    "diff": {
+      "addedBackground": "#123529",
+      "addedText": "#c9ffe0",
+      "removedBackground": "#401c2b",
+      "removedText": "#ffd5df",
+      "wordAddedBackground": "#255b42",
+      "wordAddedText": "#c9ffe0",
+      "wordRemovedBackground": "#6b3044",
+      "wordRemovedText": "#ffd5df"
+    },
+    "syntax": {
+      "attribute": "#c9d5ff",
+      "comment": "#b3c8d3",
+      "constant": "#f5c0d6",
+      "function": "#ffdf83",
+      "keyword": "#ffc996",
+      "number": "#ffe39a",
+      "punctuation": "#e1edf1",
+      "string": "#a9ecdc",
+      "tag": "#8ce7e1",
+      "type": "#b8daff"
+    },
+    "text": "#fff3d8"
+  },
   "colors": {
     "accent": "#ffcf4a",
-    "background": "#0c3153",
-    "contribution": "#ffe0a0",
-    "text": "#fff2d7"
+    "background": "#092b45",
+    "contribution": "#ffe49a",
+    "text": "#fff3d8"
   },
   "contributions": {
+    "cellBoundary": "#a6bcae",
+    "cellRadius": 1,
+    "cellStyle": "square",
     "levels": [
-      "#29354a",
-      "#a78547",
-      "#c7a153",
-      "#e3bc68",
-      "#ffe0a0"
+      "#244c62",
+      "#8b7331",
+      "#b9963c",
+      "#dfba57",
+      "#ffe49a"
     ]
   },
-  "description": "Ocean blue, warm gold and an original chart route bring a sense of open-sea adventure to GitHub.",
-  "effects": {
-    "glow": {
-      "strength": 0.1
+  "css": ".AppHeader,.Header,.HeaderMktg,.GlobalNav{border-bottom-color:#9e802e;box-shadow:0 1px 0#ffcf4a,0 3px 0 color-mix(in srgb,#ffcf4a 80%,transparent),0 4px 0 color-mix(in srgb,#9e802e 80%,transparent)}.btn-primary{font-family:var(--reskin-font-heading);font-weight:700;box-shadow:0 2px 0 color-mix(in srgb,#9d6b22 80%,transparent)}.btn-primary:hover{box-shadow:0 3px 0 color-mix(in srgb,#9d6b22 80%,transparent)}.UnderlineNav-item[aria-current=\"page\"],.tabnav-tab[aria-current=\"page\"],a[aria-current=\"page\"]{font-weight:700;box-shadow:0 3px 0-1px color-mix(in srgb,var(--reskin-accent) 80%,transparent)}a[data-testid=\"repo-name-link\"]{font-family:var(--reskin-font-heading);font-weight:700}h2.h4.mb-2,h2[data-component=\"Heading\"]{font-family:var(--reskin-font-heading);font-weight:700;text-shadow:0 2px 0 color-mix(in srgb,#061e32 80%,transparent)}[data-reskin-slot=\"profile.tag\"]{width:fit-content;margin:0 0 8px;padding:2px 10px;font-family:ui-monospace,monospace;font-weight:600;font-size:11px;line-height:1.45;letter-spacing:.12em;text-transform:uppercase;color:var(--reskin-text);background-color:var(--reskin-inset);border:1px solid var(--reskin-control-border);border-radius:999px}[data-reskin-slot=\"profile.pinned.heading\"],[data-reskin-slot=\"profile.activity.heading\"],[data-reskin-slot=\"profile.organizations.heading\"],[data-reskin-slot=\"profile.achievements.heading\"]{font-family:var(--reskin-font-heading);font-weight:700;text-shadow:0 2px 0 color-mix(in srgb,#061e32 80%,transparent)}[data-reskin-slot=\"footer.signoff\"]{font-family:var(--reskin-font-heading);color:var(--reskin-accent)}[data-reskin-slot=\"contributions.caption\"],[data-reskin-slot=\"empty.pinned.caption\"],[data-reskin-slot=\"empty.issues.caption\"]{margin:8px 0 16px;font-family:var(--reskin-font-heading);font-weight:600;font-size:15px;line-height:1.3;color:var(--reskin-muted-text)}[data-reskin-slot=\"error.notFound.caption\"]{position:absolute;right:6%;bottom:10%;max-width:340px;padding:8px 20px;font-family:var(--reskin-font-heading);font-weight:700;font-size:20px;line-height:1.25;color:var(--reskin-primary-text);background-color:var(--reskin-primary-background);border:2px solid #9e802e;border-radius:28px;transform:rotate(-4deg);box-shadow:0 4px 0 color-mix(in srgb,#061e32 80%,transparent)}@media (max-width:799px){[data-reskin-slot=\"error.notFound.caption\"]{font-size:17px}}@media (max-width:599px){[data-reskin-slot=\"error.notFound.caption\"]{font-size:14px}}",
+  "description": "A deep ocean canvas under a gold-ruled chart-room header: bathymetric contours, brass-edged panels, gold capsule buttons, a gold calendar and Fraunces headings.",
+  "details": {
+    "headerText": "#fff3d8",
+    "labels": {
+      "fill": "tinted",
+      "style": "pill"
     },
+    "scrollbar": {
+      "thumb": "#a6bcae",
+      "track": "#061e32",
+      "width": "auto"
+    },
+    "selection": {
+      "background": "#ffcf4a",
+      "text": "#172b3d"
+    },
+    "topics": {
+      "background": "#2e4f57",
+      "border": "#a6bcae",
+      "fill": "tinted",
+      "style": "pill",
+      "text": "#ffcf4a"
+    }
+  },
+  "effects": {
     "rail": {
-      "opacity": 0.26,
+      "opacity": 0.35,
       "shape": "route",
       "thickness": 2
     },
     "seal": {
-      "opacity": 0.35,
-      "shape": "compass",
-      "size": 28
+      "opacity": 0.5,
+      "shape": "rosette",
+      "size": 20
     }
   },
   "flavor": {
@@ -41,6 +143,8 @@
       "empty.issues.caption": "No routes on this chart.",
       "empty.pinned.caption": "A shelf for future finds.",
       "error.notFound.caption": "No island at these coordinates. Return to known waters.",
+      "footer.signoff": "// fair winds",
+      "profile.achievements.heading": "Charted honors",
       "profile.activity.heading": "Voyage log",
       "profile.organizations.heading": "Harbor outposts",
       "profile.pinned.heading": "Prized finds",
@@ -48,33 +152,67 @@
     }
   },
   "fonts": {
-    "accent": "fraunces"
+    "body": "source-sans-3",
+    "heading": "fraunces"
   },
   "inspiredBy": "One Piece",
   "name": "Sunward Voyage",
   "overrides": {
-    "accentMuted": "#334a52",
-    "border": "#7d8da2",
-    "controlBorder": "#8e9cae",
-    "danger": "#ffa79a",
-    "focus": "#f7d992",
-    "hover": "#294863",
-    "inset": "#091b33",
-    "link": "#8fcff0",
-    "mutedText": "#b5becd",
+    "accentMuted": "#2e4f57",
+    "border": "#5f7b7f",
+    "controlBorder": "#a6bcae",
+    "danger": "#ffb5bc",
+    "focus": "#ffcf4a",
+    "hover": "#285a71",
+    "inset": "#061e32",
+    "link": "#a8e7ff",
+    "mutedText": "#c6d4dc",
     "primaryBackground": "#ffcf4a",
-    "primaryText": "#172438",
-    "raised": "#1f405e",
-    "selectionBackground": "#ffcf4a",
-    "selectionText": "#172438",
-    "success": "#9cd3a5",
-    "surface": "#174365",
-    "warning": "#f3cf84"
+    "primaryText": "#172b3d",
+    "raised": "#1e4c65",
+    "success": "#a4edc2",
+    "surface": "#123e59",
+    "warning": "#ffe0a0"
   },
   "schemaVersion": 1,
+  "shape": {
+    "avatar": {
+      "frame": {
+        "color": "#ffcf4a",
+        "style": "double",
+        "width": 3
+      },
+      "shape": "circle"
+    },
+    "borders": {
+      "color": "#a6bcae",
+      "style": "solid",
+      "width": 1
+    },
+    "buttons": {
+      "radius": 999,
+      "style": "filled"
+    },
+    "corners": {
+      "radius": 14,
+      "style": "rounded"
+    },
+    "shadows": {
+      "blur": 0,
+      "color": "#061e32",
+      "offset": 3,
+      "opacity": 0.8,
+      "style": "hard"
+    }
+  },
   "tags": [
     "anime",
+    "nautical",
     "dark"
   ],
-  "version": "1.0.0"
+  "typography": {
+    "headingLetterSpacing": 0,
+    "uppercaseHeadings": false
+  },
+  "version": "2.0.0"
 }

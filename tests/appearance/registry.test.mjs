@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { EFFECTS, FONTS, LIMITS, registryProblems } from "../../packages/appearance/index.js";
 import { fontAudit, templateAudit } from "../../packages/appearance/audit.mjs";
+import { glyphBounds, glyphIndices, hasLowercaseForms, readWoff2 } from "../../packages/appearance/woff2.mjs";
 import { FONT_IDS } from "../../packages/contracts/index.js";
 
 const ROOT = new URL("../../", import.meta.url).pathname;
@@ -16,12 +17,10 @@ test("registry matches the contracts and the schema's effect and font registries
     assert.deepEqual(EFFECTS[id].colors.map((role) => `tokens.${role}`), effect.resolvedColorSources, id);
     assert.equal(EFFECTS[id].motion, /once on explicit selection/.test(effect.draws), id);
   }
-  // The schema lists every family a theme may name; only the bundled ones (FONT_IDS) ship files
-  // in this increment, and the rest stay deferred until their files land.
-  const bundled = new Set(FONT_IDS);
+  // Every family the schema lets a theme name ships files, one per reviewed weight.
   assert.deepEqual(
-    FONTS.map(({ id, family, weight, minimumAccentPx }) => ({ id, family, weight, minimumAccentPx })),
-    X.fonts.filter(({ id }) => bundled.has(id)).map(({ id, family, weight, minimumAccentPx }) => ({ id, family, weight, minimumAccentPx })),
+    FONTS.map(({ id, family, weight, weights, minimumAccentPx }) => ({ id, family, weight, weights, minimumAccentPx })),
+    X.fonts.map(({ id, family, weight, weights, minimumAccentPx }) => ({ id, family, weight, weights: weights ?? [weight], minimumAccentPx })),
   );
   assert.deepEqual(FONTS.map(({ id }) => id), FONT_IDS.filter((id) => id !== "system"));
 });
@@ -47,4 +46,31 @@ test("the bundled fonts pass the font audit within budget", async () => {
   const { problems, total } = await fontAudit(ROOT);
   assert.deepEqual(problems, []);
   assert.ok(total <= X.fontBudget.totalWoff2Bytes);
+});
+
+test("exactly the families whose glyphs have no lowercase forms are marked capitals-only", () => {
+  assert.deepEqual(FONTS.filter((font) => font.capsOnly).map((font) => font.id), ["bungee", "bebas-neue", "cinzel"]);
+  for (const font of FONTS) {
+    assert.equal(typeof font.capsOnly, "boolean", font.id);
+    for (const file of font.files) assert.equal(hasLowercaseForms(readWoff2(readFileSync(`${ROOT}${file.path}`))), !font.capsOnly, file.path);
+  }
+});
+
+test("the glyph reader measures lowercase, capital and small-capital outlines", () => {
+  const measure = (id) => {
+    const tables = readWoff2(readFileSync(`${ROOT}assets/fonts/${id}/${id}.woff2`));
+    const glyphs = glyphIndices(tables);
+    const bounds = glyphBounds(tables);
+    return (c) => bounds[glyphs.get(c.codePointAt(0))];
+  };
+  // Fraunces: h rises above x, p falls below the baseline, H is a capital.
+  const fraunces = measure("fraunces");
+  assert.ok(fraunces("h")[3] > fraunces("x")[3] * 1.3 && fraunces("p")[1] < 0 && fraunces("H")[3] > fraunces("x")[3]);
+  // Bungee and Bebas Neue draw lowercase letters as capitals; Cinzel as small capitals.
+  for (const id of ["bungee", "bebas-neue"]) {
+    const box = measure(id);
+    assert.deepEqual(["h", "x", "p"].map((c) => box(c)[3]), ["H", "H", "H"].map((c) => box(c)[3]), id);
+  }
+  const cinzel = measure("cinzel");
+  assert.ok(cinzel("x")[3] < cinzel("X")[3] && Math.abs(cinzel("h")[3] - cinzel("x")[3]) <= 10 && cinzel("p")[1] >= 0);
 });
