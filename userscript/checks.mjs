@@ -17,7 +17,7 @@ import { build, COMMITTED, MAX_BYTES } from "./build.mjs";
 import { scriptProblems } from "./verify.mjs";
 
 const DEFAULT_ROOT = fileURLToPath(new URL("..", import.meta.url));
-export const UNIT_TESTS = ["tests/userscript/build.test.mjs", "tests/userscript/host.test.mjs", "tests/userscript/migration.test.mjs", "tests/userscript/storage.test.mjs", "userscript.test.mjs"];
+export const UNIT_TESTS = ["tests/userscript/build.test.mjs", "tests/userscript/host.test.mjs", "tests/userscript/isolation.test.mjs", "tests/userscript/locks.test.mjs", "tests/userscript/migration.test.mjs", "tests/userscript/storage.test.mjs", "userscript.test.mjs"];
 
 // Runs unit test files in a child node --test and counts its TAP totals. Any failure, skip, todo or
 // file that runs nothing fails.
