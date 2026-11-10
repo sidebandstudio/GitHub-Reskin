@@ -8,7 +8,7 @@ import { FLAVOR_SLOT_IDS, FONT_IDS } from "../contracts/index.js";
 import { repairTheme, resolveTheme } from "../engine/index.js";
 import { BOX_EFFECTS, EFFECTS, FONTS, LIMITS, compileAppearance, effectCss, fontFaceCss, planAppearance, registryProblems } from "./index.js";
 import { EFFECT_PARAMETERS } from "./registry.js";
-import { codePoints, names, readWoff2, weightClass } from "./woff2.mjs";
+import { codePoints, hasLowercaseForms, names, readWoff2, weightClass } from "./woff2.mjs";
 import { SLOTS } from "../../extension/content/github/selectors.js";
 
 // The slots one GitHub page can hold. The adapter places each slot on one route class, so the
@@ -89,6 +89,15 @@ export async function fontAudit(root) {
         continue;
       }
       check(weightClass(tables) === file.weight, `${label} has weight class ${weightClass(tables)}`);
+      // The registry's capsOnly flag is what the glyphs draw, so authored text never meets a face
+      // that reads it in capitals.
+      let lowercase = null;
+      try {
+        lowercase = hasLowercaseForms(tables);
+      } catch (error) {
+        check(false, `${label}: ${error.message}`);
+      }
+      if (lowercase !== null) check(lowercase === !font.capsOnly, `${label} ${lowercase ? "draws lowercase forms" : "has no lowercase forms"}, but the registry's capsOnly is ${font.capsOnly}`);
       const points = codePoints(tables);
       const missing = REQUIRED_RANGE.flatMap(([a, b]) => Array.from({ length: b - a + 1 }, (_, i) => a + i)).filter((c) => !points.has(c) && !UPSTREAM_GAPS[font.id]?.includes(c));
       check(!missing.length, `${label} lacks ${missing.length} Latin code points, first U+${missing[0]?.toString(16)}`);

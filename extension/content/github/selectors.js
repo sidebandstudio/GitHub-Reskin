@@ -3,33 +3,10 @@
 // go. Words are a guard inside that scope, never a page-wide search. Nothing here matches by class
 // substring, and nothing is a fallback for a missing anchor.
 
-/** Roots of text people wrote: READMEs and rendered Markdown, comments, issue and PR titles, files, code and diffs. */
-export const AUTHORED_ROOTS = [
-  ".markdown-body",
-  ".comment-body",
-  ".js-comment-body",
-  ".markdown-title",
-  ".js-issue-title",
-  "[data-testid='issue-title']",
-  "[data-testid='issue-body']",
-  ".file",
-  ".gist-file",
-  ".blob-wrapper",
-  ".blob-code",
-  ".react-code-file-contents",
-  ".react-code-lines",
-  ".diff-table",
-  ".js-diff-table",
-  "[data-testid='diff-view']",
-  "pre",
-  "code",
-  "textarea",
-  "#readme",
-  ".readme",
-  ".user-profile-bio",
-  ".p-note",
-  ".vcard-names",
-].join(",");
+import { AUTHORED_ROOTS as AUTHORED_ROOT_LIST } from "../../../packages/primer/selectors.js";
+
+/** Roots of text people wrote, from the Primer adapter's one list, which the heading role also follows. */
+export const AUTHORED_ROOTS = AUTHORED_ROOT_LIST.join(",");
 
 /** Elements that are, or behave as, controls. An owned node never goes inside one. */
 export const INTERACTIVE = [

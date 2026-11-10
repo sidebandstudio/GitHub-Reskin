@@ -183,3 +183,56 @@ export function islandScope(covered, known, baseOf, branch) {
     deep: `:is(${below(NESTING)})`,
   };
 }
+
+/**
+ * Roots of text people wrote: READMEs and rendered Markdown, comments, issue, pull request,
+ * discussion and commit titles, files, code and diffs, and the names people choose. The content
+ * adapter never anchors an owned node inside one, and the heading role's case and a capitals-only
+ * heading face never reach one. Names and titles: profile display name and username, organization
+ * name, repository name and the owner and repository in the signed-in header, file and directory
+ * names in the file heading, breadcrumbs, tree and listing, commit rows, release names, and the
+ * gist author, name and file names (github.com, 2026-11-09).
+ */
+export const AUTHORED_ROOTS = Object.freeze([
+  ".markdown-body",
+  ".comment-body",
+  ".js-comment-body",
+  ".markdown-title",
+  ".js-issue-title",
+  "[data-testid='issue-title']",
+  "[data-testid='issue-body']",
+  ".file",
+  ".gist-file",
+  ".blob-wrapper",
+  ".blob-code",
+  ".react-code-file-contents",
+  ".react-code-lines",
+  ".diff-table",
+  ".js-diff-table",
+  "[data-testid='diff-view']",
+  "pre",
+  "code",
+  "textarea",
+  "#readme",
+  ".readme",
+  ".user-profile-bio",
+  ".p-note",
+  ".vcard-names",
+  "[itemprop='name']",
+  ".orghead h1",
+  "[data-testid='repo-name-wrapper']",
+  ".AppHeader-context-item",
+  "#file-name-id",
+  "#file-name-id-wide",
+  "#sticky-file-name-id",
+  "[data-testid='breadcrumbs']",
+  "[data-testid='breadcrumbs-filename']",
+  "#repos-file-tree [role='tree']",
+  ".react-directory-filename-column",
+  ".commit-title",
+  "[data-testid='commit-row-item']",
+  "[data-release-anchor]",
+  "[data-pjax='#repo-content-pjax-container'] > h1",
+  ".gist-blob-name",
+  ".author",
+]);
