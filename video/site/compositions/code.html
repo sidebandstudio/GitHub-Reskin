@@ -1,0 +1,45 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+    }
+  </style>
+  <!-- H07 [390,450): the real repository in Choom Circuit, file list 390-413, then a punch-in on
+       extension/content.js from 414 with its syntax palette and native monospace. H08 [450,510):
+       the immutable content.js diff with native signs, line numbers and line/word colors. Text
+       stays off the code. Scene time 0 is frame 390. Captures: R01-D, R02-D, R03-D, all at
+       commit 1a67a05. -->
+  <div id="root" data-composition-id="code" data-width="1920" data-height="1080">
+    <div id="cd-bg-1" class="clip backdrop" data-layout-ignore data-start="0" data-duration="2" data-track-index="0"><img src="assets/backdrops/R01-D.jpg" alt="" /></div>
+    <div id="cd-bg-2" class="clip backdrop" data-layout-ignore data-start="2" data-duration="2" data-track-index="0"><img src="assets/backdrops/R03-D.jpg" alt="" /></div>
+    <div class="scrim"></div>
+
+    <div id="cd-head-1" class="clip head" data-start="0" data-duration="2" data-track-index="2">
+      <div class="title">Cyberpunk: Edgerunners</div>
+      <div class="theme">Choom Circuit · <span style="color: var(--ivory)">Code colors</span></div>
+    </div>
+    <div id="cd-head-2" class="clip head" data-start="2" data-duration="2" data-track-index="2">
+      <div class="title">Cyberpunk: Edgerunners</div>
+      <div class="theme">Choom Circuit · <span style="color: var(--ivory)">Line and word diffs</span></div>
+    </div>
+    <div id="cd-src-1" class="clip src" data-start="0" data-duration="0.8" data-track-index="4"><span><b>sidebandstudio/GitHub-Reskin</b><br />files</span></div>
+    <div id="cd-src-2" class="clip src" data-start="0.8" data-duration="1.2" data-track-index="4"><span><b>extension/content.js</b><br />source</span></div>
+    <div id="cd-src-3" class="clip src" data-start="2" data-duration="2" data-track-index="4"><span><b>extension/content.js</b><br />commit diff</span></div>
+
+    <div class="shot">
+      <div id="cd-shot-1" class="clip layer" data-start="0" data-duration="0.8" data-track-index="1" style="--k: 1.3px; --x0: 20; --y0: 60"><img id="cd-img-1" class="page" src="assets/captures/R01-D.png" alt="" /></div>
+      <div id="cd-shot-2" class="clip layer" data-start="0.8" data-duration="1.2" data-track-index="1" style="--k: 1.6px; --x0: 360; --y0: 200"><img id="cd-img-2" class="page" src="assets/captures/R02-D.png" alt="" /></div>
+      <div id="cd-shot-3" class="clip layer" data-start="2" data-duration="2" data-track-index="1" style="--k: 1.6px; --x0: 330; --y0: 255"><img id="cd-img-3" class="page" src="assets/captures/R03-D.png" alt="" /></div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    const f = (n) => n / 30;
+    tl.fromTo("#cd-img-1", { scale: 1 }, { scale: 1.02, duration: f(24), ease: "none", transformOrigin: "30% 0%" }, 0);
+    tl.fromTo("#cd-img-2", { y: 0 }, { y: -40, duration: f(36), ease: "none" }, f(24));
+    tl.fromTo("#cd-img-3", { y: 0 }, { y: -60, duration: f(60), ease: "none" }, f(60));
+    tl.fromTo("#cd-head-2 .theme", { y: 12, opacity: 0.4 }, { y: 0, opacity: 1, duration: f(6), ease: "power3.out" }, f(60));
+    window.__timelines["code"] = tl;
+  </script>
+</template>

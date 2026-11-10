@@ -1,0 +1,65 @@
+{
+  "captured": "2026-11-10T02:03:34.074Z",
+  "browser": "Chromium 156.0.8078.4",
+  "extension": {
+    "name": "GitHub Reskin",
+    "version": "1.1.0",
+    "commit": "77f3ddd1ba58f5a338fdcc3c6e8155068661a86d",
+    "sourceDirty": false,
+    "package": "npm run build:stores, dist/chrome unpacked"
+  },
+  "session": "fresh logged-out profile, en-US, light color scheme, 100% zoom",
+  "id": "P06C-D",
+  "file": "P06C-D.png",
+  "url": "https://github.com/whoisaldo",
+  "httpStatus": 200,
+  "theme": "anime.frieren",
+  "themeSource": {
+    "file": "themes/anime/longroad-petals.reskin.json",
+    "sha256": "5e49519ad3bb2246685f9b382a454e1e89baf096175e6e4cc3c521dd7042ead6"
+  },
+  "appearance": "full",
+  "flavorText": true,
+  "viewport": {
+    "width": 1440,
+    "height": 1000,
+    "dpr": 2
+  },
+  "preset": "D",
+  "scrollRule": "C",
+  "scrollY": 2422,
+  "anchor": {
+    "x": 432,
+    "y": 2546,
+    "width": 747,
+    "height": 24
+  },
+  "pageHeight": null,
+  "state": {
+    "boot": "ready",
+    "styled": true,
+    "cssScope": "active",
+    "canvas": "rgb(233, 229, 243)"
+  },
+  "settings": {
+    "cssConsent": {},
+    "customThemes": [],
+    "enabled": true,
+    "migration": {
+      "notices": []
+    },
+    "onboardingCompleted": false,
+    "preferences": {
+      "appearance": "full",
+      "effects": true,
+      "extras": true,
+      "fonts": true,
+      "motion": true,
+      "text": true
+    },
+    "revision": 10,
+    "selectedThemeId": "anime.frieren",
+    "settingsVersion": 2
+  },
+  "sha256": "fe1e11e312855f0b6ac7d9ba90efa82e47b6e762d0c2e9e23e86508d19190eb5"
+}

@@ -1,0 +1,36 @@
+{
+  "product": "GitHub Reskin",
+  "studio": "Sideband Studio",
+  "unit": "S4 original brand and promo assets, icon stage",
+  "date": "2026-11-08",
+  "originalArtwork": {
+    "author": "S4 design task for Sideband Studio",
+    "method": "Hand-authored SVG geometry and original promo layouts, rasterized locally with resvg. No generated bitmap source art.",
+    "files": ["concept-a.svg", "concept-b.svg", "concept-c.svg", "icon.svg", "tile-440x280.svg", "marquee-1400x560.svg", "sources/build.mjs"],
+    "permission": "The original artwork in this handoff may be used, modified, reproduced, and redistributed by Sideband Studio with GitHub Reskin and its promotion.",
+    "thirdPartyArtwork": [],
+    "excludedAssets": ["Octocat", "GitHub mark", "GitHub logotype artwork", "franchise art", "franchise emblems", "existing extension icon geometry and pixels"]
+  },
+  "font": {
+    "family": "Manrope",
+    "author": "The Manrope Project Authors",
+    "copyright": "Copyright 2018 The Manrope Project Authors (https://github.com/googlefonts/manrope)",
+    "source": "https://github.com/google/fonts/tree/main/ofl/manrope",
+    "download": "https://raw.githubusercontent.com/google/fonts/main/ofl/manrope/Manrope%5Bwght%5D.ttf",
+    "licenseSource": "https://raw.githubusercontent.com/google/fonts/main/ofl/manrope/OFL.txt",
+    "license": "OFL-1.1",
+    "licenseFile": "fonts/OFL.txt",
+    "fontFile": "fonts/Manrope-Variable.ttf",
+    "fontSha256": "3ae11c49db0455a3cc33e37d380f20fdb8c7f8b41dc07625c177e3d87a9d6ae6",
+    "licenseSha256": "58172e0c0fac2cda8a37b348164bb55e44b0e69051e557e92b1d3f6910141f7b",
+    "redistribution": "Bundled unmodified with its full copyright notice and SIL Open Font License. Promo text is outlined from this font."
+  },
+  "referenceOnly": [
+    "/Users/aldo/work/github-reskin-run/research/06-site-video.md",
+    "/Users/aldo/work/github-reskin-run/spec/WORKPLAN.md",
+    "https://github.com/sidebandstudio/GitHub-Reskin/tree/main/extension/icons"
+  ],
+  "chosenConcept": "A / Peel",
+  "promoStatus": "Drafts without screenshots, pending later S2 copy and S3 capture stages",
+  "published": false
+}

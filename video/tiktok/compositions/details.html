@@ -1,0 +1,44 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+    }
+  </style>
+  <!-- T08 [405,465): back to whoisaldo after all three profiles. Frames 405-434: the real // CHOOM
+       profile tag, condensed heading and yellow controls in Full. Frames 435-464: the cyan
+       contribution calendar, legend and native count. Static data, hard cuts. Scene time 0 is
+       frame 405. Captures: P02-V (from CSS y=40), P11-V (the count heading at y=96). -->
+  <div id="root" data-composition-id="details" data-width="1080" data-height="1920">
+    <div id="dt-bg-1" class="clip backdrop" data-layout-ignore data-start="0" data-duration="1" data-track-index="0"><img src="assets/backdrops/P02-V.jpg" alt="" /></div>
+    <div id="dt-bg-2" class="clip backdrop" data-layout-ignore data-start="1" data-duration="1" data-track-index="0"><img src="assets/backdrops/P11-V.jpg" alt="" /></div>
+    <div class="scrim"></div>
+
+    <div id="dt-head-1" class="clip head" data-start="0" data-duration="1" data-track-index="2">
+      <div class="eyebrow">Full transformation</div>
+      <div class="title">Cyberpunk:<br />Edgerunners</div>
+      <div class="theme">Choom Circuit</div>
+    </div>
+    <div id="dt-head-2" class="clip head" data-start="1" data-duration="1" data-track-index="2">
+      <div class="eyebrow">Contribution graph too</div>
+      <div class="title">Cyberpunk:<br />Edgerunners</div>
+      <div class="theme">Choom Circuit</div>
+    </div>
+
+    <div class="shot">
+      <div id="dt-shot-1" class="clip layer" data-start="0" data-duration="1" data-track-index="1"><img id="dt-img-1" class="page" src="assets/captures/P02-V.png" alt="" style="top: calc(-60 * var(--k))" /></div>
+      <div id="dt-shot-2" class="clip layer" data-start="1" data-duration="1" data-track-index="1"><img id="dt-img-2" class="page" src="assets/captures/P11-V.png" alt="" style="top: calc(-56 * var(--k))" /></div>
+    </div>
+
+    <div id="dt-src-1" class="clip src" data-start="0" data-duration="2" data-track-index="4"><span><b>github.com/whoisaldo</b> · Full</span></div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    const f = (n) => n / 30;
+    tl.fromTo("#dt-img-1", { scale: 1.06 }, { scale: 1.1, duration: f(30), ease: "none", transformOrigin: "20% 10%" }, 0);
+    tl.fromTo("#dt-img-2", { scale: 1 }, { scale: 1.04, duration: f(30), ease: "none", transformOrigin: "30% 20%" }, f(30));
+    tl.fromTo("#dt-head-1 .eyebrow", { y: 14, opacity: 0 }, { y: 0, opacity: 1, duration: f(5), ease: "power3.out" }, 0);
+    tl.fromTo("#dt-head-2 .eyebrow", { y: 14, opacity: 0 }, { y: 0, opacity: 1, duration: f(5), ease: "power3.out" }, f(30));
+    window.__timelines["details"] = tl;
+  </script>
+</template>

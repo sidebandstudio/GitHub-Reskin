@@ -1,0 +1,54 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+    }
+  </style>
+  <!-- H09 [510,600): whoisaldo in Full for 510-539, the real Calm control tapped at 540, the page
+       in Calm from 542 and held from 552: grid, glow, extra text and theme CSS are gone, colors
+       and simple shapes stay. Scene time 0 is frame 510. Captures: P02-D, P10K-D, POP-full,
+       POP-calm. -->
+  <div id="root" data-composition-id="calm" data-width="1920" data-height="1080">
+    <div id="cm-bg-1" class="clip backdrop" data-layout-ignore data-start="0" data-duration="1.0667" data-track-index="0"><img src="assets/backdrops/P02-D.jpg" alt="" /></div>
+    <div id="cm-bg-2" class="clip backdrop" data-layout-ignore data-start="1.0667" data-duration="1.9333" data-track-index="0"><img src="assets/backdrops/P10K-D.jpg" alt="" /></div>
+    <div class="scrim"></div>
+
+    <div id="cm-head-1" class="clip head" data-start="0" data-duration="1.4" data-track-index="2">
+      <div class="title">Cyberpunk: Edgerunners</div>
+      <div class="theme">Choom Circuit · <span style="color: var(--ivory)">Full / Calm</span></div>
+    </div>
+    <div id="cm-head-2" class="clip head" data-start="1.4" data-duration="1.6" data-track-index="2">
+      <div class="title">Cyberpunk: Edgerunners</div>
+      <div class="theme">Choom Circuit · <span style="color: var(--ivory)">Calm: extras off, colors stay</span></div>
+    </div>
+    <div id="cm-src-1" class="clip src" data-start="0" data-duration="1.0667" data-track-index="4"><span><b>github.com/whoisaldo</b><br />Full</span></div>
+    <div id="cm-src-2" class="clip src" data-start="1.0667" data-duration="1.9333" data-track-index="4"><span><b>github.com/whoisaldo</b><br />Calm</span></div>
+
+    <div class="shot">
+      <div id="cm-shot-1" class="clip layer" data-start="0" data-duration="1.0667" data-track-index="1"><img class="page" src="assets/captures/P02-D.png" alt="" /></div>
+      <div id="cm-shot-2" class="clip layer" data-start="1.0667" data-duration="1.9333" data-track-index="1"><img id="cm-img-2" class="page" src="assets/captures/P10K-D.png" alt="" /></div>
+      <!-- Popup crop: the Appearance row, CSS 400x140 from y=405 at 1.2 output px per CSS px. -->
+      <div id="cm-popup" class="clip" data-start="0.2" data-duration="1.4" data-track-index="3" style="position: absolute; left: 1040px; top: 370px; width: 480px; height: 168px">
+        <div id="cm-popup-card" class="popup" style="left: 0; top: 0; width: 480px; height: 168px">
+          <img src="assets/captures/POP-full.png" alt="" style="top: -486px" />
+          <img id="cm-pop-calm" src="assets/captures/POP-calm.png" alt="" style="top: -486px; opacity: 0" />
+        </div>
+        <div id="cm-tap" class="tap" style="left: 420px; top: 49px"></div>
+      </div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    const f = (n) => n / 30;
+    tl.fromTo("#cm-popup-card", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: f(5), ease: "power3.out" }, f(6));
+    tl.fromTo("#cm-tap", { opacity: 0, scale: 1.5 }, { opacity: 1, scale: 1, duration: f(6), ease: "power2.out" }, f(24));
+    tl.to("#cm-tap", { scale: 0.82, duration: f(2), ease: "power2.in" }, f(30));
+    tl.to("#cm-tap", { opacity: 0, scale: 1.2, duration: f(8), ease: "power1.out" }, f(32));
+    tl.set("#cm-pop-calm", { opacity: 1 }, f(30));
+    tl.to("#cm-popup-card", { opacity: 0, y: 20, duration: f(5), ease: "power2.in" }, f(42));
+    tl.fromTo("#cm-head-2 .theme", { y: 12, opacity: 0.4 }, { y: 0, opacity: 1, duration: f(6), ease: "power3.out" }, f(42));
+    tl.fromTo("#cm-img-2", { scale: 1 }, { scale: 1.03, duration: f(58), ease: "none", transformOrigin: "50% 0%" }, f(32));
+    window.__timelines["calm"] = tl;
+  </script>
+</template>

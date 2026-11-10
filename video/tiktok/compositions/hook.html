@@ -1,0 +1,78 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+    }
+  </style>
+  <!-- T01 [0,30) and T02 [30,105). Frame 0 already carries the headline over plain whoisaldo; a
+       header-edge wipe from frame 11 lands Choom Circuit by frame 17. At 30 the real popup opens
+       over the plain page with Reskin off; its switch is tapped at 48, the page is themed at 50
+       and the popup closes at 75. Captures: P01-V, P02-V, POP-off, POP-on. -->
+  <div id="root" data-composition-id="hook" data-width="1080" data-height="1920">
+    <div id="hk-bg-plain-a" class="clip backdrop" data-layout-ignore data-start="0" data-duration="0.5667" data-track-index="0"><img src="assets/backdrops/P01-V.jpg" alt="" /></div>
+    <div id="hk-bg-choom-a" class="clip backdrop" data-layout-ignore data-start="0.3667" data-duration="0.6333" data-track-index="0"><div id="hk-bg-choom-a-w" class="layer"><img src="assets/backdrops/P02-V.jpg" alt="" /></div></div>
+    <div id="hk-bg-plain-b" class="clip backdrop" data-layout-ignore data-start="1" data-duration="0.6667" data-track-index="0"><img src="assets/backdrops/P01-V.jpg" alt="" /></div>
+    <div id="hk-bg-choom-b" class="clip backdrop" data-layout-ignore data-start="1.6667" data-duration="1.8333" data-track-index="0"><div id="hk-bg-choom-b-w" class="layer"><img src="assets/backdrops/P02-V.jpg" alt="" /></div></div>
+    <div class="scrim"></div>
+
+    <div id="hk-head-1" class="clip head" data-start="0" data-duration="1" data-track-index="2">
+      <div class="title">Cyberpunk:<br />Edgerunners</div>
+      <div class="theme">Choom Circuit</div>
+    </div>
+    <div id="hk-head-2" class="clip head" data-start="1" data-duration="2.5" data-track-index="2">
+      <div id="hk-eyebrow" class="eyebrow">GitHub Reskin</div>
+      <div class="title">Cyberpunk:<br />Edgerunners</div>
+      <div class="theme">Choom Circuit</div>
+    </div>
+
+    <div class="shot">
+      <div id="hk-plain-a" class="clip layer" data-start="0" data-duration="0.5667" data-track-index="1"><img class="page" src="assets/captures/P01-V.png" alt="" /></div>
+      <div id="hk-choom-a" class="clip layer" data-start="0.3667" data-duration="0.6333" data-track-index="1">
+        <div id="hk-choom-a-w" class="layer"><img id="hk-choom-a-img" class="page" src="assets/captures/P02-V.png" alt="" /></div>
+      </div>
+      <div id="hk-plain-b" class="clip layer" data-start="1" data-duration="0.6667" data-track-index="1"><img class="page" src="assets/captures/P01-V.png" alt="" /></div>
+      <div id="hk-choom-b" class="clip layer" data-start="1.6667" data-duration="1.8333" data-track-index="1">
+        <div id="hk-choom-b-w" class="layer"><img id="hk-choom-b-img" class="page" src="assets/captures/P02-V.png" alt="" /></div>
+      </div>
+      <div id="hk-edge-a" class="edge"></div>
+      <div id="hk-edge-b" class="edge"></div>
+
+      <!-- Popup page crop: CSS 400x320 at 1.55 output px per CSS px, anchored top right under GitHub's header. -->
+      <div id="hk-popup" class="clip" data-start="1" data-duration="1.7" data-track-index="3" style="position: absolute; left: 156px; top: 130px; width: 620px; height: 496px">
+        <div id="hk-popup-card" class="popup" style="left: 0; top: 0; width: 620px; height: 496px">
+          <img id="hk-pop-off" src="assets/captures/POP-off.png" alt="" style="width: 620px" />
+          <img id="hk-pop-on" src="assets/captures/POP-on.png" alt="" style="width: 620px; opacity: 0" />
+        </div>
+        <div id="hk-tap" class="tap" style="left: 542px; top: 53px"></div>
+      </div>
+    </div>
+
+    <div id="hk-src-1" class="clip src" data-start="0" data-duration="1" data-track-index="4"><span><b>github.com/whoisaldo</b></span></div>
+    <div id="hk-src-2" class="clip src" data-start="1" data-duration="2.5" data-track-index="4"><span><b>Extension popup</b> · one tap</span></div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    const f = (n) => n / 30;
+    // T01: header-edge wipe, frames 11-16, settled by 17.
+    tl.fromTo("#hk-choom-a-w", { clipPath: "inset(0 0 100% 0)" }, { clipPath: "inset(0 0 0% 0)", duration: f(6), ease: "power2.inOut" }, f(11));
+    tl.fromTo("#hk-bg-choom-a-w", { clipPath: "inset(0 0 100% 0)" }, { clipPath: "inset(0 0 0% 0)", duration: f(6), ease: "power2.inOut" }, f(11));
+    tl.fromTo("#hk-edge-a", { y: 0, opacity: 0 }, { y: 734, opacity: 0.9, duration: f(6), ease: "power2.inOut" }, f(11));
+    tl.to("#hk-edge-a", { opacity: 0, duration: f(2) }, f(17));
+    tl.fromTo("#hk-choom-a-img", { scale: 1 }, { scale: 1.025, duration: f(13), ease: "none", transformOrigin: "50% 0%" }, f(17));
+    // T02: eyebrow arrives, popup opens, real switch tap at 48, page themed at 50, popup closes at 75.
+    tl.fromTo("#hk-eyebrow", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: f(6), ease: "power3.out" }, f(30));
+    tl.fromTo("#hk-popup-card", { opacity: 0, y: -24 }, { opacity: 1, y: 0, duration: f(6), ease: "power3.out" }, f(30));
+    tl.fromTo("#hk-tap", { opacity: 0, scale: 1.5 }, { opacity: 1, scale: 1, duration: f(6), ease: "power2.out" }, f(42));
+    tl.to("#hk-tap", { scale: 0.82, duration: f(2), ease: "power2.in" }, f(48));
+    tl.to("#hk-tap", { opacity: 0, scale: 1.2, duration: f(8), ease: "power1.out" }, f(50));
+    tl.set("#hk-pop-on", { opacity: 1 }, f(48));
+    tl.fromTo("#hk-choom-b-w", { clipPath: "inset(0 0 100% 0)" }, { clipPath: "inset(0 0 0% 0)", duration: f(6), ease: "power2.inOut" }, f(50));
+    tl.fromTo("#hk-bg-choom-b-w", { clipPath: "inset(0 0 100% 0)" }, { clipPath: "inset(0 0 0% 0)", duration: f(6), ease: "power2.inOut" }, f(50));
+    tl.fromTo("#hk-edge-b", { y: 0, opacity: 0 }, { y: 734, opacity: 0.9, duration: f(6), ease: "power2.inOut" }, f(50));
+    tl.to("#hk-edge-b", { opacity: 0, duration: f(2) }, f(56));
+    tl.to("#hk-popup-card", { opacity: 0, y: -24, duration: f(6), ease: "power2.in" }, f(75));
+    tl.fromTo("#hk-choom-b-img", { scale: 1 }, { scale: 1.03, duration: f(49), ease: "none", transformOrigin: "50% 0%" }, f(56));
+    window.__timelines["hook"] = tl;
+  </script>
+</template>

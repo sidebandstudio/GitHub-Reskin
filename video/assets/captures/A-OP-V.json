@@ -1,0 +1,60 @@
+{
+  "captured": "2026-11-10T02:02:23.463Z",
+  "browser": "Chromium 156.0.8078.4",
+  "extension": {
+    "name": "GitHub Reskin",
+    "version": "1.1.0",
+    "commit": "77f3ddd1ba58f5a338fdcc3c6e8155068661a86d",
+    "sourceDirty": false,
+    "package": "npm run build:stores, dist/chrome unpacked"
+  },
+  "session": "fresh logged-out profile, en-US, light color scheme, 100% zoom",
+  "id": "A-OP-V",
+  "file": "A-OP-V.png",
+  "url": "https://github.com/whoisaldo",
+  "httpStatus": 200,
+  "theme": "anime.one-piece",
+  "themeSource": {
+    "file": "themes/anime/sunward-voyage.reskin.json",
+    "sha256": "4f0a86c1cc094cee5f3582b8ac1b3a3aa4bcbf443762f06e6ff0ca88c5892965"
+  },
+  "appearance": "full",
+  "flavorText": true,
+  "viewport": {
+    "width": 390,
+    "height": 844,
+    "dpr": 3
+  },
+  "preset": "V",
+  "scrollRule": "T",
+  "scrollY": 0,
+  "anchor": null,
+  "pageHeight": null,
+  "state": {
+    "boot": "ready",
+    "styled": true,
+    "cssScope": "active",
+    "canvas": "rgb(9, 43, 69)"
+  },
+  "settings": {
+    "cssConsent": {},
+    "customThemes": [],
+    "enabled": true,
+    "migration": {
+      "notices": []
+    },
+    "onboardingCompleted": false,
+    "preferences": {
+      "appearance": "full",
+      "effects": true,
+      "extras": true,
+      "fonts": true,
+      "motion": true,
+      "text": true
+    },
+    "revision": 12,
+    "selectedThemeId": "anime.one-piece",
+    "settingsVersion": 2
+  },
+  "sha256": "1c7700c1389417c512b6d29910c9b1dd1dd126e9d390e1b255451ef3e425a2ff"
+}

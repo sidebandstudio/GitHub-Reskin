@@ -1,0 +1,51 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+    }
+  </style>
+  <!-- H05 [270,330): Alitleis123 in Choom Circuit, the second reference profile's first
+       appearance; Reskin changes only the viewer's own browser. H06 [330,390): torvalds in the
+       Editing Suite classic, the third, with the real Classics group inset for frames 330-359.
+       Hard cuts. Scene time 0 is frame 270. Captures: P07-D, P08-D, POP-classics. -->
+  <div id="root" data-composition-id="people" data-width="1920" data-height="1080">
+    <div id="pp-bg-1" class="clip backdrop" data-layout-ignore data-start="0" data-duration="2" data-track-index="0"><img src="assets/backdrops/P07-D.jpg" alt="" /></div>
+    <div id="pp-bg-2" class="clip backdrop" data-layout-ignore data-start="2" data-duration="2" data-track-index="0"><img src="assets/backdrops/P08-D.jpg" alt="" /></div>
+    <div class="scrim"></div>
+
+    <div id="pp-head-1" class="clip head" data-start="0" data-duration="2" data-track-index="2">
+      <div class="eyebrow">Your browser view.</div>
+      <div class="title">Cyberpunk: Edgerunners</div>
+      <div class="theme">Choom Circuit</div>
+    </div>
+    <div id="pp-head-2" class="clip head" data-start="2" data-duration="2" data-track-index="2">
+      <div class="title">12 Classics</div>
+      <div class="theme">Editing Suite</div>
+    </div>
+    <div id="pp-src-1" class="clip src" data-start="0" data-duration="2" data-track-index="4"><span><b>github.com/Alitleis123</b><br />Full</span></div>
+    <div id="pp-src-2" class="clip src" data-start="2" data-duration="2" data-track-index="4"><span><b>github.com/torvalds</b><br />Classics</span></div>
+
+    <div class="shot">
+      <div id="pp-shot-1" class="clip layer" data-start="0" data-duration="2" data-track-index="1"><img id="pp-img-1" class="page" src="assets/captures/P07-D.png" alt="" /></div>
+      <div id="pp-shot-2" class="clip layer" data-start="2" data-duration="2" data-track-index="1"><img id="pp-img-2" class="page" src="assets/captures/P08-D.png" alt="" /></div>
+      <!-- Popup crop: CSS 400x300 from y=50 at 1.2 output px per CSS px. -->
+      <div id="pp-popup" class="clip" data-start="2" data-duration="1" data-track-index="3" style="position: absolute; left: 1040px; top: 60px; width: 480px; height: 360px">
+        <div id="pp-popup-card" class="popup" style="left: 0; top: 0; width: 480px; height: 360px">
+          <img src="assets/captures/POP-classics.png" alt="" style="top: -60px" />
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    const f = (n) => n / 30;
+    tl.fromTo("#pp-img-1", { scale: 1 }, { scale: 1.03, duration: f(60), ease: "none", transformOrigin: "50% 0%" }, 0);
+    tl.fromTo("#pp-img-2", { scale: 1 }, { scale: 1.03, duration: f(60), ease: "none", transformOrigin: "50% 0%" }, f(60));
+    tl.fromTo("#pp-head-1 .title", { y: 16, opacity: 0.4 }, { y: 0, opacity: 1, duration: f(6), ease: "power3.out" }, 0);
+    tl.fromTo("#pp-head-2 .title", { y: 16, opacity: 0.4 }, { y: 0, opacity: 1, duration: f(6), ease: "power3.out" }, f(60));
+    tl.fromTo("#pp-popup-card", { opacity: 0, y: -20 }, { opacity: 1, y: 0, duration: f(5), ease: "power3.out" }, f(60));
+    tl.to("#pp-popup-card", { opacity: 0, y: -20, duration: f(5), ease: "power2.in" }, f(85));
+    window.__timelines["people"] = tl;
+  </script>
+</template>

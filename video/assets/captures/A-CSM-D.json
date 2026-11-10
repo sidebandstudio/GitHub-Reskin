@@ -1,0 +1,60 @@
+{
+  "captured": "2026-11-10T02:07:14.337Z",
+  "browser": "Chromium 156.0.8078.4",
+  "extension": {
+    "name": "GitHub Reskin",
+    "version": "1.1.0",
+    "commit": "77f3ddd1ba58f5a338fdcc3c6e8155068661a86d",
+    "sourceDirty": false,
+    "package": "npm run build:stores, dist/chrome unpacked"
+  },
+  "session": "fresh logged-out profile, en-US, light color scheme, 100% zoom",
+  "id": "A-CSM-D",
+  "file": "A-CSM-D.png",
+  "url": "https://github.com/whoisaldo",
+  "httpStatus": 200,
+  "theme": "anime.chainsaw-man",
+  "themeSource": {
+    "file": "themes/anime/ripcord-bureau.reskin.json",
+    "sha256": "ad43f1cba86e250eb379d3ccd0d64aaded373e9980381afb57391e91f8b4e9d3"
+  },
+  "appearance": "full",
+  "flavorText": true,
+  "viewport": {
+    "width": 1440,
+    "height": 1000,
+    "dpr": 2
+  },
+  "preset": "D",
+  "scrollRule": "T",
+  "scrollY": 0,
+  "anchor": null,
+  "pageHeight": null,
+  "state": {
+    "boot": "ready",
+    "styled": true,
+    "cssScope": "active",
+    "canvas": "rgb(233, 228, 214)"
+  },
+  "settings": {
+    "cssConsent": {},
+    "customThemes": [],
+    "enabled": true,
+    "migration": {
+      "notices": []
+    },
+    "onboardingCompleted": false,
+    "preferences": {
+      "appearance": "full",
+      "effects": true,
+      "extras": true,
+      "fonts": true,
+      "motion": true,
+      "text": true
+    },
+    "revision": 5,
+    "selectedThemeId": "anime.chainsaw-man",
+    "settingsVersion": 2
+  },
+  "sha256": "54ebfdd055993fdd77115e0b7f3e867bdcd49e01a522e1dcfc83ef8bb01f1f4f"
+}

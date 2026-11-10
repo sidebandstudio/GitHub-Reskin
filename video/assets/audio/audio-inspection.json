@@ -1,0 +1,85 @@
+{
+  "generated_at_utc": "2026-11-08T20:05:34.804785+00:00",
+  "listened": false,
+  "inspection": "ffprobe, complete FFmpeg decode and sample-peak measurement only",
+  "total_bytes": 1996635,
+  "files": [
+    {
+      "file": "audio/bed-cyberpunk-experiment-g.mp3",
+      "duration_s": 40.0,
+      "codec": "mp3",
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "bytes": 640940,
+      "sha256": "bc53067131d898c6dd1482ba5b0decaa0398c75a2c5edcc351a67ffe9bf26600",
+      "decode_check": "passed",
+      "measured_sample_peak_dbfs": 0.0
+    },
+    {
+      "file": "audio/bed-synthwave-house.mp3",
+      "duration_s": 40.0,
+      "codec": "mp3",
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "bytes": 640940,
+      "sha256": "09235e25d6cd6838358a695de4d463cd43f478575d57a1f6ff02f2be87b45a41",
+      "decode_check": "passed",
+      "measured_sample_peak_dbfs": -0.4
+    },
+    {
+      "file": "audio/bed-synthwave-type.mp3",
+      "duration_s": 40.0,
+      "codec": "mp3",
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "bytes": 640940,
+      "sha256": "72ca7b8e83f6561481d45bce21297c4fd6de62f4655cf8153d238419ff9a8b16",
+      "decode_check": "passed",
+      "measured_sample_peak_dbfs": 0.0
+    },
+    {
+      "file": "audio/sfx-glitch.mp3",
+      "duration_s": 0.39517,
+      "codec": "mp3",
+      "sample_rate_hz": 44100,
+      "channels": 2,
+      "bytes": 10959,
+      "sha256": "51f496a70dd207d1a8cd8ba109236252d6160e93f009b0bb55e62dd0b91cf54f",
+      "decode_check": "passed",
+      "measured_sample_peak_dbfs": -0.4
+    },
+    {
+      "file": "audio/sfx-whoosh.mp3",
+      "duration_s": 2.052979,
+      "codec": "mp3",
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "bytes": 45312,
+      "sha256": "3319e044194b8185671ff8d3a2c9660d101fbae67ea31c2f6460e9cf6c1eac9d",
+      "decode_check": "passed",
+      "measured_sample_peak_dbfs": -4.6
+    },
+    {
+      "file": "audio/sfx-click.mp3",
+      "duration_s": 1.241882,
+      "codec": "mp3",
+      "sample_rate_hz": 44100,
+      "channels": 2,
+      "bytes": 11597,
+      "sha256": "a8d0369a986abe53067b160e0fe902e1a6ebfdfc5ce443ac67a37185fc04462d",
+      "decode_check": "passed",
+      "measured_sample_peak_dbfs": -0.5
+    },
+    {
+      "file": "audio/sfx-snap.mp3",
+      "duration_s": 0.19737,
+      "codec": "mp3",
+      "sample_rate_hz": 44100,
+      "channels": 2,
+      "bytes": 5947,
+      "sha256": "b02d71a1637b0c44a52d419b18d4520700e4bc69cdb7c69fa6a87d8b7ce957fc",
+      "decode_check": "passed",
+      "measured_sample_peak_dbfs": -0.0
+    }
+  ]
+}

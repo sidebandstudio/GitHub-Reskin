@@ -1,0 +1,74 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+    }
+  </style>
+  <!-- H01 [0,30): plain whoisaldo with GitHub's own navigation, header-edge wipe from frame 11
+       into Choom Circuit, settled by 17. H02 [30,120): the real popup opens over the plain page
+       with Reskin off, the switch is tapped at 48, the page is themed at 50, the popup closes at
+       75 and the yellow/cyan result holds through 119. Captures: P01-D, P02-D, POP-off, POP-on. -->
+  <div id="root" data-composition-id="hook" data-width="1920" data-height="1080">
+    <div id="hk-bg-plain-a" class="clip backdrop" data-layout-ignore data-start="0" data-duration="0.5667" data-track-index="0"><img src="assets/backdrops/P01-D.jpg" alt="" /></div>
+    <div id="hk-bg-choom-a" class="clip backdrop" data-layout-ignore data-start="0.3667" data-duration="0.6333" data-track-index="0"><div id="hk-bg-choom-a-w" class="layer"><img src="assets/backdrops/P02-D.jpg" alt="" /></div></div>
+    <div id="hk-bg-plain-b" class="clip backdrop" data-layout-ignore data-start="1" data-duration="0.6667" data-track-index="0"><img src="assets/backdrops/P01-D.jpg" alt="" /></div>
+    <div id="hk-bg-choom-b" class="clip backdrop" data-layout-ignore data-start="1.6667" data-duration="2.3333" data-track-index="0"><div id="hk-bg-choom-b-w" class="layer"><img src="assets/backdrops/P02-D.jpg" alt="" /></div></div>
+    <div class="scrim"></div>
+
+    <div id="hk-head-1" class="clip head" data-start="0" data-duration="1" data-track-index="2">
+      <div class="title">Cyberpunk: Edgerunners</div>
+      <div class="theme">Choom Circuit</div>
+    </div>
+    <div id="hk-head-2" class="clip head" data-start="1" data-duration="3" data-track-index="2">
+      <div id="hk-eyebrow" class="eyebrow">GitHub Reskin</div>
+      <div class="title">Cyberpunk: Edgerunners</div>
+      <div class="theme">Choom Circuit</div>
+    </div>
+    <div id="hk-src-1" class="clip src" data-start="0" data-duration="1" data-track-index="4"><span><b>github.com/whoisaldo</b></span></div>
+    <div id="hk-src-2" class="clip src" data-start="1" data-duration="3" data-track-index="4"><span><b>Extension popup</b><br />one tap</span></div>
+
+    <div class="shot">
+      <div id="hk-plain-a" class="clip layer" data-start="0" data-duration="0.5667" data-track-index="1"><img class="page" src="assets/captures/P01-D.png" alt="" /></div>
+      <div id="hk-choom-a" class="clip layer" data-start="0.3667" data-duration="0.6333" data-track-index="1">
+        <div id="hk-choom-a-w" class="layer"><img id="hk-choom-a-img" class="page" src="assets/captures/P02-D.png" alt="" /></div>
+      </div>
+      <div id="hk-plain-b" class="clip layer" data-start="1" data-duration="0.6667" data-track-index="1"><img class="page" src="assets/captures/P01-D.png" alt="" /></div>
+      <div id="hk-choom-b" class="clip layer" data-start="1.6667" data-duration="2.3333" data-track-index="1">
+        <div id="hk-choom-b-w" class="layer"><img id="hk-choom-b-img" class="page" src="assets/captures/P02-D.png" alt="" /></div>
+      </div>
+      <div id="hk-edge-a" class="edge"></div>
+      <div id="hk-edge-b" class="edge"></div>
+      <!-- Popup crop: CSS 400x330 at 1.2 output px per CSS px, at the window's top right. -->
+      <div id="hk-popup" class="clip" data-start="1" data-duration="1.7" data-track-index="3" style="position: absolute; left: 1040px; top: 16px; width: 480px; height: 396px">
+        <div id="hk-popup-card" class="popup" style="left: 0; top: 0; width: 480px; height: 396px">
+          <img src="assets/captures/POP-off.png" alt="" />
+          <img id="hk-pop-on" src="assets/captures/POP-on.png" alt="" style="opacity: 0" />
+        </div>
+        <div id="hk-tap" class="tap" style="left: 420px; top: 41px"></div>
+      </div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    const f = (n) => n / 30;
+    const wipe = (layer, bg, edge, at) => {
+      tl.fromTo(layer, { clipPath: "inset(0 0 100% 0)" }, { clipPath: "inset(0 0 0% 0)", duration: f(6), ease: "power2.inOut" }, at);
+      tl.fromTo(bg, { clipPath: "inset(0 0 100% 0)" }, { clipPath: "inset(0 0 0% 0)", duration: f(6), ease: "power2.inOut" }, at);
+      tl.fromTo(edge, { y: 0, opacity: 0 }, { y: 560, opacity: 0.9, duration: f(6), ease: "power2.inOut" }, at);
+      tl.to(edge, { opacity: 0, duration: f(2) }, at + f(6));
+    };
+    wipe("#hk-choom-a-w", "#hk-bg-choom-a-w", "#hk-edge-a", f(11));
+    tl.fromTo("#hk-choom-a-img", { scale: 1 }, { scale: 1.02, duration: f(13), ease: "none", transformOrigin: "50% 0%" }, f(17));
+    tl.fromTo("#hk-eyebrow", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: f(6), ease: "power3.out" }, f(30));
+    tl.fromTo("#hk-popup-card", { opacity: 0, y: -20 }, { opacity: 1, y: 0, duration: f(6), ease: "power3.out" }, f(30));
+    tl.fromTo("#hk-tap", { opacity: 0, scale: 1.5 }, { opacity: 1, scale: 1, duration: f(6), ease: "power2.out" }, f(42));
+    tl.to("#hk-tap", { scale: 0.82, duration: f(2), ease: "power2.in" }, f(48));
+    tl.to("#hk-tap", { opacity: 0, scale: 1.2, duration: f(8), ease: "power1.out" }, f(50));
+    tl.set("#hk-pop-on", { opacity: 1 }, f(48));
+    wipe("#hk-choom-b-w", "#hk-bg-choom-b-w", "#hk-edge-b", f(50));
+    tl.to("#hk-popup-card", { opacity: 0, y: -20, duration: f(6), ease: "power2.in" }, f(75));
+    tl.fromTo("#hk-choom-b-img", { scale: 1 }, { scale: 1.03, duration: f(64), ease: "none", transformOrigin: "50% 0%" }, f(56));
+    window.__timelines["hook"] = tl;
+  </script>
+</template>

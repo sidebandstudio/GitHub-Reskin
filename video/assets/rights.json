@@ -1,0 +1,60 @@
+{
+  "note": "Rights for every file under video/assets that the two films use or derive from. Patterns are relative to this folder; * matches within one path segment. scripts/verify-video.mjs fails when a file has no entry or an entry matches nothing.",
+  "entries": [
+    {
+      "files": [
+        "captures/*.png"
+      ],
+      "kind": "product capture",
+      "source": "Screenshots taken by this project with video/assets/captures/capture.mjs: the built GitHub Reskin extension, unpacked in a fresh logged-out Chromium profile, on public github.com pages (github.com/whoisaldo, the project owner; github.com/Alitleis123; github.com/torvalds; sidebandstudio/GitHub-Reskin at commit 1a67a05) and on the extension's own popup page. Each PNG has a JSON manifest beside it with URL, theme and source hash, extension commit, viewport, scroll, date and its own SHA-256.",
+      "license": "The project's own captures, used to demonstrate its product. The GitHub interface shown belongs to GitHub; public profile and repository content (names, avatars, READMEs, code) belongs to its owners and is shown unchanged as ordinary page content. No franchise art, logos, footage, dialogue or music.",
+      "owner": "Sideband Studio"
+    },
+    {
+      "files": [
+        "backdrops/*.jpg"
+      ],
+      "kind": "derived backdrop",
+      "source": "Blurred, saturated and resized copies of the captures above, made by backdrops/make.mjs with FFmpeg.",
+      "license": "Same as the captures they derive from.",
+      "owner": "Sideband Studio"
+    },
+    {
+      "files": [
+        "audio/*.mp3"
+      ],
+      "kind": "music and effects",
+      "source": "OpenGameArt and Freesound; per-file author, source page, download URL, retrieval date, hashes and proofs in audio/rights.json, audio/proofs/ and audio/README.md.",
+      "license": "CC0-1.0",
+      "owner": "See audio/rights.json"
+    },
+    {
+      "files": [
+        "fonts/Manrope-Variable.ttf",
+        "fonts/OFL.txt"
+      ],
+      "kind": "font",
+      "source": "Manrope by The Manrope Project Authors, https://github.com/google/fonts/tree/main/ofl/manrope, bundled unmodified from the brand handoff (brand/brand-rights.json).",
+      "license": "OFL-1.1",
+      "owner": "The Manrope Project Authors"
+    },
+    {
+      "files": [
+        "brand/icon.svg"
+      ],
+      "kind": "brand mark",
+      "source": "The original Peel mark from the GitHub Reskin brand handoff, November 8, 2026 (brand/brand-rights.json).",
+      "license": "Original artwork; Sideband Studio may use, modify, reproduce and redistribute it with GitHub Reskin and its promotion.",
+      "owner": "Sideband Studio"
+    },
+    {
+      "files": [
+        "vendor/gsap-3.15.0.min.js"
+      ],
+      "kind": "animation runtime",
+      "source": "gsap@3.15.0 from npm, dist/gsap.min.js, unmodified (the version hyperframes@0.9.5 scaffolds), bundled so renders make no network request.",
+      "license": "GreenSock Standard 'no charge' license, https://gsap.com/standard-license",
+      "owner": "GreenSock (Webflow)"
+    }
+  ]
+}

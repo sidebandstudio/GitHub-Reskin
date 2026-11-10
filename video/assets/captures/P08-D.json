@@ -1,0 +1,60 @@
+{
+  "captured": "2026-11-10T02:03:34.074Z",
+  "browser": "Chromium 156.0.8078.4",
+  "extension": {
+    "name": "GitHub Reskin",
+    "version": "1.1.0",
+    "commit": "77f3ddd1ba58f5a338fdcc3c6e8155068661a86d",
+    "sourceDirty": false,
+    "package": "npm run build:stores, dist/chrome unpacked"
+  },
+  "session": "fresh logged-out profile, en-US, light color scheme, 100% zoom",
+  "id": "P08-D",
+  "file": "P08-D.png",
+  "url": "https://github.com/torvalds",
+  "httpStatus": 200,
+  "theme": "editing-suite",
+  "themeSource": {
+    "file": "themes/classics/editing-suite.reskin.json",
+    "sha256": "3ee3b3e4700d513503c5f15db383a566aed51c43d95bbf39d37c4a21fc485c5a"
+  },
+  "appearance": "full",
+  "flavorText": true,
+  "viewport": {
+    "width": 1440,
+    "height": 1000,
+    "dpr": 2
+  },
+  "preset": "D",
+  "scrollRule": "T",
+  "scrollY": 0,
+  "anchor": null,
+  "pageHeight": null,
+  "state": {
+    "boot": "ready",
+    "styled": true,
+    "cssScope": null,
+    "canvas": "rgb(10, 10, 11)"
+  },
+  "settings": {
+    "cssConsent": {},
+    "customThemes": [],
+    "enabled": true,
+    "migration": {
+      "notices": []
+    },
+    "onboardingCompleted": false,
+    "preferences": {
+      "appearance": "full",
+      "effects": true,
+      "extras": true,
+      "fonts": true,
+      "motion": true,
+      "text": true
+    },
+    "revision": 6,
+    "selectedThemeId": "editing-suite",
+    "settingsVersion": 2
+  },
+  "sha256": "c96fd739db30af733832505cba9c4e10e59dff633d3bbdb61104305274b413c1"
+}
