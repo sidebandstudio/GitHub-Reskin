@@ -2,7 +2,7 @@
 // Circuit selected, a working Before/After preview, instant theme choice and Open GitHub, with the
 // result, Undo and Open GitHub in the first screen and a preview that scrolls.
 import { chromium } from "@playwright/test";
-import { CHOOM, expect, openGitHub, storage, test, waitPainted } from "./helpers.mjs";
+import { CHOOM, expect, openGitHub, storage, test, waitFor, waitPainted } from "./helpers.mjs";
 
 const onboardingTabs = (extension) => extension.context.pages().filter((page) => page.url() === extension.url("onboarding"));
 
@@ -156,8 +156,16 @@ test("the preview region scrolls by wheel and keyboard and shows the contributio
     await region.focus();
     // Keyboard scrolling may be smooth; each scroll's scrollend says where it stopped.
     // The listener is in place before the key goes down.
+    // A scrollend left over from the reset above may still arrive; only the end of a scroll that
+    // moved the region counts.
     const scrollBy = async (key) => {
-      await region.evaluate((el) => void (el.reskinScrollEnd = new Promise((resolve) => el.addEventListener("scrollend", () => resolve(el.scrollTop), { once: true }))));
+      await region.evaluate((el) => {
+        const from = el.scrollTop;
+        el.reskinScrollEnd = new Promise((resolve) => {
+          const ended = () => el.scrollTop !== from && (el.removeEventListener("scrollend", ended), resolve(el.scrollTop));
+          el.addEventListener("scrollend", ended);
+        });
+      });
       await welcome.keyboard.press(key);
       return region.evaluate((el) => el.reskinScrollEnd);
     };
@@ -196,6 +204,16 @@ test("the welcome preview paints Choom's own tag and heading treatment as on Git
 
   const github = await openGitHub(extension);
   await waitPainted(github, (state) => state.owned.includes("profile.tag"));
+  // The theme's own CSS applies once admission has classified the page and set its scope marker.
+  // Admission has a 10 ms budget and, on a loaded machine, leaves the CSS off until the page is
+  // shown again; a pageshow asks it to classify again, as in admission.spec.mjs.
+  const scoped = () =>
+    github.evaluate(() => {
+      const active = document.documentElement.getAttribute("data-reskin-css") === "active";
+      if (!active) window.dispatchEvent(new PageTransitionEvent("pageshow", { persisted: false }));
+      return active;
+    });
+  await waitFor(github, scoped, Boolean);
   const live = await github.evaluate(([slots, source]) => new Function("doc", "slots", `return (${source})(doc, slots)`)(document, slots), [SLOTS, read.toString()]);
   expect(preview).toEqual(live);
 });

@@ -485,7 +485,10 @@ async function imageUpload(env) {
   await page.getByRole("textbox", { name: "Theme name" }).fill("Photo wall");
   await page.getByRole("textbox", { name: "Theme name" }).press("Tab");
   await save(page);
-  await expect(status(page)).toHaveText("Saved Photo wall and applied it to GitHub.");
+  // After earlier scenarios this edits an approved CSS theme, so Save makes a copy that starts
+  // without approval and says so.
+  await expect(status(page)).toHaveText(/^Saved Photo wall (and applied it to GitHub\.|as a copy and applied it to GitHub\. Its advanced CSS stays off until you turn on Enable advanced CSS for the copy\.)$/);
+  expect(settingsOf(await env.records()).cssConsent[saved(await env.records(), "Photo wall").id]).toBeUndefined();
   const layer = saved(await env.records(), "Photo wall").document.backgrounds.page.layers[0].image;
   expect(layer.data).toMatch(/^data:image\/(webp|png);base64,/);
   await page.close();
@@ -537,9 +540,11 @@ async function removedThenCopied(env) {
   await expect(backup.locator('[data-rk="status"]')).toHaveText("Removed Removed glow.");
   await backup.close();
   expect(settingsOf(await env.records()).cssConsent[id]).toBeUndefined();
-  await expect(older.locator('[data-rb="css-enable"]')).not.toBeChecked();
+  // With live storage events the older window follows at once; either way its save approves nothing.
+  if (env.liveEvents) await expect(older.locator('[data-rb="css-enable"]')).not.toBeChecked();
   await setHex(older, "Accent", "#ffaa00");
-  await saveThrough(older, "Save as theme");
+  await saveThrough(older, env.liveEvents ? "Save as theme" : /^Save (as theme|changes)$/);
+  await expect(older.locator('[data-rb="css-enable"]')).not.toBeChecked();
   let records = await env.records();
   expect(saved(records, "Removed glow").id).not.toBe(id);
   expect(approvedNames(records)).not.toContain("Removed glow");
@@ -581,9 +586,10 @@ async function undoAfterRevocation(env) {
 
   await first.getByRole("button", { name: "Undo last change" }).click();
   await expect(first.getByRole("button", { name: "Save changes" })).toBeVisible();
-  await expect(first.locator('[data-rb="css-enable"]')).not.toBeChecked();
+  if (env.liveEvents) await expect(first.locator('[data-rb="css-enable"]')).not.toBeChecked();
   await saveThrough(first, "Save changes");
   expect(settingsOf(await env.records()).cssConsent[id]).toBeUndefined();
+  await expect(first.locator('[data-rb="css-enable"]')).not.toBeChecked();
   await first.close();
 }
 
@@ -732,7 +738,7 @@ async function expectCss(page, applied, label) {
 
 const chromiumEnv = async (extension) => {
   await extension.context.addInitScript({ content: CLIPBOARD_STAND_IN });
-  return { newPage: () => extension.context.newPage(), url: extension.url, records: () => storage(extension.worker) };
+  return { newPage: () => extension.context.newPage(), url: extension.url, records: () => storage(extension.worker), liveEvents: true };
 };
 
 test.describe("Chromium builder", () => {
