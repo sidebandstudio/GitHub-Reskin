@@ -55,6 +55,9 @@ export async function scriptProblems(script, { config, root }) {
   fail(!all("include").length && !all("exclude-match").length, "@include/@exclude-match widen or narrow the matches");
   fail(one("run-at") === "document-start", "@run-at document-start");
   fail(all("noframes").length === 1, "@noframes");
+  // Isolated from page scripts: Violentmonkey's content mode and Tampermonkey's DOM sandbox.
+  fail(one("inject-into") === "content", "@inject-into content keeps the script out of the page's own context");
+  fail(one("sandbox") === "DOM", "@sandbox DOM keeps the script out of the page's own context");
   fail(JSON.stringify(all("grant")) === JSON.stringify(GRANTS), "@grant must be exactly the storage and menu grants");
   fail(!all("grant").some((grant) => /xmlhttp|download|resource|unsafeWindow|cookie/i.test(grant)), "a network, resource or page grant");
   fail(!all("require").length, "@require loads remote code");

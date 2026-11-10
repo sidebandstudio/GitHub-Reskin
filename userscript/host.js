@@ -2,10 +2,18 @@
 // extension's host asks its background; here the userscript is its own settings writer, so the
 // host wraps C4's repository over the GM storage adapter. Settings stay separate from any
 // installed extension's: they live in the manager's storage, and files are the way across.
-import { STORAGE_KEYS } from "../packages/contracts/index.js";
+//
+// Every tab writes for itself, so a commit can lose to another tab's write made at the same moment
+// (storage.js confirms each write). That loss is reported as the repository reports any other
+// tab's newer save: a conflict with the current settings, which the picker answers by applying a
+// preference change again and by telling the user a theme choice was not kept.
+import { ISSUE_CODES, STORAGE_KEYS } from "../packages/contracts/index.js";
 import { cleanUi } from "../packages/ui/host.js";
+import { WRITE_LOST } from "./storage.js";
 
 const UI_KEYS = ["group", "undoneAt"];
+const CONFLICT = "Settings changed in another window. Review the current settings and try again.";
+const lost = (reply) => reply?.ok === false && reply.code === "storage" && reply.issues?.some((issue) => String(issue?.message).includes(WRITE_LOST));
 const storageFailure = (error) => ({ ok: false, code: "storage", issues: [{ code: "storage", path: "", message: String(error?.message ?? error), severity: "error" }] });
 
 /**
@@ -32,7 +40,11 @@ export function createGmHost({ storage, repository, capabilities, view, openPage
     },
     async commit(action, expectedRevision) {
       try {
-        return (await repository.commit(action, expectedRevision)) ?? storageFailure("No reply");
+        const reply = (await repository.commit(action, expectedRevision)) ?? storageFailure("No reply");
+        if (!lost(reply)) return reply;
+        const now = await repository.read();
+        if (!now.ok) return reply;
+        return { ok: false, code: "conflict", current: now.settings, issues: [{ code: ISSUE_CODES.conflict, path: "/revision", message: CONFLICT, severity: "error" }] };
       } catch (error) {
         return storageFailure(error);
       }

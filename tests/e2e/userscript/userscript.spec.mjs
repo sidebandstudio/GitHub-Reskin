@@ -2,7 +2,7 @@
 // and sign-in kept native, the 1.1.0 migration and a disabled reload, the panel's instant commit,
 // Undo, on/off, Full/Calm and Text/Motion, focus and size cleanup, no keys reaching GitHub, cross-
 // tab refresh by change events or on visibility, the labeled session preview and no requests.
-import { CHOOM, CHOOM_CANVAS, FRIEREN, FRIEREN_CANVAS, LOGIN_URL, PANEL, PROFILE_URL, expect, openPanel, painted, panelDocument, panelFrame, settingsOf, test, waitSettled } from "./helpers.mjs";
+import { CHOOM, CHOOM_CANVAS, FRIEREN, FRIEREN_CANVAS, LOGIN_URL, PANEL, PROFILE_URL, expect, openPanel, painted, panelFrame, settingsOf, test, waitSettled } from "./helpers.mjs";
 
 test("paints GitHub from manager storage at document start and leaves sign-in native", async ({ manager }) => {
   const gm = await manager({ kind: "sync" });
@@ -24,7 +24,7 @@ test("migrates the 1.1.0 userscript's saved theme, off switch and colors, and a 
   const page = await gm.open();
   await expect.poll(async () => (await settingsOf(gm, page))?.selectedThemeId).toBe("nord");
   const store = await gm.store(page);
-  expect(store["reskin.settings"].enabled).toBe(false);
+  expect(store["reskin.state"].records["reskin.settings"].enabled).toBe(false);
   for (const legacy of ["theme", "enabled", "custom"]) expect(store[legacy], legacy).toBeUndefined();
   await page.reload();
   await waitSettled(page);
@@ -123,7 +123,8 @@ test("keys typed in the panel never reach GitHub's shortcuts, and the frame fits
   const page = await gm.open();
   await page.evaluate(() => {
     window.__pageKeys = [];
-    for (const target of [window, document]) target.addEventListener("keydown", (event) => window.__pageKeys.push(event.key), true);
+    const types = ["keydown", "keyup", "keypress", "beforeinput", "input", "textInput"];
+    for (const target of [window, document, document.documentElement]) for (const type of types) for (const capture of [true, false]) target.addEventListener(type, (event) => window.__pageKeys.push(`${type}:${event.key ?? event.data}`), capture);
   });
   const frame = await openPanel(page);
   const search = frame.getByRole("searchbox", { name: "Search themes or shows" });
@@ -198,4 +199,29 @@ test("the userscript makes no request of its own", async ({ manager }) => {
   await waitSettled(page);
   // Only what the fixture page itself asks for; fonts are embedded, so none is fetched.
   expect([...new Set(gm.requests)].filter((url) => !plain.requests.includes(url))).toEqual([]);
+});
+
+test("a write the manager refuses changes nothing, the panel says so, and Retry saves", async ({ manager }) => {
+  for (const kind of ["sync", "async"]) {
+    const gm = await manager({ kind });
+    const page = await gm.open();
+    const frame = await openPanel(page);
+    const before = await gm.records(page);
+    await page.evaluate(() => {
+      window.__gmLog.refuse = (name) => name === "reskin.state";
+    });
+    // The picker puts the switch back as soon as the save fails, so this is a click, not uncheck().
+    await frame.getByRole("switch", { name: "Reskin" }).click();
+    await expect(frame.locator("[data-rs=error]"), kind).toContainText("We couldn't save that change. Your previous choice is still applied.");
+    // Nothing was kept: every record as it was, the switch back on, GitHub still themed.
+    expect(await gm.records(page), kind).toEqual(before);
+    await expect(frame.getByRole("switch", { name: "Reskin" }), kind).toBeChecked();
+    expect(await painted(page), kind).toMatchObject({ boot: "ready", canvas: CHOOM_CANVAS });
+    await page.evaluate(() => {
+      window.__gmLog.refuse = null;
+    });
+    await frame.locator("[data-rs=retry]").click();
+    await expect.poll(() => painted(page), { message: kind }).toMatchObject({ boot: "native", styled: false });
+    expect((await settingsOf(gm, page)).enabled, kind).toBe(false);
+  }
 });

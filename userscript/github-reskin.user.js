@@ -11,6 +11,7 @@
 // @match        https://gist.github.com/*
 // @run-at       document-start
 // @inject-into  content
+// @sandbox      DOM
 // @noframes
 // @grant        GM.getValue
 // @grant        GM.setValue
@@ -3005,10 +3006,10 @@ html .rs-popup .rs-gallery {
     3329325298
   ]);
   var rotr = (x2, n2) => x2 >>> n2 | x2 << 32 - n2;
-  function sha256(bytes) {
-    const length = bytes.length;
+  function sha256(bytes2) {
+    const length = bytes2.length;
     const padded = new Uint8Array(Math.ceil((length + 9) / 64) * 64);
-    padded.set(bytes);
+    padded.set(bytes2);
     padded[length] = 128;
     const view = new DataView(padded.buffer);
     view.setUint32(padded.length - 8, Math.floor(length / 536870912));
@@ -4226,7 +4227,7 @@ html .rs-popup .rs-gallery {
     if (!resolved || resolved.policy !== "themed") throw new TypeError("cssVariables takes a themed ResolvedTheme; native policies set no variables");
     const t = resolved.tokens;
     const a = resolved.appearance;
-    const font2 = (role, face) => {
+    const font = (role, face) => {
       const r = a.fonts[role];
       const list2 = r.fallback ?? NATIVE_FONT;
       return r.source === "bundled" && face ? `${JSON.stringify(face)}, ${list2}` : list2;
@@ -4263,8 +4264,8 @@ html .rs-popup .rs-gallery {
       "--reskin-diff-word-removed-text": t.diffWordRemovedText,
       ...Object.fromEntries(THEME_SYNTAX_ROLES.map((role) => [`--reskin-syntax-${kebab2(role)}`, syntax(role)])),
       ...Object.fromEntries(resolved.graph.map((color2, level) => [`--reskin-graph-${level}`, color2])),
-      "--reskin-font-heading": font2("heading", faces.headingFamily),
-      "--reskin-font-body": font2("body", faces.bodyFamily),
+      "--reskin-font-heading": font("heading", faces.headingFamily),
+      "--reskin-font-body": font("body", faces.bodyFamily),
       "--reskin-radius": `${a.shape.corners?.radius ?? 6}px`
     };
     const names = Object.keys(CSS_VARIABLES);
@@ -4277,7 +4278,7 @@ html .rs-popup .rs-gallery {
 
   // packages/format/share.js
   var crcTable;
-  function crc32(bytes) {
+  function crc32(bytes2) {
     if (!crcTable) {
       crcTable = new Uint32Array(256);
       for (let n2 = 0; n2 < 256; n2++) {
@@ -4287,7 +4288,7 @@ html .rs-popup .rs-gallery {
       }
     }
     let crc = 4294967295;
-    for (const byte of bytes) crc = crcTable[(crc ^ byte) & 255] ^ crc >>> 8;
+    for (const byte of bytes2) crc = crcTable[(crc ^ byte) & 255] ^ crc >>> 8;
     return ((crc ^ 4294967295) >>> 0).toString(16).padStart(8, "0");
   }
   var MAX_SHARE_CODE_LENGTH = SHARE_CODE_PREFIX.length + Math.ceil(LIMITS.compressedBytes * 4 / 3) + 9;
@@ -4311,8 +4312,8 @@ html .rs-popup .rs-gallery {
       const c2 = [0, 1, 2, 3].map((k2) => text[i + k2] === "=" ? 0 : VALUE[text.charCodeAt(i + k2)]);
       if (c2.some((v) => v < 0)) return null;
       const n2 = c2[0] << 18 | c2[1] << 12 | c2[2] << 6 | c2[3];
-      const bytes = [n2 >> 16 & 255, n2 >> 8 & 255, n2 & 255];
-      for (const byte of bytes) if (o < length) out[o++] = byte;
+      const bytes2 = [n2 >> 16 & 255, n2 >> 8 & 255, n2 & 255];
+      for (const byte of bytes2) if (o < length) out[o++] = byte;
     }
     const pad = text.endsWith("==") ? 2 : text.endsWith("=") ? 1 : 0;
     const last = VALUE[text.charCodeAt(text.length - 1 - pad)];
@@ -4499,18 +4500,18 @@ html .rs-popup .rs-gallery {
     const length = decodedLength(match[2]);
     if (length === null) return fail(ISSUE_CODES.imageData, "This image's base64 data is not canonical.");
     if (length > LIMITS.perImageDecodedBytes) return fail(ISSUE_CODES.imageLimit, `Each image is at most ${LIMITS.perImageDecodedBytes / 1024} KiB.`);
-    const bytes = decodeBase64(match[2]);
-    if (!bytes) return fail(ISSUE_CODES.imageData, "This image's base64 data is not canonical.");
+    const bytes2 = decodeBase64(match[2]);
+    if (!bytes2) return fail(ISSUE_CODES.imageData, "This image's base64 data is not canonical.");
     const declared = match[1];
-    const actual = MAGIC_ORDER.find((type) => READERS[type](bytes) !== null);
+    const actual = MAGIC_ORDER.find((type) => READERS[type](bytes2) !== null);
     if (actual !== declared) return fail(ISSUE_CODES.imageData, actual ? `This image says ${declared} but contains ${actual} data.` : "This is not image data Reskin can read.");
-    const info = READERS[declared](bytes);
+    const info = READERS[declared](bytes2);
     if (info.error) return fail(ISSUE_CODES.imageData, `This image cannot be read: ${info.error}.`);
     if (info.width < 1 || info.height < 1) return fail(ISSUE_CODES.imageData, "This image has no size.");
     if (!fits(info)) return fail(ISSUE_CODES.imageLimit, `Images are at most ${LIMITS.imageMaxDimension}px a side and ${LIMITS.imageMaxPixels} pixels.`);
     if (info.animated) return fail(ISSUE_CODES.imageConversion, "Animated images are kept as one still frame. Convert this image in the theme builder, which keeps its first frame, then import again.");
     if (info.metadata) return fail(ISSUE_CODES.imageConversion, "This image carries metadata such as camera or text data. Convert it in the theme builder, which removes it, then import again.");
-    return { ok: true, mime: `image/${declared}`, bytes, width: info.width, height: info.height };
+    return { ok: true, mime: `image/${declared}`, bytes: bytes2, width: info.width, height: info.height };
   }
   function rasterLayers(theme) {
     const out = [];
@@ -4525,7 +4526,7 @@ html .rs-popup .rs-gallery {
   }
   function rasterIssues(theme) {
     const issues = [];
-    let bytes = 0;
+    let bytes2 = 0;
     let pixels = 0;
     for (const { path, image } of rasterLayers(theme)) {
       const info = rasterInfo(image.data);
@@ -4536,10 +4537,10 @@ html .rs-popup .rs-gallery {
       if (info.width !== image.width || info.height !== image.height) {
         issues.push({ code: ISSUE_CODES.imageData, path: `${path}/width`, message: `This image is ${info.width}x${info.height}, not ${image.width}x${image.height}.`, severity: "error" });
       }
-      bytes += info.bytes.length;
+      bytes2 += info.bytes.length;
       pixels += info.width * info.height;
     }
-    if (bytes > LIMITS.documentImageDecodedBytes) issues.push({ code: ISSUE_CODES.imageLimit, path: "/backgrounds", message: `All images in a theme come to at most ${LIMITS.documentImageDecodedBytes / 1024} KiB, counting repeats.`, severity: "error" });
+    if (bytes2 > LIMITS.documentImageDecodedBytes) issues.push({ code: ISSUE_CODES.imageLimit, path: "/backgrounds", message: `All images in a theme come to at most ${LIMITS.documentImageDecodedBytes / 1024} KiB, counting repeats.`, severity: "error" });
     if (pixels > LIMITS.documentImageDecodedPixels) issues.push({ code: ISSUE_CODES.imageLimit, path: "/backgrounds", message: `All images in a theme come to at most ${LIMITS.documentImageDecodedPixels} pixels, counting repeats.`, severity: "error" });
     return issues;
   }
@@ -7127,19 +7128,19 @@ html .rs-popup .rs-gallery {
   };
   var fontPath = (id, weight, primary) => `assets/fonts/${id}/${id}${weight === primary ? "" : `-${weight}`}.woff2`;
   var FONTS2 = freeze3(
-    FONTS.filter((font2) => font2.id !== "system").map((font2) => ({
-      id: font2.id,
-      family: font2.family,
-      weight: font2.weight,
-      weights: [...font2.weights],
-      minimumAccentPx: font2.minimumAccentPx,
-      ...RENDER[font2.id],
-      path: fontPath(font2.id, font2.weight, font2.weight),
-      files: font2.weights.map((weight) => ({ weight, path: fontPath(font2.id, weight, font2.weight) })),
-      license: `assets/fonts/${font2.id}/OFL.txt`
+    FONTS.filter((font) => font.id !== "system").map((font) => ({
+      id: font.id,
+      family: font.family,
+      weight: font.weight,
+      weights: [...font.weights],
+      minimumAccentPx: font.minimumAccentPx,
+      ...RENDER[font.id],
+      path: fontPath(font.id, font.weight, font.weight),
+      files: font.weights.map((weight) => ({ weight, path: fontPath(font.id, weight, font.weight) })),
+      license: `assets/fonts/${font.id}/OFL.txt`
     }))
   );
-  var FONT_BY_ID = freeze3(Object.fromEntries(FONTS2.map((font2) => [font2.id, font2])));
+  var FONT_BY_ID = freeze3(Object.fromEntries(FONTS2.map((font) => [font.id, font])));
   var SYSTEM_SANS = SANS;
   var SYSTEM_MONO = 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace';
   var EFFECTS = freeze3({
@@ -7335,16 +7336,16 @@ html .rs-popup .rs-gallery {
     return typeof url === "string" && (EXTENSION_URL.test(url) || PATH_URL.test(url) || DATA_URL2.test(url));
   }
   function fontStack(fontId) {
-    const font2 = FONT_BY_ID[fontId];
-    return font2 ? `"${font2.cssFamily}", ${font2.fallback}` : SYSTEM_SANS;
+    const font = FONT_BY_ID[fontId];
+    return font ? `"${font.cssFamily}", ${font.fallback}` : SYSTEM_SANS;
   }
   function fontFaceCss(fontId, resourceUrl, weight = FONT_BY_ID[fontId]?.weight) {
     if (fontId === "system") return "";
-    const font2 = FONT_BY_ID[fontId];
-    if (!font2) throw new Error(`Unknown font ${fontId}`);
-    if (!font2.weights.includes(weight)) throw new Error(`Font ${fontId} has no reviewed weight ${weight}`);
+    const font = FONT_BY_ID[fontId];
+    if (!font) throw new Error(`Unknown font ${fontId}`);
+    if (!font.weights.includes(weight)) throw new Error(`Font ${fontId} has no reviewed weight ${weight}`);
     if (!isFontResourceUrl(resourceUrl)) throw new Error(`Font ${fontId} needs a packaged resource URL from the runtime adapter`);
-    return `@font-face{font-family:"${font2.cssFamily}";src:url("${resourceUrl}") format("woff2");font-weight:${weight};font-style:normal;font-display:swap;unicode-range:${UNICODE_RANGE}}`;
+    return `@font-face{font-family:"${font.cssFamily}";src:url("${resourceUrl}") format("woff2");font-weight:${weight};font-style:normal;font-display:swap;unicode-range:${UNICODE_RANGE}}`;
   }
   function roleFontIds(resolved) {
     const roles = resolved?.appearance?.fonts;
@@ -8126,10 +8127,10 @@ ${rules.join("\n")}
 ${structured}
 ` : "";
     const t = colors(resolved.tokens);
-    const font2 = effective.fonts ? FONT_BY_ID[resolved.font] : null;
+    const font = effective.fonts ? FONT_BY_ID[resolved.font] : null;
     const heading = effective.fonts && resolved.appearance?.fonts?.heading?.source === "native-stack" ? resolved.appearance.fonts.heading.fallback : null;
-    const accent = font2 ? `${font2.weight} ${font2.minimumAccentPx}px/1 ${fontStack(font2.id)}` : `600 14px/1 ${heading ?? SYSTEM_SANS}`;
-    const caption = font2 ? `${font2.weight} ${font2.minimumAccentPx}px/1.25 ${fontStack(font2.id)}` : `400 14px/1.4 ${SYSTEM_SANS}`;
+    const accent = font ? `${font.weight} ${font.minimumAccentPx}px/1 ${fontStack(font.id)}` : `600 14px/1 ${heading ?? SYSTEM_SANS}`;
+    const caption = font ? `${font.weight} ${font.minimumAccentPx}px/1.25 ${fontStack(font.id)}` : `400 14px/1.4 ${SYSTEM_SANS}`;
     const rules = [
       ...STRUCTURE.map(important),
       // Skin: what a theme's owned CSS may restyle. The copy takes its type from its box, so a rule
@@ -8146,7 +8147,7 @@ ${structured}
       }
     }
     if (owned) {
-      const face = font2 ? FONT_BY_ID[resolved.font].cssFamily : void 0;
+      const face = font ? FONT_BY_ID[resolved.font].cssFamily : void 0;
       const variables = Object.entries(cssVariables(resolved, { headingFamily: face })).map(([name, value]) => `${name}:${value}`);
       rules.push(`[data-reskin-owned]{${variables.join(";")}}`, registry ? `@media not (forced-colors:active){${owned.css}}` : owned.css);
     }
@@ -8534,24 +8535,7 @@ ${structured ? `${structured}
   }
 
   // packages/appearance/resources.js
-  var ASSET_PATH = /^packages\/preview\/fixture\/assets\/[a-z0-9-]+\.(webp|svg)$/;
-  var isAssetPath = (path) => typeof path === "string" && ASSET_PATH.test(path);
-  var font = (id, weight = FONT_BY_ID[id]?.weight) => FONT_BY_ID[id]?.files.find((file) => file.weight === weight)?.path ?? null;
-  function embeddedResources({ fonts = {}, assets = {} } = {}) {
-    return Object.freeze({
-      kind: "embedded",
-      fontUrl: (id, weight) => {
-        const name = font(id, weight)?.split("/").pop().replace(/\.woff2$/, "");
-        return name && Object.hasOwn(fonts, name) ? checked(`data:font/woff2;base64,${fonts[name]}`) : null;
-      },
-      assetUrl: (path) => isAssetPath(path) && Object.hasOwn(assets, path) && /^data:image\/(webp|svg\+xml);base64,[A-Za-z0-9+/]+={0,2}$/.test(assets[path]) ? assets[path] : null
-    });
-  }
   var noResources = Object.freeze({ kind: "none", fontUrl: () => null, assetUrl: () => null });
-  function checked(url) {
-    if (!isFontResourceUrl(url)) throw new Error(`Resource adapter produced an unusable font URL`);
-    return url;
-  }
 
   // packages/appearance/raster.js
   function imageAssets(theme) {
@@ -8621,7 +8605,7 @@ ${structured ? `${structured}
     };
   }
   function fontRole(requested, role, notes) {
-    const entry = FONT_ROLES.find((font2) => font2.id === requested);
+    const entry = FONT_ROLES.find((font) => font.id === requested);
     if (entry.source === "deferred") {
       notes.push({ code: "deferred-capability", path: `/fonts/${role}`, message: `${requested} arrives in a later version; GitHub's own font is used.` });
       return { id: "system", requested, source: "system", family: null, fallback: null, weights: [] };
@@ -8641,8 +8625,8 @@ ${structured ? `${structured}
     if (typeof theme.css === "string" && theme.css !== "") {
       const admitted = admitCss(theme.css, "/css");
       if (!admitted.ok) throw new TypeError("resolveTheme needs admitted CSS");
-      const { hash, bytes, sanitizerVersion, policyHash } = admitted.value;
-      css = { hash, bytes, sanitizerVersion, policyHash };
+      const { hash, bytes: bytes2, sanitizerVersion, policyHash } = admitted.value;
+      css = { hash, bytes: bytes2, sanitizerVersion, policyHash };
     }
     return {
       paints: Object.fromEntries(TARGETS2.map((target) => [target, paint(theme, target)])),
@@ -9941,7 +9925,7 @@ ${structured ? `${structured}
   var PAIR_PATHS = Object.freeze([...COLOR_PATHS, ...APPEARANCE_COLOR_PATHS]);
 
   // packages/engine/seed.js
-  var checked2 = /* @__PURE__ */ new WeakSet();
+  var checked = /* @__PURE__ */ new WeakSet();
   var isObject3 = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
   function exactKeys(value, keys, where, problems) {
     if (!isObject3(value)) return problems.push(`${where} must be an object`), false;
@@ -9987,10 +9971,10 @@ ${structured ? `${structured}
     return problems;
   }
   function assertSeed(seed) {
-    if (checked2.has(seed)) return;
+    if (checked.has(seed)) return;
     const problems = seedProblems(seed);
     if (problems.length) throw new TypeError(`Invalid ModeSeed: ${problems.slice(0, 5).join("; ")}`);
-    checked2.add(seed);
+    checked.add(seed);
   }
   function assertContext(context) {
     if (!isObject3(context)) throw new TypeError("ResolveContext must be an object");
@@ -10450,7 +10434,7 @@ ${structured ? `${structured}
     const paired = appearanceColors(colors2);
     const appearance = { colors: paired, ...resolveAppearance(theme, set.tokens) };
     const heading = appearance.fonts.heading;
-    const font2 = heading.source === "bundled" && FONTS.some((f) => f.id === heading.id) ? heading.id : "system";
+    const font = heading.source === "bundled" && FONTS.some((f) => f.id === heading.id) ? heading.id : "system";
     return deepFreeze({
       ...set,
       rendererVersion: 1,
@@ -10461,7 +10445,7 @@ ${structured ? `${structured}
       seedHash: seed.sourceHash,
       base: theme.base,
       policy: "themed",
-      font: font2,
+      font,
       effects: resolvedEffects(theme),
       flavor: resolvedFlavor(theme),
       motionAllowed: !context.reducedMotion,
@@ -10865,7 +10849,7 @@ ${structured ? `${structured}
   function boundRecovery(recovery, limit = STORAGE_LIMITS.maxRecoveryBytes) {
     const value = {};
     let truncated = false;
-    let bytes = 0;
+    let bytes2 = 0;
     for (const [key, field] of Object.entries(recovery)) {
       let size;
       try {
@@ -10873,9 +10857,9 @@ ${structured ? `${structured}
       } catch {
         size = Infinity;
       }
-      if (bytes + size <= limit) {
+      if (bytes2 + size <= limit) {
         value[key] = field === void 0 ? null : jsonCopy(field);
-        bytes += size;
+        bytes2 += size;
       } else {
         value[key] = { truncated: true, bytes: Number.isFinite(size) ? size : null };
         truncated = true;
@@ -10894,9 +10878,9 @@ ${structured ? `${structured}
   // packages/settings/admission.js
   var utf8Length2 = (text) => new TextEncoder().encode(text).length;
   function recordBytes(records) {
-    let bytes = 0;
-    for (const [key, value] of Object.entries(records)) if (value !== void 0) bytes += utf8Length2(JSON.stringify(key)) + utf8Length2(JSON.stringify(value));
-    return bytes;
+    let bytes2 = 0;
+    for (const [key, value] of Object.entries(records)) if (value !== void 0) bytes2 += utf8Length2(JSON.stringify(key)) + utf8Length2(JSON.stringify(value));
+    return bytes2;
   }
   function containsDataUrl(value, depth = 0) {
     if (depth > 16) return true;
@@ -10926,9 +10910,9 @@ ${structured ? `${structured}
     return issues;
   }
   function capacityIssues(records) {
-    const bytes = recordBytes(records);
-    if (bytes <= STORAGE_LIMITS.maxRecordsBytes) return [];
-    return [issue3(ISSUE_CODES.capacity, "", `Saving needs ${bytes} bytes; Reskin keeps at most ${STORAGE_LIMITS.maxRecordsBytes}. Export or remove a saved theme, then try again.`)];
+    const bytes2 = recordBytes(records);
+    if (bytes2 <= STORAGE_LIMITS.maxRecordsBytes) return [];
+    return [issue3(ISSUE_CODES.capacity, "", `Saving needs ${bytes2} bytes; Reskin keeps at most ${STORAGE_LIMITS.maxRecordsBytes}. Export or remove a saved theme, then try again.`)];
   }
 
   // packages/settings/actions.js
@@ -15001,9 +14985,9 @@ ${structured ? `${structured}
     const label = important3(ISSUE_LABEL2[seed.base]);
     const bevel = componentRules(resolved, prefs, { variant: "bevel" }).filter((r) => wanted(r.id));
     const square = componentRules(resolved, prefs, { variant: "square" }).filter((r) => wanted(r.id));
-    const same = bevel.filter((r, i) => square[i]?.id === r.id && square[i].body === r.body);
-    const onlyBevel = bevel.filter((r) => !same.includes(r));
-    const onlySquare = square.filter((r) => !same.some((s) => s.id === r.id));
+    const same2 = bevel.filter((r, i) => square[i]?.id === r.id && square[i].body === r.body);
+    const onlyBevel = bevel.filter((r) => !same2.includes(r));
+    const onlySquare = square.filter((r) => !same2.some((s) => s.id === r.id));
     const scrollbar = wanted("scrollbar") ? scrollbarDeclarations(resolved).map((d) => `${d} !important`).join(";") : "";
     const branch = (name) => {
       const full = cachedScope(covered, known, baseOf, name);
@@ -15015,7 +14999,7 @@ ${structured ? `${structured}
         ...wanted("issue-label") ? [[".hx_IssueLabel", label, guard]] : [],
         ...scrollbar ? [[SCROLLERS, scrollbar, guard]] : [],
         ...preview ? [] : [[`${scope2.brand}${HOLDS_NO_PROTECTED}`, brandDeclarations, `:not(${ATTRIBUTED})`], [`${scope2.brandPage}${HOLDS_NO_PROTECTED}`, brandPageDeclarations, `:not(${ATTRIBUTED})`], [`${BRAND_HEADER}${HOLDS_NO_PROTECTED}`, brandPageDeclarations, `:not(${ATTRIBUTED})`]],
-        ...same.map(component)
+        ...same2.map(component)
       ];
       const rule = (more) => ([target2, body, suffix]) => `${each(target2, `${suffix}${more}`)}{${body}}`;
       const variants = [
@@ -16197,6 +16181,51 @@ ${structured ? `${structured}
     };
   }
 
+  // userscript/fonts.js
+  var bytes = (base64, view) => {
+    const binary = view.atob(base64);
+    const out = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) out[i] = binary.charCodeAt(i);
+    return out.buffer;
+  };
+  function createFontLoader({ document: document2, view, fonts }) {
+    const faces = /* @__PURE__ */ new Map();
+    function load(id, weight = FONT_BY_ID[id]?.weight) {
+      const font = FONT_BY_ID[id];
+      const name = font?.files.find((file) => file.weight === weight)?.path.split("/").pop().replace(/\.woff2$/, "");
+      if (!name || !Object.hasOwn(fonts, name)) return Promise.resolve(false);
+      const key = `${id}:${weight}`;
+      if (!faces.has(key)) {
+        faces.set(
+          key,
+          (async () => {
+            let face = null;
+            try {
+              face = new view.FontFace(font.cssFamily, bytes(fonts[name], view), { weight: String(weight), style: "normal", display: "swap", unicodeRange: UNICODE_RANGE });
+              document2.fonts.add(face);
+              await face.loaded;
+              return true;
+            } catch {
+              try {
+                if (face) document2.fonts.delete(face);
+              } catch {
+              }
+              return false;
+            }
+          })()
+        );
+      }
+      return faces.get(key);
+    }
+    return {
+      load,
+      // Every reviewed weight of the families a resolved theme's roles name, as roleFontFaceCss lists them.
+      loadFor(resolved) {
+        for (const id of roleFontIds(resolved)) for (const weight of FONT_BY_ID[id].weights) load(id, weight);
+      }
+    };
+  }
+
   // packages/ui/host.js
   function cleanUi(value) {
     const ui = {};
@@ -16207,183 +16236,32 @@ ${structured ? `${structured}
     return ui;
   }
 
-  // userscript/host.js
-  var UI_KEYS = ["group", "undoneAt"];
-  var storageFailure = (error) => ({ ok: false, code: "storage", issues: [{ code: "storage", path: "", message: String(error?.message ?? error), severity: "error" }] });
-  function createGmHost({ storage, repository, capabilities, view, openPage = () => {
-  } }) {
-    return {
-      capabilities: Object.freeze({ ...capabilities, clipboard: typeof view.navigator?.clipboard?.writeText === "function" }),
-      async read() {
-        try {
-          await repository.initialize();
-          const result = await repository.read();
-          if (!result.ok) return { ok: false, message: result.issues?.[0]?.message ?? "Settings could not be read.", settings: result.fallback ?? null };
-          const records = await storage.get([STORAGE_KEYS.lastGood, STORAGE_KEYS.ui]).catch(() => ({}));
-          return { ok: true, settings: result.settings, notices: result.notices ?? [], lastGood: records[STORAGE_KEYS.lastGood] ?? null, ui: cleanUi(records[STORAGE_KEYS.ui]) };
-        } catch (error) {
-          return { ok: false, message: String(error?.message ?? error) };
-        }
-      },
-      async commit(action, expectedRevision) {
-        try {
-          return await repository.commit(action, expectedRevision) ?? storageFailure("No reply");
-        } catch (error) {
-          return storageFailure(error);
-        }
-      },
-      async writeUi(patch) {
-        if (Object.keys(patch).some((key) => !UI_KEYS.includes(key))) throw new TypeError("Unknown UI record field");
-        const current = cleanUi((await storage.get([STORAGE_KEYS.ui]))[STORAGE_KEYS.ui]);
-        await storage.set({ [STORAGE_KEYS.ui]: cleanUi({ ...current, ...patch }) });
-      },
-      subscribe(listener) {
-        return storage.subscribe((changes) => {
-          if (changes[STORAGE_KEYS.settings] || changes[STORAGE_KEYS.lastGood]) listener();
-        });
-      },
-      loadDraft: () => repository.loadDraft(),
-      saveDraft: (draft) => repository.saveDraft(draft),
-      discardDraft: () => repository.discardDraft(),
-      async openPage(page, query) {
-        openPage(page, query);
-        return { ok: true };
-      },
-      async copyText(text) {
-        try {
-          await view.navigator.clipboard.writeText(text);
-          return { ok: true };
-        } catch {
-          return { ok: false };
-        }
-      },
-      // A local file download: a blob link clicked in the page. Nothing leaves the browser.
-      async downloadFile({ filename, mime, bytes }) {
-        try {
-          const doc = view.document;
-          const url = view.URL.createObjectURL(new view.Blob([bytes], { type: mime }));
-          const link = doc.createElement("a");
-          link.href = url;
-          link.download = filename;
-          link.hidden = true;
-          doc.documentElement.append(link);
-          link.click();
-          link.remove();
-          view.setTimeout(() => view.URL.revokeObjectURL(url), 0);
-          return { ok: true };
-        } catch {
-          return { ok: false };
-        }
-      },
-      reducedMotion: () => Boolean(view.matchMedia?.("(prefers-reduced-motion: reduce)").matches)
-    };
-  }
-
-  // userscript/panel.js
-  var PANEL_HASH = "#reskin";
-  var PANEL_ATTRIBUTE = "data-reskin-userscript-panel";
-  var GAP = 16;
-  var WIDTH = 400;
-  var FRAME_STYLE = [
-    "position: fixed",
-    `top: ${GAP}px`,
-    `right: ${GAP}px`,
-    "z-index: 2147483647",
-    `width: min(${WIDTH}px, calc(100vw - ${2 * GAP}px))`,
-    "height: 0",
-    `max-height: calc(100vh - ${2 * GAP}px)`,
-    "margin: 0",
-    "padding: 0",
-    "border: 0",
-    "border-radius: 12px",
-    "background: #0c0f14",
-    "color-scheme: dark",
-    "box-shadow: 0 0 0 1px rgb(128 128 128 / 35%), 0 8px 24px rgb(0 0 0 / 40%)",
-    "visibility: visible",
-    "opacity: 1"
-  ].join("; ");
-  function createPanel({ document: document2, view, srcdoc, mount }) {
-    let current = null;
-    function open(mode = "picker") {
-      if (current) {
-        current.focus();
-        return current.frame;
-      }
-      const invoker = document2.activeElement && document2.activeElement !== document2.body ? document2.activeElement : null;
-      const frame = document2.createElement("iframe");
-      frame.setAttribute(PANEL_ATTRIBUTE, mode);
-      frame.title = "GitHub Reskin";
-      frame.style.cssText = FRAME_STYLE;
-      frame.srcdoc = srcdoc;
-      const cleanups = [];
-      const listen = (target, type, handler, options) => {
-        target.addEventListener(type, handler, options);
-        cleanups.push(() => target.removeEventListener(type, handler, options));
-      };
-      let mounted = null;
-      let observer = null;
-      const state = current = {
-        frame,
-        mode,
-        focus() {
-          const target = mounted?.initialFocus?.() ?? frame.contentDocument?.querySelector("button, input");
-          frame.focus();
-          target?.focus();
-        },
-        close(restore) {
-          if (current !== state) return;
-          current = null;
-          for (const cleanup of cleanups.splice(0)) cleanup();
-          observer?.disconnect();
-          observer = null;
-          try {
-            mounted?.destroy();
-          } finally {
-            mounted = null;
-            frame.remove();
-          }
-          if (view.location.hash === PANEL_HASH) view.history.replaceState(view.history.state, "", view.location.pathname + view.location.search);
-          if (restore) (invoker?.isConnected ? invoker : null)?.focus({ preventScroll: true });
-        }
-      };
-      listen(frame, "load", () => {
-        if (current !== state) return;
-        const doc = frame.contentDocument;
-        if (!doc?.body) return;
-        const fit2 = () => {
-          frame.style.height = `${Math.ceil(doc.body.getBoundingClientRect().height)}px`;
-        };
-        observer = new view.ResizeObserver(fit2);
-        observer.observe(doc.body);
-        fit2();
-        listen(doc, "keydown", (event) => {
-          if (event.key === "Escape") {
-            event.preventDefault();
-            state.close(true);
-          }
-        });
-        mounted = mount(doc, mode, { close: () => state.close(true) });
-        state.focus();
-      });
-      listen(document2, "pointerdown", (event) => event.target !== frame && state.close(false), true);
-      listen(document2, "keydown", (event) => event.key === "Escape" && state.close(true));
-      document2.documentElement.append(frame);
-      return frame;
-    }
-    const close = (restore = true) => current?.close(restore);
-    return {
-      open,
-      close,
-      toggle: (mode) => current ? close() : open(mode),
-      isOpen: () => Boolean(current),
-      frame: () => current?.frame ?? null
-    };
-  }
-
   // userscript/storage.js
   var WATCHED_KEYS = Object.freeze([STORAGE_KEYS.settings, STORAGE_KEYS.boot, STORAGE_KEYS.lastGood, STORAGE_KEYS.ui, STORAGE_KEYS.draft, RECOVERY_KEY]);
+  var STATE_KEY = "reskin.state";
+  var STATE_FORMAT = 1;
+  var CONFIRM_MS = 50;
+  var WRITE_LOST = "Another tab saved at the same time, so this change was not kept.";
+  function staleWrite(before, records) {
+    const next = records[STORAGE_KEYS.settings];
+    const prev = before[STORAGE_KEYS.settings];
+    if (!same(next, prev) && isObject4(next)) {
+      if (!isObject4(prev) || typeof prev.revision !== "number") return false;
+      if (next.revision === prev.revision + 1) return false;
+      const revision3 = !("cssConsent" in prev) || !isObject4(prev.preferences) || !("appearance" in prev.preferences);
+      return !(next.revision === prev.revision && revision3);
+    }
+    const boot = records[STORAGE_KEYS.boot];
+    if (!same(boot, before[STORAGE_KEYS.boot]) && isObject4(boot) && isObject4(next)) return boot.settingsRevision !== next.revision;
+    return false;
+  }
+  var SELF_CONTAINED = /* @__PURE__ */ new Set([STORAGE_KEYS.ui, STORAGE_KEYS.draft]);
+  var RETRIES = 3;
+  var LINEAGE = 16;
   var fn = (value) => typeof value === "function" ? value : null;
   var copy = (value) => value === void 0 ? void 0 : JSON.parse(JSON.stringify(value));
+  var same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  var isObject4 = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
   function detectGmStorage(scope2 = {}) {
     const gm = scope2.GM && typeof scope2.GM === "object" ? scope2.GM : null;
     const listenWith = (add, removeListener) => add ? (key, listener) => {
@@ -16430,10 +16308,18 @@ ${structured ? `${structured}
       listen: null
     };
   }
-  function createGmStorage(scope2 = {}, { document: document2 = null } = {}) {
+  function stateRecords(value) {
+    if (value === void 0 || value === null) return {};
+    if (!isObject4(value) || value.format !== STATE_FORMAT || !isObject4(value.records)) throw new Error("The saved GitHub Reskin record is unreadable");
+    return value.records;
+  }
+  function createGmStorage(scope2 = {}, { document: document2 = null, newId = () => globalThis.crypto.randomUUID(), confirmMs = CONFIRM_MS, wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms)) } = {}) {
     const backend = detectGmStorage(scope2);
+    const tab = newId();
+    let sequence = 0;
     const subscribers = /* @__PURE__ */ new Set();
     const emit = (changes) => {
+      if (!Object.keys(changes).length) return;
       for (const listener of [...subscribers]) {
         try {
           listener(changes);
@@ -16441,17 +16327,31 @@ ${structured ? `${structured}
         }
       }
     };
+    const diff = (before, after) => {
+      const changes = {};
+      for (const key of WATCHED_KEYS) if (!same(before[key], after[key])) changes[key] = { oldValue: before[key], newValue: after[key] };
+      return changes;
+    };
     let detach = null;
     function attach() {
       if (backend.kind === "session") return () => {
       };
       if (backend.listen) {
-        const removers = WATCHED_KEYS.map(
-          (key) => backend.listen(key, (name, oldValue, newValue, remote) => {
-            if (remote !== false) emit({ [name]: { oldValue, newValue } });
-          })
-        );
-        return () => removers.forEach((remove) => remove());
+        return backend.listen(STATE_KEY, (name, oldValue, newValue, remote) => {
+          if (remote === false) return;
+          let before = {};
+          let after = {};
+          try {
+            before = stateRecords(oldValue);
+          } catch {
+          }
+          try {
+            after = stateRecords(newValue);
+          } catch {
+            return emit(Object.fromEntries(WATCHED_KEYS.map((key) => [key, {}])));
+          }
+          emit(diff(before, after));
+        });
       }
       if (!document2) return () => {
       };
@@ -16467,10 +16367,51 @@ ${structured ? `${structured}
       if (request && typeof request === "object") return { keys: Object.keys(request), defaults: request };
       throw new TypeError("GM storage get takes a key, a key list or an object of defaults");
     };
+    const watched = (key) => WATCHED_KEYS.includes(key);
+    let queue = Promise.resolve();
+    const serialize = (task) => {
+      const run = queue.then(task, task);
+      queue = run.catch(() => {
+      });
+      return run;
+    };
+    async function writeState(update) {
+      for (let attempt = 0; ; attempt++) {
+        const stored = await backend.get(STATE_KEY);
+        const before = stateRecords(stored);
+        const records = update({ ...before });
+        if (staleWrite(before, records)) throw new Error(WRITE_LOST);
+        const stamp = `${tab}:${++sequence}`;
+        const lineage = isObject4(stored) && typeof stored.stamp === "string" ? [stored.stamp, ...Array.isArray(stored.lineage) ? stored.lineage : []].slice(0, LINEAGE) : [];
+        const next = { format: STATE_FORMAT, stamp, lineage, records };
+        try {
+          await backend.set(STATE_KEY, next);
+        } catch (error) {
+          let landed = null;
+          try {
+            landed = await backend.get(STATE_KEY);
+          } catch {
+          }
+          if (landed?.stamp !== stamp) throw error;
+        }
+        if (backend.kind !== "session") {
+          await wait(confirmMs);
+          const now = await backend.get(STATE_KEY);
+          if (!(now?.stamp === stamp || Array.isArray(now?.lineage) && now.lineage.includes(stamp))) {
+            const keys = Object.keys(records).filter((key) => !same(records[key], before[key]));
+            if (attempt < RETRIES && keys.every((key) => SELF_CONTAINED.has(key))) continue;
+            throw new Error(WRITE_LOST);
+          }
+        }
+        emit(diff(before, records));
+        return;
+      }
+    }
     const storage = {
       async get(request) {
         const { keys, defaults } = keysOf(request);
-        const values = await Promise.all(keys.map((key) => backend.get(key)));
+        const own = keys.some(watched) ? stateRecords(await backend.get(STATE_KEY)) : {};
+        const values = await Promise.all(keys.map((key) => watched(key) ? copy(own[key]) : backend.get(key)));
         const out = {};
         keys.forEach((key, i) => {
           const value = values[i] === void 0 && defaults ? defaults[key] : values[i];
@@ -16478,15 +16419,26 @@ ${structured ? `${structured}
         });
         return out;
       },
-      async set(record) {
+      set(record) {
         const entries = Object.entries(record).filter(([, value]) => value !== void 0);
-        await Promise.all(entries.map(([key, value]) => backend.set(key, value)));
-        emit(Object.fromEntries(entries.map(([key, value]) => [key, { newValue: value }])));
+        const own = entries.filter(([key]) => watched(key));
+        const other = entries.filter(([key]) => !watched(key));
+        return serialize(async () => {
+          if (own.length) await writeState((records) => Object.assign(records, copy(Object.fromEntries(own))));
+          await Promise.all(other.map(([key, value]) => backend.set(key, value)));
+        });
       },
-      async remove(keys) {
+      remove(keys) {
         const list2 = typeof keys === "string" ? [keys] : keys;
-        await Promise.all(list2.map((key) => backend.remove(key)));
-        emit(Object.fromEntries(list2.map((key) => [key, { newValue: void 0 }])));
+        return serialize(async () => {
+          if (list2.some(watched)) {
+            await writeState((records) => {
+              for (const key of list2) delete records[key];
+              return records;
+            });
+          }
+          await Promise.all(list2.filter((key) => !watched(key)).map((key) => backend.remove(key)));
+        });
       },
       subscribe(listener) {
         subscribers.add(listener);
@@ -16512,6 +16464,175 @@ ${structured ? `${structured}
         clipboard: false,
         fileDownload: true
       })
+    };
+  }
+
+  // userscript/host.js
+  var UI_KEYS = ["group", "undoneAt"];
+  var CONFLICT = "Settings changed in another window. Review the current settings and try again.";
+  var lost = (reply) => reply?.ok === false && reply.code === "storage" && reply.issues?.some((issue4) => String(issue4?.message).includes(WRITE_LOST));
+  var storageFailure = (error) => ({ ok: false, code: "storage", issues: [{ code: "storage", path: "", message: String(error?.message ?? error), severity: "error" }] });
+  function createGmHost({ storage, repository, capabilities, view, openPage = () => {
+  } }) {
+    return {
+      capabilities: Object.freeze({ ...capabilities, clipboard: typeof view.navigator?.clipboard?.writeText === "function" }),
+      async read() {
+        try {
+          await repository.initialize();
+          const result = await repository.read();
+          if (!result.ok) return { ok: false, message: result.issues?.[0]?.message ?? "Settings could not be read.", settings: result.fallback ?? null };
+          const records = await storage.get([STORAGE_KEYS.lastGood, STORAGE_KEYS.ui]).catch(() => ({}));
+          return { ok: true, settings: result.settings, notices: result.notices ?? [], lastGood: records[STORAGE_KEYS.lastGood] ?? null, ui: cleanUi(records[STORAGE_KEYS.ui]) };
+        } catch (error) {
+          return { ok: false, message: String(error?.message ?? error) };
+        }
+      },
+      async commit(action, expectedRevision) {
+        try {
+          const reply = await repository.commit(action, expectedRevision) ?? storageFailure("No reply");
+          if (!lost(reply)) return reply;
+          const now = await repository.read();
+          if (!now.ok) return reply;
+          return { ok: false, code: "conflict", current: now.settings, issues: [{ code: ISSUE_CODES.conflict, path: "/revision", message: CONFLICT, severity: "error" }] };
+        } catch (error) {
+          return storageFailure(error);
+        }
+      },
+      async writeUi(patch) {
+        if (Object.keys(patch).some((key) => !UI_KEYS.includes(key))) throw new TypeError("Unknown UI record field");
+        const current = cleanUi((await storage.get([STORAGE_KEYS.ui]))[STORAGE_KEYS.ui]);
+        await storage.set({ [STORAGE_KEYS.ui]: cleanUi({ ...current, ...patch }) });
+      },
+      subscribe(listener) {
+        return storage.subscribe((changes) => {
+          if (changes[STORAGE_KEYS.settings] || changes[STORAGE_KEYS.lastGood]) listener();
+        });
+      },
+      loadDraft: () => repository.loadDraft(),
+      saveDraft: (draft) => repository.saveDraft(draft),
+      discardDraft: () => repository.discardDraft(),
+      async openPage(page, query) {
+        openPage(page, query);
+        return { ok: true };
+      },
+      async copyText(text) {
+        try {
+          await view.navigator.clipboard.writeText(text);
+          return { ok: true };
+        } catch {
+          return { ok: false };
+        }
+      },
+      // A local file download: a blob link clicked in the page. Nothing leaves the browser.
+      async downloadFile({ filename, mime, bytes: bytes2 }) {
+        try {
+          const doc = view.document;
+          const url = view.URL.createObjectURL(new view.Blob([bytes2], { type: mime }));
+          const link = doc.createElement("a");
+          link.href = url;
+          link.download = filename;
+          link.hidden = true;
+          doc.documentElement.append(link);
+          link.click();
+          link.remove();
+          view.setTimeout(() => view.URL.revokeObjectURL(url), 0);
+          return { ok: true };
+        } catch {
+          return { ok: false };
+        }
+      },
+      reducedMotion: () => Boolean(view.matchMedia?.("(prefers-reduced-motion: reduce)").matches)
+    };
+  }
+
+  // userscript/panel.js
+  var PANEL_HASH = "#reskin";
+  var PANEL_ATTRIBUTE = "data-reskin-userscript-panel";
+  var GAP = 16;
+  var WIDTH = 400;
+  var HOST_CSS = `:host{all:initial!important;display:block!important;position:fixed!important;top:${GAP}px!important;right:${GAP}px!important;left:auto!important;bottom:auto!important;z-index:2147483647!important;width:min(${WIDTH}px,calc(100vw - ${2 * GAP}px))!important;height:auto!important;margin:0!important;padding:0!important;border:0!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;transform:none!important;filter:none!important;clip-path:none!important;mask:none!important}iframe{display:block;width:100%;height:0;max-height:calc(100vh - ${2 * GAP}px);margin:0;padding:0;border:0;border-radius:12px;background:#0c0f14;color-scheme:dark;box-shadow:0 0 0 1px rgb(128 128 128 / 35%),0 8px 24px rgb(0 0 0 / 40%)}`;
+  var attachShadow = globalThis.Element?.prototype.attachShadow;
+  function createPanel({ document: document2, view, srcdoc, mount }) {
+    let current = null;
+    function open(mode = "picker") {
+      if (current?.host.isConnected) {
+        current.focus();
+        return current.host;
+      }
+      current?.close(false);
+      const invoker = document2.activeElement && document2.activeElement !== document2.body ? document2.activeElement : null;
+      const host = document2.createElement("div");
+      host.setAttribute(PANEL_ATTRIBUTE, mode);
+      const root = attachShadow.call(host, { mode: "closed" });
+      const style = document2.createElement("style");
+      style.textContent = HOST_CSS;
+      const frame = document2.createElement("iframe");
+      frame.title = "GitHub Reskin";
+      frame.srcdoc = srcdoc;
+      root.append(style, frame);
+      const cleanups = [];
+      const listen = (target, type, handler, options) => {
+        target.addEventListener(type, handler, options);
+        cleanups.push(() => target.removeEventListener(type, handler, options));
+      };
+      let mounted = null;
+      let observer = null;
+      const state = current = {
+        host,
+        frame,
+        mode,
+        focus() {
+          const target = mounted?.initialFocus?.() ?? frame.contentDocument?.querySelector("button, input");
+          frame.focus();
+          target?.focus();
+        },
+        close(restore) {
+          if (current !== state) return;
+          current = null;
+          for (const cleanup of cleanups.splice(0)) cleanup();
+          observer?.disconnect();
+          observer = null;
+          try {
+            mounted?.destroy();
+          } finally {
+            mounted = null;
+            host.remove();
+          }
+          if (view.location.hash === PANEL_HASH) view.history.replaceState(view.history.state, "", view.location.pathname + view.location.search);
+          if (restore) (invoker?.isConnected ? invoker : null)?.focus({ preventScroll: true });
+        }
+      };
+      listen(frame, "load", () => {
+        if (current !== state) return;
+        const doc = frame.contentDocument;
+        if (!doc?.body) return;
+        const fit2 = () => {
+          frame.style.height = `${Math.ceil(doc.body.getBoundingClientRect().height)}px`;
+        };
+        observer = new view.ResizeObserver(fit2);
+        observer.observe(doc.body);
+        fit2();
+        listen(doc, "keydown", (event) => {
+          if (event.key === "Escape" && event.isTrusted) {
+            event.preventDefault();
+            state.close(true);
+          }
+        });
+        mounted = mount(doc, mode, { close: () => state.close(true) });
+        state.focus();
+      });
+      listen(document2, "pointerdown", (event) => event.isTrusted && event.target !== host && state.close(false), true);
+      listen(document2, "keydown", (event) => event.isTrusted && event.key === "Escape" && state.close(true));
+      document2.documentElement.append(host);
+      return host;
+    }
+    const close = (restore = true) => current?.close(restore);
+    return {
+      open,
+      close,
+      toggle: (mode) => current ? close() : open(mode),
+      isOpen: () => Boolean(current),
+      host: () => current?.host ?? null
     };
   }
 
@@ -16555,8 +16676,15 @@ ${structured ? `${structured}
     const { storage, kind, capabilities } = createGmStorage(scope2, { document: document2 });
     const rendering = backgroundRendering();
     const repository = createRepository(storage, { catalog, ...rendering, newId: () => view.crypto.randomUUID() });
-    const resources = embeddedResources({ fonts: reskin_fonts_default });
-    const renderer = createRenderer({ github: github_exports, catalog, resources, slotTimeLimitMs: TIME_LIMIT_MS });
+    const fonts = createFontLoader({ document: document2, view, fonts: reskin_fonts_default });
+    const base = createRenderer({ github: github_exports, catalog, resources: noResources, slotTimeLimitMs: TIME_LIMIT_MS });
+    const renderer = {
+      ...base,
+      compile(resolved, plan, prefs, context) {
+        if (prefs.fonts) fonts.loadFor(resolved);
+        return base.compile(resolved, plan, prefs, context);
+      }
+    };
     let content = null;
     const ready = repository.initialize().catch(() => null).then(() => {
       content = startContent({ storage, document: document2, view, catalog, renderer });
@@ -16568,23 +16696,36 @@ ${structured ? `${structured}
       document: document2,
       view,
       srcdoc: reskin_card_default.srcdoc,
-      mount: (doc, mode, controls) => mountCard(doc, mode, { host, catalog, resources, storage, kind, controls })
+      mount: (doc, mode, controls) => mountCard(doc, mode, { host, catalog, kind, controls })
     });
     const register = scope2.GM_registerMenuCommand ?? (typeof scope2.GM?.registerMenuCommand === "function" ? scope2.GM.registerMenuCommand.bind(scope2.GM) : null);
     try {
       register?.("Open GitHub Reskin", () => panel.toggle());
     } catch {
     }
+    let requested = view.location.hash === PANEL_HASH;
     const fromHash = () => {
-      if (view.location.hash === PANEL_HASH && document2.visibilityState !== "hidden") panel.open();
+      if (!requested || document2.visibilityState === "hidden" || document2.readyState === "loading") return;
+      requested = false;
+      panel.open();
     };
-    view.addEventListener("hashchange", fromHash);
+    view.navigation?.addEventListener?.("navigate", (event) => {
+      let hash = "";
+      try {
+        hash = new URL(event.destination.url).hash;
+      } catch {
+        return;
+      }
+      if (hash !== PANEL_HASH || !event.userInitiated) return;
+      requested = true;
+      view.setTimeout(fromHash, 0);
+    });
     document2.addEventListener("visibilitychange", fromHash);
     if (document2.readyState === "loading") document2.addEventListener("DOMContentLoaded", fromHash, { once: true });
     else fromHash();
     return { ready, panel, storage, repository, kind, capabilities, content: () => content };
   }
-  function mountCard(doc, mode, { host, catalog, resources, storage, kind, controls }) {
+  function mountCard(doc, mode, { host, catalog, kind, controls }) {
     const cleanups = [];
     const listen = (target, type, handler) => {
       if (!target) return;
@@ -16598,7 +16739,11 @@ ${structured ? `${structured}
     const label = part("session-label");
     label.hidden = durable;
     label.textContent = COPY2.sessionLabel;
-    const fontFace = (id) => fontFaceCss(id, resources.fontUrl(id));
+    const fonts = createFontLoader({ document: doc, view: doc.defaultView, fonts: reskin_fonts_default });
+    const fontFace = (id) => {
+      fonts.load(id);
+      return "";
+    };
     const picker = mountPicker(doc, host, { cards: reskin_cards_default, catalog, cardFor: standardCard, fontFace });
     const status = part("status");
     listen(part("export"), "click", async () => {

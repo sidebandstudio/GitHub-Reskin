@@ -12,7 +12,7 @@ import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { chromium, firefox } from "@playwright/test";
-import { FRIEREN, PANEL, SHIM_KEY, shim } from "./helpers.mjs";
+import { FRIEREN, PANEL, SHIM_KEY, STATE_KEY, injection } from "./helpers.mjs";
 
 const ROOT = fileURLToPath(new URL("../../../", import.meta.url));
 const PAGES = Object.freeze([
@@ -59,7 +59,7 @@ async function captureBrowser(name, launcher, script, out) {
   const requests = [];
   context.on("request", (request) => requests.push(request.url()));
   await context.addInitScript(WATCH);
-  await context.addInitScript({ content: `(${shim})("sync", ${JSON.stringify(SHIM_KEY)});\nif (window.top === window) {\n${script}\n}` });
+  await context.addInitScript({ content: injection("sync", script) });
   const page = await context.newPage();
   const records = [];
   const shot = async (file, extra = {}) => {
@@ -87,7 +87,7 @@ async function captureBrowser(name, launcher, script, out) {
   }
   await visit(page, LOGIN);
   await shot(`${name}-login.png`, { theme: "frieren" });
-  const settings = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) || "{}")["reskin.settings"], SHIM_KEY);
+  const settings = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) || "{}"), SHIM_KEY).then((store) => store[STATE_KEY]?.records["reskin.settings"]);
   const offGitHub = [...new Set(requests)].filter((url) => !/^https:\/\/(github\.com|github\.githubassets\.com|avatars\.githubusercontent\.com|[a-z0-9-]+\.githubusercontent\.com|collector\.github\.com|api\.github\.com|camo\.githubusercontent\.com)\//.test(url) && !url.startsWith("data:"));
   await browser.close();
   return { records, selected: settings?.selectedThemeId, offGitHub };

@@ -168,6 +168,7 @@ export function metadata(config, { icon, description }) {
     ...MATCHES.map((match) => ["match", match]),
     ["run-at", "document-start"],
     ["inject-into", "content"],
+    ["sandbox", "DOM"],
     ["noframes", ""],
     ...GRANTS.map((grant) => ["grant", grant]),
     ["downloadURL", update],

@@ -30,6 +30,7 @@ test("metadata keeps the 1.1.0 identity, updates from Pages and requests nothing
   assert.equal(updateUrl(config), entries.downloadURL);
   assert.match(entries.icon, /^data:image\/png;base64,/);
   assert.equal(entries["inject-into"], "content");
+  assert.equal(entries.sandbox, "DOM");
   assert.ok(!("require" in entries) && !("resource" in entries) && !("connect" in entries));
 });
 
@@ -46,6 +47,8 @@ test("the static checks catch remote code, remote icons, network calls and page 
     [`${header}${body}\nnew Function("return 1");`, /code from strings/],
     [`${header}${body}\nconst css = "a{background:url(https://example.com/x.png)}";`, /remote CSS/],
     [header, /not embedded/],
+    [header.replace(/\/\/ @sandbox.*\n/, ""), /@sandbox/],
+    [header.replace("@inject-into  content", "@inject-into  page"), /@inject-into/],
   ];
   for (const [candidate, pattern] of bad) {
     const problems = await scriptProblems(candidate, { config, root });

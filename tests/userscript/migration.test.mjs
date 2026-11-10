@@ -9,7 +9,7 @@ import { LEGACY_STORAGE_KEYS, STORAGE_KEYS } from "../../packages/contracts/inde
 import { createRepository, RECOVERY_KEY, validateSettings } from "../../packages/settings/index.js";
 import { createGmStorage } from "../../userscript/storage.js";
 import { catalog, context } from "../settings/helpers.mjs";
-import { fakeGm } from "./helpers.mjs";
+import { fakeGm, records } from "./helpers.mjs";
 
 const { cases } = JSON.parse(readFileSync(new URL("../fixtures/settings/migrations.json", import.meta.url), "utf8"));
 
@@ -20,8 +20,8 @@ for (const kind of ["sync", "async"]) {
       const gm = fakeGm(kind, raw);
       const { storage } = createGmStorage(gm.scope);
       const init = await createRepository(storage, context()).initialize();
-      assert.equal(init.state, expect.firstRun ? "fresh" : "migrated", name);
-      const stored = gm.snapshot();
+      assert.equal(init.state, expect.firstRun ? "fresh" : "migrated", `${name}: ${JSON.stringify(init.issues ?? null)}`);
+      const stored = { ...gm.snapshot(), ...records(gm.snapshot()) };
       const result = validateSettings(stored[STORAGE_KEYS.settings], catalog);
       assert.ok(result.ok, name);
       const { settings } = result;
@@ -49,6 +49,6 @@ test("a migrated record wins on the next start, and a second tab never migrates 
   gm.remoteWrite("theme", "dracula");
   const second = await createRepository(createGmStorage(gm.scope).storage, context()).initialize();
   assert.equal(second.state, "current");
-  assert.equal(gm.snapshot()[STORAGE_KEYS.settings].selectedThemeId, "nord");
+  assert.equal(records(gm.snapshot())[STORAGE_KEYS.settings].selectedThemeId, "nord");
   assert.equal("theme" in gm.snapshot(), false);
 });
