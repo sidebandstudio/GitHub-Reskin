@@ -268,6 +268,25 @@ test("closing the builder right after an edit, before the autosave delay, keeps 
   await expect.poll(async () => (await draftOf(gm, page))?.document?.colors?.accent ?? null).toBe("#12ab34");
 });
 
+test("closing the builder while Reset all is still writing leaves no draft behind", async ({ manager }) => {
+  const gm = await manager({ kind: "async" });
+  const page = await gm.open();
+  const frame = await openBuilder(page);
+  await setHex(frame, "Accent", "#12ab34");
+  // Reset all starts inside the autosave delay, and its write waits until resume().
+  await frame.getByRole("link", { name: "Backup & help" }).click();
+  await page.evaluate(() => (window.__gmLog.pause = "reskin.state"));
+  page.once("dialog", (dialog) => dialog.accept());
+  await frame.getByRole("button", { name: "Reset all", exact: true }).click();
+  await page.waitForFunction(() => window.__gmLog.paused);
+  await page.keyboard.press("Escape");
+  await expect(page.locator(HOST)).toHaveCount(0);
+  await page.evaluate(() => window.__gmLog.resume());
+  await expect.poll(async () => (await settingsOf(gm, page))?.revision).toBe(1);
+  await page.waitForTimeout(500);
+  expect(await draftOf(gm, page)).toBeNull();
+});
+
 test("exports a theme as a file and a share code and imports both back unchanged", async ({ manager }) => {
   const gm = await manager({ kind: "sync" });
   const page = await gm.open();
@@ -279,7 +298,7 @@ test("exports a theme as a file and a share code and imports both back unchanged
       for (const record of records) {
         for (const node of record.addedNodes) {
           if (node.nodeType !== 1) continue;
-          for (const link of [node, ...node.querySelectorAll("a")]) if (link.localName === "a") window.__links.push(link.getAttribute("download") ?? link.getAttribute("href") ?? "");
+          for (const link of [node, ...node.querySelectorAll("a")]) if (link.localName === "a") window.__links.push(link.getAttribute("download") ?? "", link.getAttribute("href") ?? "");
         }
       }
     }).observe(document, { childList: true, subtree: true });
@@ -440,7 +459,7 @@ test("in a real isolated world (Chromium's, Firefox's content-script Xrays) a th
   let gm;
   let close = async () => {};
   if (browserName === "chromium") {
-    gm = await manager({ kind: "sync", hooks: true, report: null, world: "isolated", pages: { "/octo-sample": PROFILE_HTML } });
+    gm = await manager({ kind: "sync", hooks: true, report: "content", world: "isolated", pages: { "/octo-sample": PROFILE_HTML } });
   } else {
     gm = await firefoxContentManager(userscript, { kind: "sync", hooks: true });
     close = gm.close;

@@ -1,7 +1,8 @@
 // detectIsolation (userscript/isolation.js) and the manager menu (userscript/menu.js). A manager's
-// report of page injection always means not isolated; the browser's own evidence (a Firefox Xray,
-// a Chromium isolated world) means isolated with no report; a report of isolation counts only
-// without that evidence, and never when it is a page global; anything else is not isolated. The
+// report of page injection always means not isolated; Firefox's content-script exportFunction means
+// isolated with no report; a report of isolation counts otherwise; anything else is not isolated,
+// a faked Xray or isolated world included. The page planting GM_info, GM or exportFunction is the
+// e2e surface's (tests/e2e/userscript/modes.spec.mjs), since main.mjs checks that. The
 // menu offers every durable setting, the anime title first, follows the settings, and offers a
 // failed change again.
 import assert from "node:assert/strict";
@@ -9,28 +10,19 @@ import test from "node:test";
 import { detectIsolation } from "../../userscript/isolation.js";
 import { createMenu, MENU } from "../../userscript/menu.js";
 
-const page = () => ({ customElements: {} });
-// A content-script Xray: expandos set on the page's window are not seen through this one.
-const xray = () => ({ customElements: {}, wrappedJSObject: {} });
+// Firefox's content-script helper, as main.mjs passes it.
+const exportFunction = (fn) => fn;
 
-test("isolation comes from the browser first, from the manager's report otherwise, and is never assumed", () => {
-  assert.deepEqual(detectIsolation({ view: xray() }), { isolated: true, method: "xray" });
-  assert.deepEqual(detectIsolation({ view: { customElements: null } }), { isolated: true, method: "isolated-world" });
-  // A page that set a property named wrappedJSObject on its own window: the marker shows through.
-  const faked = page();
-  faked.wrappedJSObject = faked;
-  assert.equal(detectIsolation({ view: faked }).isolated, false);
+test("isolation comes from Firefox's sandbox or the manager's report, and is never assumed", () => {
+  assert.deepEqual(detectIsolation({ exportFunction }), { isolated: true, method: "xray" });
   for (const info of [{ sandboxMode: "raw" }, { injectInto: "page" }]) {
-    assert.deepEqual(detectIsolation({ view: { customElements: null }, info }), { isolated: false, method: "manager-page" });
+    assert.deepEqual(detectIsolation({ info, exportFunction }), { isolated: false, method: "manager-page" });
   }
-  for (const info of [{ sandboxMode: "dom" }, { sandboxMode: "js" }, { injectInto: "content" }]) assert.deepEqual(detectIsolation({ view: page(), info }), { isolated: true, method: "manager" });
-  assert.equal(detectIsolation({ view: page(), info: { scriptHandler: "Userscripts" }, gm: { getValue() {} } }).isolated, true);
-  assert.equal(detectIsolation({ view: page(), info: { scriptHandler: "Userscripts" } }).isolated, false);
-  // A report that is a global of the page is the page's, not the manager's.
-  const planted = { injectInto: "content" };
-  const view = Object.assign(page(), { GM_info: planted });
-  assert.deepEqual(detectIsolation({ view, info: planted }), { isolated: false, method: "unverified" });
-  assert.deepEqual(detectIsolation({ view: page() }), { isolated: false, method: "unverified" });
+  for (const info of [{ sandboxMode: "dom" }, { sandboxMode: "js" }, { injectInto: "content" }]) assert.deepEqual(detectIsolation({ info }), { isolated: true, method: "manager" });
+  assert.equal(detectIsolation({ info: { scriptHandler: "Userscripts" }, gm: { getValue() {} } }).isolated, true);
+  assert.equal(detectIsolation({ info: { scriptHandler: "Userscripts" } }).isolated, false);
+  assert.deepEqual(detectIsolation({ info: { scriptHandler: "Violentmonkey" } }), { isolated: false, method: "unverified" });
+  assert.deepEqual(detectIsolation(), { isolated: false, method: "unverified" });
 });
 
 const settings = (overrides = {}) => ({ revision: 0, enabled: true, selectedThemeId: "anime.frieren", preferences: { appearance: "full", text: true, motion: true }, customThemes: [], ...overrides });

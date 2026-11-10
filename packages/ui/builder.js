@@ -146,6 +146,8 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
   let bgTarget = "page";
   let layerKey = "";
   let destroyed = false;
+  // While Reset all runs: no autosave, not even the one destroy() flushes, may write the draft back.
+  let holding = false;
   // This editor's identity for CSS approval. It lives only in this page's memory: no draft record,
   // other window or later page has it, so none of them can redeem this editor's approval.
   const editor = (win?.crypto ?? globalThis.crypto).randomUUID().replace(/-/g, "");
@@ -288,13 +290,13 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
   }
 
   function scheduleAutosave() {
-    if (!win || pendingRecord) return;
+    if (!win || pendingRecord || holding) return;
     win.clearTimeout(autosave);
     autosave = win.setTimeout(saveDraftNow, AUTOSAVE_MS);
   }
   async function saveDraftNow() {
     autosave = 0;
-    if (destroyed || !draft || pendingRecord) return;
+    if (destroyed || holding || !draft || pendingRecord) return;
     if (!dirty()) return void host.discardDraft().catch(() => {});
     const reply = await host.saveDraft(draftRecord(draft)).catch((error) => ({ ok: false, issues: [{ message: String(error?.message ?? error) }] }));
     if (!reply?.ok && !destroyed) fail(reply?.issues?.[0]?.message && /1\.25 MiB/.test(reply.issues[0].message) ? reply.issues[0].message : COPY.draftFailed, { offerDownload: true });
@@ -1497,6 +1499,16 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
     // For Backup & help: the stored draft not yet resumed, or this page's unsaved changes.
     draftStatus: () => ({ pending: draftFromRecord(pendingRecord)?.document ?? null, dirty: Boolean(draft && dirty()), name: draft?.document.name ?? "" }),
     resumeDraft,
+    // Reset all is starting: no draft write until restart(), or the returned resume if it fails.
+    holdDrafts() {
+      win?.clearTimeout(autosave);
+      autosave = 0;
+      holding = true;
+      return () => {
+        holding = false;
+        if (draft && dirty()) scheduleAutosave();
+      };
+    },
     // After Reset all: a new start from the theme now selected, with no draft kept.
     async restart() {
       const current = await host.read();
@@ -1510,6 +1522,7 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
       draft = startFrom(remixFrom);
       source = sourceFor(draft);
       lastPreviewed = null;
+      holding = false;
       render();
     },
     downloadDraft: () => {

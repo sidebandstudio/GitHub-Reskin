@@ -58,9 +58,13 @@ import { createGmStorage } from "./storage.js";
 // running beside the first.
 const RUNNING = "data-reskin-userscript";
 
+// GM, GM_info and exportFunction decide isolation (isolation.js), so each counts only when the
+// page's window has no such name: otherwise it could be a global the page planted, even on a
+// prototype. The `in` test runs no page code, since nothing can put a proxy in the window's
+// prototype chain, and it comes first because reading the name could run a getter the page set.
 const scope = {
-  GM: typeof GM === "object" ? GM : undefined,
-  GM_info: typeof GM_info === "object" ? GM_info : undefined,
+  GM: !("GM" in window) && typeof GM === "object" ? GM : undefined,
+  GM_info: !("GM_info" in window) && typeof GM_info === "object" ? GM_info : undefined,
   GM_getValue: typeof GM_getValue === "function" ? GM_getValue : undefined,
   GM_setValue: typeof GM_setValue === "function" ? GM_setValue : undefined,
   GM_deleteValue: typeof GM_deleteValue === "function" ? GM_deleteValue : undefined,
@@ -69,7 +73,7 @@ const scope = {
   GM_registerMenuCommand: typeof GM_registerMenuCommand === "function" ? GM_registerMenuCommand : undefined,
   GM_unregisterMenuCommand: typeof GM_unregisterMenuCommand === "function" ? GM_unregisterMenuCommand : undefined,
   // Firefox's content-script function, for storage.js's lock bridge.
-  exportFunction: typeof exportFunction === "function" ? exportFunction : undefined,
+  exportFunction: !("exportFunction" in window) && typeof exportFunction === "function" ? exportFunction : undefined,
 };
 
 whenRoot(document, () => start(scope, { document, view: window }));
@@ -95,7 +99,7 @@ export function start(scope, { document, view }) {
   if (!root || root.hasAttribute(RUNNING)) return null;
   root.setAttribute(RUNNING, "");
   // Before any of GitHub's scripts run.
-  const isolation = detectIsolation({ view, info: scope.GM_info ?? scope.GM?.info ?? null, gm: scope.GM ?? null });
+  const isolation = detectIsolation({ info: scope.GM_info ?? scope.GM?.info ?? null, gm: scope.GM ?? null, exportFunction: scope.exportFunction ?? null });
 
   // The extension's boot.css, as a style node: GitHub stays hidden for at most 120 ms while
   // storage answers, and forced colors bypass it.

@@ -1,6 +1,7 @@
 // Where the userscript runs decides what it offers, in Chromium and Firefox (userscript/isolation.js).
-// Isolated from GitHub's JavaScript, shown by the browser itself (a Chromium isolated world, a
-// Firefox content-script Xray) with no manager report, the panel has its controls. In the page's
+// Isolated from GitHub's JavaScript, in a Chromium isolated world on the manager's report or a
+// Firefox content-script sandbox with none, the panel has its controls. A page script that ran
+// first and faked that isolation gets none of it. In the page's
 // own context it has none: the consent and isolation review's reproduction, where a page script
 // patches Document.prototype.createElement and so holds the panel's frame, finds nothing that saves
 // and changes no setting. The script there never touches the manager's storage, so a page script
@@ -84,6 +85,39 @@ test("in the page's own context a page script that patched Function.prototype.bi
   expect(await page.evaluate(() => window.__bound.filter((target) => target && typeof target.getValue === "function").length)).toBe(0);
 });
 
+// What a page script that ran first could plant so the page looks isolated: Firefox's Xray and
+// helper, a Chromium isolated world's null registry, a manager's report on a prototype.
+const FORGERIES = {
+  "window.wrappedJSObject": () => (window.wrappedJSObject = {}),
+  "a null window.customElements": () => Object.defineProperty(window, "customElements", { value: null }),
+  "window.exportFunction": () => (window.exportFunction = (fn) => fn),
+  "GM_info on EventTarget.prototype": () => Object.defineProperty(EventTarget.prototype, "GM_info", { value: { scriptHandler: "Violentmonkey", injectInto: "content" } }),
+};
+for (const [name, forge] of Object.entries(FORGERIES)) {
+  test(`in the page's own context a page script that planted ${name} first gets no grant, and nothing is stored`, async ({ manager, userscript }) => {
+    const gm = await manager({ inject: false });
+    const page = await gm.context.newPage();
+    await page.goto(PROFILE_URL);
+    await page.evaluate(forge);
+    await page.evaluate(() => {
+      window.__called = [];
+      const call = Function.prototype.call;
+      Function.prototype.call = function (target, ...args) {
+        if (target && typeof target.getValue === "function") window.__called.push(target);
+        return Reflect.apply(call, this, [target, ...args]);
+      };
+    });
+    const handle = await page.evaluateHandle(pageWorld(userscript));
+    await expect.poll(() => painted(page)).toMatchObject({ boot: "ready", canvas: CHOOM_CANVAS });
+    // The page-context menu: the script took none of it as isolation.
+    await expect.poll(() => handle.evaluate((m) => m.menu.map((entry) => entry.name).slice(0, 2))).toEqual(["Open GitHub Reskin", "Turn GitHub Reskin on or off"]);
+    await handle.evaluate((m) => m.menu[1].fn());
+    await expect.poll(() => painted(page)).toMatchObject({ boot: "native", styled: false });
+    expect(await handle.evaluate((m) => m.records())).toEqual({});
+    expect(await page.evaluate(() => window.__called.length)).toBe(0);
+  });
+}
+
 test("a manager that injects into the page: every setting from its menu until a reload, labels that follow the settings, nothing stored and a panel without controls", async ({ manager }) => {
   const gm = await manager({ kind: "sync", report: "page" });
   const page = await gm.open();
@@ -130,11 +164,11 @@ test("a manager that injects into the page: every setting from its menu until a 
   expect(await gm.records(page)).toEqual({});
 });
 
-test("isolation the browser shows needs no manager report: the panel has its controls, and a person changes a setting with them", async ({ manager, userscript, browserName }) => {
+test("isolated, in Chromium on the manager's report and in Firefox's content-script sandbox with none: the panel has its controls, and a person changes a setting with them", async ({ manager, userscript, browserName }) => {
   let gm;
   let close = async () => {};
   if (browserName === "chromium") {
-    gm = await manager({ kind: "sync", hooks: false, report: null, world: "isolated", pages: { "/octo-sample": PROFILE_HTML } });
+    gm = await manager({ kind: "sync", hooks: false, report: "content", world: "isolated", pages: { "/octo-sample": PROFILE_HTML } });
   } else {
     gm = await firefoxContentManager(userscript, { kind: "sync" });
     close = gm.close;

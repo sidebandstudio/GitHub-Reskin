@@ -162,13 +162,14 @@ export function mountBackup(doc, { host, catalog, download, builder = null, conf
   async function resetAll() {
     const count = settings?.customThemes.length ?? 0;
     if (!confirm(COPY.confirmReset(count))) return part("reset-all").focus();
+    const resume = builder?.holdDrafts?.();
     const reply = await commit({ type: "resetAll" });
     if (reply) {
       renderThemes();
       await builder?.restart?.();
       renderDraft();
       say(COPY.reset(catalog.document(reply.settings.selectedThemeId)?.name ?? ""));
-    }
+    } else resume?.();
     part("reset-all").focus();
   }
 

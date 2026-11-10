@@ -11,9 +11,9 @@
 //   none     no storage grants at all
 // Each also reports where it runs the script, as Violentmonkey's GM_info.injectInto does
 // (Userscripts for Safari's GM.info.scriptHandler for "safari"): `report` "content" (the default),
-// "page", or null for no report at all, as a manager that gives none. A "page" report always
-// counts; a "content" one only when the browser cannot show isolation itself
-// (userscript/isolation.js), as in Playwright's main world, where these tests stand in for it.
+// "page", or null for no report at all, as a manager that gives none. Either report counts
+// (userscript/isolation.js), so in Playwright's main world a "content" one stands in for an
+// isolated manager.
 // As in a manager, the grants are the script's own locals, never globals of the page. Values live
 // in one JSON record under SHIM_KEY in the routed origin's localStorage, so they survive reloads
 // and are shared by the context's tabs, and the browser's storage event delivers another tab's

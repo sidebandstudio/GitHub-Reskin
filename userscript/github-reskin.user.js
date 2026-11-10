@@ -27135,13 +27135,14 @@ To keep your themes, choose Cancel, then Export each one.`,
     async function resetAll() {
       const count = settings?.customThemes.length ?? 0;
       if (!confirm(COPY2.confirmReset(count))) return part("reset-all").focus();
+      const resume = builder2?.holdDrafts?.();
       const reply = await commit({ type: "resetAll" });
       if (reply) {
         renderThemes();
         await builder2?.restart?.();
         renderDraft();
         say(COPY2.reset(catalog.document(reply.settings.selectedThemeId)?.name ?? ""));
-      }
+      } else resume?.();
       part("reset-all").focus();
     }
     root.addEventListener("click", (event) => {
@@ -27539,6 +27540,7 @@ To keep your themes, choose Cancel, then Export each one.`,
     let bgTarget = "page";
     let layerKey = "";
     let destroyed = false;
+    let holding = false;
     const editor = (win?.crypto ?? globalThis.crypto).randomUUID().replace(/-/g, "");
     let approval = null;
     let approving = null;
@@ -27650,13 +27652,13 @@ To keep your themes, choose Cancel, then Export each one.`,
       return result;
     }
     function scheduleAutosave() {
-      if (!win || pendingRecord) return;
+      if (!win || pendingRecord || holding) return;
       win.clearTimeout(autosave);
       autosave = win.setTimeout(saveDraftNow, AUTOSAVE_MS);
     }
     async function saveDraftNow() {
       autosave = 0;
-      if (destroyed || !draft || pendingRecord) return;
+      if (destroyed || holding || !draft || pendingRecord) return;
       if (!dirty()) return void host.discardDraft().catch(() => {
       });
       const reply = await host.saveDraft(draftRecord(draft)).catch((error2) => ({ ok: false, issues: [{ message: String(error2?.message ?? error2) }] }));
@@ -28741,6 +28743,16 @@ To keep your themes, choose Cancel, then Export each one.`,
       // For Backup & help: the stored draft not yet resumed, or this page's unsaved changes.
       draftStatus: () => ({ pending: draftFromRecord(pendingRecord)?.document ?? null, dirty: Boolean(draft && dirty()), name: draft?.document.name ?? "" }),
       resumeDraft,
+      // Reset all is starting: no draft write until restart(), or the returned resume if it fails.
+      holdDrafts() {
+        win?.clearTimeout(autosave);
+        autosave = 0;
+        holding = true;
+        return () => {
+          holding = false;
+          if (draft && dirty()) scheduleAutosave();
+        };
+      },
       // After Reset all: a new start from the theme now selected, with no draft kept.
       async restart() {
         const current = await host.read();
@@ -28754,6 +28766,7 @@ To keep your themes, choose Cancel, then Export each one.`,
         draft = startFrom(remixFrom);
         source = sourceFor(draft);
         lastPreviewed = null;
+        holding = false;
         render();
       },
       downloadDraft: () => {
@@ -30779,50 +30792,15 @@ To keep your themes, choose Cancel, then Export each one.`,
   }
 
   // userscript/isolation.js
-  function detectIsolation({ view, info: info2 = null, gm: gm2 = null }) {
-    const reported = isObject9(info2) && !(view && isOwnGlobal(view, "GM_info", info2)) ? info2 : null;
-    const handler = typeof reported?.scriptHandler === "string" ? reported.scriptHandler : "";
-    const sandbox = reported?.sandboxMode;
-    const inject = reported?.injectInto;
+  function detectIsolation({ info: info2 = null, gm: gm2 = null, exportFunction: exportFunction2 = null } = {}) {
+    const handler = typeof info2?.scriptHandler === "string" ? info2.scriptHandler : "";
+    const sandbox = info2?.sandboxMode;
+    const inject = info2?.injectInto;
     if (sandbox === "raw" || inject === "page") return { isolated: false, method: "manager-page" };
-    if (xrayIsolated(view)) return { isolated: true, method: "xray" };
-    if (isolatedWorld(view)) return { isolated: true, method: "isolated-world" };
+    if (typeof exportFunction2 === "function") return { isolated: true, method: "xray" };
     if (sandbox === "js" || sandbox === "dom" || inject === "content") return { isolated: true, method: "manager" };
     if (handler === "Userscripts" && typeof gm2?.getValue === "function") return { isolated: true, method: "manager" };
     return { isolated: false, method: "unverified" };
-  }
-  var isObject9 = (value) => value !== null && typeof value === "object";
-  function isOwnGlobal(view, name, value) {
-    try {
-      return Object.prototype.hasOwnProperty.call(view, name) && view[name] === value;
-    } catch {
-      return false;
-    }
-  }
-  function xrayIsolated(view) {
-    let page;
-    try {
-      page = view?.wrappedJSObject;
-    } catch {
-      return false;
-    }
-    if (!isObject9(page) || page === view) return false;
-    const key = `__reskinIsolation${Math.random().toString(36).slice(2)}`;
-    try {
-      page[key] = true;
-      const shared = key in view || page[key] !== true;
-      delete page[key];
-      return !shared;
-    } catch {
-      return false;
-    }
-  }
-  function isolatedWorld(view) {
-    try {
-      return "customElements" in view && view.customElements === null;
-    } catch {
-      return false;
-    }
   }
 
   // userscript/menu.js
@@ -31088,8 +31066,8 @@ To keep your themes, choose Cancel, then Export each one.`,
   // userscript/main.mjs
   var RUNNING = "data-reskin-userscript";
   var scope = {
-    GM: typeof GM === "object" ? GM : void 0,
-    GM_info: typeof GM_info === "object" ? GM_info : void 0,
+    GM: !("GM" in window) && typeof GM === "object" ? GM : void 0,
+    GM_info: !("GM_info" in window) && typeof GM_info === "object" ? GM_info : void 0,
     GM_getValue: typeof GM_getValue === "function" ? GM_getValue : void 0,
     GM_setValue: typeof GM_setValue === "function" ? GM_setValue : void 0,
     GM_deleteValue: typeof GM_deleteValue === "function" ? GM_deleteValue : void 0,
@@ -31098,7 +31076,7 @@ To keep your themes, choose Cancel, then Export each one.`,
     GM_registerMenuCommand: typeof GM_registerMenuCommand === "function" ? GM_registerMenuCommand : void 0,
     GM_unregisterMenuCommand: typeof GM_unregisterMenuCommand === "function" ? GM_unregisterMenuCommand : void 0,
     // Firefox's content-script function, for storage.js's lock bridge.
-    exportFunction: typeof exportFunction === "function" ? exportFunction : void 0
+    exportFunction: !("exportFunction" in window) && typeof exportFunction === "function" ? exportFunction : void 0
   };
   whenRoot(document, () => start(scope, { document, view: window }));
   function whenRoot(document2, run) {
@@ -31114,7 +31092,7 @@ To keep your themes, choose Cancel, then Export each one.`,
     const root = document2.documentElement;
     if (!root || root.hasAttribute(RUNNING)) return null;
     root.setAttribute(RUNNING, "");
-    const isolation = detectIsolation({ view, info: scope2.GM_info ?? scope2.GM?.info ?? null, gm: scope2.GM ?? null });
+    const isolation = detectIsolation({ info: scope2.GM_info ?? scope2.GM?.info ?? null, gm: scope2.GM ?? null, exportFunction: scope2.exportFunction ?? null });
     const gate = document2.createElement("style");
     gate.id = "reskin-userscript-boot";
     gate.textContent = reskin_boot_default;
