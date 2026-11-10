@@ -158,9 +158,9 @@
       "footer.signoff": "// sync complete",
       "profile.achievements.heading": "Sync records",
       "profile.activity.heading": "Operations log",
-      "profile.organizations.heading": "Operations outposts",
+      "profile.organizations.heading": "Branches",
       "profile.pinned.heading": "Selected sectors",
-      "profile.tag": "// operations view"
+      "profile.tag": "// operations"
     }
   },
   "fonts": {

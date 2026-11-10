@@ -149,9 +149,9 @@
       "footer.signoff": "// record sealed",
       "profile.achievements.heading": "Graded records",
       "profile.activity.heading": "Field record log",
-      "profile.organizations.heading": "Record outposts",
+      "profile.organizations.heading": "Schools",
       "profile.pinned.heading": "Selected domains",
-      "profile.tag": "// barrier records"
+      "profile.tag": "// barrier"
     }
   },
   "fonts": {
