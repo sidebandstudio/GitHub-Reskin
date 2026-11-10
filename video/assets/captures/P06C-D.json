@@ -1,10 +1,10 @@
 {
-  "captured": "2026-11-10T02:03:34.074Z",
+  "captured": "2026-11-10T03:10:21.007Z",
   "browser": "Chromium 156.0.8078.4",
   "extension": {
     "name": "GitHub Reskin",
     "version": "1.1.0",
-    "commit": "77f3ddd1ba58f5a338fdcc3c6e8155068661a86d",
+    "commit": "3365cdc6bf6ad0cd182b807725681cd9f731e571",
     "sourceDirty": false,
     "package": "npm run build:stores, dist/chrome unpacked"
   },
@@ -27,7 +27,7 @@
   },
   "preset": "D",
   "scrollRule": "C",
-  "scrollY": 2422,
+  "scrollY": 2449,
   "anchor": {
     "x": 432,
     "y": 2546,
@@ -61,5 +61,5 @@
     "selectedThemeId": "anime.frieren",
     "settingsVersion": 2
   },
-  "sha256": "fe1e11e312855f0b6ac7d9ba90efa82e47b6e762d0c2e9e23e86508d19190eb5"
+  "sha256": "26c3d3773ea3afe6c6ef4795e1f57512b9c8c0cc1515454379335e8cf204f7ed"
 }

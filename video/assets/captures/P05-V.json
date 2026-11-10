@@ -1,10 +1,10 @@
 {
-  "captured": "2026-11-10T02:02:23.463Z",
+  "captured": "2026-11-10T03:08:36.795Z",
   "browser": "Chromium 156.0.8078.4",
   "extension": {
     "name": "GitHub Reskin",
     "version": "1.1.0",
-    "commit": "77f3ddd1ba58f5a338fdcc3c6e8155068661a86d",
+    "commit": "3365cdc6bf6ad0cd182b807725681cd9f731e571",
     "sourceDirty": false,
     "package": "npm run build:stores, dist/chrome unpacked"
   },
@@ -56,5 +56,5 @@
     "selectedThemeId": "anime.dandadan",
     "settingsVersion": 2
   },
-  "sha256": "06343bce053ca5d3e2713e5619ff4de5c513dd885df5ee8784ca91bdd0037a46"
+  "sha256": "036a3f4edae7a697049a6da93ce61b83dca6e69e7cfcaf5a476ec0214abaa42f"
 }

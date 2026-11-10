@@ -1,10 +1,10 @@
 {
-  "captured": "2026-11-10T02:07:14.337Z",
+  "captured": "2026-11-10T03:10:21.007Z",
   "browser": "Chromium 156.0.8078.4",
   "extension": {
     "name": "GitHub Reskin",
     "version": "1.1.0",
-    "commit": "77f3ddd1ba58f5a338fdcc3c6e8155068661a86d",
+    "commit": "3365cdc6bf6ad0cd182b807725681cd9f731e571",
     "sourceDirty": false,
     "package": "npm run build:stores, dist/chrome unpacked"
   },
@@ -52,9 +52,9 @@
       "motion": true,
       "text": true
     },
-    "revision": 5,
+    "revision": 8,
     "selectedThemeId": "anime.chainsaw-man",
     "settingsVersion": 2
   },
-  "sha256": "54ebfdd055993fdd77115e0b7f3e867bdcd49e01a522e1dcfc83ef8bb01f1f4f"
+  "sha256": "ca8939f32be51202f2988c9402abfd84891619d7d1b9ba5a19a3c7690515ad31"
 }

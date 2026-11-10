@@ -1,10 +1,10 @@
 {
-  "captured": "2026-11-10T02:02:23.463Z",
+  "captured": "2026-11-10T03:08:36.795Z",
   "browser": "Chromium 156.0.8078.4",
   "extension": {
     "name": "GitHub Reskin",
     "version": "1.1.0",
-    "commit": "77f3ddd1ba58f5a338fdcc3c6e8155068661a86d",
+    "commit": "3365cdc6bf6ad0cd182b807725681cd9f731e571",
     "sourceDirty": false,
     "package": "npm run build:stores, dist/chrome unpacked"
   },
@@ -56,5 +56,5 @@
     "selectedThemeId": "anime.evangelion",
     "settingsVersion": 2
   },
-  "sha256": "e7a82debe198bff866a8d54f0a5b875f504b80d93652ab60b0cd6385dc462398"
+  "sha256": "3c3624fc46edb420c3748983f37e6a94944014686d75b31f7dfc729210dc3dc1"
 }

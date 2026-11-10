@@ -1,10 +1,10 @@
 {
-  "captured": "2026-11-10T02:06:37.008Z",
+  "captured": "2026-11-10T03:08:36.795Z",
   "browser": "Chromium 156.0.8078.4",
   "extension": {
     "name": "GitHub Reskin",
     "version": "1.1.0",
-    "commit": "77f3ddd1ba58f5a338fdcc3c6e8155068661a86d",
+    "commit": "3365cdc6bf6ad0cd182b807725681cd9f731e571",
     "sourceDirty": false,
     "package": "npm run build:stores, dist/chrome unpacked"
   },
@@ -52,9 +52,9 @@
       "motion": true,
       "text": true
     },
-    "revision": 6,
+    "revision": 11,
     "selectedThemeId": "anime.spy-family",
     "settingsVersion": 2
   },
-  "sha256": "b4fc53dab8619375149db6ccaff982e92a661fd30dfb83c8f4cc52b801cae379"
+  "sha256": "260255beb0d798b7d31e9254b33de69bf9b09875fdfde95f20b67dfce3332e05"
 }

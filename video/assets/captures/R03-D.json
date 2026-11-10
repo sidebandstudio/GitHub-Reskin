@@ -1,10 +1,10 @@
 {
-  "captured": "2026-11-10T02:03:34.074Z",
+  "captured": "2026-11-10T03:10:21.007Z",
   "browser": "Chromium 156.0.8078.4",
   "extension": {
     "name": "GitHub Reskin",
     "version": "1.1.0",
-    "commit": "77f3ddd1ba58f5a338fdcc3c6e8155068661a86d",
+    "commit": "3365cdc6bf6ad0cd182b807725681cd9f731e571",
     "sourceDirty": false,
     "package": "npm run build:stores, dist/chrome unpacked"
   },
@@ -27,7 +27,7 @@
   },
   "preset": "D",
   "scrollRule": "DIF",
-  "scrollY": 4175,
+  "scrollY": 4344,
   "anchor": {
     "x": 321,
     "y": 4594,
@@ -57,9 +57,9 @@
       "motion": true,
       "text": true
     },
-    "revision": 11,
+    "revision": 13,
     "selectedThemeId": "anime.cyberpunk-edgerunners",
     "settingsVersion": 2
   },
-  "sha256": "3829777a653f60ccc05e8d6925b625dc5c3b7bbb5a72a64fbb16de8b3798a4f1"
+  "sha256": "a9aed264ffe3f345715a90d0ad0845e9d87dacbed5f1db8776ba9f6ad32176ef"
 }
