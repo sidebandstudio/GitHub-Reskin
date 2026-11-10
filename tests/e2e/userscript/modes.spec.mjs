@@ -16,8 +16,9 @@ const MENU_ONLY = COPY.menuOnly;
 
 // The review's page-context manager: GM.* in a closure only the automation client can reach, the
 // userscript run in the page's own world after load.
-const pageWorld = (script) =>
-  `(() => {const values = new Map(); const menu = []; const GM = {getValue: async (k, d) => (values.has(k) ? structuredClone(values.get(k)) : d), setValue: async (k, v) => void values.set(k, structuredClone(v)), deleteValue: async (k) => void values.delete(k), registerMenuCommand: (name, fn) => menu.push({ name, fn })};\n${script}\nreturn { menu, records: () => Object.fromEntries(values) };})()`;
+// `locals` adds more of the manager's own bindings.
+const pageWorld = (script, locals = "") =>
+  `(() => {const values = new Map(); const menu = []; const GM = {getValue: async (k, d) => (values.has(k) ? structuredClone(values.get(k)) : d), setValue: async (k, v) => void values.set(k, structuredClone(v)), deleteValue: async (k) => void values.delete(k), registerMenuCommand: (name, fn) => menu.push({ name, fn })};\n${locals}\n${script}\nreturn { menu, records: () => Object.fromEntries(values) };})()`;
 
 test("in the page's own context a page script that holds the panel's frame finds no control and changes nothing; the manager's menu changes the page, never its storage", async ({ manager, userscript }) => {
   const gm = await manager({ inject: false });
@@ -85,29 +86,33 @@ test("in the page's own context a page script that patched Function.prototype.bi
   expect(await page.evaluate(() => window.__bound.filter((target) => target && typeof target.getValue === "function").length)).toBe(0);
 });
 
-// What a page script that ran first could plant so the page looks isolated: Firefox's Xray and
-// helper, a Chromium isolated world's null registry, a manager's report on a prototype.
+// What a page script that ran first could plant, as a classic script, so the page looks isolated:
+// Firefox's Xray and helper, a Chromium isolated world's null registry, a report under a name the
+// manager doesn't bind, and getters on Object.prototype for fields the manager's objects lack.
+// [plant, more of the manager's own bindings].
 const FORGERIES = {
-  "window.wrappedJSObject": () => (window.wrappedJSObject = {}),
-  "a null window.customElements": () => Object.defineProperty(window, "customElements", { value: null }),
-  "window.exportFunction": () => (window.exportFunction = (fn) => fn),
-  "GM_info on EventTarget.prototype": () => Object.defineProperty(EventTarget.prototype, "GM_info", { value: { scriptHandler: "Violentmonkey", injectInto: "content" } }),
+  "window.wrappedJSObject": ["window.wrappedJSObject = {};"],
+  "a null window.customElements": ['Object.defineProperty(window, "customElements", { value: null });'],
+  "let GM_info": ['let GM_info = { scriptHandler: "Violentmonkey", injectInto: "content" };'],
+  "let exportFunction": ["let exportFunction = (fn) => fn;"],
+  "a getter for GM.info": ['Object.defineProperty(Object.prototype, "info", { configurable: true, get() { if (typeof this.getValue === "function") window.__called.push(this); } });'],
+  "an inherited injectInto": ['Object.defineProperty(Object.prototype, "injectInto", { configurable: true, value: "content" });', 'const GM_info = { scriptHandler: "Greasemonkey" };'],
 };
-for (const [name, forge] of Object.entries(FORGERIES)) {
+for (const [name, [plant, locals]] of Object.entries(FORGERIES)) {
   test(`in the page's own context a page script that planted ${name} first gets no grant, and nothing is stored`, async ({ manager, userscript }) => {
     const gm = await manager({ inject: false });
     const page = await gm.context.newPage();
     await page.goto(PROFILE_URL);
-    await page.evaluate(forge);
+    await page.evaluate(() => (window.__called = []));
+    await page.addScriptTag({ content: plant });
     await page.evaluate(() => {
-      window.__called = [];
       const call = Function.prototype.call;
       Function.prototype.call = function (target, ...args) {
         if (target && typeof target.getValue === "function") window.__called.push(target);
         return Reflect.apply(call, this, [target, ...args]);
       };
     });
-    const handle = await page.evaluateHandle(pageWorld(userscript));
+    const handle = await page.evaluateHandle(pageWorld(userscript, locals));
     await expect.poll(() => painted(page)).toMatchObject({ boot: "ready", canvas: CHOOM_CANVAS });
     // The page-context menu: the script took none of it as isolation.
     await expect.poll(() => handle.evaluate((m) => m.menu.map((entry) => entry.name).slice(0, 2))).toEqual(["Open GitHub Reskin", "Turn GitHub Reskin on or off"]);
@@ -117,6 +122,40 @@ for (const [name, forge] of Object.entries(FORGERIES)) {
     expect(await page.evaluate(() => window.__called.length)).toBe(0);
   });
 }
+
+// Violentmonkey runs a script inside `with` over a proxy for `window` that answers for its grants
+// too, so the script's `window` is not the page's while its realm's global object is.
+test("a manager that runs the script through a proxy window keeps its report of isolation: the panel has its controls and settings are stored", async ({ manager, userscript }) => {
+  const gm = await manager({ inject: false });
+  const page = await gm.context.newPage();
+  await page.goto(PROFILE_URL);
+  const handle = await page.evaluateHandle(`(() => {
+    const records = new Map();
+    const menu = [];
+    const local = Object.assign(Object.create(null), {
+      GM: Object.create(null),
+      GM_info: { scriptHandler: "Violentmonkey", injectInto: "content" },
+      GM_getValue: (key, fallback) => (records.has(key) ? records.get(key) : fallback),
+      GM_setValue: (key, value) => void records.set(key, value),
+      GM_deleteValue: (key) => void records.delete(key),
+      GM_registerMenuCommand: (name, fn) => menu.push({ name, fn }),
+    });
+    const wrapper = new Proxy(local, {
+      has: (_, name) => name in local || name in globalThis,
+      get: (_, name) => {
+        if (name === Symbol.unscopables) return undefined;
+        if (["window", "self", "globalThis", "top", "parent"].includes(name)) return wrapper;
+        if (name in local) return local[name];
+        const value = globalThis[name];
+        return typeof value === "function" && /^[a-z]/.test(String(name)) ? value.bind(globalThis) : value;
+      },
+    });
+    new Function("with (this) { return (() => {\\n" + ${JSON.stringify(userscript)} + "\\n})(); }").call(wrapper);
+    return { menu, records: () => records.size };
+  })()`);
+  await expect.poll(() => handle.evaluate((m) => m.records())).toBeGreaterThan(0);
+  expect(await handle.evaluate((m) => m.menu.map((entry) => entry.name))).toEqual(["Open GitHub Reskin"]);
+});
 
 test("a manager that injects into the page: every setting from its menu until a reload, labels that follow the settings, nothing stored and a panel without controls", async ({ manager }) => {
   const gm = await manager({ kind: "sync", report: "page" });

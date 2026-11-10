@@ -287,6 +287,54 @@ test("closing the builder while Reset all is still writing leaves no draft behin
   expect(await draftOf(gm, page)).toBeNull();
 });
 
+test("a second Reset all while the first is still writing does nothing, so closing then leaves no draft", async ({ manager }) => {
+  const gm = await manager({ kind: "async" });
+  const page = await gm.open();
+  const frame = await openBuilder(page);
+  await setHex(frame, "Accent", "#12ab34");
+  await frame.getByRole("link", { name: "Backup & help" }).click();
+  await page.evaluate(() => (window.__gmLog.pause = "reskin.state"));
+  page.once("dialog", (dialog) => dialog.accept());
+  await frame.getByRole("button", { name: "Reset all", exact: true }).click();
+  await page.waitForFunction(() => window.__gmLog.paused);
+  let asked = false;
+  page.once("dialog", (dialog) => ((asked = true), dialog.accept()));
+  await frame.getByRole("button", { name: "Reset all", exact: true }).click();
+  await page.keyboard.press("Escape");
+  await expect(page.locator(HOST)).toHaveCount(0);
+  expect(asked).toBe(false);
+  await page.evaluate(() => window.__gmLog.resume());
+  await expect.poll(async () => (await settingsOf(gm, page))?.revision).toBe(1);
+  await page.waitForTimeout(650);
+  expect(await draftOf(gm, page)).toBeNull();
+});
+
+test("an edit made just before a Reset all that fails is kept, even when the builder closed while it ran", async ({ manager }) => {
+  const gm = await manager({ kind: "async" });
+  const page = await gm.open();
+  await openBuilder(page);
+  await page.evaluate(() => {
+    window.__gmLog.pause = "reskin.state";
+    window.__gmLog.refuse = (name, value) => name === "reskin.state" && value?.records?.["reskin.settings"]?.revision === 1;
+  });
+  // The edit and Reset all in one task, well inside the autosave delay.
+  const doc = await (await page.locator(PANEL).elementHandle()).contentFrame();
+  await doc.evaluate(() => {
+    window.confirm = () => true;
+    const input = document.querySelector("#rb-colors-accent");
+    input.value = "#12ab34";
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+    document.querySelector('[data-rk="reset-all"]').click();
+  });
+  await page.waitForFunction(() => window.__gmLog.paused);
+  expect(await draftOf(gm, page)).toBeNull();
+  await page.keyboard.press("Escape");
+  await expect(page.locator(HOST)).toHaveCount(0);
+  await page.evaluate(() => window.__gmLog.resume());
+  await expect.poll(async () => (await draftOf(gm, page))?.document?.colors?.accent ?? null).toBe("#12ab34");
+  expect((await settingsOf(gm, page))?.revision ?? 0).toBe(0);
+});
+
 test("exports a theme as a file and a share code and imports both back unchanged", async ({ manager }) => {
   const gm = await manager({ kind: "sync" });
   const page = await gm.open();

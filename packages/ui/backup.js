@@ -160,16 +160,23 @@ export function mountBackup(doc, { host, catalog, download, builder = null, conf
   }
 
   async function resetAll() {
+    // One write at a time: a second Reset all would release the first one's hold on drafts.
+    if (busy) return;
     const count = settings?.customThemes.length ?? 0;
     if (!confirm(COPY.confirmReset(count))) return part("reset-all").focus();
     const resume = builder?.holdDrafts?.();
-    const reply = await commit({ type: "resetAll" });
+    let reply = null;
+    try {
+      reply = await commit({ type: "resetAll" });
+    } finally {
+      if (!reply) resume?.();
+    }
     if (reply) {
       renderThemes();
       await builder?.restart?.();
       renderDraft();
       say(COPY.reset(catalog.document(reply.settings.selectedThemeId)?.name ?? ""));
-    } else resume?.();
+    }
     part("reset-all").focus();
   }
 

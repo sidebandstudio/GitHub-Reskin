@@ -1506,7 +1506,10 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
       holding = true;
       return () => {
         holding = false;
-        if (draft && dirty()) scheduleAutosave();
+        if (!draft || pendingRecord || !dirty()) return;
+        // Closed while the reset ran: save now, as destroy() would have.
+        if (destroyed) host.saveDraft(draftRecord(draft)).catch(() => {});
+        else scheduleAutosave();
       };
     },
     // After Reset all: a new start from the theme now selected, with no draft kept.

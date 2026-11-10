@@ -1,28 +1,55 @@
-// detectIsolation (userscript/isolation.js) and the manager menu (userscript/menu.js). A manager's
-// report of page injection always means not isolated; Firefox's content-script exportFunction means
-// isolated with no report; a report of isolation counts otherwise; anything else is not isolated,
-// a faked Xray or isolated world included. The page planting GM_info, GM or exportFunction is the
-// e2e surface's (tests/e2e/userscript/modes.spec.mjs), since main.mjs checks that. The
+// detectIsolation and ownFields (userscript/isolation.js) and the manager menu (userscript/menu.js).
+// A manager's report of page injection always means not isolated; a realm whose global object is
+// not a window, Firefox's content-script sandbox, means isolated with no report; a report of
+// isolation counts otherwise; anything else is not isolated. ownFields keeps a report's own fields
+// and nothing a prototype adds. A page planting globals and getters first is the e2e surface's
+// (tests/e2e/userscript/modes.spec.mjs). The
 // menu offers every durable setting, the anime title first, follows the settings, and offers a
 // failed change again.
 import assert from "node:assert/strict";
 import test from "node:test";
-import { detectIsolation } from "../../userscript/isolation.js";
+import { detectIsolation, ownFields } from "../../userscript/isolation.js";
 import { createMenu, MENU } from "../../userscript/menu.js";
 
-// Firefox's content-script helper, as main.mjs passes it.
-const exportFunction = (fn) => fn;
+// A window is its own `window`; Firefox's content-script sandbox reaches the page's through its prototype.
+const pageRealm = () => {
+  const realm = {};
+  realm.window = realm;
+  return realm;
+};
+const sandbox = () => ({ window: pageRealm() });
 
 test("isolation comes from Firefox's sandbox or the manager's report, and is never assumed", () => {
-  assert.deepEqual(detectIsolation({ exportFunction }), { isolated: true, method: "xray" });
-  for (const info of [{ sandboxMode: "raw" }, { injectInto: "page" }]) {
-    assert.deepEqual(detectIsolation({ info, exportFunction }), { isolated: false, method: "manager-page" });
+  assert.deepEqual(detectIsolation({ realm: sandbox() }), { isolated: true, method: "xray" });
+  for (const realm of [pageRealm(), undefined, null]) assert.deepEqual(detectIsolation({ realm }), { isolated: false, method: "unverified" });
+  for (const report of [{ sandboxMode: "raw" }, { injectInto: "page" }]) {
+    assert.deepEqual(detectIsolation({ report, realm: sandbox() }), { isolated: false, method: "manager-page" });
   }
-  for (const info of [{ sandboxMode: "dom" }, { sandboxMode: "js" }, { injectInto: "content" }]) assert.deepEqual(detectIsolation({ info }), { isolated: true, method: "manager" });
-  assert.equal(detectIsolation({ info: { scriptHandler: "Userscripts" }, gm: { getValue() {} } }).isolated, true);
-  assert.equal(detectIsolation({ info: { scriptHandler: "Userscripts" } }).isolated, false);
-  assert.deepEqual(detectIsolation({ info: { scriptHandler: "Violentmonkey" } }), { isolated: false, method: "unverified" });
+  for (const report of [{ sandboxMode: "dom" }, { sandboxMode: "js" }, { injectInto: "content" }]) assert.deepEqual(detectIsolation({ report, realm: pageRealm() }), { isolated: true, method: "manager" });
+  assert.equal(detectIsolation({ report: { scriptHandler: "Userscripts" }, gm: { getValue() {} } }).isolated, true);
+  assert.equal(detectIsolation({ report: { scriptHandler: "Userscripts" } }).isolated, false);
+  assert.deepEqual(detectIsolation({ report: { scriptHandler: "Violentmonkey" } }), { isolated: false, method: "unverified" });
   assert.deepEqual(detectIsolation(), { isolated: false, method: "unverified" });
+});
+
+test("ownFields keeps an object's own fields and nothing its prototype answers, without touching that prototype", () => {
+  const seen = [];
+  const proto = {
+    sandboxMode: "dom",
+    get info() {
+      seen.push(this);
+      return { injectInto: "content" };
+    },
+  };
+  const gm = Object.assign(Object.create(proto), { getValue() {} });
+  const copy = ownFields(gm);
+  assert.equal(Object.getPrototypeOf(copy), null);
+  assert.equal(copy.getValue, gm.getValue);
+  assert.equal(copy.info, undefined);
+  assert.equal(copy.sandboxMode, undefined);
+  assert.deepEqual(seen, []);
+  assert.deepEqual({ ...ownFields({ injectInto: "content", scriptHandler: "Violentmonkey" }) }, { injectInto: "content", scriptHandler: "Violentmonkey" });
+  for (const value of [null, undefined, "content", () => {}]) assert.equal(ownFields(value), null);
 });
 
 const settings = (overrides = {}) => ({ revision: 0, enabled: true, selectedThemeId: "anime.frieren", preferences: { appearance: "full", text: true, motion: true }, customThemes: [], ...overrides });

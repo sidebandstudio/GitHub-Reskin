@@ -47,7 +47,7 @@ import { TIME_LIMIT_MS } from "../extension/content/github/slots.js";
 import { startContent } from "../extension/content/lifecycle/index.js";
 import { createFontLoader } from "./fonts.js";
 import { createGmHost } from "./host.js";
-import { detectIsolation } from "./isolation.js";
+import { detectIsolation, ownFields } from "./isolation.js";
 import { createMenu } from "./menu.js";
 import { BUILDER_MODES, createPanel, PANEL_HASH } from "./panel.js";
 import { xrayRasterEnv } from "./raster.js";
@@ -58,13 +58,9 @@ import { createGmStorage } from "./storage.js";
 // running beside the first.
 const RUNNING = "data-reskin-userscript";
 
-// GM, GM_info and exportFunction decide isolation (isolation.js), so each counts only when the
-// page's window has no such name: otherwise it could be a global the page planted, even on a
-// prototype. The `in` test runs no page code, since nothing can put a proxy in the window's
-// prototype chain, and it comes first because reading the name could run a getter the page set.
 const scope = {
-  GM: !("GM" in window) && typeof GM === "object" ? GM : undefined,
-  GM_info: !("GM_info" in window) && typeof GM_info === "object" ? GM_info : undefined,
+  GM: typeof GM === "object" ? GM : undefined,
+  GM_info: typeof GM_info === "object" ? GM_info : undefined,
   GM_getValue: typeof GM_getValue === "function" ? GM_getValue : undefined,
   GM_setValue: typeof GM_setValue === "function" ? GM_setValue : undefined,
   GM_deleteValue: typeof GM_deleteValue === "function" ? GM_deleteValue : undefined,
@@ -73,10 +69,17 @@ const scope = {
   GM_registerMenuCommand: typeof GM_registerMenuCommand === "function" ? GM_registerMenuCommand : undefined,
   GM_unregisterMenuCommand: typeof GM_unregisterMenuCommand === "function" ? GM_unregisterMenuCommand : undefined,
   // Firefox's content-script function, for storage.js's lock bridge.
-  exportFunction: !("exportFunction" in window) && typeof exportFunction === "function" ? exportFunction : undefined,
+  exportFunction: typeof exportFunction === "function" ? exportFunction : undefined,
 };
 
-whenRoot(document, () => start(scope, { document, view: window }));
+// The global object of this script's own realm, for isolation.js: a sloppy-mode function called
+// bare gets it as `this`, with no lookup a page script could answer. The bundle is a classic
+// script without "use strict"; where a manager makes it strict this is undefined and shows nothing.
+const realm = (function () {
+  return this;
+})();
+
+whenRoot(document, () => start(scope, { document, view: window, realm }));
 
 // Some managers run a document-start script before the parser has made <html>. The boot gate and
 // the lifecycle start as soon as it exists.
@@ -92,14 +95,21 @@ function whenRoot(document, run) {
 
 /**
  * @param {object} scope the manager's grants
- * @param {{document:Document, view:Window}} page
+ * @param {{document:Document, view:Window, realm?:object}} page
  */
-export function start(scope, { document, view }) {
+export function start(scope, { document, view, realm = null }) {
   const root = document.documentElement;
   if (!root || root.hasAttribute(RUNNING)) return null;
   root.setAttribute(RUNNING, "");
-  // Before any of GitHub's scripts run.
-  const isolation = detectIsolation({ info: scope.GM_info ?? scope.GM?.info ?? null, gm: scope.GM ?? null, exportFunction: scope.exportFunction ?? null });
+  // Before any of GitHub's scripts run. The report is the one that comes with the storage the
+  // script would use: GM.info on the GM object for GM.*, otherwise GM_info. A page global could
+  // stand in only for a name the manager doesn't bind, and a manager binds the report it grants
+  // storage with. Fields are read from ownFields copies: a page getter on Object.prototype never
+  // sees the manager's objects or fills in a field they lack.
+  const gm = ownFields(scope.GM);
+  const sync = typeof scope.GM_getValue === "function" && typeof scope.GM_setValue === "function";
+  const report = !sync && typeof gm?.getValue === "function" ? ownFields(gm.info) : (ownFields(scope.GM_info) ?? ownFields(gm?.info));
+  const isolation = detectIsolation({ realm, report, gm });
 
   // The extension's boot.css, as a style node: GitHub stays hidden for at most 120 ms while
   // storage answers, and forced colors bypass it.
@@ -144,9 +154,9 @@ export function start(scope, { document, view }) {
   // Tampermonkey, Violentmonkey and Greasemonkey list commands in their menu. Managers without a
   // menu (Userscripts for Safari) open the panel from an address ending in #reskin.
   // A closure rather than bind(): page code that patched Function.prototype.bind would be handed
-  // the whole GM object, storage included.
-  const gm = scope.GM;
-  const register = scope.GM_registerMenuCommand ?? (typeof gm?.registerMenuCommand === "function" ? (name, onClick) => gm.registerMenuCommand(name, onClick) : null);
+  // the whole GM object, storage included. The method is the GM object's own (gm is its ownFields
+  // copy), so calling it reads no inherited getter.
+  const register = scope.GM_registerMenuCommand ?? (typeof gm?.registerMenuCommand === "function" ? (name, onClick) => scope.GM.registerMenuCommand(name, onClick) : null);
   const unregister = scope.GM_unregisterMenuCommand ?? null;
   const note = isolation.isolated ? null : register ? COPY.menuOnly : COPY.noControls;
   // Not isolated, every mode is the note on the card: no builder document is ever loaded.
