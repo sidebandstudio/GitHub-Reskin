@@ -143,6 +143,7 @@ test("configuration is required and validated before anything mounts", () => {
   assert.throws(() => mountPreview(element, { view: "settings", theme, preferences }), /view/);
   assert.throws(() => mountPreview(element, { view: "profile", theme: { ...theme, colors: { background: "red" } }, preferences }), /valid theme/);
   assert.throws(() => mountPreview(element, { view: "profile", theme, preferences: { ...preferences, motion: "yes" } }), /motion/);
+  assert.throws(() => mountPreview(element, { view: "profile", theme, preferences, compact: "yes" }), /compact must be a boolean/);
   assert.throws(() => mountPreview(null, { view: "profile", theme, preferences }), /container/);
   assert.equal(typeof createFixtureRenderer, "function");
 });

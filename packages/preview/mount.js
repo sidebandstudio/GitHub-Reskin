@@ -16,7 +16,7 @@ import { THEMED_SWITCH } from "../appearance/paint.js";
 import { LIMITS } from "../appearance/registry.js";
 import { fixtureBody, serializeFixture } from "./serialize.js";
 import { FIXTURE_CSS } from "./styles.js";
-import { variableDeclarations } from "./variables.js";
+import { PREVIEW_VARIABLES, variableDeclarations } from "./variables.js";
 import { VIEWS, builder } from "./views.js";
 
 // Slots without evidence on current GitHub markup stay dormant in the preview too, so it never
@@ -28,13 +28,14 @@ export const VIEW_LABELS = Object.freeze({ profile: "GitHub profile", repo: "Git
 // The styled frame's sandbox grants nothing: no scripts, no same-origin access, no forms,
 // popups or navigation of the host.
 export const PREVIEW_SANDBOX = "";
+const PREVIEW_NAMES = Object.freeze(Object.keys(PREVIEW_VARIABLES));
 
 let runtime = null;
 
 /**
- * Supplies what differs per host: the Primer adapter module (selectMode, compileGitHub), the
- * frozen ModeIndex, the resource adapter for fonts and fixture images, and the dormant slots.
- * Call once before mountPreview.
+ * Supplies what differs per host: the Primer adapter module (selectMode, compileGitHub, and
+ * compilePreview when it has one), the frozen ModeIndex, the resource adapter for fonts and
+ * fixture images, and the dormant slots. Call once before mountPreview.
  */
 export function configurePreview({ primer, modeIndex, resources = noResources, dormantSlots = DEFAULT_DORMANT_SLOTS }) {
   if (typeof primer?.selectMode !== "function" || typeof primer?.compileGitHub !== "function") throw new TypeError("configurePreview needs the Primer adapter's selectMode and compileGitHub");
@@ -70,6 +71,10 @@ function checkOptions({ theme, preferences }) {
   if (!result.ok) throw new TypeError(`The preview needs a valid theme: ${(result.issues || []).map((i) => i.message).join("; ")}`);
   for (const key of ["enabled", "extras", "text", "motion", "fonts", "effects"]) if (typeof preferences?.[key] !== "boolean") throw new TypeError(`preferences.${key} must be a boolean`);
 }
+const checkCompact = (value) => {
+  if (value !== undefined && typeof value !== "boolean") throw new TypeError("compact must be a boolean");
+  return value === true;
+};
 const checkCssAllowed = (value) => {
   if (value !== undefined && typeof value !== "boolean") throw new TypeError("cssAllowed must be a boolean");
   return value === true;
@@ -163,7 +168,11 @@ export function createFixtureRenderer(fdoc, rt = runtime) {
       root.setAttribute("data-color-mode", native.colorMode);
       root.setAttribute("data-light-theme", native.lightTheme);
       root.setAttribute("data-dark-theme", native.darkTheme);
-      const compiled = themed ? rt.primer.compileGitHub(resolved, plan, prefs) : null;
+      // C3b's preview target writes only the variables the fixture reads, for a frame whose only
+      // island is its root; an adapter without it compiles the full GitHub stylesheet.
+      const compiled = !themed ? null
+        : rt.primer.compilePreview ? rt.primer.compilePreview(resolved, plan, prefs, { variables: PREVIEW_NAMES, index: rt.modeIndex })
+        : rt.primer.compileGitHub(resolved, plan, prefs);
       const cssAllowed = Boolean(state.cssAllowed);
       // The same registry the content runtime compiles against, so a theme's CSS that also names
       // GitHub's own elements still compiles here. Those rules need admission markers, which the
@@ -180,7 +189,7 @@ export function createFixtureRenderer(fdoc, rt = runtime) {
       // Colors reach the body only through the style layers, so a color edit keeps the body. The
       // structured appearance can move text (fonts, case, tracking, a banner), so it is structure.
       const a = resolved.appearance;
-      const structure = JSON.stringify([state.view, state.theme.base, state.before, themed, prefs, resolved.policy, resolved.flavor, resolved.effects, resolved.font, Boolean(css.fonts), win?.innerWidth ?? 0, cssAllowed, owned.css, a?.fonts ?? null, a?.typography ?? null, Boolean(a?.paints?.profileBanner)]);
+      const structure = JSON.stringify([state.view, state.theme.base, state.before, themed, prefs, resolved.policy, resolved.flavor, resolved.effects, resolved.font, Boolean(css.fonts), win?.innerWidth ?? 0, cssAllowed, owned.css, a?.fonts ?? null, a?.typography ?? null, Boolean(a?.paints?.profileBanner), Boolean(state.compact)]);
       const rebuilt = play || structure !== built?.structure || !fdoc.body.contains(built.root);
       // A layout document needs new styles only for a new layout; colors never move anything.
       if (rebuilt || !layoutOnly) {
@@ -204,6 +213,9 @@ export function createFixtureRenderer(fdoc, rt = runtime) {
           fdoc.body.replaceChildren(view.root);
         }
         built = { structure, nativeKey, view, root: view.root };
+        // The phone composition of the profile: the fixture's narrow layout reads this marker.
+        if (state.compact && state.view === "profile") view.root.setAttribute("data-density", "compact");
+        else view.root.removeAttribute("data-density");
         if (themed && cssAllowed) view.root.setAttribute(CSS_SCOPE, "active");
         else view.root.removeAttribute(CSS_SCOPE);
         if (themed) {
@@ -307,17 +319,21 @@ function visiblePart(rect, el, win) {
  * the state as it was when the job started; a newer request stops it at once, even while it
  * waits for a font or image read, and only the newest generation reports completion, with
  * metadata for the document it rendered. destroy releases the frames, their documents and every
- * reference the handle held; a destroyed handle's methods do nothing.
+ * reference the handle held; a destroyed handle's methods do nothing. options.compact asks for the
+ * profile's phone composition in a fixed window: in the narrow layout it shows the name and tag,
+ * one pinned repository and the graph with its legend, without the header, bio and details;
+ * update({ compact }) changes it, and an update without compact keeps it.
  */
 export function mountPreview(container, options) {
   if (!runtime) throw new Error("Call configurePreview before mountPreview");
   if (container?.nodeType !== 1) throw new TypeError("mountPreview needs a container element");
   if (!PREVIEW_VIEWS.includes(options?.view)) throw new TypeError(`Unknown preview view ${options?.view}`);
   checkOptions(options);
+  const compact = checkCompact(options.compact);
   const rt = runtime;
   const doc = container.ownerDocument;
   const win = doc.defaultView;
-  const state = { view: options.view, theme: options.theme, preferences: options.preferences, before: false, cssAllowed: checkCssAllowed(options.cssAllowed) };
+  const state = { view: options.view, theme: options.theme, preferences: options.preferences, before: false, cssAllowed: checkCssAllowed(options.cssAllowed), compact };
 
   let host = doc.createElement("div");
   host.className = "reskin-preview";
@@ -597,6 +613,7 @@ export function mountPreview(container, options) {
       state.theme = next.theme;
       state.preferences = next.preferences;
       state.cssAllowed = cssAllowed;
+      if (next.compact !== undefined) state.compact = checkCompact(next.compact);
       // A newly selected theme is an explicit selection: its one pass of motion may play.
       request({ play: selected });
     },

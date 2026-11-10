@@ -1,0 +1,54 @@
+---
+// The theme chooser, anime title first. Every option is an ordinary link to that theme's page, so a
+// tap before the page's script runs still lands on the chosen theme; the script turns a tap into an
+// in-place selection. Desktop shows the whole list beside the preview; phones and tablets get a
+// compact disclosure that names the selected anime and opens over the preview.
+import Icon from "./Icon.astro";
+import { ANIME, CLASSICS, href, themePath } from "../lib/site.mjs";
+
+interface Props { selected: any }
+const { selected } = Astro.props;
+const swatch = (doc: any) => [doc.colors.background, doc.colors.accent, doc.colors.contribution || doc.colors.accent];
+const option = (t: any) => ({ t, current: t.slug === selected.slug });
+---
+{[["side", "picker-side"], ["drop", "picker-drop"]].map(([kind, cls]) => {
+  const list = (themes: any[], label: string) => (
+    <ul class="picker-list" aria-label={label}>
+      {themes.map(option).map(({ t, current }) => (
+        <li>
+          <a class="pick" href={`${href(themePath(t.slug))}#preview`} data-select={t.slug} aria-current={current ? "true" : undefined}>
+            <span class="swatch" aria-hidden="true">{swatch(t.doc).map((c) => <i style={`--c:${c}`}></i>)}</span>
+            <span class="pick-text"><span class="pick-title">{t.title}</span><span class="pick-sub">{t.anime ? t.name : "Classic"}</span></span>
+            <span class="pick-check"><Icon name="check" /></span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  );
+  const classics = (
+    <details class="picker-classics" open={selected.group === "classics" ? true : undefined}>
+      <summary>Plus 12 Classics</summary>
+      {list(CLASSICS, "Classic themes")}
+    </details>
+  );
+  return kind === "side" ? (
+    <nav class={cls} aria-labelledby="picker-side-title">
+      <h2 class="picker-heading" id="picker-side-title">13 anime themes</h2>
+      {list(ANIME, "Anime themes")}
+      {classics}
+    </nav>
+  ) : (
+    <details class={cls} data-picker>
+      <summary>
+        <span class="swatch" aria-hidden="true" data-selected="swatch">{swatch(selected.doc).map((c) => <i style={`--c:${c}`}></i>)}</span>
+        <span class="pick-text"><span class="pick-title" data-selected="title">{selected.title}</span><span class="pick-sub" data-selected="name">{selected.anime ? selected.name : "Classic"}</span></span>
+        <span class="drop-count">13 anime themes</span>
+        <span class="drop-chevron" aria-hidden="true"></span>
+      </summary>
+      <nav class="drop-panel" aria-label="Choose a theme">
+        {list(ANIME, "Anime themes")}
+        {classics}
+      </nav>
+    </details>
+  );
+})}

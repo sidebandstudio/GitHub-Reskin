@@ -1,0 +1,20 @@
+---
+// GitHub Pages serves this for any missing path under the site, at its own URL, so every link
+// here is absolute under the base.
+import Base from "../layouts/Base.astro";
+import { ANIME, href, themePath } from "../lib/site.mjs";
+---
+<Base title="Page not found · GitHub Reskin" description="This GitHub Reskin page isn't here. Try the themes instead." path="404.html">
+  <div class="wrap page not-found">
+    <h1>This theme link isn't here.</h1>
+    <p class="lede">The link may be mistyped, or the page has moved. Every theme is still one tap away.</p>
+    <div class="prompt-actions">
+      <a class="btn btn-primary" href={`${href()}#preview`}>Try the themes</a>
+      <a class="btn" href={href("make/")}>Make a theme</a>
+    </div>
+    <h2 class="make-h2">13 anime themes</h2>
+    <ul class="not-found-list">
+      {ANIME.map((t) => <li><a href={`${href(themePath(t.slug))}#preview`}><b>{t.anime}</b> <span>{t.name}</span></a></li>)}
+    </ul>
+  </div>
+</Base>

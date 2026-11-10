@@ -1,0 +1,55 @@
+---
+// Shared preview links: /share/#RS1... The fragment stays in the browser; this page decodes it with
+// the format's decodeShare and shows it in the shared preview. A shared link never enables advanced
+// CSS: the recipient reviews it and chooses, as with an import.
+import Base from "../../layouts/Base.astro";
+import Icon from "../../components/Icon.astro";
+import { href } from "../../lib/site.mjs";
+import { LIMITS } from "../../../../packages/contracts/index.js";
+
+const WARNING = "Advanced CSS changes GitHub's appearance and can break layout or reduce readability. Reskin blocks outside resources and unsupported rules, but cannot guarantee every GitHub page. Review the preview and CSS before enabling it. Calm turns it off.";
+---
+<Base title="Shared theme · GitHub Reskin" description="Open a GitHub Reskin theme someone shared with you." path="share/">
+  <div class="wrap page">
+    <h1>Shared theme</h1>
+    <p class="lede">A shared link carries its theme after the # in the address. Your browser keeps that part to itself; it is not sent to any server.</p>
+    <div class="make">
+      <div class="make-summary">
+        <p class="make-name" data-share-name>No theme in this link</p>
+        <p class="make-state" role="status" aria-live="polite" data-share-state>This link has no shared theme. Ask for the full link or the theme's .reskin.json file.</p>
+        <button class="btn" type="button" data-share-retry hidden>Try again</button>
+        <noscript><p class="field-help">Reading a shared theme needs JavaScript.</p></noscript>
+        <div class="css-review" data-css-review hidden>
+          <p class="badge">Advanced CSS</p>
+          <p class="css-warning">{WARNING}</p>
+          <details class="faq-list">
+            <summary>View the CSS</summary>
+            <div><pre class="css-source" data-css-source></pre></div>
+          </details>
+          <label class="check"><input type="checkbox" data-css-enable /><span>Enable advanced CSS in this preview</span></label>
+          <p class="field-help" data-css-note hidden></p>
+        </div>
+        <p class="field-help" data-images hidden></p>
+        <div class="prompt-actions" data-exports hidden>
+          <button class="btn btn-primary" type="button" data-download><Icon name="arrow" /> <span data-download-label>Download theme</span></button>
+          <button class="btn" type="button" data-copy-code><Icon name="copy" /> Copy share code</button>
+        </div>
+        <p class="copy-status" role="status" aria-live="polite" data-export-status></p>
+        <div class="field" data-code-fallback hidden>
+          <label for="code-text">Share code</label>
+          <input id="code-text" type="text" readonly data-code-text spellcheck="false" />
+        </div>
+        <p class="field-help">Opening a shared link does not change an installed extension. To use the theme, import its file or share code in GitHub Reskin.</p>
+        <p><a href={href()}>Browse the bundled themes</a> or <a href={href("make/")}>make your own</a>.</p>
+      </div>
+      <div class="window window-make" data-window hidden>
+        <div class="window-live" data-live></div>
+        <p class="window-pending" data-pending><span class="spinner" aria-hidden="true"></span> Loading the preview</p>
+      </div>
+    </div>
+  </div>
+  <script type="application/json" id="share-data" set:html={JSON.stringify({ maxLink: LIMITS.maxShareLinkCharacters })} />
+  <script>
+    import "../../scripts/share.mjs";
+  </script>
+</Base>

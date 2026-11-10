@@ -1,0 +1,62 @@
+/* The popup's card in the userscript frame, after the extension's ui.css and popup.css. The card
+   takes its natural height and the frame follows it up to the viewport; past that the frame
+   document scrolls. The gallery keeps its own bounded scroller at every frame height, so the
+   frame's height never changes which layout the card uses. */
+html {
+  width: auto;
+}
+.rs-popup {
+  height: auto;
+  overflow: visible;
+  padding-bottom: 4px;
+}
+html .rs-popup .rs-gallery {
+  flex: none;
+  max-height: 300px;
+}
+.us-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin: -6px -8px -6px 0;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--text);
+  font-size: 24px;
+  line-height: 1;
+}
+.us-close:hover {
+  background: var(--hover);
+}
+.us-storage {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: 4px;
+  border-top: 1px solid var(--separator);
+}
+.us-storage p {
+  margin: 0;
+}
+.us-session-label {
+  align-self: flex-start;
+  padding: 1px 8px;
+  border: 1px solid var(--brand);
+  border-radius: 999px;
+  color: var(--brand-hover);
+  font-size: 12px;
+  font-weight: 650;
+}
+.us-storage-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0 12px;
+}
+.us-storage .rs-status {
+  font-size: 13px;
+}

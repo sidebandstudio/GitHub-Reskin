@@ -1,0 +1,81 @@
+---
+import "../styles/site.css";
+import { SUPPORT, canonical, href } from "../lib/site.mjs";
+
+// themePage: the page has a selected theme and its keep sheet. On touch devices the header action
+// keeps that theme for desktop there, and elsewhere leads back to the theme preview; with a mouse
+// it is Install. The same media decision drives every hero and install action.
+interface Props { title: string; description: string; path?: string; themePage?: boolean }
+const { title, description, path = "", themePage = false } = Astro.props;
+const url = canonical(path);
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={url} />
+    <meta name="theme-color" content="#0c0f14" />
+    <meta name="referrer" content="no-referrer" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="GitHub Reskin" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={url} />
+    <link rel="icon" href={href("icon.svg")} type="image/svg+xml" />
+    <link rel="icon" href={href("icon-32.png")} type="image/png" sizes="32x32" />
+    <link rel="apple-touch-icon" href={href("apple-touch-icon.png")} />
+    <script is:inline>document.documentElement.classList.add("js");</script>
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <header class="nav">
+      <div class="wrap nav-in">
+        <a class="brand" href={href()} aria-label="GitHub Reskin home">
+          <img src={href("icon.svg")} width="28" height="28" alt="" />
+          <span class="wordmark">GitHub <span>Reskin</span></span>
+        </a>
+        <nav aria-label="Main">
+          <ul class="nav-links">
+            <li><a href={`${href()}#themes`}>Themes</a></li>
+            <li><a href={href("make/")}>Make a theme</a></li>
+            <li><a href={`${href()}#faq`}>FAQ</a></li>
+            <li><a href={SUPPORT.source}>Source</a></li>
+          </ul>
+        </nav>
+        <div class="nav-action">
+          <a class="btn btn-small btn-primary for-desk" href={`${href()}#install`}>Install</a>
+          {themePage
+            ? <a class="btn btn-small btn-primary for-touch" href="#keep" data-open-keep>Keep for desktop</a>
+            : <a class="btn btn-small btn-primary for-touch" href={`${href()}#preview`}>Try the themes</a>}
+        </div>
+      </div>
+    </header>
+    <main id="main">
+      <slot />
+    </main>
+    <footer class="footer">
+      <div class="wrap footer-in">
+        <div>
+          <a class="brand" href={href()}>
+            <img src={href("icon.svg")} width="28" height="28" alt="" />
+            <span class="wordmark">GitHub <span>Reskin</span></span>
+          </a>
+          <p class="footer-note">GitHub Reskin is an independent project by Sideband Studio. Not affiliated with or endorsed by GitHub. Series names identify inspiration; all trademarks belong to their owners.</p>
+        </div>
+        <ul class="footer-links">
+          <li><a href={href("install/")}>Install</a></li>
+          <li><a href={href("make/")}>Make a theme</a></li>
+          <li><a href={href("privacy/")}>Privacy</a></li>
+          <li><a href={href("credits/")}>Credits</a></li>
+          <li><a href={href("changelog/")}>Changelog</a></li>
+          <li><a href={SUPPORT.source}>Source</a></li>
+          <li><a href={SUPPORT.issues}>Report an issue</a></li>
+        </ul>
+      </div>
+    </footer>
+    <slot name="end" />
+  </body>
+</html>

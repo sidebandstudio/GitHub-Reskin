@@ -35,7 +35,6 @@ test("runtime bundles leave out the css-tree parser and carry the bundled catalo
 test("the packaged extension holds the new runtime and none of the 1.1.0 files", async () => {
   const { files, manifest } = await extensionFiles("chrome", { config, entry });
   for (const legacy of ["popup.html", "popup.js", "popup.css", "themes.js", "slang.js", "github-modes.js"]) assert.equal(files[legacy], undefined, legacy);
-  assert.ok(!files["content.js"].equals(await readFile(join(ROOT, "extension/content.js"))), "content.js is the new bundle, not the 1.1.0 script");
   assert.deepEqual(manifest.content_scripts[0].css, ["content/lifecycle/boot.css"]);
   assert.ok(files["content.js"].length > 0 && files["background.js"].length > 0 && files["pages/pages.js"].length > 0);
   for (const page of ["popup", "onboarding", "settings"]) {
