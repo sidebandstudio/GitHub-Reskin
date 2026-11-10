@@ -20,7 +20,10 @@ approval records, and there is no authority outside it to check them against.
 a copy or re-added theme, a draft, Undo or a resumed draft, another window, a stale editor, or a
 message from any page other than the builder document that asked for the approval. Approval
 tickets are bound to the browser-provided identity of that settings page document and to the
-settings revision it saw, and each is used once.
+settings revision it saw, and each is used once. Chrome names the document itself. Firefox gives no
+document ID, so there the identity is the tab, frame and page address, and a settings page reloaded
+in the same tab and frame shares it; the reloaded page has a new editor token, so it still cannot
+redeem the earlier page's ticket.
 
 **What it does not protect against.** Direct edits of the extension's own storage, for example by
 another program with access to the browser profile, by developer tools on the extension's pages, or
