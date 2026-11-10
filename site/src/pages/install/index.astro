@@ -1,0 +1,33 @@
+---
+import Prose from "../../layouts/Prose.astro";
+import { BROWSERS, SUPPORT, href } from "../../lib/site.mjs";
+---
+<Prose title="Install · GitHub Reskin" heading="Install GitHub Reskin" description="Install GitHub Reskin in Chrome or Firefox on desktop, or try a developer build from source." path="install/" lede="GitHub Reskin runs in Chrome and Firefox on desktop. It is free.">
+  {BROWSERS.map((b) => (
+    <section>
+      <h2 id={b.id}>{b.name}</h2>
+      {b.store
+        ? <p><a class="btn btn-primary" href={b.store}>Get it from {b.storeName}</a></p>
+        : <p><b>Store listing coming soon.</b> The {b.storeName} listing is being prepared. This page links to it once it is live.</p>}
+      <p>{b.also}</p>
+    </section>
+  ))}
+
+  <h2 id="developer-preview">Developer preview</h2>
+  <p>Until the store listings are live, you can build the extension from its source code. Builds from source do not update automatically.</p>
+  <ol>
+    <li>Install Node.js 24.22.2 and npm 11.12.1, then clone <a href={SUPPORT.source}>the repository</a>.</li>
+    <li>Run <code>npm ci</code>, then <code>npm run build:chrome</code> or <code>npm run build:firefox</code>.</li>
+    <li>In Chrome, open <code>chrome://extensions</code>, turn on Developer mode, choose Load unpacked and select <code>dist/chrome</code>.</li>
+    <li>In Firefox, open <code>about:debugging</code>, choose This Firefox, then Load Temporary Add-on and select <code>dist/firefox/manifest.json</code>. Firefox removes a temporary add-on when it restarts.</li>
+  </ol>
+
+  <h2 id="userscript">Safari and the userscript</h2>
+  <p>Safari can run GitHub Reskin as a userscript in a userscript manager. This route is for advanced users and is still being tested; instructions arrive with the release. The userscript keeps its own settings, separate from the extension.</p>
+
+  <h2 id="phones">Phones</h2>
+  <p>Browser extensions for GitHub Reskin run on desktop. On a phone you can preview every theme on <a href={href()}>the home page</a> and keep its link for your computer. Firefox for Android is not supported yet.</p>
+
+  <h2>After installing</h2>
+  <p>Open GitHub and pick a theme in the GitHub Reskin popup. A theme you picked on this site is not sent to the extension; choose it again there.</p>
+</Prose>

@@ -1,0 +1,15 @@
+---
+// One stable, pre-rendered page per bundled theme: /themes/<catalog-slug>/.
+import Base from "../../layouts/Base.astro";
+import Home from "../../components/Home.astro";
+import { THEMES, pageTitle, themeDescription, themePath } from "../../lib/site.mjs";
+
+export function getStaticPaths() {
+  return THEMES.map((theme) => ({ params: { slug: theme.slug } }));
+}
+const { slug } = Astro.params;
+const theme = THEMES.find((t) => t.slug === slug);
+---
+<Base title={pageTitle(theme)} description={themeDescription(theme)} path={themePath(slug)} themePage>
+  <Home slug={slug} />
+</Base>
