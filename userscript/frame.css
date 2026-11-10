@@ -60,3 +60,41 @@ html .rs-popup .rs-gallery {
 .us-storage .rs-status {
   font-size: 13px;
 }
+.us-pages {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0 12px;
+}
+
+/* The builder's frame: the settings page's Make a theme and Backup & help, after page.css. The
+   frame follows the page's height up to the viewport and scrolls past it, so the page keeps its
+   natural height instead of the tab's. */
+.us-builder {
+  min-height: 0;
+}
+.us-builder .rs-page-header {
+  max-width: none;
+  padding: 8px 12px 0 16px;
+}
+.us-builder .us-close {
+  margin-left: auto;
+}
+.us-builder .us-storage {
+  padding-top: 0;
+  border-top: 0;
+}
+.us-builder .rs-views .us-view {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--separator);
+  border-radius: 8px;
+  background: none;
+  color: var(--secondary);
+  font: inherit;
+  font-weight: 600;
+}
+.us-builder .rs-views .us-view:hover {
+  background: var(--raised);
+}

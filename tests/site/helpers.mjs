@@ -2,7 +2,7 @@
 // `npm run check:site`) or is built once into a temporary directory, so `node --test tests/site/`
 // and `npm test` also work from a clean checkout.
 import { existsSync } from "node:fs";
-import { mkdtemp, readdir, readFile, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, readdir, readFile, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -18,11 +18,37 @@ export async function siteDir() {
     built = (async () => {
       const tmp = await mkdtemp(join(tmpdir(), "reskin-site-"));
       const { buildSiteFrom, loadReleaseConfig } = await import("../../scripts/build.mjs");
-      const { dir } = await buildSiteFrom(ROOT, { outDir: tmp, releaseConfig: await loadReleaseConfig() });
+      const { dir } = await oneBuildAtATime(async () => buildSiteFrom(ROOT, { outDir: tmp, releaseConfig: await loadReleaseConfig() }));
       return { dir, cleanup: () => rm(tmp, { recursive: true, force: true }) };
     })();
   }
   return built;
+}
+
+// node --test runs each test file in its own process, so two files can build the site at once.
+// Builds share the preview capture cache in site/.cache/previews, which a cold build deletes and
+// rewrites, and Astro's <cwd>/.astro/.prerender, its fallback when outDir is outside the working
+// directory. A lock directory makes them take turns. One left by a killed run clears after ten
+// minutes.
+async function oneBuildAtATime(build) {
+  const lock = join(ROOT, "site/.cache/test-build.lock");
+  await mkdir(join(ROOT, "site/.cache"), { recursive: true });
+  for (;;) {
+    try {
+      await mkdir(lock);
+      break;
+    } catch (error) {
+      if (error.code !== "EEXIST") throw error;
+      const since = await stat(lock).then((s) => Date.now() - s.mtimeMs, () => 0);
+      if (since > 10 * 60 * 1000) await rm(lock, { recursive: true, force: true });
+      else await new Promise((done) => setTimeout(done, 250));
+    }
+  }
+  try {
+    return await build();
+  } finally {
+    await rm(lock, { recursive: true, force: true });
+  }
 }
 
 /** Every file under dir as a relative POSIX path. */

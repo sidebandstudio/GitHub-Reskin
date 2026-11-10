@@ -95,6 +95,20 @@ test("openPage stays in the panel, and files download through a local blob link"
   assert.deepEqual(await host.downloadFile({ filename: "choom.reskin.json", mime: "application/json", bytes: new Uint8Array([123, 125]) }), { ok: true });
   assert.deepEqual(clicks, [{ href: "blob:reskin/1", download: "choom.reskin.json" }]);
   assert.deepEqual(revoked, ["blob:reskin/1"]);
+
+  // From the panel, the link is made and clicked in the frame's document with the frame's own
+  // window, so the file never passes through GitHub's document.
+  const framed = [];
+  const frameView = { Blob: view.Blob, URL: { createObjectURL: () => "blob:frame/1", revokeObjectURL: (url) => revoked.push(url) }, setTimeout: (fn) => fn() };
+  const frameDocument = {
+    defaultView: frameView,
+    documentElement: { append: () => {} },
+    createElement: () => ({ click() { framed.push({ href: this.href, download: this.download }); }, remove() {} }),
+  };
+  assert.deepEqual(await host.downloadFile({ filename: "night.reskin.json", mime: "application/json", bytes: new Uint8Array([123, 125]) }, frameDocument), { ok: true });
+  assert.deepEqual(framed, [{ href: "blob:frame/1", download: "night.reskin.json" }]);
+  assert.equal(clicks.length, 1, "nothing was added to the page's document");
+  assert.deepEqual(revoked, ["blob:reskin/1", "blob:frame/1"]);
 });
 
 // The round-1 review's reproductions: two tabs, each with its own repository and host, over one
@@ -192,3 +206,16 @@ for (const kind of ["sync", "async"]) {
     }
   });
 }
+
+test("saving the builder's draft answers as the extension's host does: ok, or the issue that stopped it", async () => {
+  const { host } = setup("sync");
+  await host.read();
+  const draft = { document: { schemaVersion: 1, name: "Draft", base: "dark", colors: { background: "#101010", text: "#eeeeee", accent: "#ff5577" } } };
+  assert.deepEqual(await host.saveDraft(draft), { ok: true });
+  assert.deepEqual(await host.loadDraft(), draft);
+  const large = { ...draft, padding: "x".repeat(1.3 * 1024 * 1024) };
+  const refused = await host.saveDraft(large);
+  assert.equal(refused.ok, false);
+  assert.match(refused.issues[0].message, /1\.25 MiB/);
+  assert.deepEqual(await host.loadDraft(), draft);
+});
