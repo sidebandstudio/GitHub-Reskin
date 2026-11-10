@@ -199,11 +199,11 @@ test("the mapping covers every seed leaf, emits only variables every mode declar
 });
 
 test("the 1.1.0 mode inventory is fully accounted for in the new mapping and baselines", () => {
-  // extension/github-modes.js forced 750 standard variables over every mode. Each must now be
-  // written from a resolved role, restored from the family seed's baseline, follow one of those
-  // through var(), or be identical in every themable mode.
-  const text = readText("extension/github-modes.js");
-  const legacy = [...new Set([...text.matchAll(/(--[\w-]+):/g)].map((m) => m[1]))];
+  // 1.1.0's extension/github-modes.js forced 750 standard variables over every mode (recorded in
+  // tests/fixtures/legacy/1.1.0.json). Each must now be written from a resolved role, restored
+  // from the family seed's baseline, follow one of those through var(), or be identical in every
+  // themable mode.
+  const legacy = JSON.parse(readText("tests/fixtures/legacy/1.1.0.json")).modeVariables;
   assert.ok(legacy.length >= 750, `${legacy.length} legacy variables`);
   const inv = provenance.tokenInventory;
   const handled = new Set([...inv.emitted, ...inv.baseline, ...inv.follows, ...inv.constant]);

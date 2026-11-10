@@ -73,7 +73,7 @@ test("package writes versioned ZIPs, the userscript, a source archive, checksums
     assert.deepEqual(info.manifestDifferences, ["/background/scripts", "/background/service_worker", "/browser_specific_settings"]);
     assert.match(info.commit ?? "", /^[0-9a-f]{40}$/);
     const source = unzipSync(await readFile(join(out, artifactName(version, "amo-source"))));
-    for (const path of ["BUILDING.md", "package-lock.json", "extension/github-modes.js", "scripts/build.mjs"]) assert.ok(source[path], path);
+    for (const path of ["BUILDING.md", "package-lock.json", "userscript/build.mjs", "scripts/build.mjs"]) assert.ok(source[path], path);
     assert.ok(!Object.keys(source).some((path) => /^(node_modules|dist|artifacts)\//.test(path)));
     const notice = await readFile(join(ROOT, "licenses/primer-primitives.txt"));
     assert.deepEqual(Buffer.from(source["licenses/primer-primitives.txt"]), notice);
@@ -84,16 +84,17 @@ test("package writes versioned ZIPs, the userscript, a source archive, checksums
     }
     // The single-file userscript embeds the same notice, byte for byte, in a comment.
     const userscript = await readFile(join(out, artifactName(version, "userscript")), "utf8");
-    assert.ok(userscript.includes(`\n/*\n${notice.toString("utf8")}*/\n(function () {`));
+    assert.ok(userscript.includes(`/* licenses/primer-primitives.txt\n\n${notice.toString("utf8")}*/\n`));
     // The Primer notice covers every bundle that embeds the mode data and travels in the
-    // userscript too; font and preview-image notices ship only in the browser packages.
+    // userscript too, as do the font notices, since the userscript embeds the fonts; the preview
+    // images' notices ship only in the browser packages.
     const entry = await loadEntry(await loadReleaseConfig());
     assert.deepEqual(
       info.licenses.map((item) => [item.file, item.license, item.covers, item.in]),
       [
         ["LICENSE", "MIT", ["GitHub Reskin"], ["chrome", "firefox", "amo-source"]],
         ["licenses/primer-primitives.txt", "MIT", ["extension/background.js", "extension/content.js", "extension/pages/pages.js"], ["chrome", "firefox", "userscript", "amo-source"]],
-        ...entry.notices.slice(1).map((n) => [n.file, "OFL-1.1", n.covers.map((path) => `extension/${path}`), ["chrome", "firefox", "amo-source"]]),
+        ...entry.notices.slice(1).map((n) => [n.file, "OFL-1.1", n.covers.map((path) => `extension/${path}`), n.file.startsWith("assets/fonts/") ? ["chrome", "firefox", "userscript", "amo-source"] : ["chrome", "firefox", "amo-source"]]),
       ],
     );
     // Primer's, one OFL notice for each of the eighteen font families and the preview images' two.
