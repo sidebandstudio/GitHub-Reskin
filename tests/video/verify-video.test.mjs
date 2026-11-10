@@ -16,7 +16,7 @@ function withCopy(name, edit, fn) {
   const tmp = mkdtempSync(join(tmpdir(), "reskin-video-test-"));
   try {
     const dir = join(tmp, name);
-    cpSync(join(ROOT, PROJECTS[name].dir), dir, { recursive: true, filter: (src) => !src.endsWith("/assets") });
+    cpSync(join(ROOT, PROJECTS[name].dir), dir, { recursive: true, filter: (src) => !/[\\/]assets$/.test(src) });
     symlinkSync(ASSETS, join(dir, "assets"));
     edit(dir);
     return fn(checkProject(dir, PROJECTS[name], ASSETS));
@@ -109,14 +109,17 @@ test("an asset without a rights entry, or an entry that matches nothing, fails",
     writeFileSync(join(tmp, "fonts/Manrope-Variable.ttf"), "");
     writeFileSync(join(tmp, "fonts/OFL.txt"), "");
     writeFileSync(join(tmp, "stray.png"), "");
+    writeFileSync(join(tmp, "audio/unrecorded.mp3"), "");
     const entries = [
       { files: ["fonts/*"], license: "OFL-1.1", source: "test" },
+      { files: ["audio/*.mp3"], license: "CC0-1.0", source: "test" },
       { files: ["brand/*.svg"], license: "x", source: "test" },
     ];
     writeFileSync(join(tmp, "rights.json"), JSON.stringify({ entries }));
     const result = checkAssets(tmp);
     failsWith(result, /stray\.png has a rights entry/);
     failsWith(result, /rights pattern .*brand.* matches a file/);
+    failsWith(result, /audio\/unrecorded\.mp3 has its own record/);
   } finally {
     rmSync(tmp, { recursive: true, force: true });
   }
@@ -132,6 +135,19 @@ test("the committed capture manifests record their source and hash", () => {
     assert.equal(record.id, id);
     assert.match(record.extension.commit, /^[0-9a-f]{40}$/);
     assert.ok(record.viewport.width > 0 && record.viewport.dpr >= 2, `${id} viewport`);
+  }
+});
+
+test("a capture whose theme file has changed since fails until it is recaptured", () => {
+  const tmp = mkdtempSync(join(tmpdir(), "reskin-video-themes-"));
+  try {
+    cpSync(join(ROOT, "themes"), join(tmp, "themes"), { recursive: true });
+    assert.deepEqual(checkProject(join(ROOT, "video/tiktok"), PROJECTS.tiktok, ASSETS, tmp).failures, []);
+    const record = JSON.parse(readFileSync(join(ASSETS, "captures/P05-V.json"), "utf8"));
+    writeFileSync(join(tmp, record.themeSource.file), `${readFileSync(join(ROOT, record.themeSource.file), "utf8")} `);
+    failsWith(checkProject(join(ROOT, "video/tiktok"), PROJECTS.tiktok, ASSETS, tmp), /P05-V\.png was captured with .* as it is now/);
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
   }
 });
 

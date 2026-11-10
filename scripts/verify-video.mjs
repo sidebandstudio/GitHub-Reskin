@@ -112,9 +112,10 @@ const sha256 = (file) => createHash("sha256").update(readFileSync(file)).digest(
 
 /**
  * Checks one project without a browser. Returns a list of failure strings and the number of
- * assertions made. `spec` is a PROJECTS entry; `assets` the shared video/assets directory.
+ * assertions made. `spec` is a PROJECTS entry; `assets` the shared video/assets directory; `checkout`
+ * the checkout whose theme files the captures must match.
  */
-export function checkProject(dir, spec, assets) {
+export function checkProject(dir, spec, assets, checkout = join(assets, "../..")) {
   const failures = [];
   let count = 0;
   const expect = (ok, message) => {
@@ -183,6 +184,11 @@ export function checkProject(dir, spec, assets) {
           const record = JSON.parse(readFileSync(manifest, "utf8"));
           expect(Boolean(record.url && record.captured && record.viewport && record.extension?.commit), `${src} manifest records URL, date, viewport and extension commit`);
           expect(record.sha256 === sha256(file), `${src} matches the hash in its manifest`);
+          expect(!record.theme || Boolean(record.themeSource?.file), `${src} manifest records its theme's source file`);
+          if (record.themeSource?.file) {
+            const theme = join(checkout, record.themeSource.file);
+            expect(existsSync(theme) && sha256(theme) === record.themeSource.sha256, `${src} was captured with ${record.themeSource.file} as it is now. Recapture it`);
+          }
         }
       }
     }
@@ -213,6 +219,8 @@ export function checkAssets(assets) {
   }
   for (const file of files) expect(Boolean(rightsFor(rights, file)), `${file} has a rights entry`);
   const audio = JSON.parse(readFileSync(join(assets, "audio/rights.json"), "utf8"));
+  const recorded = new Set(audio.assets.map((record) => basename(record.file)));
+  for (const file of files.filter((f) => /^audio\/[^/]+\.mp3$/.test(f))) expect(recorded.has(basename(file)), `${file} has its own record in audio/rights.json`);
   for (const record of audio.assets) {
     const file = join(assets, "audio", basename(record.file));
     expect(existsSync(file) && sha256(file) === record.sha256, `${basename(record.file)} matches its CC0 ledger hash`);
@@ -257,7 +265,11 @@ function must(cmd, args, options) {
   return result.stdout;
 }
 
-const hf = (args, cwd) => sh("npx", ["--yes", CLI, ...args], { cwd });
+// npx is a .cmd on Windows, which Node starts only through a shell, so there it runs as one quoted
+// command line.
+const quote = (arg) => (/[\s"&|<>^]/.test(arg) ? `"${arg.replace(/"/g, '""')}"` : arg);
+const hf = (args, cwd) =>
+  process.platform === "win32" ? sh(["npx.cmd", "--yes", CLI, ...args].map(quote).join(" "), [], { cwd, shell: true }) : sh("npx", ["--yes", CLI, ...args], { cwd });
 
 /** Runs `hyperframes check --json` in a project and returns {ok, errors, warnings}. */
 export function hyperframesCheck(dir) {
