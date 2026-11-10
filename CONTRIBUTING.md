@@ -20,7 +20,7 @@ The theme format is documented in `packages/format/README.md` and `packages/form
 
 The build needs Node 24.22.2 and npm 11.12.1 exactly. `.node-version` and `release.config.json` pin them, and `npm ci` refuses other versions. `npm run check:toolchain` checks the versions, the installed dependencies and the browsers the tests use.
 
-After `npm ci`, every build and check runs offline. Fonts, GitHub's mode colors and theme data are checked in.
+After `npm ci`, building and checking the extension, the userscript and the site runs offline. Fonts, GitHub's mode colors and theme data are checked in.
 
 ### Build and package
 
@@ -46,7 +46,7 @@ To try a build, load `dist/chrome` unpacked in Chrome, or `dist/firefox/manifest
 
 ```sh
 npm run build:site       # dist/site
-npm run serve            # serves the fixture and site on a free port
+npm run serve -- dist/site --base /GitHub-Reskin   # serves the built site on a free port
 ```
 
 The site build captures each theme's preview in Chromium the first time and caches it in `site/.cache/previews`. It also publishes the userscript at `downloads/`.
