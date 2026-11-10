@@ -1,40 +1,175 @@
 {
   "$schema": "https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json",
   "author": "sidebandstudio",
+  "backgrounds": {
+    "header": {
+      "color": "#e8e2f3",
+      "layers": [
+        {
+          "gradientCss": {
+            "value": "linear-gradient(0deg,#655080 2px,transparent 2px)"
+          }
+        },
+        {
+          "gradientCss": {
+            "value": "linear-gradient(180deg,#a8925f 2px,transparent 2px)"
+          }
+        },
+        {
+          "gradientCss": {
+            "value": "linear-gradient(100deg,#dde8d8,#e8e2f3 42%,#e0d7f0)"
+          }
+        }
+      ]
+    },
+    "page": {
+      "color": "#e9e5f3",
+      "layers": [
+        {
+          "gradientCss": {
+            "size": "100% 100vh",
+            "value": "repeating-radial-gradient(ellipse at 82% 108%,transparent 0 55px,#75618f24 56px 58px,transparent 59px 99px)"
+          }
+        },
+        {
+          "gradientCss": {
+            "size": "100% 100vh",
+            "value": "radial-gradient(ellipse at 8% 4%,#c9d6c299,transparent 55%)"
+          }
+        },
+        {
+          "gradientCss": {
+            "value": "repeating-linear-gradient(45deg,transparent 0 5px,#75618f0d 5px 6px)"
+          }
+        },
+        {
+          "gradientCss": {
+            "size": "100% 100vh",
+            "value": "linear-gradient(#f4f0fa,#e9e5f3 70%)"
+          }
+        }
+      ]
+    }
+  },
   "base": "light",
+  "code": {
+    "ansi": {
+      "black": "#303245",
+      "blue": "#3b4e84",
+      "brightBlack": "#504e60",
+      "brightBlue": "#33426f",
+      "brightCyan": "#205455",
+      "brightGreen": "#244a32",
+      "brightMagenta": "#5c3062",
+      "brightRed": "#7a2131",
+      "brightWhite": "#3c3e52",
+      "brightYellow": "#5c410c",
+      "cyan": "#22585a",
+      "green": "#2e593d",
+      "magenta": "#6f3b76",
+      "red": "#8e2a3c",
+      "white": "#4f4d60",
+      "yellow": "#694b11"
+    },
+    "background": "#ddd8e9",
+    "diff": {
+      "addedBackground": "#d3ecdc",
+      "addedText": "#153e29",
+      "removedBackground": "#f5d9dc",
+      "removedText": "#672130",
+      "wordAddedBackground": "#b3dbbe",
+      "wordAddedText": "#153e29",
+      "wordRemovedBackground": "#e8b5be",
+      "wordRemovedText": "#672130"
+    },
+    "syntax": {
+      "attribute": "#704630",
+      "comment": "#534d60",
+      "constant": "#7f3951",
+      "deleted": "#952636",
+      "escape": "#71461a",
+      "function": "#474b81",
+      "inserted": "#22583b",
+      "invalid": "#952636",
+      "keyword": "#6f3b76",
+      "markupEmphasis": "#303245",
+      "markupHeading": "#474b81",
+      "markupLink": "#494b7d",
+      "markupList": "#6f3b76",
+      "markupQuote": "#534d60",
+      "number": "#71461a",
+      "operator": "#6f3b76",
+      "punctuation": "#454454",
+      "regex": "#325842",
+      "string": "#325842",
+      "tag": "#22585a",
+      "type": "#61466d",
+      "variable": "#303245"
+    },
+    "text": "#303245"
+  },
   "colors": {
     "accent": "#655080",
-    "background": "#f1f0fa",
-    "contribution": "#472c5e",
-    "text": "#303647"
+    "background": "#fdfaf2",
+    "contribution": "#4d3c69",
+    "text": "#303245"
   },
   "contributions": {
+    "cellBoundary": "#7c718d",
+    "cellStyle": "square",
     "levels": [
-      "#e3e0e8",
-      "#8f77a9",
-      "#7b5c9b",
-      "#60437c",
-      "#472c5e"
+      "#e4e0ed",
+      "#8c7ea5",
+      "#776891",
+      "#62527d",
+      "#4d3c69"
     ]
   },
-  "description": "Silver-lilac paper, a small geometric rosette and petal details give GitHub a quiet travel-journal style.",
+  "css": ".AppHeader,.Header,.HeaderMktg,.GlobalNav{box-shadow:0 1px 0#655080,0 6px 14px color-mix(in srgb,#453653 22%,transparent)}.UnderlineNav-item[aria-current=\"page\"],.tabnav-tab[aria-current=\"page\"]{border-bottom-color:var(--reskin-accent);font-family:var(--reskin-font-heading);font-weight:700}.btn-primary{font-family:var(--reskin-font-heading);font-weight:700;letter-spacing:.02em}h2.h4.mb-2,h2[data-component=\"Heading\"]{color:var(--reskin-link);font-weight:700;letter-spacing:.01em}a[data-testid=\"repo-name-link\"]{font-family:var(--reskin-font-heading);font-weight:700}@supports (corner-shape:bevel){.ContributionCalendar-day{border-radius:50%;corner-shape:bevel}}[data-reskin-slot=\"profile.tag\"]{width:fit-content;margin:0 0 8px;padding:3px 9px 2px;font-weight:600;font-size:11px;line-height:1.45;letter-spacing:.14em;text-transform:uppercase;color:var(--reskin-accent);background-color:var(--reskin-surface);border:1px solid var(--reskin-control-border);border-width:1px 1px 1px 3px;border-left-color:#a8925f;border-radius:3px 9px 3px 9px}[data-reskin-slot=\"profile.pinned.heading\"],[data-reskin-slot=\"profile.activity.heading\"],[data-reskin-slot=\"profile.organizations.heading\"],[data-reskin-slot=\"profile.achievements.heading\"]{font-family:var(--reskin-font-heading);font-weight:700;letter-spacing:.02em;color:var(--reskin-accent)}[data-reskin-slot=\"contributions.caption\"],[data-reskin-slot=\"footer.signoff\"],[data-reskin-slot=\"empty.pinned.caption\"]{font-family:var(--reskin-font-heading);color:var(--reskin-muted-text)}[data-reskin-slot=\"error.notFound.caption\"]{position:absolute;right:6%;bottom:10%;max-width:320px;padding:8px 16px;font-family:var(--reskin-font-heading);font-weight:700;font-size:24px;line-height:1.2;color:var(--reskin-accent);background-color:var(--reskin-surface);border:1px solid var(--reskin-control-border);border-width:1px 1px 1px 3px;border-left-color:#a8925f;border-radius:3px 3px 18px 3px;transform:rotate(-2deg);box-shadow:0 4px 0#d5cfdd}@media (max-width:1099px){[data-reskin-slot=\"error.notFound.caption\"]{font-size:21px}}@media (max-width:799px){[data-reskin-slot=\"error.notFound.caption\"]{font-size:18px}}@media (max-width:599px){[data-reskin-slot=\"error.notFound.caption\"]{font-size:16px}}",
+  "description": "Silver-lilac travel paper with sage contour lines, a sage-to-lilac header bound in gold, serif headings, an arched portrait and plum diamond calendar marks.",
+  "details": {
+    "headerText": "#303245",
+    "labels": {
+      "background": "#e6def0",
+      "border": "#7c718d",
+      "fill": "tinted",
+      "style": "rounded",
+      "text": "#303245"
+    },
+    "scrollbar": {
+      "thumb": "#7c718d",
+      "track": "#ddd8e9",
+      "width": "auto"
+    },
+    "selection": {
+      "background": "#655080",
+      "text": "#ffffff"
+    },
+    "topics": {
+      "background": "#dfe9db",
+      "border": "#58745d",
+      "fill": "tinted",
+      "style": "pill",
+      "text": "#2c4632"
+    }
+  },
   "effects": {
     "drift": {
-      "count": 2,
+      "count": 3,
       "distance": 6,
-      "durationMs": 1000,
-      "opacity": 0.07,
+      "durationMs": 900,
+      "opacity": 0.16,
       "shape": "petal"
     },
     "paper": {
-      "opacity": 0.025,
-      "scale": 12,
+      "opacity": 0.06,
+      "scale": 6,
       "texture": "grain"
     },
-    "seal": {
-      "opacity": 0.22,
-      "shape": "rosette",
-      "size": 20
+    "rules": {
+      "opacity": 0.12,
+      "spacing": 18,
+      "style": "ruled"
     }
   },
   "flavor": {
@@ -45,6 +180,8 @@
       "empty.issues.caption": "A quiet stop along the road.",
       "empty.pinned.caption": "Room for small discoveries.",
       "error.notFound.caption": "This path ends here. There are other roads.",
+      "footer.signoff": "// the road goes on",
+      "profile.achievements.heading": "Small keepsakes",
       "profile.activity.heading": "Journey log",
       "profile.organizations.heading": "Journal waystations",
       "profile.pinned.heading": "Collected favorites",
@@ -52,33 +189,69 @@
     }
   },
   "fonts": {
-    "accent": "alegreya"
+    "body": "source-sans-3",
+    "heading": "alegreya"
   },
   "inspiredBy": "Frieren: Beyond Journey's End",
   "name": "Longroad Petals",
   "overrides": {
-    "accentMuted": "#dbd6e6",
-    "border": "#81796f",
-    "controlBorder": "#7d756c",
-    "danger": "#9d384b",
+    "accentMuted": "#e6def0",
+    "border": "#ada5bb",
+    "controlBorder": "#766c86",
+    "danger": "#962636",
+    "done": "#5b3f86",
     "focus": "#655080",
-    "hover": "#dadae5",
-    "inset": "#e3e0ef",
-    "link": "#495b81",
-    "mutedText": "#5f5964",
+    "hover": "#e2deed",
+    "inset": "#ddd8e9",
+    "link": "#45477a",
+    "mutedText": "#4f4d60",
     "primaryBackground": "#655080",
     "primaryText": "#ffffff",
-    "raised": "#e2e1ec",
+    "raised": "#ece9f3",
     "selectionBackground": "#655080",
     "selectionText": "#ffffff",
-    "success": "#306544",
-    "surface": "#fbfaff",
-    "warning": "#765614"
+    "success": "#22583b",
+    "surface": "#f2eef8",
+    "warning": "#724f0e"
   },
   "schemaVersion": 1,
+  "shape": {
+    "avatar": {
+      "frame": {
+        "color": "#85704e",
+        "style": "double",
+        "width": 3
+      },
+      "shape": "arch"
+    },
+    "borders": {
+      "color": "#7c718d",
+      "style": "solid",
+      "width": 1
+    },
+    "buttons": {
+      "radius": 4,
+      "style": "filled"
+    },
+    "corners": {
+      "radius": 10,
+      "style": "rounded"
+    },
+    "shadows": {
+      "blur": 10,
+      "color": "#453653",
+      "offset": 3,
+      "opacity": 0.3,
+      "style": "soft"
+    }
+  },
   "tags": [
     "anime",
+    "fantasy",
     "light"
   ],
-  "version": "1.0.0"
+  "typography": {
+    "headingLetterSpacing": 0.01
+  },
+  "version": "2.0.0"
 }

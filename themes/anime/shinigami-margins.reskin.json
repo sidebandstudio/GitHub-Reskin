@@ -1,33 +1,166 @@
 {
   "$schema": "https://sidebandstudio.github.io/GitHub-Reskin/schemas/theme-v1.schema.json",
   "author": "sidebandstudio",
+  "backgrounds": {
+    "header": {
+      "color": "#17191c",
+      "layers": [
+        {
+          "gradientCss": {
+            "value": "linear-gradient(0deg,#742c40 2px,transparent 2px)"
+          }
+        },
+        {
+          "gradientCss": {
+            "value": "repeating-linear-gradient(90deg,transparent 0 3px,#202327 3px 4px)"
+          }
+        }
+      ]
+    },
+    "page": {
+      "color": "#eef0f1",
+      "layers": [
+        {
+          "gradientCss": {
+            "value": "linear-gradient(90deg,#17191c 2px,transparent 2px)"
+          }
+        },
+        {
+          "gradientCss": {
+            "value": "linear-gradient(90deg,transparent 0 34px,#742c402b 34px 36px,transparent 36px)"
+          }
+        },
+        {
+          "gradientCss": {
+            "value": "repeating-linear-gradient(0deg,transparent 0 27px,#69717b21 27px 28px)"
+          }
+        },
+        {
+          "gradientCss": {
+            "value": "linear-gradient(90deg,#e0e3e5 0 14px,#f6f7f8 14px 420px,#eef0f1 1200px)"
+          }
+        }
+      ]
+    }
+  },
   "base": "light",
+  "code": {
+    "ansi": {
+      "black": "#1d2023",
+      "blue": "#29475c",
+      "brightBlack": "#4c5156",
+      "brightBlue": "#223b4d",
+      "brightCyan": "#214b50",
+      "brightGreen": "#204632",
+      "brightMagenta": "#47375e",
+      "brightRed": "#6a1d2e",
+      "brightWhite": "#33373c",
+      "brightYellow": "#553c0e",
+      "cyan": "#27575d",
+      "green": "#28543d",
+      "magenta": "#564271",
+      "red": "#7e2337",
+      "white": "#474c52",
+      "yellow": "#654812"
+    },
+    "background": "#dee2e5",
+    "diff": {
+      "addedBackground": "#d3ecdc",
+      "addedText": "#153e29",
+      "removedBackground": "#f5d9dc",
+      "removedText": "#672130",
+      "wordAddedBackground": "#b3dbbe",
+      "wordAddedText": "#153e29",
+      "wordRemovedBackground": "#e8b5be",
+      "wordRemovedText": "#672130"
+    },
+    "syntax": {
+      "attribute": "#624d24",
+      "comment": "#4d5056",
+      "constant": "#792e44",
+      "deleted": "#952636",
+      "escape": "#6b491a",
+      "function": "#29475c",
+      "inserted": "#22583b",
+      "invalid": "#952636",
+      "keyword": "#742c40",
+      "markupEmphasis": "#1d2023",
+      "markupHeading": "#29475c",
+      "markupLink": "#34485e",
+      "markupList": "#742c40",
+      "markupQuote": "#4d5056",
+      "number": "#6b491a",
+      "operator": "#742c40",
+      "punctuation": "#303941",
+      "regex": "#28543d",
+      "string": "#28543d",
+      "tag": "#27575d",
+      "type": "#564271",
+      "variable": "#1d2023"
+    },
+    "text": "#1d2023"
+  },
   "colors": {
-    "accent": "#33363b",
-    "background": "#f4f5f6",
-    "contribution": "#282522",
-    "text": "#201f1d"
+    "accent": "#292c31",
+    "background": "#eef0f1",
+    "contribution": "#242a33",
+    "text": "#1d2023"
   },
   "contributions": {
+    "cellBoundary": "#646a70",
+    "cellRadius": 0,
+    "cellStyle": "square",
     "levels": [
-      "#dddad4",
-      "#85817b",
-      "#7a756e",
-      "#5b5751",
-      "#282522"
+      "#e1e3e5",
+      "#868b92",
+      "#656b72",
+      "#454a53",
+      "#242a33"
     ]
   },
-  "description": "Cool gray paper, graphite activity and a spare margin rule give GitHub an investigative notebook style.",
+  "css": ".AppHeader,.Header,.HeaderMktg,.GlobalNav{box-shadow:0 1px 0#742c40,0 4px 0 color-mix(in srgb,#17191c 80%,transparent)}.UnderlineNav-item[aria-current=\"page\"],.tabnav-tab[aria-current=\"page\"]{border-bottom-color:var(--reskin-accent);font-family:var(--reskin-font-heading);font-weight:700;letter-spacing:.03em}.UnderlineNav-item[aria-current=\"page\"],.tabnav-tab[aria-current=\"page\"],a[aria-current=\"page\"]{box-shadow:0 2px 0 color-mix(in srgb,#742c40 80%,transparent)}.btn-primary{font-family:var(--reskin-font-heading);font-weight:700;letter-spacing:.03em}h2.h4.mb-2,h2[data-component=\"Heading\"]{font-weight:700;letter-spacing:.03em}a[data-testid=\"repo-name-link\"]{font-family:var(--reskin-font-heading);font-weight:700;letter-spacing:.02em}[data-reskin-slot=\"profile.tag\"]{width:fit-content;margin:0 0 8px;padding:3px 8px 2px;font-family:ui-monospace,monospace;font-weight:600;font-size:11px;line-height:1.45;letter-spacing:.2em;text-transform:uppercase;color:var(--reskin-text);background-color:var(--reskin-surface);border:1px solid var(--reskin-text);border-width:1px 1px 1px 4px;border-left-color:#742c40}[data-reskin-slot=\"profile.pinned.heading\"],[data-reskin-slot=\"profile.activity.heading\"],[data-reskin-slot=\"profile.organizations.heading\"],[data-reskin-slot=\"profile.achievements.heading\"]{font-family:var(--reskin-font-heading);font-weight:700;letter-spacing:.04em;color:var(--reskin-text)}[data-reskin-slot=\"contributions.caption\"],[data-reskin-slot=\"footer.signoff\"],[data-reskin-slot=\"empty.pinned.caption\"]{font-family:var(--reskin-font-heading);font-weight:600;letter-spacing:.02em;color:var(--reskin-muted-text)}[data-reskin-slot=\"error.notFound.caption\"]{position:absolute;right:6%;bottom:10%;max-width:330px;padding:8px 16px 8px 20px;font-family:var(--reskin-font-heading);font-weight:700;font-size:28px;line-height:1.15;letter-spacing:.02em;color:var(--reskin-text);background-color:var(--reskin-surface);border:1px solid var(--reskin-text);border-width:1px 1px 1px 4px;border-left-color:#742c40;box-shadow:5px 5px 0#b9bec3}@media (max-width:1099px){[data-reskin-slot=\"error.notFound.caption\"]{font-size:24px}}@media (max-width:799px){[data-reskin-slot=\"error.notFound.caption\"]{font-size:20px}}@media (max-width:599px){[data-reskin-slot=\"error.notFound.caption\"]{font-size:17px}}",
+  "description": "Cold ruled notebook paper inside a black cover: a wine-red margin, double-ruled white sheets, high-contrast serif headings and a graphite calendar.",
+  "details": {
+    "headerText": "#ffffff",
+    "labels": {
+      "background": "#e5e6e6",
+      "border": "#646a70",
+      "fill": "tinted",
+      "style": "sharp",
+      "text": "#1d2023"
+    },
+    "scrollbar": {
+      "thumb": "#646a70",
+      "track": "#dee2e5",
+      "width": "auto"
+    },
+    "selection": {
+      "background": "#292c31",
+      "text": "#ffffff"
+    },
+    "topics": {
+      "background": "#17191c",
+      "border": "#17191c",
+      "fill": "solid",
+      "style": "sharp",
+      "text": "#ffffff"
+    }
+  },
   "effects": {
     "paper": {
-      "opacity": 0.02,
-      "scale": 8,
+      "opacity": 0.05,
+      "scale": 6,
       "texture": "grain"
     },
+    "rail": {
+      "opacity": 0.4,
+      "shape": "notch",
+      "thickness": 2
+    },
     "rules": {
-      "opacity": 0.1,
-      "spacing": 28,
-      "style": "margin"
+      "opacity": 0.15,
+      "spacing": 14,
+      "style": "ruled"
     }
   },
   "flavor": {
@@ -38,6 +171,8 @@
       "empty.issues.caption": "No notes in this view.",
       "empty.pinned.caption": "Room for a first notebook.",
       "error.notFound.caption": "No entry matches this address.",
+      "footer.signoff": "// the last page, for now",
+      "profile.achievements.heading": "Marked pages",
       "profile.activity.heading": "Entry log",
       "profile.organizations.heading": "Archive outposts",
       "profile.pinned.heading": "Selected notebooks",
@@ -45,33 +180,69 @@
     }
   },
   "fonts": {
-    "accent": "cormorant-garamond"
+    "body": "ibm-plex-sans",
+    "heading": "cormorant-garamond"
   },
   "inspiredBy": "Death Note",
   "name": "Shinigami Margins",
   "overrides": {
-    "accentMuted": "#d5d6d8",
-    "border": "#b2aaa0",
-    "controlBorder": "#575d64",
-    "danger": "#a42b36",
-    "focus": "#676159",
-    "hover": "#dbdbdc",
-    "inset": "#e0e3e6",
-    "link": "#3d4c61",
-    "mutedText": "#565c63",
+    "accentMuted": "#e5e6e6",
+    "border": "#a2a6aa",
+    "controlBorder": "#646a70",
+    "danger": "#962636",
+    "done": "#564271",
+    "focus": "#292c31",
+    "hover": "#d9dee2",
+    "inset": "#dee2e5",
+    "link": "#2c3e52",
+    "mutedText": "#43484d",
     "primaryBackground": "#292c31",
     "primaryText": "#ffffff",
-    "raised": "#e3e4e5",
+    "raised": "#e5e8ea",
     "selectionBackground": "#292c31",
     "selectionText": "#ffffff",
-    "success": "#3d6246",
+    "success": "#22583b",
     "surface": "#ffffff",
-    "warning": "#735617"
+    "warning": "#73500e"
   },
   "schemaVersion": 1,
+  "shape": {
+    "avatar": {
+      "frame": {
+        "color": "#17191c",
+        "style": "double",
+        "width": 2
+      },
+      "shape": "square"
+    },
+    "borders": {
+      "color": "#3d4247",
+      "style": "double",
+      "width": 3
+    },
+    "buttons": {
+      "radius": 0,
+      "style": "filled"
+    },
+    "corners": {
+      "radius": 0,
+      "style": "sharp"
+    },
+    "shadows": {
+      "blur": 0,
+      "color": "#8e959c",
+      "offset": 4,
+      "opacity": 0.8,
+      "style": "hard"
+    }
+  },
   "tags": [
     "anime",
+    "noir",
     "light"
   ],
-  "version": "1.0.0"
+  "typography": {
+    "headingLetterSpacing": 0.03
+  },
+  "version": "2.0.0"
 }

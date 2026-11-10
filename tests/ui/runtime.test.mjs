@@ -159,7 +159,9 @@ test("cards carry what Full adds, at miniature scale: wallpaper, heading face, t
   assert.equal(choom.font.id, null, "a native stack needs no file");
   assert.match(choom.font.stack, /^"Roboto Condensed", /);
   const frieren = cards.find((card) => card.id === "anime.frieren").mini;
-  assert.deepEqual([frieren.font.id, frieren.wallpaper, frieren.tag, frieren.glow], ["alegreya", null, "// travel journal", false]);
+  assert.deepEqual([frieren.font.id, frieren.tag, frieren.glow], ["alegreya", "// travel journal", false]);
+  // Frieren's contour lines, sage haze and linen weave reach its card too.
+  assert.ok(frieren.wallpaper.image.startsWith("repeating-radial-gradient("));
   for (const card of cards.filter((c) => c.group === "classics")) {
     assert.deepEqual([card.mini.tag, card.mini.flourish, card.mini.wallpaper, card.mini.font], [null, null, null, null], card.id);
   }
