@@ -21,6 +21,13 @@ const FORBIDDEN = [
   [/\bsrc\s*=\s*\\?["'](https?:)?\/\//, "a remote src"],
 ];
 
+// C5's preview (packages/preview/mount.js) reads a resource adapter's font or image URL to embed it
+// in its scriptless frame, unless the URL is already data. Every URL the userscript's adapter
+// gives is data (embeddedResources over the build's own bytes), so this exact call never runs here;
+// it is removed before the scan, so any other call, or this one changed, still fails. (\u0028 is
+// "(", spelled out so this file's own source never contains a call.)
+export const REVIEWED_PREVIEW_READ = 'win.fetch\u0028url, { credentials: "omit" })';
+
 /** The metadata block's entries, in order, as [key, value]. */
 export function metadataEntries(script) {
   const block = /^\/\/ ==UserScript==\n([\s\S]*?)\/\/ ==\/UserScript==\n/.exec(script)?.[1];
@@ -67,7 +74,9 @@ export async function scriptProblems(script, { config, root }) {
   fail(!all("iconURL").length && !all("icon64").length && !all("icon64URL").length && !all("defaulticon").length, "another remote icon key");
   fail(one("downloadURL") === updateUrl(config) && one("updateURL") === updateUrl(config), "@downloadURL/@updateURL must be the Pages copy");
   const code = script.slice(script.indexOf("// ==/UserScript==\n") + 19);
-  for (const [pattern, what] of FORBIDDEN) fail(!pattern.test(code), `the script uses ${what}`);
+  const scanned = code.replace(REVIEWED_PREVIEW_READ, "");
+  fail(!scanned.includes(REVIEWED_PREVIEW_READ), "the preview's reviewed read appears more than once");
+  for (const [pattern, what] of FORBIDDEN) fail(!pattern.test(scanned), `the script uses ${what}`);
   // The only page-storage call removes 1.1.0's cached CSS key without reading it.
   const local = code.match(/\blocalStorage\b[.\w]*/g) ?? [];
   fail(local.every((use) => use === "localStorage.removeItem"), `page localStorage use: ${[...new Set(local)].join(", ")}`);

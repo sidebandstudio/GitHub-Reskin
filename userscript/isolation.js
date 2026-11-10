@@ -4,74 +4,47 @@
 // Document.prototype.createElement hands it the picker's frame. So the panel's controls exist only
 // once isolation is shown, and otherwise every durable change goes through the manager's own menu.
 //
-// Checked once at document start, before GitHub's scripts run, so nothing the page defines later
-// can answer for it. In order:
+// Only evidence a page script that ran first can't fake counts. In the page's own context such a
+// script owns every global and prototype: it can set window.wrappedJSObject or a null
+// window.customElements, declare `let GM_info` or `let exportFunction` for any name the manager
+// doesn't bind itself, and put getters on Object.prototype that answer for any field an object
+// lacks. In order:
 //   1. The manager says the script runs in the page: Tampermonkey's GM_info.sandboxMode "raw", or
 //      Violentmonkey's GM_info.injectInto "page". Not isolated.
-//   2. Firefox's content-script Xray: window.wrappedJSObject is the page's own window, and a marker
-//      set on it is not seen through this script's window. Isolated.
-//   3. A Chromium isolated world (content scripts, the userScripts API's world): window.customElements
-//      is null there and a registry in the page's world. Isolated.
-//   4. The manager says the script runs isolated: Tampermonkey's sandboxMode "js" or "dom",
+//   2. Firefox's content-script sandbox: the global object of this script's own realm is the
+//      sandbox, not a window. main.mjs gets it as `this` of a bare sloppy-mode call, which no page
+//      code can intercept, and a window's own `window` is unforgeable. Isolated.
+//   3. The manager says the script runs isolated: Tampermonkey's sandboxMode "js" or "dom",
 //      Violentmonkey's injectInto "content", or Userscripts for Safari, whose GM.* storage exists
-//      only in its content-script scope. Isolated. A report that is a page global instead of the
-//      manager's own is ignored.
-//   5. Otherwise unverified, which counts as not isolated.
-// Steps 2 and 3 are facts of the browser rather than reports, and either one is enough; 1 and 4
-// come from the manager's GM_info, which it hands the script directly.
+//      only in its content-script scope. Isolated.
+//   4. Otherwise unverified, which counts as not isolated. A Chromium isolated world with no report
+//      ends here: nothing inside it tells it apart from a page that faked one.
+// The report is the one that comes with the storage the script would use (main.mjs), and only the
+// fields the manager set on it count (ownFields).
 
 /**
- * @param {{view: Window, info?: object|null, gm?: object|null}} options this script's window, the
- *   manager's GM_info (or GM.info), and its GM object
+ * An object's own enumerable fields, copied into an object with no prototype. Spreading calls no
+ * built-in the page could have replaced, and a field the original lacks reads as undefined on the
+ * copy, where on the original it would reach a getter the page put on Object.prototype and hand
+ * that getter the object.
+ * @param {unknown} value
+ * @returns {object|null}
+ */
+export const ownFields = (value) => (value !== null && typeof value === "object" ? { __proto__: null, ...value } : null);
+
+/**
+ * @param {{realm?: object|null, report?: object|null, gm?: object|null}} options this script's
+ *   realm's global object (undefined in strict code), the manager's report and its GM object, both
+ *   as ownFields copies
  * @returns {{isolated: boolean, method: string}}
  */
-export function detectIsolation({ view, info = null, gm = null }) {
-  const reported = isObject(info) && !(view && isOwnGlobal(view, "GM_info", info)) ? info : null;
-  const handler = typeof reported?.scriptHandler === "string" ? reported.scriptHandler : "";
-  const sandbox = reported?.sandboxMode;
-  const inject = reported?.injectInto;
+export function detectIsolation({ realm = null, report = null, gm = null } = {}) {
+  const handler = typeof report?.scriptHandler === "string" ? report.scriptHandler : "";
+  const sandbox = report?.sandboxMode;
+  const inject = report?.injectInto;
   if (sandbox === "raw" || inject === "page") return { isolated: false, method: "manager-page" };
-  if (xrayIsolated(view)) return { isolated: true, method: "xray" };
-  if (isolatedWorld(view)) return { isolated: true, method: "isolated-world" };
+  if (realm !== null && typeof realm === "object" && realm.window !== realm) return { isolated: true, method: "xray" };
   if (sandbox === "js" || sandbox === "dom" || inject === "content") return { isolated: true, method: "manager" };
   if (handler === "Userscripts" && typeof gm?.getValue === "function") return { isolated: true, method: "manager" };
   return { isolated: false, method: "unverified" };
-}
-
-const isObject = (value) => value !== null && typeof value === "object";
-
-// A report the page could have planted: the very object a page global of that name holds.
-function isOwnGlobal(view, name, value) {
-  try {
-    return Object.prototype.hasOwnProperty.call(view, name) && view[name] === value;
-  } catch {
-    return false;
-  }
-}
-
-function xrayIsolated(view) {
-  let page;
-  try {
-    page = view?.wrappedJSObject;
-  } catch {
-    return false;
-  }
-  if (!isObject(page) || page === view) return false;
-  const key = `__reskinIsolation${Math.random().toString(36).slice(2)}`;
-  try {
-    page[key] = true;
-    const shared = key in view || page[key] !== true;
-    delete page[key];
-    return !shared;
-  } catch {
-    return false;
-  }
-}
-
-function isolatedWorld(view) {
-  try {
-    return "customElements" in view && view.customElements === null;
-  } catch {
-    return false;
-  }
 }

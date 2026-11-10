@@ -6,7 +6,9 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
-import { build, cardDocument, GRANTS, MAX_BYTES, metadata, updateUrl } from "../../userscript/build.mjs";
+import { build, builderDocument, cardDocument, fixtureAssets, GRANTS, MAX_BYTES, metadata, updateUrl } from "../../userscript/build.mjs";
+import { CSS_NOTE, IMPORT_CSS_NOTE } from "../../userscript/copy.js";
+import { REVIEWED_PREVIEW_READ } from "../../userscript/verify.mjs";
 import { metadataEntries, scriptProblems } from "../../userscript/verify.mjs";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
@@ -57,14 +59,46 @@ test("the static checks catch remote code, remote icons, network calls and page 
   assert.equal(GRANTS.some((grant) => /xmlhttp|download|resource/i.test(grant)), false);
 });
 
-test("the frame document is the popup's card with Close, the storage note and Export, and no script", async () => {
+test("the frame document is the popup's card with Close, the storage note, Export and the builder's two views, and no script", async () => {
   const { srcdoc } = await cardDocument();
   assert.ok(!/<script|\son\w+=|javascript:/i.test(srcdoc), "the frame document runs nothing itself");
   assert.ok(!/<img\b|<link\b/i.test(srcdoc), "the mark is inline and the styles embedded, so the frame loads nothing");
-  for (const part of ['data-rs="enabled"', 'data-rs="gallery"', 'data-rs="undo"', 'name="appearance"', 'data-rs="text"', 'data-rs="motion"', 'data-us="close"', 'data-us="storage-note"', 'data-us="export"', 'data-us="session-label"']) {
+  for (const part of ['data-rs="enabled"', 'data-rs="gallery"', 'data-rs="undo"', 'name="appearance"', 'data-rs="text"', 'data-rs="motion"', 'data-us="close"', 'data-us="storage-note"', 'data-us="export"', 'data-us="session-label"', 'data-us="make"', 'data-us="backup"']) {
     assert.ok(srcdoc.includes(part), part);
   }
   assert.ok(!srcdoc.includes("data-rs-open"), "the extension's Settings page does not exist here");
   // esbuild requotes the embedded string, so look for its parts rather than its JSON form.
   for (const part of ["us-storage-row", "Close GitHub Reskin", "Export theme file"]) assert.ok(script.includes(part), `the script embeds the card: ${part}`);
+});
+
+test("the builder's frame is the settings page's Make a theme and Backup & help, with no way to enable Advanced CSS and no script", async () => {
+  const { srcdoc } = await builderDocument();
+  assert.ok(!/<script|\son\w+=|javascript:/i.test(srcdoc), "the frame document runs nothing itself");
+  assert.ok(!/<img\b|<link\b/i.test(srcdoc), "the mark is inline and the styles embedded, so the frame loads nothing");
+  for (const part of ['data-rb="builder"', 'data-rb="import"', 'data-rb="preview"', 'data-rb="image-file"', 'data-rb="save-copy"', 'data-rb="resume"', 'data-rk="backup"', 'data-rk="reset-all"', 'data-us="close"', 'data-us="themes"', 'data-us="storage-note"', 'data-us="session-label"']) {
+    assert.ok(srcdoc.includes(part), part);
+  }
+  // Neither Enable advanced CSS is left as a control: only inert, hidden inputs the builder reads.
+  assert.ok(!srcdoc.includes("Enable advanced CSS"));
+  for (const part of ["css-enable", "import-css-enable"]) assert.match(srcdoc, new RegExp(`<input type="checkbox" data-rb="${part}" hidden disabled inert tabindex="-1" aria-hidden="true" />`));
+  assert.match(srcdoc, /data-rb="css" readonly /);
+  assert.ok(srcdoc.includes(CSS_NOTE) && srcdoc.includes(IMPORT_CSS_NOTE));
+  // The extension's own help is replaced where it names the extension's settings.
+  assert.ok(!srcdoc.includes("extension settings"));
+  assert.ok(!srcdoc.includes('id="preferences"') && !srcdoc.includes('id="themes"'), "the card holds the themes and preferences");
+});
+
+test("the preview's fixture images are embedded as data, and its one reviewed read is the only network call in the script", async () => {
+  const assets = await fixtureAssets();
+  assert.ok(Object.keys(assets).length >= 10);
+  for (const [path, url] of Object.entries(assets)) {
+    assert.match(path, /^packages\/preview\/fixture\/assets\/[a-z0-9-]+\.(webp|svg)$/);
+    assert.match(url, /^data:image\/(webp|svg\+xml);base64,/);
+    assert.ok(script.includes(url.slice(0, 200)), `${path} is embedded`);
+  }
+  const code = script.slice(script.indexOf("// ==/UserScript==\n") + 19);
+  assert.equal(code.split(REVIEWED_PREVIEW_READ).length, 2, "the preview's read appears once");
+  const config = JSON.parse(await readFile(new URL("../../release.config.json", import.meta.url), "utf8"));
+  const twice = script.replace(REVIEWED_PREVIEW_READ, `${REVIEWED_PREVIEW_READ};${REVIEWED_PREVIEW_READ}`);
+  assert.ok((await scriptProblems(twice, { config, root })).some((problem) => /more than once|fetch/.test(problem)));
 });
