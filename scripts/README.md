@@ -68,6 +68,14 @@ A command with a selector (`budgets --surface=site`) takes the first matching ro
 the command's default row. Arguments are forwarded either way, so C2's contrast `run` sees
 `--scope=primer` and loads C3's data itself.
 
+`check:release` runs DONE.md's gate one step at a time, each as its own `node scripts/check.mjs`
+process, and stops at the first failure. With `RESKIN_CHECK_RESULT` set to a file path,
+`check.mjs` writes its `{ exitCode, testCount }` there, which is how the release check reads each
+step's test count. It writes `artifacts/reports/release.json`. `check:budgets` without a surface
+writes `artifacts/reports/budgets.json` and fails on any measurement it can't find, including the
+browser timings in `artifacts/reports/release-timings.json`, which the release surface records.
+The release surface, `capture-release` and the `qa-*` commands still fail with exit 2.
+
 ### Browser surfaces
 
 `test:e2e` and `a11y` dispatch by surface, calling each selected surface module's `run` with
