@@ -1,20 +1,26 @@
 # GitHub Reskin
 
-A browser extension that themes GitHub. Click it, pick a theme or set your own colors, and every open GitHub tab repaints. That includes the contribution graph, which normally stays green or switches to whatever GitHub picks for a holiday.
+A browser extension that restyles github.com and gist.github.com in your own browser. Pick one of 13 anime themes or 12 classic editor themes, or build your own, and every open GitHub tab repaints, contribution graph included.
+
+[Preview every theme](https://sidebandstudio.github.io/GitHub-Reskin/) on the site, including on a phone.
 
 The repo also has a GitHub Action that draws your contribution graph as an SVG in your colors, so visitors to your profile see them too.
 
 ## Install
 
-The extension isn't in the Chrome Web Store or on Firefox Add-ons yet. To load it from this repo in Chrome, Edge, Brave or Arc:
+GitHub Reskin isn't in the Chrome Web Store or on Firefox Add-ons yet. Until it is, build it from source. The build needs Node 24.22.2 and npm 11.12.1 exactly, and `npm ci` refuses other versions.
 
-1. On the repo page, click Code, then Download ZIP, and unzip it.
-2. Open `chrome://extensions`, turn on Developer mode, click Load unpacked and pick the `extension` folder.
-3. Reload any GitHub or Gist tabs you already had open, then click GitHub Reskin in your browser's extensions menu to pick a theme.
+1. Clone the repo, then run `npm ci` and `npm run build:chrome`.
+2. Open `chrome://extensions` in Chrome, Edge, Brave or Arc, turn on Developer mode, click Load unpacked and pick the `dist/chrome` folder. The `extension` folder holds build inputs and won't load by itself.
+3. Reload any GitHub or Gist tabs you already had open, then open GitHub Reskin from your browser's extensions menu.
 
-### Firefox, Safari and other browsers
+For Firefox 140 or newer, run `npm run build:firefox`, open `about:debugging#/runtime/this-firefox`, click Load Temporary Add-on and pick `dist/firefox/manifest.json`. Firefox removes it when it restarts. Firefox 140 to 150 gets the theme colors but not the painted backgrounds.
 
-Firefox only keeps an unsigned extension until it restarts, and Safari can't load one at all. For those browsers, GitHub Reskin also comes as a userscript built from the same code as the extension: the same themes, Full and Calm, and the same picker card. It stays installed.
+A build from source doesn't update itself. Pull and build again to update.
+
+### Userscript for Safari and other browsers
+
+Safari can't load the extension, and Firefox drops an unsigned one when it restarts. For those browsers, GitHub Reskin also comes as a userscript built from the same code as the extension. It has the same themes, Full and Calm, and the same picker card, and it stays installed.
 
 1. Install a userscript manager. In Firefox, use [Violentmonkey](https://violentmonkey.github.io) or [Tampermonkey](https://www.tampermonkey.net). In Safari on a Mac, iPhone or iPad, use [Userscripts](https://github.com/quoid/userscripts) or Tampermonkey. Safari asks you to turn the extension on in its settings and allow it on github.com.
 2. Open [github-reskin.user.js](https://raw.githubusercontent.com/sidebandstudio/GitHub-Reskin/main/userscript/github-reskin.user.js) and install it from your manager's prompt. In Userscripts, the prompt is under its toolbar button.
@@ -27,48 +33,56 @@ What differs by manager:
 - Tampermonkey and Violentmonkey save your choice in the manager's storage, and other GitHub tabs follow a change at once. Managers with only `GM.getValue`, like Userscripts, save it too, and other tabs pick it up when you switch back to them.
 - A manager that gives the script no storage gets a labeled session preview: themes apply until you reload, and Export theme file saves the theme you chose.
 - GitHub's page only allows its own fonts, so on github.com the themes' fonts fall back to your system's. The picker's previews show the same fallback.
-- These settings are separate from the extension's. Export theme file is the way to carry a theme between them. The theme builder and import come to the userscript after the extension's builder is finished.
+- These settings are separate from the extension's. Export theme file is the way to carry a theme between them. The theme builder and import aren't in the userscript yet.
 - The card's controls appear only when the script can confirm that GitHub's own scripts can't reach it. Violentmonkey's content mode, Tampermonkey's sandbox and Userscripts run it that way. If your manager runs the script inside GitHub's page, or the script can't tell, the card only shows the current theme. You then change settings from the manager's menu: on or off, Full or Calm, extra theme text, motion, and one entry per theme, listed by anime title first. Inside the page, a GitHub script that replaces the browser's built-in functions could still interfere with what a menu change saves.
 - Advanced CSS in your own themes stays off in the userscript, and nothing in it can turn that CSS on. The bundled themes keep their reviewed CSS.
 - GitHub tabs save one at a time, so a change in one tab never silently undoes a change made in another at the same moment. If a tab stays busy, the change fails and offers Retry. github.com and gist.github.com can't take turns this way. Between them the script checks the saved settings just before it writes, but a write the manager delivers late can still replace the other tab's.
 - The card is drawn above everything else on GitHub's page, and it closes or ignores the click when the page puts its own element over it. GitHub's page still controls what is drawn around the card. A page script could hide an element over the card where the script can't see it and give a real control a misleading label. That reaches only these theme settings on GitHub. For the full protections, use the extension.
 
-You can also try the extension itself in Firefox 140 or newer. Run `npm ci` and `npm run build:firefox`, then open `about:debugging#/runtime/this-firefox`, click Load Temporary Add-on and pick `dist/firefox/manifest.json`. Firefox removes it when it restarts.
+## Themes
 
-## Themes and colors
+Thirteen anime themes lead the picker. Each has an original name and credits its show in plain text: Choom Circuit for Cyberpunk: Edgerunners, Violet Synchrony for Neon Genesis Evangelion, Occult Orbit for Dandadan, Gatewake Protocol for Solo Leveling, Wisteria Emberline for Demon Slayer, Sunward Voyage for One Piece, Fifth Leaf Forge for Black Clover, Cursed Aperture for Jujutsu Kaisen, Peanut Dossier for Spy x Family, Wallward Scout for Attack on Titan, Longroad Petals for Frieren, Ripcord Bureau for Chainsaw Man and Shinigami Margins for Death Note. No logos, character art, screenshots or dialogue from any show are included.
 
-Thirteen themes come with it. Cyberpunk is the default. The other dark ones are Editing Suite, Dracula, Nord, Catppuccin Mocha, Gruvbox, Tokyo Night, Rosé Pine, One Dark and Solarized Dark. The light ones are Catppuccin Latte, Rosé Pine Dawn and Solarized Light.
+Choom Circuit is the default. It carries forward the Cyberpunk theme from earlier versions.
 
-Cyberpunk is electric yellow and cyan on a near-black blue-violet, and it changes more than colors:
+The twelve classics are Editing Suite, Dracula, Nord, Catppuccin Mocha, Gruvbox, Tokyo Night, Rosé Pine, One Dark and Solarized Dark, plus the light Catppuccin Latte, Rosé Pine Dawn and Solarized Light.
 
-- Headings, the header, tabs, buttons, counters and labels use condensed and monospace system fonts. Font sizes and spacing stay as GitHub has them.
-- Headings, the selected tab, primary buttons, focus rings, hovered links and contribution graph cells glow. Busier days glow more. Code, diffs and body text don't.
-- Buttons, labels, boxes and menus get beveled corners instead of round ones. Firefox and Zen, and other browsers that don't draw `corner-shape`, get square corners instead, and labels and counters that aren't links keep their cut corners through a clip path.
-- A faint grid and scanlines sit behind the page, and the header has a neon edge. Scrollbars, selected text and the text cursor use the accent.
-- The GitHub logo and the repo title glitch when you hover them. If your system is set to reduce motion, nothing moves.
-- The popup takes on the same look.
+A built-in theme sets more than colors. It restyles the page background, the header, panels, corners, buttons, fonts, code highlighting, diffs, selection, scrollbars, labels, the avatar frame and the contribution graph. Code keeps its monospace font.
 
-The effects use whatever colors you set, so editing Cyberpunk's colors keeps the effects in your colors.
+Settings from version 1.1.0 carry over the first time the new version runs.
 
-Cyberpunk also swaps some of GitHub's own labels for street slang. Profiles get a "choom" tag over the name, Pinned becomes Preem picks, Achievements becomes Street cred, the Code button says Jack in, Sponsor says Send eddies, Releases become Drops, and a missing page is stamped Flatlined. Names, numbers and anything people wrote stay as they are, and screen readers still hear GitHub's words.
+## Full or Calm
 
-Under the themes you can change four colors: background, text, accent and the contribution graph. GitHub Reskin works out the rest, like borders, muted text and button colors. "Reset to theme" puts the theme's colors back, and the switch at the top turns the theme off.
+The popup switches between two appearances. Full, the default, draws each theme's backgrounds, effects and fonts, and adds a little flavor text in a few safe places, such as a tag on profiles, a caption on the 404 page and a footer sign-off. Calm keeps the colors and drops the rest. GitHub's own buttons, menus and navigation keep their words in both, and anything people wrote stays as they wrote it.
 
-It adjusts the colors it works out so they stay readable:
+Separate switches turn off the extra text or the motion. If your system asks for reduced motion, nothing moves. Forced colors and GitHub's high contrast modes keep GitHub's native colors.
 
-- Muted text and links move toward your text color until they reach WCAG AA contrast, 4.5:1.
-- Primary buttons get a darker shade of your accent when GitHub's white button text wouldn't read on the accent itself. Cyberpunk instead fills them with the accent and uses black, white or your background color for the button text, whichever reads best.
-- If your text color is hard to read on your background, the popup warns you. GitHub's main text still uses your color, but borders, muted text and links are then worked out from black or white instead.
+## Make your own theme
 
-## How it works
+Settings, in the popup, opens the theme builder. It starts with three colors: background, text and accent. More options cover backgrounds and images, shapes and type, code colors, the graph and advanced CSS. The builder imports a theme from a `.reskin.json` file, pasted JSON or a share code that starts with `RS1.`, and exports the same three ways.
 
-The extension recolors github.com and gist.github.com through the color variables GitHub's own CSS uses. A dark theme also brings in GitHub's standard dark colors for code, diffs and labels, and a light theme brings the light ones. These replace whatever palette your GitHub account uses, including dimmed, high contrast, colorblind and tritanopia, so code stays readable under any theme. If you use a colorblind palette, diffs go back to GitHub's standard red and green while a theme is on.
+To make one with a chatbot, click Copy AI prompt, paste the prompt into ChatGPT, Gemini, Claude or Copilot, describe the theme you want, and import the answer. GitHub Reskin itself never contacts an AI service.
 
-Cyberpunk's effects come out of the same generated CSS, using only system fonts and CSS gradients. Your settings stay in the browser, and the extension makes no network requests. The userscript runs the same code and keeps your settings in the userscript manager's storage, never in github.com's. It makes no requests; only the manager checks for updates.
+Advanced CSS in a theme you import starts off. It runs only after you review it and turn it on, only in Full, and never on GitHub's account, security, billing or sign-in pages.
 
-## Add a theme
+## Privacy
 
-Themes live in `themes/anime` and `themes/classics` as `.reskin.json` files, listed in `themes/catalog.json`. Run `npm test` to check them.
+The extension asks for one permission, `storage`, plus access to github.com and gist.github.com. It makes no network requests and has no analytics. Your settings and themes stay in your browser, and the userscript keeps them in your userscript manager's storage. See the [privacy policy](https://sidebandstudio.github.io/GitHub-Reskin/privacy/).
+
+## Development
+
+The toolchain is pinned to Node 24.22.2 and npm 11.12.1.
+
+```sh
+npm ci
+npm test                 # unit tests
+npm run build:stores     # dist/chrome, dist/firefox and the userscript
+npm run build:site && npm run serve
+```
+
+`scripts/README.md` lists every check and browser test surface, and each package under `packages/` has its own README.
+
+Themes live in `themes/anime` and `themes/classics` as `.reskin.json` files, listed in `themes/catalog.json`. `npm run check:themes`, `npm run check:schema` and `npm run check:contrast` check them.
 
 GitHub's standard mode colors live in `vendor/primer`, a frozen snapshot. `node scripts/refresh-primer.mjs` fetches a newer one for review.
 
@@ -149,9 +163,9 @@ GITHUB_TOKEN=$(gh auth token) node index.mjs --username you --color "#7c5cff" --
 GITHUB_TOKEN=$(gh auth token) node index.mjs --username you --style cyberpunk --output contributions.svg
 ```
 
-## Theme credits
+## Credits
 
-The theme palettes come from these MIT-licensed projects:
+The classic palettes come from these MIT-licensed projects:
 
 - [Dracula](https://draculatheme.com)
 - [Nord](https://www.nordtheme.com)
@@ -163,6 +177,10 @@ The theme palettes come from these MIT-licensed projects:
 - [Solarized](https://ethanschoonover.com/solarized/)
 
 Editing Suite is the amber and near-black from [Ali Tleis's profile](https://github.com/Alitleis123).
+
+The bundled fonts in `assets/fonts` use the SIL Open Font License 1.1.
+
+GitHub Reskin is an independent project by Sideband Studio. It isn't affiliated with or endorsed by GitHub or by anyone behind the shows its themes credit. Show titles only name each theme's inspiration, and every trademark belongs to its owner.
 
 ## License
 
