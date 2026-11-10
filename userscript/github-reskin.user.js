@@ -23,6 +23,7 @@
 // @grant        GM_addValueChangeListener
 // @grant        GM_removeValueChangeListener
 // @grant        GM_registerMenuCommand
+// @grant        GM_unregisterMenuCommand
 // @downloadURL  https://sidebandstudio.github.io/GitHub-Reskin/downloads/github-reskin.user.js
 // @updateURL    https://sidebandstudio.github.io/GitHub-Reskin/downloads/github-reskin.user.js
 // ==/UserScript==
@@ -16242,6 +16243,10 @@ ${structured ? `${structured}
   var STATE_FORMAT = 1;
   var CONFIRM_MS = 50;
   var WRITE_LOST = "Another tab saved at the same time, so this change was not kept.";
+  var LOCK_NAME = "github-reskin-userscript-state";
+  var LOCK_WAIT_MS = 5e3;
+  var LOCK_BUSY = "Another GitHub tab is still saving GitHub Reskin settings, so this change was not saved. Try again.";
+  var POLL_MS = 25;
   function staleWrite(before, records) {
     const next = records[STORAGE_KEYS.settings];
     const prev = before[STORAGE_KEYS.settings];
@@ -16313,16 +16318,16 @@ ${structured ? `${structured}
     if (!isObject4(value) || value.format !== STATE_FORMAT || !isObject4(value.records)) throw new Error("The saved GitHub Reskin record is unreadable");
     return value.records;
   }
-  function createGmStorage(scope2 = {}, { document: document2 = null, newId = () => globalThis.crypto.randomUUID(), confirmMs = CONFIRM_MS, wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms)) } = {}) {
+  function createGmStorage(scope2 = {}, { document: document2 = null, newId = () => globalThis.crypto.randomUUID(), confirmMs = CONFIRM_MS, wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms)), locks = null, bridge = null, lockName = LOCK_NAME, lockWaitMs = LOCK_WAIT_MS, now = () => Date.now() } = {}) {
     const backend = detectGmStorage(scope2);
     const tab = newId();
     let sequence = 0;
     const subscribers = /* @__PURE__ */ new Set();
-    const emit = (changes) => {
+    const emit = (changes, own = false) => {
       if (!Object.keys(changes).length) return;
       for (const listener of [...subscribers]) {
         try {
-          listener(changes);
+          listener(changes, { own });
         } catch {
         }
       }
@@ -16361,10 +16366,10 @@ ${structured ? `${structured}
       document2.addEventListener("visibilitychange", visible);
       return () => document2.removeEventListener("visibilitychange", visible);
     }
-    const keysOf = (request) => {
-      if (typeof request === "string") return { keys: [request], defaults: null };
-      if (Array.isArray(request)) return { keys: request, defaults: null };
-      if (request && typeof request === "object") return { keys: Object.keys(request), defaults: request };
+    const keysOf = (request2) => {
+      if (typeof request2 === "string") return { keys: [request2], defaults: null };
+      if (Array.isArray(request2)) return { keys: request2, defaults: null };
+      if (request2 && typeof request2 === "object") return { keys: Object.keys(request2), defaults: request2 };
       throw new TypeError("GM storage get takes a key, a key list or an object of defaults");
     };
     const watched = (key) => WATCHED_KEYS.includes(key);
@@ -16375,15 +16380,111 @@ ${structured ? `${structured}
       });
       return run;
     };
+    async function drain() {
+      for (let tail = queue; ; tail = queue) {
+        await tail;
+        if (tail === queue) return;
+      }
+    }
+    let lockable = Boolean(locks && typeof locks.request === "function" && backend.kind !== "session");
+    const request = (name, options, callback) => {
+      if (!bridge) return locks.request(name, options, callback);
+      return locks.request(
+        name,
+        options,
+        bridge.exportFunction(
+          (lock) => new bridge.Promise((resolve) => {
+            Promise.resolve().then(() => callback(lock)).then(
+              () => resolve(),
+              () => resolve()
+            );
+          })
+        )
+      );
+    };
+    const MARK = `${lockName}|`;
+    let grant = null;
+    let marker = null;
+    const knows = (stored, { at: at2, stamp }) => isObject4(stored) && (stored.stamp === stamp || Array.isArray(stored.lineage) && stored.lineage.includes(stamp) || typeof stored.at === "number" && stored.at > at2);
+    async function awaitDelivery(deadline) {
+      if (typeof locks.query !== "function") return;
+      const { held = [] } = await locks.query();
+      const marks = [];
+      for (const { name } of held) {
+        if (typeof name !== "string" || !name.startsWith(MARK)) continue;
+        const [at2, ...rest] = name.slice(MARK.length).split("|");
+        const stamp = rest.join("|");
+        if (!stamp.startsWith(`${tab}:`)) marks.push({ at: Number(at2), stamp });
+      }
+      if (!marks.length) return;
+      for (; ; ) {
+        const stored = await backend.get(STATE_KEY);
+        if (marks.every((mark2) => knows(stored, mark2))) return;
+        if (now() >= deadline) throw new Error(LOCK_BUSY);
+        await wait(POLL_MS);
+      }
+    }
+    async function announce(at2, stamp) {
+      let release = () => {
+      };
+      const kept = new Promise((resolve) => release = resolve);
+      const granted = await new Promise((resolve) => {
+        Promise.resolve().then(() => request(`${MARK}${at2}|${stamp}`, { mode: "shared", ifAvailable: true }, (lock) => (resolve(Boolean(lock)), lock ? kept : void 0))).catch(() => resolve(false));
+      });
+      if (!granted) return;
+      marker?.();
+      marker = release;
+    }
+    async function exclusive(task) {
+      if (!lockable || grant) return task();
+      const deadline = now() + lockWaitMs;
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), lockWaitMs);
+      const hold = { lost: false };
+      let finished = null;
+      const done = new Promise((resolve) => finished = resolve);
+      let granted = false;
+      const pending = request(lockName, { signal: controller.signal }, async () => {
+        granted = true;
+        clearTimeout(timer);
+        grant = hold;
+        let outcome2;
+        try {
+          await awaitDelivery(deadline);
+          outcome2 = { value: await task() };
+        } catch (error) {
+          outcome2 = { error };
+        }
+        await drain();
+        if (grant === hold) grant = null;
+        finished(outcome2);
+      });
+      try {
+        await pending;
+      } catch (error) {
+        clearTimeout(timer);
+        if (!granted) throw new Error(LOCK_BUSY);
+        if (error?.name === "AbortError") {
+          hold.lost = true;
+        } else {
+          lockable = false;
+        }
+      }
+      const outcome = await done;
+      if ("error" in outcome) throw outcome.error;
+      return outcome.value;
+    }
     async function writeState(update) {
       for (let attempt = 0; ; attempt++) {
         const stored = await backend.get(STATE_KEY);
         const before = stateRecords(stored);
         const records = update({ ...before });
         if (staleWrite(before, records)) throw new Error(WRITE_LOST);
+        if (grant?.lost) throw new Error(LOCK_BUSY);
         const stamp = `${tab}:${++sequence}`;
+        const at2 = now();
         const lineage = isObject4(stored) && typeof stored.stamp === "string" ? [stored.stamp, ...Array.isArray(stored.lineage) ? stored.lineage : []].slice(0, LINEAGE) : [];
-        const next = { format: STATE_FORMAT, stamp, lineage, records };
+        const next = { format: STATE_FORMAT, stamp, at: at2, lineage, records };
         try {
           await backend.set(STATE_KEY, next);
         } catch (error) {
@@ -16396,20 +16497,21 @@ ${structured ? `${structured}
         }
         if (backend.kind !== "session") {
           await wait(confirmMs);
-          const now = await backend.get(STATE_KEY);
-          if (!(now?.stamp === stamp || Array.isArray(now?.lineage) && now.lineage.includes(stamp))) {
+          const now2 = await backend.get(STATE_KEY);
+          if (!(now2?.stamp === stamp || Array.isArray(now2?.lineage) && now2.lineage.includes(stamp))) {
             const keys = Object.keys(records).filter((key) => !same(records[key], before[key]));
             if (attempt < RETRIES && keys.every((key) => SELF_CONTAINED.has(key))) continue;
             throw new Error(WRITE_LOST);
           }
         }
-        emit(diff(before, records));
+        if (lockable && grant) await announce(at2, stamp);
+        emit(diff(before, records), true);
         return;
       }
     }
     const storage = {
-      async get(request) {
-        const { keys, defaults } = keysOf(request);
+      async get(request2) {
+        const { keys, defaults } = keysOf(request2);
         const own = keys.some(watched) ? stateRecords(await backend.get(STATE_KEY)) : {};
         const values = await Promise.all(keys.map((key) => watched(key) ? copy(own[key]) : backend.get(key)));
         const out = {};
@@ -16423,22 +16525,33 @@ ${structured ? `${structured}
         const entries = Object.entries(record).filter(([, value]) => value !== void 0);
         const own = entries.filter(([key]) => watched(key));
         const other = entries.filter(([key]) => !watched(key));
-        return serialize(async () => {
-          if (own.length) await writeState((records) => Object.assign(records, copy(Object.fromEntries(own))));
-          await Promise.all(other.map(([key, value]) => backend.set(key, value)));
-        });
+        return exclusive(
+          () => serialize(async () => {
+            if (own.length) await writeState((records) => Object.assign(records, copy(Object.fromEntries(own))));
+            await Promise.all(other.map(([key, value]) => backend.set(key, value)));
+          })
+        );
       },
       remove(keys) {
         const list2 = typeof keys === "string" ? [keys] : keys;
-        return serialize(async () => {
-          if (list2.some(watched)) {
-            await writeState((records) => {
-              for (const key of list2) delete records[key];
-              return records;
-            });
-          }
-          await Promise.all(list2.filter((key) => !watched(key)).map((key) => backend.remove(key)));
-        });
+        return exclusive(
+          () => serialize(async () => {
+            if (list2.some(watched)) {
+              await writeState((records) => {
+                for (const key of list2) delete records[key];
+                return records;
+              });
+            }
+            await Promise.all(list2.filter((key) => !watched(key)).map((key) => backend.remove(key)));
+          })
+        );
+      },
+      // Runs a whole read-modify-write (a repository commit) under the cross-tab lock.
+      transaction: (task) => exclusive(task),
+      // Lets go of the lock that announces this tab's last write, as closing the tab does.
+      release() {
+        marker?.();
+        marker = null;
       },
       subscribe(listener) {
         subscribers.add(listener);
@@ -16474,6 +16587,17 @@ ${structured ? `${structured}
   var storageFailure = (error) => ({ ok: false, code: "storage", issues: [{ code: "storage", path: "", message: String(error?.message ?? error), severity: "error" }] });
   function createGmHost({ storage, repository, capabilities, view, openPage = () => {
   } }) {
+    async function locked(task) {
+      try {
+        const reply = await (storage.transaction ?? ((run) => run()))(task) ?? storageFailure("No reply");
+        if (!lost(reply)) return reply;
+        const now = await repository.read();
+        if (!now.ok) return reply;
+        return { ok: false, code: "conflict", current: now.settings, issues: [{ code: ISSUE_CODES.conflict, path: "/revision", message: CONFLICT, severity: "error" }] };
+      } catch (error) {
+        return storageFailure(error);
+      }
+    }
     return {
       capabilities: Object.freeze({ ...capabilities, clipboard: typeof view.navigator?.clipboard?.writeText === "function" }),
       async read() {
@@ -16487,25 +16611,23 @@ ${structured ? `${structured}
           return { ok: false, message: String(error?.message ?? error) };
         }
       },
-      async commit(action, expectedRevision) {
-        try {
-          const reply = await repository.commit(action, expectedRevision) ?? storageFailure("No reply");
-          if (!lost(reply)) return reply;
-          const now = await repository.read();
-          if (!now.ok) return reply;
-          return { ok: false, code: "conflict", current: now.settings, issues: [{ code: ISSUE_CODES.conflict, path: "/revision", message: CONFLICT, severity: "error" }] };
-        } catch (error) {
-          return storageFailure(error);
-        }
-      },
+      commit: (action, expectedRevision) => locked(() => repository.commit(action, expectedRevision)),
+      apply: (action) => locked(async () => {
+        await repository.initialize();
+        const now = await repository.read();
+        if (!now.ok) return { ok: false, code: "invalid", issues: now.issues ?? [] };
+        return repository.commit(typeof action === "function" ? action(now.settings) : action, now.settings.revision);
+      }),
       async writeUi(patch) {
         if (Object.keys(patch).some((key) => !UI_KEYS.includes(key))) throw new TypeError("Unknown UI record field");
         const current = cleanUi((await storage.get([STORAGE_KEYS.ui]))[STORAGE_KEYS.ui]);
         await storage.set({ [STORAGE_KEYS.ui]: cleanUi({ ...current, ...patch }) });
       },
+      // Settings another tab saved. This tab's own commits answer with their settings, and a re-read
+      // started by their write could land after the next change and show the one before it.
       subscribe(listener) {
-        return storage.subscribe((changes) => {
-          if (changes[STORAGE_KEYS.settings] || changes[STORAGE_KEYS.lastGood]) listener();
+        return storage.subscribe((changes, { own = false } = {}) => {
+          if (!own && (changes[STORAGE_KEYS.settings] || changes[STORAGE_KEYS.lastGood])) listener();
         });
       },
       loadDraft: () => repository.loadDraft(),
@@ -16545,6 +16667,132 @@ ${structured ? `${structured}
     };
   }
 
+  // userscript/isolation.js
+  function detectIsolation({ view, info = null, gm = null }) {
+    const reported = isObject5(info) && !(view && isOwnGlobal(view, "GM_info", info)) ? info : null;
+    const handler = typeof reported?.scriptHandler === "string" ? reported.scriptHandler : "";
+    const sandbox = reported?.sandboxMode;
+    const inject = reported?.injectInto;
+    if (sandbox === "raw" || inject === "page") return { isolated: false, method: "manager-page" };
+    if (xrayIsolated(view)) return { isolated: true, method: "xray" };
+    if (isolatedWorld(view)) return { isolated: true, method: "isolated-world" };
+    if (sandbox === "js" || sandbox === "dom" || inject === "content") return { isolated: true, method: "manager" };
+    if (handler === "Userscripts" && typeof gm?.getValue === "function") return { isolated: true, method: "manager" };
+    return { isolated: false, method: "unverified" };
+  }
+  var isObject5 = (value) => value !== null && typeof value === "object";
+  function isOwnGlobal(view, name, value) {
+    try {
+      return Object.prototype.hasOwnProperty.call(view, name) && view[name] === value;
+    } catch {
+      return false;
+    }
+  }
+  function xrayIsolated(view) {
+    let page;
+    try {
+      page = view?.wrappedJSObject;
+    } catch {
+      return false;
+    }
+    if (!isObject5(page) || page === view) return false;
+    const key = `__reskinIsolation${Math.random().toString(36).slice(2)}`;
+    try {
+      page[key] = true;
+      const shared = key in view || page[key] !== true;
+      delete page[key];
+      return !shared;
+    } catch {
+      return false;
+    }
+  }
+  function isolatedWorld(view) {
+    try {
+      return "customElements" in view && view.customElements === null;
+    } catch {
+      return false;
+    }
+  }
+
+  // userscript/menu.js
+  var MENU = Object.freeze({
+    open: "Open GitHub Reskin",
+    retry: "Last change was not saved. Try it again",
+    enabled: (on) => on ? "Turn GitHub Reskin off" : "Turn GitHub Reskin on",
+    appearance: (calm) => calm ? "Use Full appearance" : "Use Calm appearance",
+    text: (on) => on ? "Turn extra theme text off" : "Turn extra theme text on",
+    motion: (on) => on ? "Turn motion off" : "Turn motion on",
+    fixed: Object.freeze({ enabled: "Turn GitHub Reskin on or off", appearance: "Switch between Full and Calm", text: "Turn extra theme text on or off", motion: "Turn motion on or off" }),
+    theme: (card, selected) => {
+      const { primary, secondary } = cardLabels(card);
+      return `${selected ? "✓ " : ""}${primary} · ${secondary}`;
+    }
+  });
+  function createMenu({ register, unregister, host, cards, customCard, open }) {
+    const dynamic = typeof unregister === "function";
+    let ids = [];
+    let failed = null;
+    let settings = null;
+    let chain = Promise.resolve();
+    let built = false;
+    function entries() {
+      const list2 = [[MENU.open, null]];
+      if (failed) list2.push([MENU.retry, failed]);
+      if (dynamic && settings) {
+        const prefs = settings.preferences;
+        list2.push([MENU.enabled(settings.enabled), { type: "setEnabled", enabled: !settings.enabled }]);
+        list2.push([MENU.appearance(prefs.appearance === "calm"), { type: "setPreference", key: "appearance", value: prefs.appearance === "calm" ? "full" : "calm" }]);
+        list2.push([MENU.text(prefs.text), { type: "setPreference", key: "text", value: !prefs.text }]);
+        list2.push([MENU.motion(prefs.motion), { type: "setPreference", key: "motion", value: !prefs.motion }]);
+      } else {
+        list2.push([MENU.fixed.enabled, (now) => ({ type: "setEnabled", enabled: !now.enabled })]);
+        list2.push([MENU.fixed.appearance, (now) => ({ type: "setPreference", key: "appearance", value: now.preferences.appearance === "calm" ? "full" : "calm" })]);
+        list2.push([MENU.fixed.text, (now) => ({ type: "setPreference", key: "text", value: !now.preferences.text })]);
+        list2.push([MENU.fixed.motion, (now) => ({ type: "setPreference", key: "motion", value: !now.preferences.motion })]);
+      }
+      const custom = (settings?.customThemes ?? []).map((theme) => customCard(theme)).filter(Boolean);
+      for (const card of [...cards, ...custom]) list2.push([MENU.theme(card, dynamic && settings?.selectedThemeId === card.id), { type: "selectTheme", id: card.id }]);
+      return list2;
+    }
+    async function run(change) {
+      const reply = await host.apply(change);
+      failed = reply?.ok ? null : change;
+      if (reply?.ok) settings = reply.settings;
+      rebuild();
+    }
+    function rebuild() {
+      chain = chain.then(async () => {
+        if (built && !dynamic) return;
+        for (const id of ids.splice(0)) {
+          try {
+            await unregister(await id);
+          } catch {
+          }
+        }
+        for (const [name, change] of entries()) {
+          try {
+            ids.push(register(name, () => change ? void run(change) : open()));
+          } catch {
+          }
+        }
+        built = true;
+      });
+      return chain;
+    }
+    async function refresh() {
+      const read2 = await host.read();
+      if (read2.ok) settings = read2.settings;
+      return rebuild();
+    }
+    const stop2 = host.subscribe(() => void refresh());
+    return {
+      ready: refresh(),
+      destroy() {
+        stop2?.();
+      }
+    };
+  }
+
   // userscript/panel.js
   var PANEL_HASH = "#reskin";
   var PANEL_ATTRIBUTE = "data-reskin-userscript-panel";
@@ -16552,6 +16800,19 @@ ${structured ? `${structured}
   var WIDTH = 400;
   var HOST_CSS = `:host{all:initial!important;display:block!important;position:fixed!important;top:${GAP}px!important;right:${GAP}px!important;left:auto!important;bottom:auto!important;z-index:2147483647!important;width:min(${WIDTH}px,calc(100vw - ${2 * GAP}px))!important;height:auto!important;margin:0!important;padding:0!important;border:0!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;transform:none!important;filter:none!important;clip-path:none!important;mask:none!important}iframe{display:block;width:100%;height:0;max-height:calc(100vh - ${2 * GAP}px);margin:0;padding:0;border:0;border-radius:12px;background:#0c0f14;color-scheme:dark;box-shadow:0 0 0 1px rgb(128 128 128 / 35%),0 8px 24px rgb(0 0 0 / 40%)}`;
   var attachShadow = globalThis.Element?.prototype.attachShadow;
+  var TOP_LAYER = [":popover-open", ":modal", ":fullscreen"];
+  function topLayer(document2, host) {
+    const found = [];
+    for (const selector of TOP_LAYER) {
+      try {
+        for (const element of document2.querySelectorAll(selector)) if (element !== host) found.push(element);
+      } catch {
+      }
+    }
+    return found;
+  }
+  var overlaps2 = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+  var contains = (box, x2, y) => x2 >= box.left && x2 <= box.right && y >= box.top && y <= box.bottom;
   function createPanel({ document: document2, view, srcdoc, mount }) {
     let current = null;
     function open(mode = "picker") {
@@ -16563,6 +16824,9 @@ ${structured ? `${structured}
       const invoker = document2.activeElement && document2.activeElement !== document2.body ? document2.activeElement : null;
       const host = document2.createElement("div");
       host.setAttribute(PANEL_ATTRIBUTE, mode);
+      const popover = typeof host.showPopover === "function";
+      if (popover) host.setAttribute("popover", "manual");
+      let shown2 = false;
       const root = attachShadow.call(host, { mode: "closed" });
       const style = document2.createElement("style");
       style.textContent = HOST_CSS;
@@ -16602,10 +16866,31 @@ ${structured ? `${structured}
           if (restore) (invoker?.isConnected ? invoker : null)?.focus({ preventScroll: true });
         }
       };
+      const covered = (point = null) => {
+        if (shown2) {
+          try {
+            if (!host.matches(":popover-open")) return true;
+          } catch {
+          }
+        }
+        const box = host.getBoundingClientRect();
+        const frameBox = frame.getBoundingClientRect();
+        return topLayer(document2, host).some((element) => {
+          const other = element.getBoundingClientRect();
+          return point ? contains(other, frameBox.left + point.x, frameBox.top + point.y) : overlaps2(other, box);
+        });
+      };
       listen(frame, "load", () => {
         if (current !== state) return;
         const doc = frame.contentDocument;
         if (!doc?.body) return;
+        const guard = (event) => {
+          if (!covered({ x: event.clientX, y: event.clientY })) return;
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          if (event.type === "click") state.close(false);
+        };
+        for (const type of ["pointerdown", "mousedown", "pointerup", "mouseup", "click", "dblclick", "auxclick"]) listen(doc.defaultView, type, guard, true);
         const fit2 = () => {
           frame.style.height = `${Math.ceil(doc.body.getBoundingClientRect().height)}px`;
         };
@@ -16623,7 +16908,16 @@ ${structured ? `${structured}
       });
       listen(document2, "pointerdown", (event) => event.isTrusted && event.target !== host && state.close(false), true);
       listen(document2, "keydown", (event) => event.isTrusted && event.key === "Escape" && state.close(true));
+      const recheck = () => current === state && covered() && state.close(false);
+      for (const type of ["toggle", "fullscreenchange"]) listen(document2, type, () => view.setTimeout(recheck, 0), true);
       document2.documentElement.append(host);
+      if (popover) {
+        try {
+          host.showPopover();
+          shown2 = true;
+        } catch {
+        }
+      }
       return host;
     }
     const close = (restore = true) => current?.close(restore);
@@ -16638,21 +16932,28 @@ ${structured ? `${structured}
 
   // userscript/main.mjs
   var RUNNING = "data-reskin-userscript";
+  var NO_CSS = "Advanced CSS in your own themes stays off in the userscript.";
   var COPY2 = Object.freeze({
-    durable: "Saved by your userscript manager. Export a theme file to keep a copy or move it to the extension.",
-    session: "This userscript manager can't save themes here. You can preview and export a file.",
+    durable: `Saved by your userscript manager. Export a theme file to keep a copy or move it to the extension. ${NO_CSS}`,
+    session: `This userscript manager can't save themes here. You can preview and export a file. ${NO_CSS}`,
+    menuOnly: `Your userscript manager runs this script inside GitHub's page, where GitHub's code could reach this panel, so change settings from the manager's menu. ${NO_CSS}`,
+    noControls: `Your userscript manager runs this script inside GitHub's page and has no menu, so settings can't be changed here. Use the extension or a manager that keeps scripts apart from the page. ${NO_CSS}`,
     sessionLabel: "Session preview",
     exported: "Theme file saved to your downloads.",
     exportFailed: "The theme file could not be saved. Try again."
   });
   var scope = {
     GM: typeof GM === "object" ? GM : void 0,
+    GM_info: typeof GM_info === "object" ? GM_info : void 0,
     GM_getValue: typeof GM_getValue === "function" ? GM_getValue : void 0,
     GM_setValue: typeof GM_setValue === "function" ? GM_setValue : void 0,
     GM_deleteValue: typeof GM_deleteValue === "function" ? GM_deleteValue : void 0,
     GM_addValueChangeListener: typeof GM_addValueChangeListener === "function" ? GM_addValueChangeListener : void 0,
     GM_removeValueChangeListener: typeof GM_removeValueChangeListener === "function" ? GM_removeValueChangeListener : void 0,
-    GM_registerMenuCommand: typeof GM_registerMenuCommand === "function" ? GM_registerMenuCommand : void 0
+    GM_registerMenuCommand: typeof GM_registerMenuCommand === "function" ? GM_registerMenuCommand : void 0,
+    GM_unregisterMenuCommand: typeof GM_unregisterMenuCommand === "function" ? GM_unregisterMenuCommand : void 0,
+    // Firefox's content-script function, for storage.js's lock bridge.
+    exportFunction: typeof exportFunction === "function" ? exportFunction : void 0
   };
   whenRoot(document, () => start(scope, { document, view: window }));
   function whenRoot(document2, run) {
@@ -16668,12 +16969,14 @@ ${structured ? `${structured}
     const root = document2.documentElement;
     if (!root || root.hasAttribute(RUNNING)) return null;
     root.setAttribute(RUNNING, "");
+    const isolation = detectIsolation({ view, info: scope2.GM_info ?? scope2.GM?.info ?? null, gm: scope2.GM ?? null });
     const gate = document2.createElement("style");
     gate.id = "reskin-userscript-boot";
     gate.textContent = reskin_boot_default;
     root.prepend(gate);
     const catalog = catalogFromData(reskin_catalog_default);
-    const { storage, kind, capabilities } = createGmStorage(scope2, { document: document2 });
+    const bridge = isolation.method === "xray" && typeof scope2.exportFunction === "function" ? { exportFunction: (fn2) => scope2.exportFunction(fn2, view), Promise: view.Promise } : null;
+    const { storage, kind, capabilities } = createGmStorage(scope2, { document: document2, locks: view.navigator?.locks ?? null, bridge });
     const rendering = backgroundRendering();
     const repository = createRepository(storage, { catalog, ...rendering, newId: () => view.crypto.randomUUID() });
     const fonts = createFontLoader({ document: document2, view, fonts: reskin_fonts_default });
@@ -16682,8 +16985,9 @@ ${structured ? `${structured}
       ...base,
       compile(resolved, plan, prefs, context) {
         if (prefs.fonts) fonts.loadFor(resolved);
-        return base.compile(resolved, plan, prefs, context);
-      }
+        return base.compile(resolved, plan, prefs, { ...context, consent: null });
+      },
+      decorate: (doc, resolved, prefs, context) => base.decorate(doc, resolved, prefs, { ...context, consent: null })
     };
     let content = null;
     const ready = repository.initialize().catch(() => null).then(() => {
@@ -16692,16 +16996,30 @@ ${structured ? `${structured}
     });
     let panel = null;
     const host = createGmHost({ storage, repository, capabilities, view, openPage: () => panel?.open() });
+    const register = scope2.GM_registerMenuCommand ?? (typeof scope2.GM?.registerMenuCommand === "function" ? scope2.GM.registerMenuCommand.bind(scope2.GM) : null);
+    const unregister = scope2.GM_unregisterMenuCommand ?? null;
+    const note = isolation.isolated ? null : register ? COPY2.menuOnly : COPY2.noControls;
     panel = createPanel({
       document: document2,
       view,
       srcdoc: reskin_card_default.srcdoc,
-      mount: (doc, mode, controls) => mountCard(doc, mode, { host, catalog, kind, controls })
+      mount: (doc, mode, controls) => note ? mountNote(doc, { host, kind, controls, note }) : mountCard(doc, mode, { host, catalog, kind, controls })
     });
-    const register = scope2.GM_registerMenuCommand ?? (typeof scope2.GM?.registerMenuCommand === "function" ? scope2.GM.registerMenuCommand.bind(scope2.GM) : null);
-    try {
-      register?.("Open GitHub Reskin", () => panel.toggle());
-    } catch {
+    let menu = null;
+    if (isolation.isolated) {
+      try {
+        register?.("Open GitHub Reskin", () => panel.toggle());
+      } catch {
+      }
+    } else if (register) {
+      const customCard = (theme) => {
+        try {
+          return { ...standardCard({ id: theme.id, group: "mine", document: theme.document }), group: "mine" };
+        } catch {
+          return null;
+        }
+      };
+      menu = createMenu({ register, unregister, host, cards: reskin_cards_default, customCard, open: () => panel.toggle() });
     }
     let requested = view.location.hash === PANEL_HASH;
     const fromHash = () => {
@@ -16723,7 +17041,47 @@ ${structured ? `${structured}
     document2.addEventListener("visibilitychange", fromHash);
     if (document2.readyState === "loading") document2.addEventListener("DOMContentLoaded", fromHash, { once: true });
     else fromHash();
-    return { ready, panel, storage, repository, kind, capabilities, content: () => content };
+    return { ready, panel, storage, repository, kind, capabilities, isolation, menu, content: () => content };
+  }
+  var CONTROLS = [".rs-top-switch", "[data-rs=undo]", "[data-rs=error]", "[data-rs=notices]", ".rs-browse", "[data-rs=gallery]", "[data-rs=empty]", ".rs-prefs", ".us-storage-row"];
+  function mountNote(doc, { host, kind, controls, note }) {
+    const part = (name) => doc.querySelector(`[data-us="${name}"]`);
+    for (const node of doc.querySelectorAll(CONTROLS.join(","))) node.remove();
+    doc.documentElement.dataset.usStorage = kind;
+    doc.documentElement.dataset.usControls = "menu";
+    part("storage-note").textContent = note;
+    const label = part("session-label");
+    label.hidden = kind !== "session";
+    label.textContent = COPY2.sessionLabel;
+    const cards = new Map(reskin_cards_default.map((card) => [card.id, card]));
+    let live = true;
+    const show = async () => {
+      const read2 = await host.read();
+      if (!live || !read2.settings) return;
+      const id = read2.settings.selectedThemeId;
+      const custom = read2.settings.customThemes.find((theme) => theme.id === id);
+      let card = cards.get(id) ?? null;
+      try {
+        card ??= custom ? standardCard({ id, group: "mine", document: custom.document }) : null;
+      } catch {
+      }
+      doc.querySelector("[data-rs=summary-show]").textContent = card?.show ?? card?.name ?? "";
+      doc.querySelector("[data-rs=summary-name]").textContent = card?.show ? card.name : "";
+      doc.querySelector("[data-rs=summary-note]").textContent = read2.settings.enabled ? "" : "GitHub Reskin is off.";
+    };
+    void show();
+    const stop2 = host.subscribe(() => void show());
+    const close = part("close");
+    const onClose = () => controls.close();
+    close.addEventListener("click", onClose);
+    return {
+      initialFocus: () => close,
+      destroy() {
+        live = false;
+        stop2();
+        close.removeEventListener("click", onClose);
+      }
+    };
   }
   function mountCard(doc, mode, { host, catalog, kind, controls }) {
     const cleanups = [];

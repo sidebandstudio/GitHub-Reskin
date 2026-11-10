@@ -3,10 +3,15 @@
 // host wraps C4's repository over the GM storage adapter. Settings stay separate from any
 // installed extension's: they live in the manager's storage, and files are the way across.
 //
-// Every tab writes for itself, so a commit can lose to another tab's write made at the same moment
-// (storage.js confirms each write). That loss is reported as the repository reports any other
-// tab's newer save: a conflict with the current settings, which the picker answers by applying a
-// preference change again and by telling the user a theme choice was not kept.
+// Every tab writes for itself, so each commit runs whole under storage.js's cross-tab lock: the
+// repository reads the latest settings, checks the revision the picker showed, applies the action
+// to them and writes, with no other tab of the origin in between. A commit made from a revision
+// another tab has since replaced is a conflict with the current settings, which the picker answers
+// by applying a preference change again on them and by telling the user a theme choice was not
+// kept. A write lost without the lock (storage.js confirms each one) is reported the same way, and
+// a lock that stays busy as a storage failure with Retry. apply() is the manager menu's commit: the
+// action (or the action a function makes of them) on whatever the settings are inside the lock,
+// since a menu entry names its own change.
 import { ISSUE_CODES, STORAGE_KEYS } from "../packages/contracts/index.js";
 import { cleanUi } from "../packages/ui/host.js";
 import { WRITE_LOST } from "./storage.js";
@@ -25,6 +30,17 @@ const storageFailure = (error) => ({ ok: false, code: "storage", issues: [{ code
  * @param {(page:string, query?:object)=>void} [options.openPage] shows another part of the panel
  */
 export function createGmHost({ storage, repository, capabilities, view, openPage = () => {} }) {
+  async function locked(task) {
+    try {
+      const reply = (await (storage.transaction ?? ((run) => run()))(task)) ?? storageFailure("No reply");
+      if (!lost(reply)) return reply;
+      const now = await repository.read();
+      if (!now.ok) return reply;
+      return { ok: false, code: "conflict", current: now.settings, issues: [{ code: ISSUE_CODES.conflict, path: "/revision", message: CONFLICT, severity: "error" }] };
+    } catch (error) {
+      return storageFailure(error);
+    }
+  }
   return {
     capabilities: Object.freeze({ ...capabilities, clipboard: typeof view.navigator?.clipboard?.writeText === "function" }),
     async read() {
@@ -38,25 +54,24 @@ export function createGmHost({ storage, repository, capabilities, view, openPage
         return { ok: false, message: String(error?.message ?? error) };
       }
     },
-    async commit(action, expectedRevision) {
-      try {
-        const reply = (await repository.commit(action, expectedRevision)) ?? storageFailure("No reply");
-        if (!lost(reply)) return reply;
+    commit: (action, expectedRevision) => locked(() => repository.commit(action, expectedRevision)),
+    apply: (action) =>
+      locked(async () => {
+        await repository.initialize();
         const now = await repository.read();
-        if (!now.ok) return reply;
-        return { ok: false, code: "conflict", current: now.settings, issues: [{ code: ISSUE_CODES.conflict, path: "/revision", message: CONFLICT, severity: "error" }] };
-      } catch (error) {
-        return storageFailure(error);
-      }
-    },
+        if (!now.ok) return { ok: false, code: "invalid", issues: now.issues ?? [] };
+        return repository.commit(typeof action === "function" ? action(now.settings) : action, now.settings.revision);
+      }),
     async writeUi(patch) {
       if (Object.keys(patch).some((key) => !UI_KEYS.includes(key))) throw new TypeError("Unknown UI record field");
       const current = cleanUi((await storage.get([STORAGE_KEYS.ui]))[STORAGE_KEYS.ui]);
       await storage.set({ [STORAGE_KEYS.ui]: cleanUi({ ...current, ...patch }) });
     },
+    // Settings another tab saved. This tab's own commits answer with their settings, and a re-read
+    // started by their write could land after the next change and show the one before it.
     subscribe(listener) {
-      return storage.subscribe((changes) => {
-        if (changes[STORAGE_KEYS.settings] || changes[STORAGE_KEYS.lastGood]) listener();
+      return storage.subscribe((changes, { own = false } = {}) => {
+        if (!own && (changes[STORAGE_KEYS.settings] || changes[STORAGE_KEYS.lastGood])) listener();
       });
     },
     loadDraft: () => repository.loadDraft(),

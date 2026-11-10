@@ -1,5 +1,6 @@
 // Accessibility of the userscript panel, in Chromium and Firefox: axe finds nothing serious or
-// critical in the frame (durable and session storage, wide and narrow), every control has a name,
+// critical in the frame (durable and session storage, wide and narrow, and the card without
+// controls a script in the page's context gets), every control has a name,
 // a theme card is reached and chosen with the keyboard alone, focus stays visible, and Escape
 // gives focus back to the page element that had it.
 import { axeViolations, blocking } from "../../helpers/a11y.mjs";
@@ -16,6 +17,17 @@ test("the panel has no serious or critical axe findings, with or without durable
     // The frame itself is named for the page's accessibility tree.
     await expect(page.locator(PANEL)).toHaveAttribute("title", "GitHub Reskin");
   }
+});
+
+test("the card without controls, for a script in the page's context, has no serious or critical axe findings and focuses Close @a11y", async ({ manager }) => {
+  const gm = await manager({ kind: "sync", report: "page" });
+  const page = await gm.open(`${PROFILE_URL}#reskin`);
+  const frame = page.frameLocator(PANEL);
+  await expect(frame.locator("[data-us=storage-note]")).toHaveText(/manager's menu/);
+  await expect(frame.locator("[data-rs=summary-show]")).not.toBeEmpty();
+  const violations = await axeViolations(await panelDocument(page));
+  expect(blocking(violations), JSON.stringify(violations, null, 1)).toEqual([]);
+  await expect(frame.getByRole("button", { name: "Close GitHub Reskin" })).toBeFocused();
 });
 
 test("every control is named and a theme is chosen with the keyboard alone @a11y", async ({ manager }) => {

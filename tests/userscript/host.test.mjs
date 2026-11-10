@@ -45,7 +45,7 @@ test("a commit goes through the revision check and leaves the prior selection fo
   assert.deepEqual([stale.ok, stale.code, stale.current.selectedThemeId], [false, "conflict", "nord"]);
 });
 
-test("writeUi merges known fields only, and subscribers hear settings and lastGood changes", async () => {
+test("writeUi merges known fields only, and subscribers hear the settings and lastGood changes another tab made", async () => {
   const { gm, host } = setup("sync");
   const { settings } = await host.read();
   await host.writeUi({ group: "mine" });
@@ -55,11 +55,12 @@ test("writeUi merges known fields only, and subscribers hear settings and lastGo
   const unsubscribe = host.subscribe(() => heard++);
   await host.writeUi({ undoneAt: 1 });
   assert.equal(heard, 0);
+  // This tab's own commit answers with its settings; a re-read it started could land late.
   await host.commit({ type: "setEnabled", enabled: false }, settings.revision);
-  assert.equal(heard, 1);
+  assert.equal(heard, 0);
   const stored = gm.snapshot()[STATE_KEY];
   gm.remoteWrite(STATE_KEY, { ...stored, stamp: "other:1", records: { ...stored.records, [STORAGE_KEYS.settings]: { ...stored.records[STORAGE_KEYS.settings], revision: 9 } } });
-  assert.equal(heard, 2);
+  assert.equal(heard, 1);
   unsubscribe();
 });
 

@@ -30,6 +30,7 @@ export const GRANTS = Object.freeze([
   "GM_addValueChangeListener",
   "GM_removeValueChangeListener",
   "GM_registerMenuCommand",
+  "GM_unregisterMenuCommand",
 ]);
 // The budget from ARCHITECTURE.md: the userscript, embedded fonts included.
 export const MAX_BYTES = 3.5 * 1024 * 1024;

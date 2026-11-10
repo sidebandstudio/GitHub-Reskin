@@ -55,13 +55,22 @@ test("the panel commits a theme at once, offers Undo, and switches on/off, Full/
   await frame.locator("[data-rs=undo]").click();
   await expect.poll(() => painted(page)).toMatchObject({ canvas: CHOOM_CANVAS });
   await expect(frame.locator("[data-rs=undo]")).toBeHidden();
+  await expect(frame.locator("[data-rs=status]")).toHaveText("Theme change undone.");
 
+  // Each change is stored, then the picker shows it saved (a re-render from a re-read can still
+  // show the stored value over a click whose commit has not started), before the next one.
+  const saved = async (preferences) => {
+    await expect.poll(async () => (await settingsOf(gm, page)).preferences).toMatchObject(preferences);
+    await expect(frame.locator("[data-rs=status]")).toHaveText("Saved.");
+  };
   await frame.getByRole("radio", { name: "Calm" }).check();
-  await expect.poll(async () => (await settingsOf(gm, page)).preferences).toMatchObject({ appearance: "calm", extras: false });
+  await saved({ appearance: "calm", extras: false });
   await frame.getByRole("radio", { name: "Full" }).check();
+  await saved({ appearance: "full" });
   await frame.getByRole("switch", { name: "Extra theme text" }).uncheck();
+  await saved({ text: false });
   await frame.getByRole("switch", { name: "Motion" }).uncheck();
-  await expect.poll(async () => (await settingsOf(gm, page)).preferences).toMatchObject({ appearance: "full", text: false, motion: false });
+  await saved({ appearance: "full", text: false, motion: false });
 
   await frame.getByRole("switch", { name: "Reskin" }).uncheck();
   await expect.poll(() => painted(page)).toMatchObject({ boot: "native", styled: false });
@@ -167,7 +176,7 @@ test("a manager without durable storage gets a labeled session preview with expo
   const page = await gm.open(`${PROFILE_URL}#reskin`);
   const frame = await panelFrame(page);
   await expect(frame.locator("[data-us=session-label]")).toHaveText("Session preview");
-  await expect(frame.locator("[data-us=storage-note]")).toHaveText("This userscript manager can't save themes here. You can preview and export a file.");
+  await expect(frame.locator("[data-us=storage-note]")).toHaveText("This userscript manager can't save themes here. You can preview and export a file. Advanced CSS in your own themes stays off in the userscript.");
   await frame.locator(`[data-theme="${FRIEREN}"]`).click();
   await expect.poll(() => painted(page)).toMatchObject({ boot: "ready", canvas: FRIEREN_CANVAS });
   const download = page.waitForEvent("download");
