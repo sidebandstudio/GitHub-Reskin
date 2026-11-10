@@ -73,8 +73,11 @@ process, and stops at the first failure. With `RESKIN_CHECK_RESULT` set to a fil
 `check.mjs` writes its `{ exitCode, testCount }` there, which is how the release check reads each
 step's test count. It writes `artifacts/reports/release.json`. `check:budgets` without a surface
 writes `artifacts/reports/budgets.json` and fails on any measurement it can't find, including the
-browser timings in `artifacts/reports/release-timings.json`, which the release surface records.
-The release surface, `capture-release` and the `qa-*` commands still fail with exit 2.
+browser timings in `artifacts/reports/release-timings.json`. The release surface's `test:e2e`
+writes that file: its timing tests each record one measurement under
+`artifacts/reports/release-timings/`, and the module merges them after the run, replacing the
+last run's file even when a test fails. `capture-release` and the `qa-*` commands still fail
+with exit 2.
 
 ### Browser surfaces
 

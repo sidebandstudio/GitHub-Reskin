@@ -13,17 +13,22 @@
 //   store-links  check:store-links: each store in release.config.json is null or a listing URL of
 //                that store, and README.md and the site name no other listing. With --require-live
 //                both listings must exist, and each is fetched.
-// The release surface (test:e2e, a11y), capture-release and the qa-* commands are not written
-// yet and fail with exit 2.
+//   test:e2e     The release surface, tests/e2e/release in release-chromium and release-firefox.
+//                Its timing tests each write a file under artifacts/reports/release-timings (or
+//                RESKIN_RELEASE_TIMINGS), which this clears first and then merges into
+//                artifacts/reports/release-timings.json for check:budgets.
+//   a11y         The release surface's @a11y tests: the add-on's pages at 320px in both engines.
+// capture-release and the qa-* commands are not written yet and fail with exit 2.
 // Direct use: node tests/release/checks.mjs <command> [args]
 import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, realpathSync, rmSync } from "node:fs";
-import { mkdir, readdir, readFile, stat, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { cpus, tmpdir, totalmem } from "node:os";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { gzipSync } from "node:zlib";
 import { BROWSER_TARGETS, BUDGETS, LIMITS } from "../../packages/contracts/index.js";
+import { runSurface } from "../../scripts/check-a11y.mjs";
 import { artifactName } from "../../scripts/package.mjs";
 
 const DEFAULT_ROOT = fileURLToPath(new URL("../..", import.meta.url));
@@ -243,6 +248,58 @@ export async function checkBudgets({ args = [], root, outDir = join(root, "dist"
   return { exitCode, testCount: measurements.length + missing.length + siteResult.testCount };
 }
 
+// Where the release surface's timing tests write, as tests/e2e/release/helpers.mjs does.
+const timingsDir = (root) => process.env.RESKIN_RELEASE_TIMINGS || join(root, REPORTS, "release-timings");
+
+/**
+ * release-timings.json from the timing tests' files, each {project, name, data}: the gates as
+ * check:budgets reads them and every file's own numbers under `browsers`. The preview's resolve
+ * and settings to style gate the slower engine, so each needs both; Firefox's settings to style
+ * starts at the storage write (tests/e2e/release/timings.firefox.spec.mjs). The long task and idle
+ * CPU come from Chromium's trace and metrics. Returns null when nothing was measured.
+ */
+export function mergeTimings(parts, measuredAt = new Date().toISOString()) {
+  if (!parts.length) return null;
+  const get = (project, name, key) => parts.find((part) => part.project === project && part.name === name)?.data[key];
+  const slower = (a, b) => (Number.isFinite(a) && Number.isFinite(b) ? Math.max(a, b) : null);
+  const browsers = {};
+  for (const { project, name, data } of parts) {
+    const { project: _project, machine: _machine, ...values } = data;
+    (browsers[project] ??= {})[name] = values;
+  }
+  return {
+    measuredAt,
+    machine: parts[0].data.machine ?? null,
+    previewResolveP95Ms: slower(get("release-chromium", "preview", "previewResolveP95Ms"), get("release-firefox", "preview", "previewResolveP95Ms")),
+    settingsToStyleP95Ms: slower(get("release-chromium", "settings", "settingsToStyleP95Ms"), get("release-firefox", "storage", "storageToStyleP95Ms")),
+    longestTaskMs: get("release-chromium", "settings", "longestTaskMs") ?? null,
+    idleCpuPercent: get("release-chromium", "idle", "idleCpuPercent") ?? null,
+    browsers,
+  };
+}
+
+/**
+ * The release surface's test:e2e, or its @a11y tests with `a11y`. test:e2e replaces
+ * release-timings.json with what this run measured, even when a test fails, so check:budgets never
+ * reads an earlier run's numbers. `runner` is for tests.
+ * @returns {Promise<{exitCode:number, testCount:number}>}
+ */
+export async function releaseSurface({ args = [], root, a11y = false, runner = runSurface }) {
+  if (a11y) return runner("release", { args, root, a11y: true });
+  const dir = timingsDir(root);
+  await rm(dir, { recursive: true, force: true });
+  await rm(join(root, REPORTS, "release-timings.json"), { force: true });
+  const result = await runner("release", { args, root });
+  const parts = [];
+  for (const file of existsSync(dir) ? (await readdir(dir)).sort() : []) {
+    const match = file.match(/^(.+)\.([^.]+)\.json$/);
+    if (match) parts.push({ project: match[1], name: match[2], data: await readJson(join(dir, file)) });
+  }
+  const timings = mergeTimings(parts);
+  if (timings) await writeReport(root, "release-timings.json", timings);
+  return result;
+}
+
 // A store's listing address: Chrome Web Store's detail page with its 32-letter ID, or addons.mozilla.org's.
 export const STORE_URLS = Object.freeze({
   chrome: /^https:\/\/chromewebstore\.google\.com\/detail\/[a-z0-9-]+\/[a-p]{32}$/,
@@ -314,6 +371,8 @@ export async function run({ command, args = [], root = DEFAULT_ROOT, outDir = jo
   if (command === "release") return checkRelease({ args, root, outDir });
   if (command === "budgets") return checkBudgets({ args, root, outDir });
   if (command === "store-links") return checkStoreLinks({ args, root });
+  if (command === "test:e2e") return releaseSurface({ args, root });
+  if (command === "a11y") return releaseSurface({ args, root, a11y: true });
   console.error(`NOT IMPLEMENTED: ${command} (owner C9): tests/release/checks.mjs does not serve it yet. Until it exists this gate fails.`);
   return { exitCode: 2, testCount: 0 };
 }

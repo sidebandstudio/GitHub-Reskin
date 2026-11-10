@@ -2,7 +2,8 @@
 // the first failure and reports every step, run or not; check:budgets measures what the build and
 // package wrote, fails on a byte over or a measurement missing, and writes what it measured;
 // check:store-links accepts null or real listing URLs only, finds stray listings in the README and
-// site, and with --require-live needs both listings to answer.
+// site, and with --require-live needs both listings to answer; the release surface's test:e2e
+// replaces release-timings.json with what its run measured.
 import assert from "node:assert/strict";
 import { mkdtempSync, rmSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
@@ -11,7 +12,7 @@ import { dirname, join } from "node:path";
 import test from "node:test";
 import { BUDGETS } from "../../packages/contracts/index.js";
 import { fileURLToPath } from "node:url";
-import { checkBudgets, checkRelease, checkStoreLinks, runCheck } from "./checks.mjs";
+import { checkBudgets, checkRelease, checkStoreLinks, mergeTimings, releaseSurface, runCheck } from "./checks.mjs";
 
 const ROOT = fileURLToPath(new URL("../..", import.meta.url));
 
@@ -141,6 +142,58 @@ test("check:budgets fails one byte over a budget, a task at the long-task limit,
   await withRoot({ ...withoutFirefox, "artifacts/reports/release-timings.json": TIMINGS }, async (root) => {
     assert.equal((await quiet(() => checkBudgets({ root, site, engine }))).exitCode, 1);
     assert.deepEqual((await report(root, "budgets.json")).missing, ["github-reskin-9.9.9-firefox.zip"]);
+  });
+});
+
+const MACHINE = { cpu: "test", cores: 2, load: [0, 0, 0] };
+const PARTS = [
+  { project: "release-chromium", name: "preview", data: { project: "release-chromium", browser: "chromium 1", machine: MACHINE, previewResolveP95Ms: 5 } },
+  { project: "release-firefox", name: "preview", data: { project: "release-firefox", browser: "firefox 1", machine: MACHINE, previewResolveP95Ms: 9 } },
+  { project: "release-chromium", name: "settings", data: { project: "release-chromium", browser: "chromium 1", machine: MACHINE, settingsToStyleP95Ms: 40, longestTaskMs: 47 } },
+  { project: "release-firefox", name: "storage", data: { project: "release-firefox", browser: "firefox 1", machine: MACHINE, storageToStyleP95Ms: 10 } },
+  { project: "release-chromium", name: "idle", data: { project: "release-chromium", browser: "chromium 1", machine: MACHINE, idleCpuPercent: 0.1 } },
+];
+
+test("the release timings gate the slower engine, need both engines for the preview and settings, and keep each file's numbers", () => {
+  const merged = mergeTimings(PARTS, "now");
+  assert.deepEqual(
+    { ...merged, browsers: undefined },
+    { measuredAt: "now", machine: MACHINE, previewResolveP95Ms: 9, settingsToStyleP95Ms: 40, longestTaskMs: 47, idleCpuPercent: 0.1, browsers: undefined },
+  );
+  assert.deepEqual(merged.browsers["release-firefox"].storage, { browser: "firefox 1", storageToStyleP95Ms: 10 });
+  const chromiumOnly = mergeTimings(PARTS.filter((part) => part.project === "release-chromium"), "now");
+  assert.equal(chromiumOnly.previewResolveP95Ms, null);
+  assert.equal(chromiumOnly.settingsToStyleP95Ms, null);
+  assert.equal(chromiumOnly.longestTaskMs, 47);
+  assert.equal(mergeTimings([]), null);
+});
+
+test("the release surface's test:e2e replaces the timings with this run's, and its a11y run leaves them", async () => {
+  await withRoot({ ...BUILT, "artifacts/reports/release-timings.json": TIMINGS, "artifacts/reports/release-timings/release-chromium.old.json": "{}" }, async (root) => {
+    const dir = join(root, "artifacts", "reports", "release-timings");
+    const calls = [];
+    const runner = async (surface, options) => {
+      calls.push([surface, options]);
+      await mkdir(dir, { recursive: true });
+      for (const part of PARTS) await writeFile(join(dir, `${part.project}.${part.name}.json`), JSON.stringify(part.data));
+      return { exitCode: 0, testCount: 26 };
+    };
+    assert.deepEqual(await quiet(() => releaseSurface({ args: ["--project=release-firefox"], root, runner })), { exitCode: 0, testCount: 26 });
+    assert.deepEqual(calls, [["release", { args: ["--project=release-firefox"], root }]]);
+    const written = await report(root, "release-timings.json");
+    assert.equal(written.previewResolveP95Ms, 9);
+    assert.equal(written.browsers["release-chromium"].old, undefined);
+    // check:budgets reads what the surface wrote.
+    assert.equal((await quiet(() => checkBudgets({ root, site, engine }))).exitCode, 0);
+
+    calls.length = 0;
+    assert.deepEqual(await quiet(() => releaseSurface({ root, a11y: true, runner: async (...call) => (calls.push(call), { exitCode: 0, testCount: 21 }) })), { exitCode: 0, testCount: 21 });
+    assert.deepEqual(calls, [["release", { args: [], root, a11y: true }]]);
+    assert.equal((await report(root, "release-timings.json")).previewResolveP95Ms, 9);
+
+    // A run that measures nothing leaves no timings for check:budgets to trust.
+    assert.deepEqual(await quiet(() => releaseSurface({ root, runner: async () => ({ exitCode: 1, testCount: 0 }) })), { exitCode: 1, testCount: 0 });
+    await assert.rejects(report(root, "release-timings.json"), { code: "ENOENT" });
   });
 });
 
