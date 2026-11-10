@@ -1499,17 +1499,19 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
     // For Backup & help: the stored draft not yet resumed, or this page's unsaved changes.
     draftStatus: () => ({ pending: draftFromRecord(pendingRecord)?.document ?? null, dirty: Boolean(draft && dirty()), name: draft?.document.name ?? "" }),
     resumeDraft,
-    // Reset all is starting: no draft write until restart(), or the returned resume if it fails.
+    // Reset all is starting. An edit still inside the autosave delay is saved now, ahead of the
+    // reset's own write, so a reset that fails keeps it; then no draft write until restart(), or
+    // the returned resume if the reset fails. A builder closed while the reset ran writes nothing
+    // afterwards: a newer one may have saved its own draft by then.
     holdDrafts() {
-      win?.clearTimeout(autosave);
-      autosave = 0;
+      if (autosave) {
+        win.clearTimeout(autosave);
+        void saveDraftNow();
+      }
       holding = true;
       return () => {
         holding = false;
-        if (!draft || pendingRecord || !dirty()) return;
-        // Closed while the reset ran: save now, as destroy() would have.
-        if (destroyed) host.saveDraft(draftRecord(draft)).catch(() => {});
-        else scheduleAutosave();
+        if (!destroyed && draft && dirty()) scheduleAutosave();
       };
     },
     // After Reset all: a new start from the theme now selected, with no draft kept.

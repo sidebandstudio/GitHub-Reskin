@@ -335,6 +335,35 @@ test("an edit made just before a Reset all that fails is kept, even when the bui
   expect((await settingsOf(gm, page))?.revision ?? 0).toBe(0);
 });
 
+test("after a Reset all that fails, a builder reopened while it ran keeps its newer edit", async ({ manager }) => {
+  const gm = await manager({ kind: "async" });
+  const page = await gm.open();
+  await openBuilder(page);
+  await page.evaluate(() => {
+    window.__gmLog.pause = "reskin.state";
+    window.__gmLog.refuse = (name, value) => name === "reskin.state" && value?.records?.["reskin.settings"]?.revision === 1;
+  });
+  const doc = await (await page.locator(PANEL).elementHandle()).contentFrame();
+  await doc.evaluate(() => {
+    window.confirm = () => true;
+    const input = document.querySelector("#rb-colors-accent");
+    input.value = "#12ab34";
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+    document.querySelector('[data-rk="reset-all"]').click();
+  });
+  await page.waitForFunction(() => window.__gmLog.paused);
+  await page.keyboard.press("Escape");
+  await expect(page.locator(HOST)).toHaveCount(0);
+  const frame = await openBuilder(page, { keepDraft: true });
+  await setHex(frame, "Accent", "#56cd78");
+  // The newer edit's autosave waits behind the held writes.
+  await page.waitForTimeout(650);
+  await page.evaluate(() => window.__gmLog.resume());
+  await expect.poll(async () => (await draftOf(gm, page))?.document?.colors?.accent ?? null).toBe("#56cd78");
+  await page.waitForTimeout(650);
+  expect((await draftOf(gm, page))?.document?.colors?.accent).toBe("#56cd78");
+});
+
 test("exports a theme as a file and a share code and imports both back unchanged", async ({ manager }) => {
   const gm = await manager({ kind: "sync" });
   const page = await gm.open();
