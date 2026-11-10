@@ -10818,12 +10818,10 @@ My idea: {{IDEA}}`;
       const solid = `linear-gradient(${c2},${c2})`;
       const base = `.rs-fx-seal{left:4px;top:calc(50% - ${num(size / 2)}px);width:${size}px;height:${size}px}`;
       const badge = `.rs-box--badge>.rs-fx-seal{position:relative;left:auto;top:auto;flex:none;width:${Math.min(size, 16)}px;height:${Math.min(size, 16)}px}`;
-      const clear = `.rs-box--strip:where(:has(>.rs-fx-seal)){padding-left:${size + 8}px}`;
       const pseudo = (part, rule) => `.rs-fx-seal::${part}{content:"";position:absolute;box-sizing:border-box;${rule}}`;
       const shapes = {
         diamond: [pseudo("before", `inset:15%;border:1.5px solid ${c2};transform:rotate(45deg)`)],
-        // A square mark between the two brackets, so the seal frames something.
-        brackets: [`.rs-fx-seal{background:${solid} center/26% 26% no-repeat}`, pseudo("before", `left:0;top:0;bottom:0;width:30%;border:1.5px solid ${c2};border-right:0`), pseudo("after", `right:0;top:0;bottom:0;width:30%;border:1.5px solid ${c2};border-left:0`)],
+        brackets: [pseudo("before", `left:0;top:0;bottom:0;width:30%;border:1.5px solid ${c2};border-right:0`), pseudo("after", `right:0;top:0;bottom:0;width:30%;border:1.5px solid ${c2};border-left:0`)],
         compass: [`.rs-fx-seal{border:1.5px solid ${c2};border-radius:50%}`, pseudo("after", `width:1.5px;height:35%;right:12%;top:-10%;background:${c2};transform:rotate(35deg)`)],
         sprig: [
           `.rs-fx-seal{background:radial-gradient(ellipse 18% 32% at 50% 40%,${c2} 0 96%,transparent 100%)}`,
@@ -10832,7 +10830,7 @@ My idea: {{IDEA}}`;
         ],
         rosette: [`.rs-fx-seal{background:${solid} 35% 0/32% 32% no-repeat,${solid} 100% 35%/32% 32% no-repeat,${solid} 65% 100%/32% 32% no-repeat,${solid} 0 65%/32% 32% no-repeat}`]
       };
-      return [base, badge, clear, ...shapes[shape2]];
+      return [base, badge, ...shapes[shape2]];
     },
     drift({ shape: shape2, durationMs, distance, opacity }, t) {
       const c2 = rgba(t.mutedText, opacity);
