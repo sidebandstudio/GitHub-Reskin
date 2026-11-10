@@ -30,5 +30,7 @@ test("release.config.json's builder and the compatibility entry build the same s
 test("1.1.0 installs move to this script: same name and namespace, nothing generated from the legacy files", () => {
   assert.match(script, /^\/\/ @name +GitHub Reskin$/m);
   assert.match(script, /^\/\/ @namespace +https:\/\/github\.com\/sidebandstudio\/GitHub-Reskin$/m);
-  for (const legacy of ["GitHubReskin.card", "POPUP_HTML", "extension/themes.js", "slang.js"]) assert.ok(!script.includes(legacy), legacy);
+  // The builder's preview fixture quotes the repository README, which names extension/slang.js, so
+  // that file is checked for by its code.
+  for (const legacy of ["GitHubReskin.card", "POPUP_HTML", "extension/themes.js", "const SWAPS = ["]) assert.ok(!script.includes(legacy), legacy);
 });

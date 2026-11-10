@@ -11,9 +11,9 @@
 //   none     no storage grants at all
 // Each also reports where it runs the script, as Violentmonkey's GM_info.injectInto does
 // (Userscripts for Safari's GM.info.scriptHandler for "safari"): `report` "content" (the default),
-// "page", or null for no report at all, as a manager that gives none. A "page" report always
-// counts; a "content" one only when the browser cannot show isolation itself
-// (userscript/isolation.js), as in Playwright's main world, where these tests stand in for it.
+// "page", or null for no report at all, as a manager that gives none. Either report counts
+// (userscript/isolation.js), so in Playwright's main world a "content" one stands in for an
+// isolated manager.
 // As in a manager, the grants are the script's own locals, never globals of the page. Values live
 // in one JSON record under SHIM_KEY in the routed origin's localStorage, so they survive reloads
 // and are shared by the context's tabs, and the browser's storage event delivers another tab's
@@ -276,10 +276,11 @@ export { expect };
  * as Violentmonkey's content mode and Greasemonkey do there: an Xray sandbox apart from the page's
  * JavaScript. Playwright cannot run a script in an isolated world in Firefox, so the stand-in is a
  * temporary add-on installed through Firefox's remote debugging protocol. Its grants are the shim's,
- * with no test hooks and no report of where it runs, so only the browser can show the isolation.
+ * with no report of where it runs, so only the browser can show the isolation, and no test hooks
+ * unless `hooks`: then, inside the content script only, the panel's root is open for the locators.
  * Values live in the routed origin's localStorage, as in `manager`.
  */
-export async function firefoxContentManager(userscript, { kind = "sync", pages = {} } = {}) {
+export async function firefoxContentManager(userscript, { kind = "sync", pages = {}, hooks = false } = {}) {
   const { firefox } = await import("@playwright/test");
   const { connectWithMaxRetries } = await import(new URL("../../../node_modules/web-ext/lib/firefox/remote.js", import.meta.url).href);
   const addon = await mkdtemp(join(tmpdir(), "reskin-e2e-manager-addon-"));
@@ -293,7 +294,7 @@ export async function firefoxContentManager(userscript, { kind = "sync", pages =
     content_scripts: [{ matches: ["https://github.com/*"], js: ["manager.js"], run_at: "document_start" }],
   };
   await writeFile(join(addon, "manifest.json"), JSON.stringify(manifest));
-  await writeFile(join(addon, "manager.js"), injection(kind, userscript, { hooks: false, report: null }));
+  await writeFile(join(addon, "manager.js"), injection(kind, userscript, { hooks, report: null }));
   const context = await firefox.launchPersistentContext(profile, {
     headless: true,
     viewport: { width: 1280, height: 900 },
