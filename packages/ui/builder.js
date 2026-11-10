@@ -297,7 +297,7 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
     if (destroyed || !draft || pendingRecord) return;
     if (!dirty()) return void host.discardDraft().catch(() => {});
     const reply = await host.saveDraft(draftRecord(draft)).catch((error) => ({ ok: false, issues: [{ message: String(error?.message ?? error) }] }));
-    if (!reply?.ok) fail(reply?.issues?.[0]?.message && /1\.25 MiB/.test(reply.issues[0].message) ? reply.issues[0].message : COPY.draftFailed, { offerDownload: true });
+    if (!reply?.ok && !destroyed) fail(reply?.issues?.[0]?.message && /1\.25 MiB/.test(reply.issues[0].message) ? reply.issues[0].message : COPY.draftFailed, { offerDownload: true });
   }
 
   // ----- preview -----
@@ -1525,6 +1525,11 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
       host.discardDraft().catch(() => {});
     },
     destroy() {
+      // An edit still inside the autosave delay is saved now, so closing right after it keeps it.
+      if (autosave) {
+        win.clearTimeout(autosave);
+        void saveDraftNow();
+      }
       dropApproval();
       destroyed = true;
       win?.clearTimeout(autosave);

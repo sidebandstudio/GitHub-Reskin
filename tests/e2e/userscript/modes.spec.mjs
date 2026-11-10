@@ -65,6 +65,25 @@ test("in the page's own context a page script that holds the panel's frame finds
   expect(await stored()).toEqual({});
 });
 
+test("in the page's own context a page script that patched Function.prototype.bind first never receives the manager's grants", async ({ manager, userscript }) => {
+  const gm = await manager({ inject: false });
+  const page = await gm.context.newPage();
+  await page.goto(PROFILE_URL);
+  await page.evaluate(() => {
+    window.__bound = [];
+    const bind = Function.prototype.bind;
+    Function.prototype.bind = function (target, ...args) {
+      window.__bound.push(target);
+      return bind.call(this, target, ...args);
+    };
+  });
+  const handle = await page.evaluateHandle(pageWorld(userscript));
+  await expect.poll(() => painted(page)).toMatchObject({ boot: "ready", canvas: CHOOM_CANVAS });
+  await expect.poll(() => handle.evaluate((m) => m.menu.length)).toBeGreaterThan(0);
+  // Nothing bound to an object that carries the manager's storage functions.
+  expect(await page.evaluate(() => window.__bound.filter((target) => target && typeof target.getValue === "function").length)).toBe(0);
+});
+
 test("a manager that injects into the page: every setting from its menu until a reload, labels that follow the settings, nothing stored and a panel without controls", async ({ manager }) => {
   const gm = await manager({ kind: "sync", report: "page" });
   const page = await gm.open();

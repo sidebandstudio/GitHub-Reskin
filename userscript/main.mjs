@@ -139,7 +139,10 @@ export function start(scope, { document, view }) {
   const host = createGmHost({ storage, repository, capabilities, view, openPage: () => panel?.open() });
   // Tampermonkey, Violentmonkey and Greasemonkey list commands in their menu. Managers without a
   // menu (Userscripts for Safari) open the panel from an address ending in #reskin.
-  const register = scope.GM_registerMenuCommand ?? (typeof scope.GM?.registerMenuCommand === "function" ? scope.GM.registerMenuCommand.bind(scope.GM) : null);
+  // A closure rather than bind(): page code that patched Function.prototype.bind would be handed
+  // the whole GM object, storage included.
+  const gm = scope.GM;
+  const register = scope.GM_registerMenuCommand ?? (typeof gm?.registerMenuCommand === "function" ? (name, onClick) => gm.registerMenuCommand(name, onClick) : null);
   const unregister = scope.GM_unregisterMenuCommand ?? null;
   const note = isolation.isolated ? null : register ? COPY.menuOnly : COPY.noControls;
   // Not isolated, every mode is the note on the card: no builder document is ever loaded.

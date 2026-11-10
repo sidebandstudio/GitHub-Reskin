@@ -27660,7 +27660,7 @@ To keep your themes, choose Cancel, then Export each one.`,
       if (!dirty()) return void host.discardDraft().catch(() => {
       });
       const reply = await host.saveDraft(draftRecord(draft)).catch((error2) => ({ ok: false, issues: [{ message: String(error2?.message ?? error2) }] }));
-      if (!reply?.ok) fail2(reply?.issues?.[0]?.message && /1\.25 MiB/.test(reply.issues[0].message) ? reply.issues[0].message : COPY4.draftFailed, { offerDownload: true });
+      if (!reply?.ok && !destroyed) fail2(reply?.issues?.[0]?.message && /1\.25 MiB/.test(reply.issues[0].message) ? reply.issues[0].message : COPY4.draftFailed, { offerDownload: true });
     }
     const preferences = () => settings ? { ...effectivePreferences(settings), enabled: true } : { enabled: true, appearance: "full", extras: true, text: true, motion: true, fonts: true, effects: true };
     const cssAllowed = (document2, enabled) => Boolean(enabled && cssSummary(document2)?.ok);
@@ -28770,6 +28770,10 @@ To keep your themes, choose Cancel, then Export each one.`,
         });
       },
       destroy() {
+        if (autosave) {
+          win.clearTimeout(autosave);
+          void saveDraftNow();
+        }
         dropApproval();
         destroyed = true;
         win?.clearTimeout(autosave);
@@ -31137,7 +31141,8 @@ To keep your themes, choose Cancel, then Export each one.`,
     });
     let panel = null;
     const host = createGmHost({ storage, repository: repository2, capabilities, view, openPage: () => panel?.open() });
-    const register = scope2.GM_registerMenuCommand ?? (typeof scope2.GM?.registerMenuCommand === "function" ? scope2.GM.registerMenuCommand.bind(scope2.GM) : null);
+    const gm2 = scope2.GM;
+    const register = scope2.GM_registerMenuCommand ?? (typeof gm2?.registerMenuCommand === "function" ? (name, onClick) => gm2.registerMenuCommand(name, onClick) : null);
     const unregister = scope2.GM_unregisterMenuCommand ?? null;
     const note2 = isolation.isolated ? null : register ? COPY6.menuOnly : COPY6.noControls;
     const builder2 = !note2 && BUILDER_MODES;

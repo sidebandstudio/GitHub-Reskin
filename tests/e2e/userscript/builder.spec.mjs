@@ -257,10 +257,33 @@ test("keeps the draft when the panel closes and after a reload, and resumes it",
   await expect(hex(frame, "Accent")).not.toHaveValue("#12ab34");
 });
 
+test("closing the builder right after an edit, before the autosave delay, keeps that edit in the draft", async ({ manager }) => {
+  const gm = await manager({ kind: "sync" });
+  const page = await gm.open();
+  const frame = await openBuilder(page);
+  await setHex(frame, "Accent", "#12ab34");
+  // Well inside the builder's 400 ms autosave delay.
+  await page.keyboard.press("Escape");
+  await expect(page.locator(HOST)).toHaveCount(0);
+  await expect.poll(async () => (await draftOf(gm, page))?.document?.colors?.accent ?? null).toBe("#12ab34");
+});
+
 test("exports a theme as a file and a share code and imports both back unchanged", async ({ manager }) => {
   const gm = await manager({ kind: "sync" });
   const page = await gm.open();
   const frame = await openBuilder(page);
+  // Every link GitHub's document ever holds, even one added and removed at once.
+  await page.evaluate(() => {
+    window.__links = [];
+    new MutationObserver((records) => {
+      for (const record of records) {
+        for (const node of record.addedNodes) {
+          if (node.nodeType !== 1) continue;
+          for (const link of [node, ...node.querySelectorAll("a")]) if (link.localName === "a") window.__links.push(link.getAttribute("download") ?? link.getAttribute("href") ?? "");
+        }
+      }
+    }).observe(document, { childList: true, subtree: true });
+  });
   await frame.getByRole("textbox", { name: "Theme name" }).fill("Round Trip");
   await frame.getByRole("textbox", { name: "Theme name" }).press("Tab");
   await setHex(frame, "Accent", "#e05d9c");
@@ -291,8 +314,8 @@ test("exports a theme as a file and a share code and imports both back unchanged
   await expect(hex(frame, "Accent")).toHaveValue("#e05d9c");
   const [again] = await Promise.all([page.waitForEvent("download"), frame.getByRole("button", { name: "Download .reskin.json" }).click()]);
   expect(JSON.parse((await readFile(await again.path())).toString("utf8"))).toEqual(exported);
-  // The file went through the panel's frame, never a link in GitHub's document.
-  expect(await page.evaluate(() => document.querySelectorAll("a[download]").length)).toBe(0);
+  // The files went through the panel's frame, never a link in GitHub's document.
+  expect(await page.evaluate(() => window.__links.filter((link) => /\.reskin\.json$|^blob:/.test(link)))).toEqual([]);
 });
 
 test("where the script cannot show it runs apart from the page, there is no builder, and the note says so", async ({ manager }) => {
