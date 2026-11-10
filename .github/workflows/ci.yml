@@ -1,7 +1,7 @@
 name: Build
 
-# Builds, checks and packages the extension and userscript. It prepares downloadable artifacts
-# only; it never signs, uploads, submits or deploys anything.
+# Builds, checks and packages the extension and userscript, and runs the showcase site's gate. It
+# prepares downloadable artifacts only; it never signs, uploads, submits or deploys anything.
 on:
   push:
   pull_request:
@@ -49,5 +49,40 @@ jobs:
         if: failure()
         with:
           name: playwright-results
+          path: artifacts/e2e/
+          if-no-files-found: ignore
+
+  # The same site checks the Pages workflow runs before it deploys from main, so a site failure
+  # blocks a pull request instead of the deploy after the merge. The site build captures each
+  # theme's first paint in Chromium; the e2e also runs Firefox, and the recovery cases launch WebKit.
+  site:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+
+      - run: npm install --global npm@11.12.1
+
+      # Dependency and browser installation are the only steps that use the network. The browser
+      # downloads are cached by lockfile; their system dependencies are installed every run.
+      - run: npm ci
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - run: npx --no-install playwright install --with-deps chromium firefox webkit
+
+      - run: npm run check:site -- --production
+      - run: npm run check:budgets -- --surface=site
+      - run: npm run test:e2e -- --surface=site
+      - run: npm run check:a11y -- --surface=site
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: failure()
+        with:
+          name: site-playwright-results
           path: artifacts/e2e/
           if-no-files-found: ignore

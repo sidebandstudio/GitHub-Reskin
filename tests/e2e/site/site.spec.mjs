@@ -41,7 +41,38 @@ async function restingScroll(page) {
     last = now;
   }
 }
-const noOverflow = (page) => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth);
+// Null when the page does not scroll sideways. Otherwise both widths and each box that starts the
+// overflow: an element or text past the right edge whose parent is not, under no clipping ancestor
+// below the body.
+const sidewaysOverflow = (page) =>
+  page.evaluate(() => {
+    const { scrollWidth, clientWidth } = document.documentElement;
+    if (scrollWidth <= clientWidth) return null;
+    const past = (rect) => rect.width > 0 && rect.right > clientWidth + 0.5;
+    const name = (el) => el.tagName.toLowerCase() + (el.id ? `#${el.id}` : "") + [...el.classList].map((c) => `.${c}`).join("");
+    const where = (rect) => `at ${Math.round(rect.left)}-${Math.round(rect.right)}px, ${Math.round(rect.width)}px wide`;
+    const words = (text) => JSON.stringify(text.replace(/\s+/g, " ").trim().slice(0, 40));
+    const found = [];
+    const visit = (el) => {
+      // The body's overflow belongs to the viewport, so its overflow-x: clip does not stop this.
+      const style = getComputedStyle(el);
+      if (el !== document.body && (style.overflowX !== "visible" || style.clip !== "auto")) return;
+      for (const node of el.childNodes) {
+        if (node.nodeType === Node.TEXT_NODE && node.data.trim()) {
+          const range = document.createRange();
+          range.selectNodeContents(node);
+          const rect = range.getBoundingClientRect();
+          if (past(rect)) found.push(`text ${words(node.data)} in ${name(el)} ${where(rect)}`);
+        } else if (node.nodeType === Node.ELEMENT_NODE && getComputedStyle(node).position !== "fixed") {
+          const rect = node.getBoundingClientRect();
+          if (past(rect)) found.push(`${name(node)} ${words(node.textContent)} ${where(rect)} in ${name(el)}`);
+          else visit(node);
+        }
+      }
+    };
+    visit(document.body);
+    return `scrollWidth ${scrollWidth}px > clientWidth ${clientWidth}px; ${found.join("; ") || "no single box past the edge"}`;
+  });
 const host = (page, scope = "[data-window]") => page.locator(`${scope} [data-live] [data-reskin-preview]`);
 // Starts the live preview the way a visitor does, and waits for its first frame.
 async function goLive(page, touch = false) {
@@ -76,7 +107,7 @@ test.describe("phone first screen", () => {
     const keep = await page.locator(".hero-keep [data-open-keep]").boundingBox();
     expect(keep.y + keep.height).toBeLessThanOrEqual(844);
     await expect(page.locator(".hero-keep .hero-compat")).toContainText("Chrome and Firefox on desktop");
-    expect(await noOverflow(page)).toBe(true);
+    expect(await sidewaysOverflow(page)).toBeNull();
     await expect(page.locator(".nav .for-touch")).toBeVisible();
     await expect(page.locator(".nav .for-touch")).toHaveText("Keep for desktop");
   });
@@ -160,7 +191,7 @@ test("reflows at 320px without page-wide horizontal scrolling", async ({ page, s
   await page.setViewportSize({ width: 320, height: 640 });
   for (const path of ["", "themes/sunward-voyage/", "make/", "share/", "install/", "privacy/", "credits/", "404.html"]) {
     await page.goto(`${site}${path}`);
-    expect(await noOverflow(page), path).toBe(true);
+    expect(await sidewaysOverflow(page), `/${path} at 320px`).toBeNull();
   }
 });
 
@@ -601,14 +632,14 @@ for (const size of [{ width: 390, height: 844 }, { width: 430, height: 932 }]) {
         expect(box.top, part).toBeGreaterThanOrEqual(live.top);
         expect(box.bottom, part).toBeLessThanOrEqual(live.bottom);
       }
-      expect(await noOverflow(page)).toBe(true);
+      expect(await sidewaysOverflow(page)).toBeNull();
 
       // The whole page is the whole profile again.
       await page.locator("[data-expand]").click();
       await settled(page);
       const bio = await page.locator("[data-live] iframe[aria-hidden]").evaluate((frame) => frame.contentDocument.querySelector(".user-profile-bio").getBoundingClientRect().height);
       expect(bio).toBeGreaterThan(0);
-      expect(await noOverflow(page)).toBe(true);
+      expect(await sidewaysOverflow(page)).toBeNull();
     });
   });
 }
