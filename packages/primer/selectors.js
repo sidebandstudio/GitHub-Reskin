@@ -191,7 +191,14 @@ export function islandScope(covered, known, baseOf, branch) {
  * heading face never reach one. Names and titles: profile display name and username, organization
  * name, repository name and the owner and repository in the signed-in header, file and directory
  * names in the file heading, breadcrumbs, tree and listing, commit rows, release names, and the
- * gist author, name and file names (github.com, 2026-11-09).
+ * gist author, name and file names (github.com, 2026-11-09). Also, from a second logged-out pass
+ * on github.com on 2026-11-09: issue and pull request list titles, pinned discussion titles, the
+ * user, organization and repository a hovercard link names (discussion post and reply authors,
+ * fork owners, the sponsored account, a search result's repository), search result headings,
+ * the project's own name in the project app's top bar, its board column and card titles, wiki
+ * page titles, milestone names, a discussion category's heading, the branches in a comparison's
+ * branch buttons, the editor in a comment's edit history button, and a profile's repository list
+ * (itemprop "name codeRepository").
  */
 export const AUTHORED_ROOTS = Object.freeze([
   ".markdown-body",
@@ -218,7 +225,7 @@ export const AUTHORED_ROOTS = Object.freeze([
   ".user-profile-bio",
   ".p-note",
   ".vcard-names",
-  "[itemprop='name']",
+  "[itemprop~='name']",
   ".orghead h1",
   "[data-testid='repo-name-wrapper']",
   ".AppHeader-context-item",
@@ -235,4 +242,22 @@ export const AUTHORED_ROOTS = Object.freeze([
   "[data-pjax='#repo-content-pjax-container'] > h1",
   ".gist-blob-name",
   ".author",
+  "[data-testid='issue-listitem-title-link']",
+  "[data-testid='listitem-title-link']",
+  "[data-target='discussion-spotlight-container.mainLink']",
+  "[data-hovercard-type='user']",
+  "[data-hovercard-type='organization']",
+  "[data-hovercard-type='repository']",
+  "[data-testid='results-list'] h3",
+  // The project app's top bar names the project; GitHub's own React page titles are elsewhere.
+  "projects-v2 [role='navigation'][aria-label='Project'] h1",
+  "[data-board-column] h2",
+  "[id^='board-card-title-']",
+  "#wiki-wrapper .gh-header-title",
+  "a[href*='/milestone/']",
+  ".Subhead #discussions-list",
+  "summary.branch [data-menu-button]",
+  // A comment's edit history button reads "edited by" and the editor's login, with no element
+  // around the login.
+  "[data-target='edit-history.menuTrigger']",
 ]);

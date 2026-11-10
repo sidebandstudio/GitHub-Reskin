@@ -3,7 +3,11 @@
 // username, organization, repository name, pull request title, file name and README heading keep
 // their case and lowercase letterforms, while GitHub's own headings and tabs take the treatment.
 // The GitHub-like page carries GitHub's markup for each name as captured logged out on
-// github.com on 2026-11-09; the preview draws the same rules on its own fixture.
+// github.com on 2026-11-09, including issue and pull request list titles, pinned discussion
+// titles, discussion authors, a project's name, columns and cards, wiki titles, milestones,
+// search results, a discussion category, comparison branches, a comment's editor and a profile's
+// repository list;
+// the preview draws the same rules on its own fixture.
 import { PREFS, classic, expect, inFrame, mount, test } from "./helpers.mjs";
 
 // GitHub's markup for the names the adversarial page lacks.
@@ -13,7 +17,21 @@ const NAMES = `
 <nav class="UnderlineNav-body" aria-label="User profile"><a class="UnderlineNav-item" aria-current="page" href="#overview">Overview</a></nav>
 <h1 class="prc-PageHeader-Title" data-component="PH_Title"><bdi class="markdown-title" data-testid="issue-title">Keep colorPicker names in mixedCase</bdi> <span class="fgColor-muted">#19</span></h1>
 <div data-testid="breadcrumbs-filename"><span aria-hidden="true">/</span><h1 class="prc-Heading-Heading" data-component="Heading" id="file-name-id">color.js</h1></div>
-<article class="markdown-body"><h2 class="heading-element" dir="auto">Getting started with iOS</h2></article>`;
+<article class="markdown-body"><h2 class="heading-element" dir="auto">Getting started with iOS</h2></article>
+<ul role="list"><li><div><h3><a data-testid="issue-listitem-title-link" href="#issue"><span><span data-component="Text">Folder sessions show session changes rather than branch changes</span></span></a></h3></div></li></ul>
+<ul role="list"><li><div><h3><a data-testid="listitem-title-link" data-hovercard-type="pull_request" href="#pull"><span><span data-component="Text">sessions: preserve remote connection for folderless chats</span></span></a></h3></div></li></ul>
+<discussion-spotlight-container><div class="discussion-spotlight-container"><h3 class="mb-2"><a data-target="discussion-spotlight-container.mainLink" class="lh-condensed discussion-title Link--primary Link" href="#pinned">Companies / Sites using Next.js</a></h3></div></discussion-spotlight-container>
+<div class="timeline-comment"><h3 class="timeline-comment-header-text text-normal f5"><div class="d-flex flex-items-center Truncate"><a data-hovercard-type="user" data-hovercard-url="/users/Janpot/hovercard" href="#Janpot" class="Truncate Link--primary Link d-flex flex-items-center text-bold"><div class="d-flex flex-column Truncate"><span class="Truncate-text text-bold">Janpot</span></div></a> <a href="#reply" class="Link--secondary js-timestamp">Feb 22, 2020</a> <span class="Label">Maintainer</span></div></h3></div>
+<projects-v2 id="memex-root"><div role="navigation" aria-label="Project"><div><div><h1 data-component="Text">Agent Host Protocol</h1></div></div></div><div data-board-column="Up Next"><h2><span data-component="Text">Up Next</span></h2><h3 id="board-card-title-94967103" class="d-inline f5 text-normal"><span data-component="Text">Cross-repository milestones [GA]</span></h3></div></projects-v2>
+<h1 data-component="Text" class="own-react-title">Projects</h1>
+<div id="wiki-wrapper"><div class="gh-header"><h1 class="gh-header-title">Native Crash Issues</h1></div><h2 id="wiki-pages-box-heading">Pages</h2></div>
+<ul><li role="listitem"><div><h3><a href="/microsoft/vscode/milestone/470"><span>Backlog Candidates</span></a></h3></div></li></ul>
+<div data-testid="results-list"><div><h3><div><a data-component="Link" href="#repo" data-hovercard-type="repository"><span>hydy100/R3nzSkin</span></a></div><div><a data-component="Link" href="#result"><span data-component="Text">Hydy100 pls update reskin</span></a></div></h3></div></div>
+<div class="Subhead"><div class="flex-1"><h2 class="Subhead-heading h4" id="discussions-list"><span aria-hidden="true">🎓</span>Help <span>Discussions</span></h2></div></div>
+<details class="details-overlay select-menu"><summary class="branch Button--secondary Button--small Button"><span class="Button-content"><span class="Button-label"><span class="fgColor-muted text-bold">base:</span> <span class="css-truncate css-truncate-target" data-menu-button="">release/1.95</span></span></span></summary></details>
+<div><h3 class="wb-break-all"><a href="#codeRepository" itemprop="name codeRepository">dotfiles</a> <span class="Label Label--secondary">Public</span></h3></div>
+<span class="js-comment-edit-history"><edit-history><button role="button" data-target="edit-history.menuTrigger" type="button" class="Button--invisible Button--small Button"><span class="Button-content"><span class="Button-label">edited by ijjk</span></span></button></edit-history></span>
+<h2 class="f4"><a class="no-underline" data-hovercard-type="organization" href="#gitpod-io"><span class="f4 d-inline-block">gitpod-io</span></a></h2>`;
 
 // Each probe: its own text, the text as shown, and whether its face draws lowercase forms.
 const PROBE = (doc, selectors) =>
@@ -40,11 +58,33 @@ const AUTHORED = {
   title: "bdi.markdown-title",
   file: "#file-name-id",
   readme: "article.markdown-body h2.heading-element",
+  issueList: "a[data-testid='issue-listitem-title-link'] span[data-component='Text']",
+  pullList: "a[data-testid='listitem-title-link'] span[data-component='Text']",
+  pinnedDiscussion: "a.discussion-title",
+  discussionAuthor: ".timeline-comment-header-text .Truncate-text",
+  project: "projects-v2 h1[data-component='Text']",
+  projectColumn: "[data-board-column] h2 span",
+  projectCard: "[id^='board-card-title-'] span",
+  wiki: "#wiki-wrapper .gh-header-title",
+  milestone: "a[href*='/milestone/'] span",
+  searchRepository: "[data-testid='results-list'] [data-hovercard-type='repository'] span",
+  searchTitle: "[data-testid='results-list'] span[data-component='Text']",
+  category: ".Subhead #discussions-list",
+  branch: "summary.branch [data-menu-button]",
+  repositoryList: "a[itemprop='name codeRepository']",
+  organizationLink: "h2.f4 a[data-hovercard-type='organization'] span",
+  editor: "[data-target='edit-history.menuTrigger'] .Button-label",
 };
 const GITHUB = {
   pinned: ".js-pinned-items-reorder-container > h2.f4",
   contributions: ".js-yearly-contributions > h2",
   organizations: ".h-card h2.h4",
+  // GitHub's own words beside names: a role badge, a visibility label, a React page title outside
+  // the project app, and the wiki's page list.
+  badge: ".timeline-comment-header-text .Label",
+  visibility: "h3.wb-break-all > .Label",
+  reactTitle: "h1.own-react-title",
+  wikiPages: "#wiki-pages-box-heading",
 };
 
 const CASES = [
