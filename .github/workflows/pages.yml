@@ -31,9 +31,10 @@ jobs:
       - run: npm install --global npm@11.12.1
 
       # Dependency and browser installation are the only steps that use the network. The site
-      # build itself needs Chromium.
+      # build itself needs Chromium; the e2e runs Chromium and Firefox, and its recovery cases
+      # launch WebKit.
       - run: npm ci
-      - run: npx --no-install playwright install --with-deps chromium firefox
+      - run: npx --no-install playwright install --with-deps chromium firefox webkit
 
       - run: npm run check:site -- --production
       - run: npm run check:budgets -- --surface=site

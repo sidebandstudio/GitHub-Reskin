@@ -437,7 +437,9 @@ html:not(.js) .needs-js { display: none !important; }
   .hero-lede { font-size: 16px; }
   .hero-actions, .hero-side .hero-compat { display: none; }
   .stage { margin-top: 16px; gap: 8px; }
-  .viewer-controls { flex-wrap: nowrap; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+  /* One row when both groups fit. With wider system fonts (DejaVu Sans on Linux) they do not at
+     320px, and the second group wraps instead of pushing the page sideways. */
+  .viewer-controls { justify-content: space-between; gap: 8px; margin-bottom: 8px; }
   .seg span { min-width: 0; padding: 0 10px; font-size: 15px; }
   .viewer-foot { margin-top: 8px; gap: 8px; }
   .viewer-desc { display: none; }
