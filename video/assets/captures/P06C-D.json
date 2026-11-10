@@ -1,10 +1,10 @@
 {
-  "captured": "2026-11-10T03:10:21.007Z",
+  "captured": "2026-11-10T19:00:41.721Z",
   "browser": "Chromium 156.0.8078.4",
   "extension": {
     "name": "GitHub Reskin",
     "version": "1.1.0",
-    "commit": "3365cdc6bf6ad0cd182b807725681cd9f731e571",
+    "commit": "4f3d0eb1540d64e83ab93283b583d05299eabecb",
     "sourceDirty": false,
     "package": "npm run build:stores, dist/chrome unpacked"
   },
@@ -16,7 +16,7 @@
   "theme": "anime.frieren",
   "themeSource": {
     "file": "themes/anime/longroad-petals.reskin.json",
-    "sha256": "5e49519ad3bb2246685f9b382a454e1e89baf096175e6e4cc3c521dd7042ead6"
+    "sha256": "2d4024da465a4e3e7d89b1372ac53ffc9fdba05699aaa85f3bce55e514e7d14e"
   },
   "appearance": "full",
   "flavorText": true,
@@ -57,9 +57,9 @@
       "motion": true,
       "text": true
     },
-    "revision": 10,
+    "revision": 6,
     "selectedThemeId": "anime.frieren",
     "settingsVersion": 2
   },
-  "sha256": "26c3d3773ea3afe6c6ef4795e1f57512b9c8c0cc1515454379335e8cf204f7ed"
+  "sha256": "52e6e0da28fb256687dcc1de3185e7ad6d40b2915a761174e8d4215e6e0997d7"
 }

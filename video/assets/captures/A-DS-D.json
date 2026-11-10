@@ -1,10 +1,10 @@
 {
-  "captured": "2026-11-10T03:10:21.007Z",
+  "captured": "2026-11-10T19:00:41.721Z",
   "browser": "Chromium 156.0.8078.4",
   "extension": {
     "name": "GitHub Reskin",
     "version": "1.1.0",
-    "commit": "3365cdc6bf6ad0cd182b807725681cd9f731e571",
+    "commit": "4f3d0eb1540d64e83ab93283b583d05299eabecb",
     "sourceDirty": false,
     "package": "npm run build:stores, dist/chrome unpacked"
   },
@@ -16,7 +16,7 @@
   "theme": "anime.demon-slayer",
   "themeSource": {
     "file": "themes/anime/wisteria-emberline.reskin.json",
-    "sha256": "579773c0d9c6d3cf5360443d6f509460cdb944697c6ba916cb08206312a1a22c"
+    "sha256": "b5284af91959634bfaa8cd5f73cf72e8033d6f86b5254dfbdbb61185cf0c7453"
   },
   "appearance": "full",
   "flavorText": true,
@@ -52,9 +52,9 @@
       "motion": true,
       "text": true
     },
-    "revision": 7,
+    "revision": 3,
     "selectedThemeId": "anime.demon-slayer",
     "settingsVersion": 2
   },
-  "sha256": "3f02605440678cec3bd62238bcd3504b904794ac430b21c61822a344cdf551b2"
+  "sha256": "fd20fbc4ab6dc383f1df486c94d5921d248141547f4c37ebfac9d16e235ae8b0"
 }

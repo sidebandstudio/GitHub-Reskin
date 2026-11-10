@@ -1,10 +1,10 @@
 {
-  "captured": "2026-11-10T03:08:36.795Z",
+  "captured": "2026-11-10T18:59:59.123Z",
   "browser": "Chromium 156.0.8078.4",
   "extension": {
     "name": "GitHub Reskin",
     "version": "1.1.0",
-    "commit": "3365cdc6bf6ad0cd182b807725681cd9f731e571",
+    "commit": "4f3d0eb1540d64e83ab93283b583d05299eabecb",
     "sourceDirty": false,
     "package": "npm run build:stores, dist/chrome unpacked"
   },
@@ -16,7 +16,7 @@
   "theme": "anime.one-piece",
   "themeSource": {
     "file": "themes/anime/sunward-voyage.reskin.json",
-    "sha256": "4f0a86c1cc094cee5f3582b8ac1b3a3aa4bcbf443762f06e6ff0ca88c5892965"
+    "sha256": "46aa85993b947229f4dbc94da840a7e0d66e67a8f80609e275d10d6af5a7d748"
   },
   "appearance": "full",
   "flavorText": true,
@@ -52,9 +52,9 @@
       "motion": true,
       "text": true
     },
-    "revision": 9,
+    "revision": 5,
     "selectedThemeId": "anime.one-piece",
     "settingsVersion": 2
   },
-  "sha256": "f71c9c121f0d98e645acc6d9e242dda134f0edd645ab9b46f4a938b9a23f15cd"
+  "sha256": "def952ee84d27dedd1910f5644a958edbcc25336a068894de487434b35354978"
 }

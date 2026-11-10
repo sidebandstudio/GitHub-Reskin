@@ -1,10 +1,10 @@
 {
-  "captured": "2026-11-10T03:08:36.795Z",
+  "captured": "2026-11-10T18:59:59.123Z",
   "browser": "Chromium 156.0.8078.4",
   "extension": {
     "name": "GitHub Reskin",
     "version": "1.1.0",
-    "commit": "3365cdc6bf6ad0cd182b807725681cd9f731e571",
+    "commit": "4f3d0eb1540d64e83ab93283b583d05299eabecb",
     "sourceDirty": false,
     "package": "npm run build:stores, dist/chrome unpacked"
   },
@@ -16,7 +16,7 @@
   "theme": "anime.dandadan",
   "themeSource": {
     "file": "themes/anime/occult-orbit.reskin.json",
-    "sha256": "578f844bf13344abd5482dc07cfcb1a09811965955062cf597b0a354e247c3df"
+    "sha256": "e5f900f0d6c94fecac732c00e5b6c573c4a80bee43b681986c2839ac45d82fe1"
   },
   "appearance": "full",
   "flavorText": true,
@@ -52,9 +52,9 @@
       "motion": true,
       "text": true
     },
-    "revision": 10,
+    "revision": 6,
     "selectedThemeId": "anime.dandadan",
     "settingsVersion": 2
   },
-  "sha256": "036a3f4edae7a697049a6da93ce61b83dca6e69e7cfcaf5a476ec0214abaa42f"
+  "sha256": "7bdeb7e0cbc6559a144ae00a09f7606cdb0b1a1254c5b0aed8ff1f357c1d38eb"
 }

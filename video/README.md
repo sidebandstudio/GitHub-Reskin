@@ -104,17 +104,21 @@ It loads `dist/chrome` unpacked in a fresh logged-out Chromium profile and picks
 setting with the popup page's own controls. Presets are V (390x844 CSS px, DPR 3), D
 (1440x1000, DPR 2) and the popup (400x600, DPR 3). Each `<id>.png` has `<id>.json` beside it with
 the URL, theme and its source hash, Full or Calm, extension commit, viewport, scroll rule and
-resolved scroll, date and the PNG's SHA-256. The current set was taken on November 9, 2026 from the
-extension as built on this branch after merging main at fb010c6 (all 13 anime themes). Vertical
+resolved scroll, date and the PNG's SHA-256. The set was taken on November 9, 2026 from the
+extension as built on this branch after merging main at fb010c6 (all 13 anime themes). The 13
+shots of themes whose files changed after that, with the seal fixes, were retaken on November 10
+from main at 18842a0: A-CSM, A-DS, A-OP, P04 and P06 in both sizes, A-SXF-V, P05-V and P06C-D. Vertical
 crops stay above the owner's README image so the theme carries the frame; the landscape shots show
 it as ordinary page content. Popup crops are scaled so native 15 px labels render at 28 px or more.
 
-After recapturing, run `npm run check:video`: it fails if a PNG no longer matches its manifest.
+After recapturing, run `npm run check:video`: it fails if a PNG no longer matches its manifest, or
+if the theme file a capture recorded has changed since. Recapture those with `--only <ids>` and
+remake their backdrops.
 
 ## Rights
 
-`assets/rights.json` covers every file in `assets/`; `check:video` fails on a file without an entry
-or an entry that matches nothing.
+`assets/rights.json` covers every file in `assets/`; `check:video` fails on a file without an entry,
+an entry that matches nothing, or a sound without its own record in `audio/rights.json`.
 
 - Captures and their backdrops: this project's own screenshots of its product. GitHub's interface
   and the public profile and repository content shown belong to their owners and appear unchanged.

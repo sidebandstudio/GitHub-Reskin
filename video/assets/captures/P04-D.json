@@ -1,10 +1,10 @@
 {
-  "captured": "2026-11-10T03:10:21.007Z",
+  "captured": "2026-11-10T19:00:41.721Z",
   "browser": "Chromium 156.0.8078.4",
   "extension": {
     "name": "GitHub Reskin",
     "version": "1.1.0",
-    "commit": "3365cdc6bf6ad0cd182b807725681cd9f731e571",
+    "commit": "4f3d0eb1540d64e83ab93283b583d05299eabecb",
     "sourceDirty": false,
     "package": "npm run build:stores, dist/chrome unpacked"
   },
@@ -16,7 +16,7 @@
   "theme": "anime.evangelion",
   "themeSource": {
     "file": "themes/anime/violet-synchrony.reskin.json",
-    "sha256": "23a96a1896557ab649f716c8409cd219709eb0aca0a56ef40f9eec3d47b790d1"
+    "sha256": "7c6aaef361de87f78b0d040ea047a218be804722b673b9ca5c51a54878ba1ddd"
   },
   "appearance": "full",
   "flavorText": true,
@@ -52,9 +52,9 @@
       "motion": true,
       "text": true
     },
-    "revision": 3,
+    "revision": 1,
     "selectedThemeId": "anime.evangelion",
     "settingsVersion": 2
   },
-  "sha256": "eb6aea1a3c07c4d02e83b2e4c49f3273dab4e676aa4e60805ce2b5f123069dec"
+  "sha256": "9f0b1c822e797003b6b4052b905ec6855e4616044ac2f9be5a6f972c07326a2a"
 }
