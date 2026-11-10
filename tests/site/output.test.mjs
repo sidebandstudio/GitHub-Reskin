@@ -37,6 +37,13 @@ describe("routes and paths", () => {
     for (const route of ROUTES) assert.ok(page(route)?.includes("<h1"), `${BASE}${route} is missing or has no h1`);
   });
 
+  test("the userscript is published at the address its @updateURL names", async () => {
+    const { build, updateUrl } = await import("../../userscript/build.mjs");
+    const file = `downloads/${release.userscript.output}`;
+    assert.equal(`${CANONICAL}${file}`, updateUrl(release));
+    assert.equal(await read(dir, file), await build());
+  });
+
   test("a branded, base-aware 404 page offers a way back to the themes", () => {
     const html = pages.get("404.html");
     assert.ok(html, "404.html is missing");

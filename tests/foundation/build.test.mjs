@@ -38,11 +38,11 @@ test("the browser packages carry their source files unchanged", async () => {
   });
 });
 
-test("the built userscript is the committed one", async () => {
+test("the userscript target writes what userscript/build.mjs generates", async () => {
   await withTempDir(async (tmp) => {
     const { dir } = await build({ target: "userscript", outDir: tmp });
-    const committed = (await readFile(join(ROOT, "userscript/github-reskin.user.js"), "utf8")).replace(/\r\n/g, "\n");
-    assert.equal(await readFile(join(dir, "github-reskin.user.js"), "utf8"), committed);
+    const { build: generate } = await import("../../userscript/build.mjs");
+    assert.equal(await readFile(join(dir, "github-reskin.user.js"), "utf8"), await generate());
   });
 });
 

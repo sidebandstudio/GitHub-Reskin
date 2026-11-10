@@ -11,7 +11,8 @@ import { backgroundRendering, CSS_ADMISSION } from "../../../packages/ui/rendere
 import { ROOT } from "../../../scripts/build.mjs";
 import { STATE_KEY, expect, painted, settingsOf, test } from "./helpers.mjs";
 
-// Settings with a saved copy of Choom Circuit, its CSS approved, selected; made by the repository.
+// Settings with a saved copy of Choom Circuit, its CSS approved, selected; made by the repository
+// as the extension's builder would make them.
 async function approvedCopy() {
   const catalog = catalogFromData(catalogData(await readCatalogEntries(ROOT)));
   const values = new Map();
@@ -25,8 +26,13 @@ async function approvedCopy() {
   const document = { ...structuredClone(catalog.document(DEFAULT_THEME_ID)), name: "My Choom" };
   let settings = (await repository.commit({ type: "saveCustom", document, basedOn: DEFAULT_THEME_ID, select: true }, 0)).settings;
   const id = settings.selectedThemeId;
-  const { hash, sanitizerVersion } = CSS_ADMISSION.inspect(document).css;
-  settings = (await repository.commit({ type: "setCssConsent", id, granted: true, hash, sanitizerVersion }, settings.revision)).settings;
+  // As the extension's builder grants it: a ticket for exactly this CSS, redeemed by the builder
+  // document that asked for it.
+  const origin = { document: "extension-settings-document" };
+  const editor = randomUUID().replace(/-/g, "");
+  const { approval } = await repository.commit({ type: "approveCss", editor, target: id, css: document.css }, settings.revision, origin);
+  settings = (await repository.commit({ type: "setCssConsent", id, granted: true, editor, approval: approval.ticket }, settings.revision, origin)).settings;
+  expect(settings.cssConsent[id]?.hash).toBe(CSS_ADMISSION.inspect(document).css.hash);
   return { seed: { [STATE_KEY]: { format: 1, stamp: "seed:1", lineage: [], records: { "reskin.settings": settings } } }, id };
 }
 

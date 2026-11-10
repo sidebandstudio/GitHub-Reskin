@@ -20,22 +20,24 @@ A build from source doesn't update itself. Pull and build again to update.
 
 ### Userscript for Safari and other browsers
 
-Safari can't load the extension, and Firefox drops an unsigned one when it restarts. For those browsers, GitHub Reskin also comes as a userscript built from the same code as the extension. It has the same themes, Full and Calm, and the same picker card, and it stays installed.
+Safari can't load the extension, and Firefox drops an unsigned one when it restarts. For those browsers, GitHub Reskin also comes as a userscript built from the same code as the extension. It has the same themes, Full and Calm, the same picker card and the same theme builder, and it stays installed.
 
 1. Install a userscript manager. In Firefox, use [Violentmonkey](https://violentmonkey.github.io) or [Tampermonkey](https://www.tampermonkey.net). In Safari on a Mac, iPhone or iPad, use [Userscripts](https://github.com/quoid/userscripts) or Tampermonkey. Safari asks you to turn the extension on in its settings and allow it on github.com.
-2. Open [github-reskin.user.js](https://raw.githubusercontent.com/sidebandstudio/GitHub-Reskin/main/userscript/github-reskin.user.js) and install it from your manager's prompt. In Userscripts, the prompt is under its toolbar button.
+2. Open [github-reskin.user.js](https://sidebandstudio.github.io/GitHub-Reskin/downloads/github-reskin.user.js) and install it from your manager's prompt. In Userscripts, the prompt is under its toolbar button.
 3. Reload any GitHub or Gist tabs you already had open.
 
 To pick a theme, choose Open GitHub Reskin from your manager's menu. Userscripts has no menu, so open `https://github.com/#reskin` instead. A theme applies as soon as you click it, and Undo puts the previous one back. Press Escape, click Close or click the page to close the card.
 
+Make a theme on the card opens the extension's builder in a wider panel: three colors to start, then fonts, effects, flavor text, backgrounds with gradients, patterns and your own images, shape and type, graph and code colors, and details, with one-change Undo and a preview of GitHub that never touches the page until you save. Import takes a chatbot's answer, a theme file or a share code, and Export and share gives the file, the theme JSON or a share code. Copy AI prompt is there too. Your unsaved draft is kept, so closing the panel or reloading GitHub doesn't lose it. Backup & help lists your saved themes to export or remove.
+
 What differs by manager:
 
 - Tampermonkey and Violentmonkey save your choice in the manager's storage, and other GitHub tabs follow a change at once. Managers with only `GM.getValue`, like Userscripts, save it too, and other tabs pick it up when you switch back to them.
-- A manager that gives the script no storage gets a labeled session preview: themes apply until you reload, and Export theme file saves the theme you chose.
-- GitHub's page only allows its own fonts, so on github.com the themes' fonts fall back to your system's. The picker's previews show the same fallback.
-- These settings are separate from the extension's. Export theme file is the way to carry a theme between them. The theme builder and import aren't in the userscript yet.
-- The card's controls appear only when the script can confirm that GitHub's own scripts can't reach it. Violentmonkey's content mode, Tampermonkey's sandbox and Userscripts run it that way. If your manager runs the script inside GitHub's page, or the script can't tell, the card only shows the current theme. You then change settings from the manager's menu: on or off, Full or Calm, extra theme text, motion, and one entry per theme, listed by anime title first. Inside the page, a GitHub script that replaces the browser's built-in functions could still interfere with what a menu change saves.
-- Advanced CSS in your own themes stays off in the userscript, and nothing in it can turn that CSS on. The bundled themes keep their reviewed CSS.
+- A manager that gives the script no storage gets a labeled session preview: themes apply until you reload, and Export theme file saves the theme you chose. Themes you make there last until the tab closes, so download them to keep them.
+- GitHub's page only allows its own font files, so the script hands each theme's fonts to the browser from bytes it carries. Where a browser or manager refuses that, your system's fonts stand in. The builder's preview always uses your system's fonts.
+- These settings are separate from the extension's. Theme files are the way to carry a theme between them.
+- The card's controls appear only when the script can confirm that GitHub's own scripts can't reach it. Violentmonkey's content mode, Tampermonkey's sandbox and Userscripts run it that way. If your manager runs the script inside GitHub's page, or the script can't tell, it doesn't read or save the manager's storage at all, because GitHub's code could reach it there. The card only shows the current theme, there is no builder or import, and the manager's menu changes settings until you reload: on or off, Full or Calm, extra theme text, motion, and one entry per theme, listed by anime title first.
+- Advanced CSS in your own themes stays off in the userscript, and nothing in it can turn that CSS on. A theme you import that carries CSS keeps it, and the builder shows it with a note that custom CSS needs the extension. The bundled themes keep their reviewed CSS.
 - GitHub tabs save one at a time, so a change in one tab never silently undoes a change made in another at the same moment. If a tab stays busy, the change fails and offers Retry. github.com and gist.github.com can't take turns this way. Between them the script checks the saved settings just before it writes, but a write the manager delivers late can still replace the other tab's.
 - The card is drawn above everything else on GitHub's page, and it closes or ignores the click when the page puts its own element over it. GitHub's page still controls what is drawn around the card. A page script could hide an element over the card where the script can't see it and give a real control a misleading label. That reaches only these theme settings on GitHub. For the full protections, use the extension.
 
@@ -86,7 +88,7 @@ Themes live in `themes/anime` and `themes/classics` as `.reskin.json` files, lis
 
 GitHub's standard mode colors live in `vendor/primer`, a frozen snapshot. `node scripts/refresh-primer.mjs` fetches a newer one for review.
 
-The userscript in `userscript/github-reskin.user.js` is generated from the same packages by `userscript/build.mjs`. After changing anything it embeds, run `node userscript/build.mjs`. `npm test` fails while the userscript is out of date. Userscript managers only install an update when its version goes up, so raise `version` in `release.config.json` when you change what users see.
+The userscript is generated from the same packages by `userscript/build.mjs`. `npm run build:userscript` writes it to `dist/userscript/`, and the site build publishes it on Pages at the address its `@updateURL` names. `userscript/github-reskin.user.js` is a frozen copy, version 1.1.1, that moves installs of the first userscripts (1.0.0 and 1.1.0) to that address, so leave it as it is. Userscript managers only install an update when its version goes up, so raise `version` in `release.config.json` when you change what users see.
 
 ## Contribution graph for your profile
 
