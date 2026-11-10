@@ -68,7 +68,11 @@ async function copyTree(from, to) {
  * the paths siteResources(base) resolves.
  */
 export async function copyRuntimeFiles(dir) {
-  await copyTree(join(ROOT, "assets/fonts"), join(dir, "assets/fonts"));
+  // One folder per family, with its WOFF2 files and license; the acquisition script, README and
+  // provenance record beside them stay in the repository.
+  for (const item of await readdir(join(ROOT, "assets/fonts"), { withFileTypes: true })) {
+    if (item.isDirectory()) await copyTree(join(ROOT, "assets/fonts", item.name), join(dir, "assets/fonts", item.name));
+  }
   await copyTree(join(ROOT, "packages/preview/fixture/assets"), join(dir, "packages/preview/fixture/assets"));
   // The fixture's own notices, for the credits page.
   await mkdir(join(dir, "licenses"), { recursive: true });

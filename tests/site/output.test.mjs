@@ -7,6 +7,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { after, before, describe, test } from "node:test";
 import { CATALOG } from "../../site/src/catalog.mjs";
+import { FONTS } from "../../packages/appearance/registry.js";
 import { BASE, ROOT, links, listFiles, read, siteDir } from "./helpers.mjs";
 
 const release = JSON.parse(await readFile(join(ROOT, "release.config.json"), "utf8"));
@@ -53,6 +54,16 @@ describe("routes and paths", () => {
       "editing-suite", "dracula", "nord", "catppuccin-mocha", "gruvbox", "tokyo-night", "rose-pine", "one-dark",
       "solarized-dark", "catppuccin-latte", "rose-pine-dawn", "solarized-light",
     ]);
+    // The gallery and both pickers list the themes in the catalog's order, on every page that has them.
+    const slugs = CATALOG.map((t) => t.slug);
+    for (const route of ["", ...CATALOG.map((t) => `themes/${t.slug}/`)]) {
+      const html = page(route);
+      const all = (attr) => [...html.matchAll(new RegExp(`${attr}="([a-z0-9-]+)"`, "g"))].map((m) => m[1]);
+      assert.deepEqual(all("data-card"), slugs, `${route} gallery`);
+      const options = all("data-select");
+      assert.equal(options.length % slugs.length, 0, `${route} pickers`);
+      for (let i = 0; i < options.length; i += slugs.length) assert.deepEqual(options.slice(i, i + slugs.length), slugs, `${route} picker`);
+    }
   });
 
   test("every internal link and asset is under the base path and resolves, including fragments", () => {
@@ -208,9 +219,11 @@ describe("content and honesty", () => {
 
 describe("offline preview and requests", () => {
   test("the live preview's packaged fonts and fixture images ship at the paths the site resource adapter resolves", () => {
-    for (const font of ["rajdhani", "barlow-condensed", "bungee", "fraunces", "alegreya", "cormorant-garamond", "josefin-sans", "space-grotesk"]) {
-      assert.ok(files.includes(`assets/fonts/${font}/${font}.woff2`) && files.includes(`assets/fonts/${font}/OFL.txt`), font);
-    }
+    // Every bundled family at every reviewed weight, with its license, and nothing else from
+    // assets/fonts: its acquisition script, README and provenance record stay in the repository.
+    const expected = FONTS.flatMap((font) => [...font.files.map((file) => file.path), font.license]).sort();
+    assert.equal(FONTS.length, 18);
+    assert.deepEqual(files.filter((file) => file.startsWith("assets/fonts/")).sort(), expected);
     assert.ok(files.includes("packages/preview/fixture/assets/avatar-whoisaldo.webp"));
     assert.ok(files.includes("licenses/OFL-Chakra-Petch.txt") && files.includes("licenses/OFL-JetBrains-Mono.txt"));
   });

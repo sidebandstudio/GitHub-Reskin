@@ -11,6 +11,8 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, test as base } from "../../helpers/e2e.mjs";
 import { encodeShare } from "../../../packages/format/viewer.js";
+import { makeAiPrompt } from "../../../packages/format/index.js";
+import { FONT_BY_ID } from "../../../packages/appearance/registry.js";
 
 const ROOT = fileURLToPath(new URL("../../../", import.meta.url));
 const SITE = process.env.RESKIN_SITE_DIR || join(ROOT, "dist/site");
@@ -328,7 +330,7 @@ test("Copy AI prompt reports Prompt copied after the clipboard accepts it, and t
   await page.goto(site);
   await page.getByRole("button", { name: "Copy AI prompt" }).click();
   await expect(page.locator("[data-copy-status]")).toContainText("Prompt copied");
-  expect(await page.evaluate(() => window.__copied)).toContain("Create ONE rich GitHub Reskin theme");
+  expect(await page.evaluate(() => window.__copied)).toBe(makeAiPrompt());
   await expect(page.getByRole("link", { name: "Paste your chatbot answer" })).toHaveAttribute("href", "/GitHub-Reskin/make/#answer");
   await expect(page.getByRole("link", { name: "Try a sample answer" })).toHaveAttribute("href", "/GitHub-Reskin/make/#sample");
 });
@@ -438,6 +440,105 @@ test("a copied preview link opens on the share page with Advanced CSS off", asyn
   await expect(page.getByLabel("Enable advanced CSS in this preview")).not.toBeChecked();
   await expect(page.locator('[data-window][data-preview="live"]')).toHaveCount(1, { timeout: 20000 });
   await expect(page.getByRole("button", { name: "Download Midnight signal" })).toBeVisible();
+});
+
+// The site paths of every reviewed weight of a theme's heading and body families.
+const fontFiles = (theme) => [...new Set([theme.fonts?.heading, theme.fonts?.body])].filter((id) => FONT_BY_ID[id]).flatMap((id) => FONT_BY_ID[id].files.map((file) => `/GitHub-Reskin/${file.path}`)).sort();
+const fontRequests = (page) => {
+  const seen = [];
+  page.on("request", (request) => {
+    const url = new URL(request.url());
+    if (url.pathname.endsWith(".woff2")) seen.push(url);
+  });
+  return seen;
+};
+const theme = (slug) => JSON.parse(readFileSync(join(ROOT, `themes/anime/${slug}.reskin.json`), "utf8"));
+
+test("the live preview loads the shown theme's heading and body fonts from the site's own files, only once a visitor reaches for it", async ({ page, site }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const fonts = fontRequests(page);
+  const all = fontRequests(page);
+  await page.goto(site, { waitUntil: "networkidle" });
+  // First paint is a picture: the site's own face only.
+  expect(fonts.map((url) => url.pathname)).toEqual([expect.stringMatching(/^\/GitHub-Reskin\/_assets\/manrope-latin\.[^/]+\.woff2$/)]);
+  fonts.length = 0;
+  await goLive(page);
+  await settled(page);
+  expect(fonts.map((url) => url.pathname).sort()).toEqual(fontFiles(CHOOM));
+  // A switch loads only the new theme's families; Calm keeps the same fonts and loads nothing.
+  fonts.length = 0;
+  await page.locator('[data-card="sunward-voyage"] [data-theme]').click();
+  await settled(page);
+  expect(fonts.map((url) => url.pathname).sort()).toEqual(fontFiles(theme("sunward-voyage")));
+  fonts.length = 0;
+  await page.locator(".seg label", { hasText: "Calm" }).click();
+  await settled(page);
+  expect(fonts).toEqual([]);
+  expect(fontFiles(theme("sunward-voyage")).some((path) => path.includes("/fraunces/"))).toBe(true);
+  for (const url of all) expect(url.origin).toBe(new URL(site).origin);
+});
+
+test("Calm drops a theme's backgrounds, paper texture and effects, and keeps its fonts", async ({ page, site }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(`${site}themes/longroad-petals/`);
+  await goLive(page);
+  await settled(page);
+  // The newest styled frame: an update replaces it, so both can be present for a moment.
+  const styled = () => page.locator("[data-live] iframe:not([aria-hidden])").last().getAttribute("srcdoc");
+  const faces = (doc) => doc.match(/@font-face\{[^}]*\}/g) ?? [];
+  const full = await styled();
+  expect(full).toMatch(/gradient\(/);
+  expect(faces(full).some((face) => face.includes('"Reskin Alegreya"'))).toBe(true);
+  await page.locator(".seg label", { hasText: "Calm" }).click();
+  await expect.poll(async () => (await styled()) !== full).toBe(true);
+  await settled(page);
+  const calm = await styled();
+  expect(calm).not.toMatch(/gradient\(/);
+  expect(faces(calm)).toEqual(faces(full));
+});
+
+test("a theme file with fonts, gradient and image layers and CSS imports and shares with its image and CSS disclosures", async ({ page, site }) => {
+  await stubClipboard(page, true);
+  const images = JSON.parse(readFileSync(join(ROOT, "tests/fixtures/schema/valid/embedded-images.reskin.json"), "utf8"));
+  const doc = {
+    ...images,
+    name: "Lantern harbor",
+    inspiredBy: "An original harbor at dusk",
+    fonts: { heading: "fraunces", body: "barlow" },
+    backgrounds: {
+      ...images.backgrounds,
+      page: { layers: [{ gradient: { type: "linear", angle: 180, stops: [{ color: "#e9dfc8", position: 0 }, { color: "#f6f2e8", position: 100 }], opacity: 0.6 } }, ...images.backgrounds.page.layers] },
+    },
+    css: '[data-reskin-slot="profile.tag"] { letter-spacing: 0.02em; }',
+  };
+  const fonts = fontRequests(page);
+  await page.goto(`${site}make/`);
+  await page.locator("[data-file]").setInputFiles({ name: "lantern-harbor.reskin.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(doc)) });
+  await expect(page.locator("[data-import-status]")).toHaveText("Theme ready to preview.");
+  await expect(page.locator("[data-make-name]")).toHaveText("An original harbor at dusk: Lantern harbor");
+  await expect(page.locator("[data-images]")).toHaveText(/^This theme embeds 3 images, .* in all\. Its file and preview link include them, and anyone you share them with can save them\.$/);
+  await expect(page.locator("[data-css-review]")).toBeVisible();
+  await expect(page.getByLabel("Enable advanced CSS in this preview")).not.toBeChecked();
+  await expect(page.locator('[data-window][data-preview="live"]')).toHaveCount(1, { timeout: 20000 });
+  await settled(page);
+  // Beside the site's own face, which the page itself uses.
+  expect(fonts.map((url) => url.pathname).filter((path) => path.startsWith("/GitHub-Reskin/assets/fonts/")).sort()).toEqual(fontFiles(doc));
+  const download = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Download Lantern harbor" }).click();
+  const saved = JSON.parse(readFileSync(await (await download).path(), "utf8"));
+  expect(saved.fonts).toEqual(doc.fonts);
+  expect(saved.backgrounds.page.layers).toHaveLength(2);
+
+  await page.getByRole("button", { name: "Copy preview link" }).click();
+  await expect(page.locator("[data-export-status]")).toContainText("Preview link copied");
+  const link = await page.evaluate(() => window.__copied);
+  await page.goto(`${site}share/${new URL(link).hash}`);
+  await expect(page.locator("[data-share-name]")).toHaveText("An original harbor at dusk: Lantern harbor");
+  await expect(page.locator("[data-images]")).toHaveText("This theme embeds 3 images. Its file and share code include them.");
+  await expect(page.locator("[data-css-review]")).toBeVisible();
+  await expect(page.getByLabel("Enable advanced CSS in this preview")).not.toBeChecked();
+  await expect(page.locator('[data-window][data-preview="live"]')).toHaveCount(1, { timeout: 20000 });
+  await settled(page);
 });
 
 test("a damaged share code says so", async ({ page, site }) => {

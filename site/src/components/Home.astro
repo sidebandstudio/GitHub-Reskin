@@ -15,6 +15,7 @@ const { slug, home = false } = Astro.props;
 const theme = themeBySlug(slug);
 const shots = theme.captures;
 const animeList = ANIME.map((t) => t.anime);
+const descriptions = [...new Set(THEMES.map((t) => t.description))];
 const data = {
   base: BASE,
   canonical: CANONICAL,
@@ -83,7 +84,12 @@ const data = {
           <label><input type="radio" name="appearance" value="calm" /><span>Calm</span></label>
         </fieldset>
         <button class="btn btn-small needs-js" type="button" data-expand aria-expanded="false">Show the whole page</button>
-        <p class="viewer-desc" data-selected="description">{theme.description}</p>
+        {/* Every description sits in the same cell, unseen, so the box is as tall as the longest at
+            any width and a theme switch never moves what is below it. */}
+        <div class="viewer-desc">
+          <p data-selected="description">{theme.description}</p>
+          {descriptions.map((text) => <p class="desc-room" aria-hidden="true">{text}</p>)}
+        </div>
       </div>
       <div class="hero-keep">
         <a class="btn btn-primary for-touch" href="#keep" data-open-keep>Keep this theme for desktop</a>
@@ -119,7 +125,7 @@ const data = {
     <div>
       <div class="section-head">
         <h2 id="extras-title">Still your GitHub.</h2>
-        <p>Full is the whole theme: its fonts, effects and lines such as the profile tag. Calm keeps every color and the graph, and drops the extras. One switch in the extension.</p>
+        <p>Full is the whole theme: its backgrounds and images, effects and lines such as the profile tag. Calm keeps every color, the fonts and the graph, and drops the extras. One switch in the extension.</p>
       </div>
       <ul class="facts">
         <li><Icon name="check" /><span><b>Buttons keep their words.</b> GitHub's own labels, such as Pinned, Code and Pull requests, stay as they are. Theme lines are added beside them.</span></li>
@@ -138,7 +144,7 @@ const data = {
           <img src={shots.calm.src} width={shots.calm.width} height={shots.calm.height} alt={`${theme.name} in Calm`} loading="lazy" decoding="async" data-compare="calm" />
         </div>
       </div>
-      <figcaption id="compare-caption"><span data-selected="name">{theme.name}</span> on the same profile. Full adds the theme's own lines and decoration; Calm keeps the colors.</figcaption>
+      <figcaption id="compare-caption"><span data-selected="name">{theme.name}</span> on the same profile. Full adds the theme's backgrounds, effects and lines; Calm keeps its colors and fonts.</figcaption>
       <div class="lines" data-selected="lines" hidden={!theme.profileLines.length}>
         <p class="lines-title">Lines Full adds to a profile</p>
         <dl>{theme.profileLines.map(([label, text]) => <div><dt>{label}</dt><dd>{text}</dd></div>)}</dl>
@@ -168,7 +174,7 @@ const data = {
         <noscript><p class="hero-compat">The prompt is on the <a href={href("make/")}>Make a theme</a> page.</p></noscript>
       </div>
       <ol class="steps">
-        <li><div><b>Copy the prompt</b><p>It describes the theme format: colors, backgrounds, fonts, code colors and optional CSS.</p></div></li>
+        <li><div><b>Copy the prompt</b><p>It describes the theme format: colors, backgrounds and patterns, heading and body fonts, shapes, code and graph colors, and optional CSS that stays off until you approve it.</p></div></li>
         <li><div><b>Describe your theme</b><p>Paste it into ChatGPT, Gemini, Claude, Copilot or another chatbot, and add your idea.</p></div></li>
         <li><div><b>Paste the answer on Make a theme</b><p>You see the preview and any readability fixes, then download the file. Import in GitHub Reskin works the same way.</p></div></li>
       </ol>

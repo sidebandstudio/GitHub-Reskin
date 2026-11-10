@@ -204,7 +204,9 @@ a:hover { text-decoration-color: var(--brand); }
 .spinner { width: 14px; height: 14px; border: 2px solid var(--control); border-top-color: var(--brand); border-radius: 50%; animation: spin 800ms linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .viewer-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; margin-top: 12px; }
-.viewer-desc { flex: 1 1 320px; color: var(--text-2); font-size: 16px; }
+.viewer-desc { flex: 1 1 320px; display: grid; color: var(--text-2); font-size: 16px; }
+.viewer-desc > p { grid-area: 1 / 1; }
+.desc-room { visibility: hidden; }
 .hero-keep { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-top: 16px; }
 .hero-keep .hero-compat { margin: 0; }
 .nojs-note { margin-top: 10px; color: var(--caption); font-size: 14px; }
