@@ -13,7 +13,7 @@
 // Until a routed module and its run export exist the check fails with exit 2 and NOT IMPLEMENTED,
 // so a gate never passes empty.
 import { execFileSync, spawnSync } from "node:child_process";
-import { existsSync, readFileSync, realpathSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { readFile, readdir } from "node:fs/promises";
 import { join, relative, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -370,6 +370,8 @@ if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.me
   const [name, ...rest] = process.argv.slice(2);
   // npm removes its own "--"; one typed directly after the command is the same separator.
   const args = rest[0] === "--" ? rest.slice(1) : rest;
-  const { exitCode } = await dispatch(name, args);
-  process.exitCode = exitCode;
+  const result = await dispatch(name, args);
+  // check:release runs each step as its own process and reads the result from this file.
+  if (process.env.RESKIN_CHECK_RESULT) writeFileSync(process.env.RESKIN_CHECK_RESULT, JSON.stringify(result));
+  process.exitCode = result.exitCode;
 }
