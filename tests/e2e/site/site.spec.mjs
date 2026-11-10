@@ -114,6 +114,9 @@ test.describe("phone first screen", () => {
 
   test("the chooser opens over the preview with all 13 anime and the Classics, and a choice applies in place", async ({ page, site }) => {
     await page.goto(site);
+    // The stage rises in after load. A click on a moving option is retried, and a late retry
+    // scrolls the option to the top of the page, which would move the chooser out of view.
+    await expect.poll(() => page.locator("#preview").evaluate((stage) => stage.getAnimations().every((a) => a.playState === "finished"))).toBe(true);
     const chooser = page.locator("[data-picker]");
     await chooser.locator("> summary").click();
     const options = chooser.locator(".drop-panel > .picker-list .pick");
