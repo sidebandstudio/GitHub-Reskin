@@ -19,17 +19,23 @@
 //
 // One panel at a time. It opens from the manager's menu or an address ending in #reskin, takes
 // focus, and closes with Escape, its Close button, a click on the page or the menu again. Escape
-// and Close return focus to whatever had it when the panel opened. Closing removes the host,
+// and Close return focus to whatever had it when the panel opened. The card can switch the panel
+// to the builder (Make a theme, Backup & help), a wider frame with its own document; switching
+// keeps that focus to return to. Escape inside the builder's import dialog closes the dialog only. Closing removes the host,
 // disconnects the ResizeObserver and every listener, and drops #reskin from the address. Only a
 // person's events count: synthetic page events neither close it nor reach it.
 export const PANEL_HASH = "#reskin";
 export const PANEL_ATTRIBUTE = "data-reskin-userscript-panel";
 const GAP = 16;
 const WIDTH = 400;
+// The builder's width: the settings page's Make a theme at its widest.
+const WIDE = 1120;
+export const BUILDER_MODES = Object.freeze(["make", "backup"]);
 
 // The host's box, fixed against page styles: shadow-context !important declarations outrank the
-// page's, inline and !important ones included.
-export const HOST_CSS = `:host{all:initial!important;display:block!important;position:fixed!important;top:${GAP}px!important;right:${GAP}px!important;left:auto!important;bottom:auto!important;z-index:2147483647!important;width:min(${WIDTH}px,calc(100vw - ${2 * GAP}px))!important;height:auto!important;margin:0!important;padding:0!important;border:0!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;transform:none!important;filter:none!important;clip-path:none!important;mask:none!important}iframe{display:block;width:100%;height:0;max-height:calc(100vh - ${2 * GAP}px);margin:0;padding:0;border:0;border-radius:12px;background:#0c0f14;color-scheme:dark;box-shadow:0 0 0 1px rgb(128 128 128 / 35%),0 8px 24px rgb(0 0 0 / 40%)}`;
+// page's, inline and !important ones included. The builder's modes take the wider box.
+export const hostCss = (mode) =>
+  `:host{all:initial!important;display:block!important;position:fixed!important;top:${GAP}px!important;right:${GAP}px!important;left:auto!important;bottom:auto!important;z-index:2147483647!important;width:min(${BUILDER_MODES.includes(mode) ? WIDE : WIDTH}px,calc(100vw - ${2 * GAP}px))!important;height:auto!important;margin:0!important;padding:0!important;border:0!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;transform:none!important;filter:none!important;clip-path:none!important;mask:none!important}iframe{display:block;width:100%;height:0;max-height:calc(100vh - ${2 * GAP}px);margin:0;padding:0;border:0;border-radius:12px;background:#0c0f14;color-scheme:dark;box-shadow:0 0 0 1px rgb(128 128 128 / 35%),0 8px 24px rgb(0 0 0 / 40%)}`;
 
 // Captured at document start, before any page script can replace them.
 const attachShadow = globalThis.Element?.prototype.attachShadow;
@@ -54,20 +60,23 @@ const contains = (box, x, y) => x >= box.left && x <= box.right && y >= box.top 
  * @param {object} options
  * @param {Document} options.document the GitHub page
  * @param {Window} options.view its window
- * @param {string} options.srcdoc the card document (build.mjs)
- * @param {(doc:Document, mode:string, panel:{close:Function})=>{destroy():void, initialFocus?():Element|null}} options.mount
- *   mounts the UI on the frame's document
+ * @param {string|((mode:string)=>string)} options.srcdoc the frame document for a mode (build.mjs)
+ * @param {(doc:Document, mode:string, panel:{close:Function, show:(mode:string)=>void})=>{destroy():void, initialFocus?():Element|null}} options.mount
+ *   mounts the UI on the frame's document; show(mode) switches the panel to another mode
  */
 export function createPanel({ document, view, srcdoc, mount }) {
   let current = null;
+  const documentFor = typeof srcdoc === "function" ? srcdoc : () => srcdoc;
 
   function open(mode = "picker") {
-    if (current?.host.isConnected) {
+    if (current?.host.isConnected && current.mode === mode) {
       current.focus();
       return current.host;
     }
+    // Another mode replaces this one, and focus still returns to what had it before either.
+    const kept = current?.host.isConnected ? current.invoker : undefined;
     current?.close(false);
-    const invoker = document.activeElement && document.activeElement !== document.body ? document.activeElement : null;
+    const invoker = kept !== undefined ? kept : document.activeElement && document.activeElement !== document.body ? document.activeElement : null;
     const host = document.createElement("div");
     host.setAttribute(PANEL_ATTRIBUTE, mode);
     const popover = typeof host.showPopover === "function";
@@ -75,10 +84,10 @@ export function createPanel({ document, view, srcdoc, mount }) {
     let shown = false;
     const root = attachShadow.call(host, { mode: "closed" });
     const style = document.createElement("style");
-    style.textContent = HOST_CSS;
+    style.textContent = hostCss(mode);
     const frame = document.createElement("iframe");
     frame.title = "GitHub Reskin";
-    frame.srcdoc = srcdoc;
+    frame.srcdoc = documentFor(mode);
     root.append(style, frame);
     const cleanups = [];
     const listen = (target, type, handler, options) => {
@@ -91,6 +100,7 @@ export function createPanel({ document, view, srcdoc, mount }) {
       host,
       frame,
       mode,
+      invoker,
       focus() {
         const target = mounted?.initialFocus?.() ?? frame.contentDocument?.querySelector("button, input");
         frame.focus();
@@ -151,12 +161,13 @@ export function createPanel({ document, view, srcdoc, mount }) {
       observer.observe(doc.body);
       fit();
       listen(doc, "keydown", (event) => {
-        if (event.key === "Escape" && event.isTrusted) {
+        // A modal dialog in the frame (the builder's Import) closes on its own Escape.
+        if (event.key === "Escape" && event.isTrusted && !event.target?.closest?.("dialog[open]")) {
           event.preventDefault();
           state.close(true);
         }
       });
-      mounted = mount(doc, mode, { close: () => state.close(true) });
+      mounted = mount(doc, mode, { close: () => state.close(true), show: (next) => view.setTimeout(() => current === state && open(next), 0) });
       state.focus();
     });
     // Clicks and keys inside the frame stay in the frame, so these see only the page.
