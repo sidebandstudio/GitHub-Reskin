@@ -67,13 +67,22 @@ jobs:
       - run: npm install --global npm@11.12.1
 
       # Dependency and browser installation are the only steps that use the network. The browser
-      # downloads are cached by lockfile; their system dependencies are installed every run.
+      # downloads and the package archives of their system dependencies are cached by lockfile:
+      # WebKit needs about 180 packages the runner lacks, and its mirror can take over ten minutes
+      # to serve them. The packages are still installed every run.
       - run: npm ci
+      - run: |
+          mkdir -p ~/.cache/apt-archives/partial
+          echo "Dir::Cache::Archives \"$HOME/.cache/apt-archives\";" | sudo tee /etc/apt/apt.conf.d/90-cached-archives
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          path: |
+            ~/.cache/ms-playwright
+            ~/.cache/apt-archives
+          key: browsers-apt-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
       - run: npx --no-install playwright install --with-deps chromium firefox webkit
+      # apt leaves its download directory to root; the cache saves what the runner can read.
+      - run: sudo rm -rf ~/.cache/apt-archives/partial ~/.cache/apt-archives/lock && sudo chown -R "$USER" ~/.cache/apt-archives
 
       - run: npm run check:site -- --production
       - run: npm run check:budgets -- --surface=site
