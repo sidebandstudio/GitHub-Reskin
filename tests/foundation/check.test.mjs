@@ -25,11 +25,11 @@ test("the test runner fails when it discovers no tests", async () => {
   });
 });
 
-test("by default the runner finds the Action, extension, userscript and unit tests, and no e2e specs", async () => {
+test("by default the runner finds the Action, userscript and unit tests, and no e2e specs", async () => {
   const { files, empty } = await discoverTests();
   assert.equal(empty, undefined);
   const found = files.map((file) => relative(realpathSync(ROOT), file).split("\\").join("/"));
-  for (const path of ["test.mjs", "extension.test.mjs", "userscript.test.mjs", "tests/foundation/check.test.mjs"]) assert.ok(found.includes(path), path);
+  for (const path of ["test.mjs", "userscript.test.mjs", "tests/userscript/storage.test.mjs", "tests/foundation/check.test.mjs"]) assert.ok(found.includes(path), path);
   assert.ok(!found.some((path) => path.startsWith("tests/e2e/") || path.startsWith("node_modules/") || path.startsWith("tests/helpers/")));
 });
 

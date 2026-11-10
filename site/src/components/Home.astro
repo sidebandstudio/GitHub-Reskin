@@ -1,0 +1,247 @@
+---
+// The home page argument, used by / and by every /themes/<slug>/ page with that theme selected.
+// The first paint is the shared preview's own capture of the selected theme, so it works without
+// JavaScript. The page script loads the live preview (engine.mjs) when a visitor reaches for it.
+import Icon from "./Icon.astro";
+import Picker from "./Picker.astro";
+import ThemeCard from "./ThemeCard.astro";
+import KeepSheet from "./KeepSheet.astro";
+import Faq from "./Faq.astro";
+import { AI_PROMPT, CATALOG_SOURCE } from "../catalog.mjs";
+import { ANIME, BASE, BROWSERS, CANONICAL, CLASSICS, THEMES, href, pageTitle, themeBySlug, themeDescription, themeFor, themeLede } from "../lib/site.mjs";
+
+interface Props { slug: string; home?: boolean }
+const { slug, home = false } = Astro.props;
+const theme = themeBySlug(slug);
+const shots = theme.captures;
+const animeList = ANIME.map((t) => t.anime);
+const descriptions = [...new Set(THEMES.map((t) => t.description))];
+const data = {
+  base: BASE,
+  canonical: CANONICAL,
+  initial: slug,
+  themes: THEMES.map((t) => {
+    const c = t.captures;
+    return { slug: t.slug, title: t.title, name: t.name, sub: t.anime ? t.name : "Classic", group: t.group, pageTitle: pageTitle(t), themeFor: themeFor(t), lede: themeLede(t), metaDescription: themeDescription(t), description: t.description, advancedCss: t.advancedCss, swatch: [t.doc.colors.background, t.doc.colors.accent, t.doc.colors.contribution || t.doc.colors.accent], phone: c.phone.src, desk: c.desk.src, calm: c.calm.src, lines: t.profileLines, sourceHash: c.sourceHash };
+  }),
+};
+---
+<section class="hero" aria-labelledby="hero-title">
+  <div class="wrap hero-top">
+    {home
+      ? <h1 id="hero-title">Your GitHub.<br /> Your world.</h1>
+      : <h1 id="hero-title" class="hero-theme-title" data-selected="heading">{themeFor(theme)}</h1>}
+    <div class="hero-side">
+      {home
+        ? <p class="hero-lede">Anime themes for GitHub, in your own browser. Thirteen anime, twelve Classics, free.</p>
+        : <p class="hero-lede" data-selected="lede">{themeLede(theme)}</p>}
+      <div class="hero-actions">
+        <a class="btn btn-primary for-desk" href="#install">Install on your browser</a>
+        <a class="btn" href={href("make/")}>Make a theme</a>
+      </div>
+      <p class="hero-compat for-desk">Chrome and Firefox on desktop. Store listings are coming soon.</p>
+    </div>
+  </div>
+
+  <div class="wrap-stage stage" id="preview" data-intent>
+    <Picker selected={theme} />
+    <div class="viewer">
+      <div class="viewer-head">
+        <div class="viewer-id">
+          <p class="viewer-title" data-selected="title">{theme.title}</p>
+          <p class="viewer-sub"><span data-selected="themeFor">{theme.anime ? `${theme.name} · ${themeFor(theme)}` : themeFor(theme)}</span> <span class="badge" data-selected="badge" hidden={!theme.advancedCss}>Advanced CSS · Bundled and reviewed</span></p>
+        </div>
+      </div>
+      <div class="viewer-controls needs-js">
+        <fieldset class="seg">
+          <legend>Preview page</legend>
+          <label><input type="radio" name="view" value="profile" checked /><span>Profile</span></label>
+          <label><input type="radio" name="view" value="repo" /><span>Code</span></label>
+          <label><input type="radio" name="view" value="diff" /><span>Diff</span></label>
+        </fieldset>
+        <fieldset class="seg">
+          <legend>Theme on or off</legend>
+          <label><input type="radio" name="before" value="before" /><span>Before</span></label>
+          <label><input type="radio" name="before" value="after" checked /><span>After</span></label>
+        </fieldset>
+      </div>
+      <div class="window" data-window role="region" aria-label="Interactive preview of github.com/whoisaldo">
+        <picture class="window-shot" data-shot>
+          <source media="(min-width: 760px)" srcset={shots.desk.src} width={shots.desk.width} height={shots.desk.height} data-shot-desk />
+          <img src={shots.phone.src} width={shots.phone.width} height={shots.phone.height} alt={`${theme.name} on the whoisaldo GitHub profile`} fetchpriority="high" decoding="async" data-shot-img data-source-hash={shots.sourceHash} />
+        </picture>
+        <div class="window-live" data-live></div>
+        <p class="window-pending" data-pending hidden><span class="spinner" aria-hidden="true"></span> Loading the live preview</p>
+        <div class="window-failed" data-failed hidden>
+          <p>The live preview didn't load. This is a picture of the profile with the theme on.</p>
+          <button class="btn btn-small" type="button" data-retry>Try again</button>
+        </div>
+      </div>
+      <div class="viewer-foot">
+        <fieldset class="seg seg-appearance needs-js">
+          <legend>Appearance</legend>
+          <label><input type="radio" name="appearance" value="full" checked /><span>Full</span></label>
+          <label><input type="radio" name="appearance" value="calm" /><span>Calm</span></label>
+        </fieldset>
+        <button class="btn btn-small needs-js" type="button" data-expand aria-expanded="false">Show the whole page</button>
+        {/* Every description sits in the same cell, unseen, so the box is as tall as the longest at
+            any width and a theme switch never moves what is below it. */}
+        <div class="viewer-desc">
+          <p data-selected="description">{theme.description}</p>
+          {descriptions.map((text) => <p class="desc-room" aria-hidden="true">{text}</p>)}
+        </div>
+      </div>
+      <div class="hero-keep">
+        <a class="btn btn-primary for-touch" href="#keep" data-open-keep>Keep this theme for desktop</a>
+        <a class="btn btn-primary for-desk" href="#install">Install GitHub Reskin</a>
+        <p class="hero-compat">Chrome and Firefox on desktop. Store listings are coming soon.</p>
+      </div>
+      <p class="nojs-note">Switching themes in place needs JavaScript. Every theme also has its own page.</p>
+      <p class="sr-only" role="status" aria-live="polite" data-status></p>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="themes" aria-labelledby="themes-title">
+  <div class="wrap">
+    <div class="section-head">
+      <h2 id="themes-title">13 anime. Pick yours.</h2>
+      <p>{animeList.slice(0, -1).join(", ")} and {animeList.at(-1)}. Each card shows the same profile, so you can compare.</p>
+    </div>
+    <ul class="gallery">
+      {ANIME.map((t) => <ThemeCard theme={t} selected={t.slug === slug} />)}
+    </ul>
+    <details class="classics" id="classics" open={theme.group === "classics" ? true : undefined}>
+      <summary>Plus 12 Classics</summary>
+      <ul class="gallery">
+        {CLASSICS.map((t) => <ThemeCard theme={t} selected={t.slug === slug} />)}
+      </ul>
+    </details>
+  </div>
+</section>
+
+<section class="section" id="extras" aria-labelledby="extras-title">
+  <div class="wrap split">
+    <div>
+      <div class="section-head">
+        <h2 id="extras-title">Still your GitHub.</h2>
+        <p>Full is the whole theme: its backgrounds and images, effects and lines such as the profile tag. Calm keeps every color, the fonts and the graph, and drops the extras. One switch in the extension.</p>
+      </div>
+      <ul class="facts">
+        <li><Icon name="check" /><span><b>Buttons keep their words.</b> GitHub's own labels, such as Pinned, Code and Pull requests, stay as they are. Theme lines are added beside them.</span></li>
+        <li><Icon name="check" /><span><b>Code stays readable.</b> Code and diffs keep their native fonts, and theme colors are checked for contrast. <a class="text-link needs-js" href="#preview" data-show-diff>See a diff</a></span></li>
+        <li><Icon name="check" /><span><b>Only you see it.</b> The theme changes how GitHub looks in your browser, not your profile for anyone else.</span></li>
+      </ul>
+    </div>
+    <figure class="compare" aria-labelledby="compare-caption">
+      <div class="compare-pair">
+        <div class="compare-item">
+          <p class="compare-label">Full</p>
+          <img src={shots.phone.src} width={shots.phone.width} height={shots.phone.height} alt={`${theme.name} in Full`} loading="lazy" decoding="async" data-compare="full" />
+        </div>
+        <div class="compare-item">
+          <p class="compare-label">Calm</p>
+          <img src={shots.calm.src} width={shots.calm.width} height={shots.calm.height} alt={`${theme.name} in Calm`} loading="lazy" decoding="async" data-compare="calm" />
+        </div>
+      </div>
+      <figcaption id="compare-caption"><span data-selected="name">{theme.name}</span> on the same profile. Full adds the theme's backgrounds, effects and lines; Calm keeps its colors and fonts.</figcaption>
+      <div class="lines" data-selected="lines" hidden={!theme.profileLines.length}>
+        <p class="lines-title">Lines Full adds to a profile</p>
+        <dl>{theme.profileLines.map(([label, text]) => <div><dt>{label}</dt><dd>{text}</dd></div>)}</dl>
+      </div>
+    </figure>
+  </div>
+</section>
+
+<section class="section" id="make" aria-labelledby="make-title">
+  <div class="wrap">
+    <div class="builder">
+      <div>
+        <div class="section-head">
+          <h2 id="make-title">Make a theme from an idea.</h2>
+          <p>Copy the prompt into any chatbot and describe a mood. Paste its answer on the Make a theme page to preview it and download it as a theme file, or paste it into Import in GitHub Reskin.</p>
+        </div>
+        <div class="prompt-actions">
+          <button class="btn btn-primary needs-js" type="button" data-copy-prompt><Icon name="copy" /> Copy AI prompt</button>
+          <a class="btn" href={`${href("make/")}#answer`}>Paste your chatbot answer</a>
+          <a class="text-link link-plain" href={`${href("make/")}#sample`}>Try a sample answer</a>
+        </div>
+        <p class="copy-status" role="status" aria-live="polite" data-copy-status></p>
+        <div class="prompt-box" data-prompt-fallback hidden>
+          <label for="prompt-text">Select prompt</label>
+          <textarea id="prompt-text" readonly rows="10">{AI_PROMPT}</textarea>
+        </div>
+        <noscript><p class="hero-compat">The prompt is on the <a href={href("make/")}>Make a theme</a> page.</p></noscript>
+      </div>
+      <ol class="steps">
+        <li><div><b>Copy the prompt</b><p>It describes the theme format: colors, backgrounds and patterns, heading and body fonts, shapes, code and graph colors, and optional CSS that stays off until you approve it.</p></div></li>
+        <li><div><b>Describe your theme</b><p>Paste it into ChatGPT, Gemini, Claude, Copilot or another chatbot, and add your idea.</p></div></li>
+        <li><div><b>Paste the answer on Make a theme</b><p>You see the preview and any readability fixes, then download the file. Import in GitHub Reskin works the same way.</p></div></li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="film" aria-labelledby="film-title">
+  <div class="wrap film-split">
+    <div class="section-head">
+      <h2 id="film-title">Watch it on GitHub.</h2>
+      <p>A 30-second film of the extension on real GitHub pages, with sound off by default.</p>
+    </div>
+    <div class="film">
+      <div class="film-poster">
+        <img src={href("icon.svg")} width="56" height="56" alt="" />
+        <p class="film-title">The film arrives with the release.</p>
+        <p>Until then, the preview above shows each theme on the same profile.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="install" aria-labelledby="install-title">
+  <div class="wrap">
+    <div class="section-head">
+      <h2 id="install-title">Install on your browser.</h2>
+      <p>GitHub Reskin is free. Store listings are being prepared. Until they are live, developers can build it from source.</p>
+    </div>
+    <div class="install-body">
+      <div class="phone-path" id="keep" data-phone-path>
+        <div>
+          <h3>On your phone?</h3>
+          <p>Browser extensions run on desktop. Keep the theme you like and open its link on your computer.</p>
+          <p class="keep-inline"><label for="keep-inline">Link to <span data-keep-name>{theme.name}</span></label><input id="keep-inline" type="text" readonly value={`${CANONICAL}themes/${slug}/`} data-keep-inline spellcheck="false" /></p>
+        </div>
+        <button class="btn btn-primary needs-js" type="button" data-open-keep>Keep this theme for desktop</button>
+      </div>
+      <div class="install-grid">
+        {BROWSERS.map((b) => (
+          <div class="browser" data-browser={b.id}>
+            <p class="likely">Your browser</p>
+            <h3>{b.name}</h3>
+            {b.store
+              ? <a class="btn btn-primary" href={b.store}>Get it from {b.storeName}</a>
+              : <p class="store-state">Store listing coming soon</p>}
+            <p>{b.also}</p>
+            <a class="text-link" href={`${href("install/")}#developer-preview`}>Developer preview help</a>
+          </div>
+        ))}
+        <div class="browser" data-browser="safari">
+          <p class="likely">Your browser</p>
+          <h3>Safari</h3>
+          <p class="store-state">Advanced: userscript</p>
+          <p>Safari can run GitHub Reskin as a userscript in a userscript manager. Instructions arrive with the release.</p>
+          <a class="text-link" href={`${href("install/")}#userscript`}>Userscript help</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<Faq />
+
+<KeepSheet name={theme.name} url={`${CANONICAL}themes/${slug}/`} />
+
+<script type="application/json" id="reskin-data" data-catalog-source={CATALOG_SOURCE} set:html={JSON.stringify(data).replace(/</g, "\\u003c")} />
+<script>
+  import "../scripts/home.mjs";
+</script>

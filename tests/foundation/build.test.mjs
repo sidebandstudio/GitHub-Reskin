@@ -222,11 +222,12 @@ test("builds work with the network disabled, and never run the network mode gene
     const { stdout } = await node([...OFFLINE, "scripts/build.mjs", "--target", "chrome,firefox,userscript", "--out", tmp]);
     assert.match(stdout, /built .*firefox/);
   });
-  // The guard is real: the old generator fails under it.
-  await assert.rejects(node([...OFFLINE, "scripts/github-modes.mjs"]), /Network access/);
+  // The guard is real: a fetch fails under it, as scripts/refresh-primer.mjs, the network mode
+  // generator, does.
+  await assert.rejects(node([...OFFLINE, "--input-type=module", "-e", 'await fetch("https://github.com/")']), /Network access/);
   for (const script of ["build", "package", "check", "check-routes", "check-a11y", "serve", "verify-artifacts", "verify-repro"]) {
     const source = await readFile(join(ROOT, `scripts/${script}.mjs`), "utf8");
-    assert.doesNotMatch(source, /(import|spawn|exec|fork)\w*\([^)]*github-modes/, script);
+    assert.doesNotMatch(source, /(import|spawn|exec|fork)\w*\([^)]*(github-modes|refresh-primer)/, script);
     assert.doesNotMatch(source, /\bfetch\(|https?\.request|new Date\(\)|Date\.now\(\)|Math\.random\(/, script);
   }
 });

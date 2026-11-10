@@ -180,5 +180,15 @@ svg.octicon{fill:currentColor;vertical-align:text-bottom;flex:none}
   .error-illustration .code{font-size:56px}
   .AppHeader-search-text,.AppHeader-context-divider,.AppHeader-context a:not(:last-child),.AppHeader-globalBar-end>.AppHeader-button{display:none}
   .AppHeader-search{width:32px;justify-content:center;padding:0}
+  [data-density="compact"]>.AppHeader,[data-density="compact"] .h-card>.after-names,[data-density="compact"] .js-yearly-contributions>h2,[data-density="compact"] .ContributionCalendar-footer>span{display:none}
+  [data-density="compact"] .page{padding-bottom:12px}
+  [data-density="compact"] .layout{gap:12px}
+  [data-density="compact"] .h-card{grid-template-columns:48px minmax(0,1fr);column-gap:12px}
+  [data-density="compact"] .h-card .avatar{width:48px;height:48px}
+  [data-density="compact"] .js-pinned-items-reorder-container{margin-bottom:12px}
+  [data-density="compact"] .pinned-item-list-item{min-height:0;padding:12px;gap:4px}
+  [data-density="compact"] .pinned-item-desc{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+  [data-density="compact"] .ContributionCalendar{padding:12px}
+  [data-density="compact"] .ContributionCalendar-footer{justify-content:flex-end;margin-top:6px}
 }
 `;

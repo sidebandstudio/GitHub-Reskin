@@ -13,8 +13,8 @@ no network requests.
 | `check-routes.mjs` | The routing table itself. |
 | `check-a11y.mjs` | The Playwright surface runner every surface's `test:e2e` and `a11y` checks use. |
 | `serve.mjs` | The static fixture and site server, on a free port bound to 0.0.0.0. |
-| `userscript.mjs` | Generates the userscript from the 1.1.0 extension. |
-| `github-modes.mjs` | Maintenance only: refetches GitHub's mode CSS. No build or check runs it. |
+| `userscript.mjs` | Compatibility entry for `userscript/build.mjs`, which generates the userscript from the product packages. |
+| `refresh-primer.mjs` | Maintenance only: refetches GitHub's mode CSS into `vendor/primer`. No build or check runs it. |
 
 ## Check routing
 

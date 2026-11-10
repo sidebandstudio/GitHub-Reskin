@@ -72,9 +72,9 @@ browser_specific_settings (Gecko ID ${config.extension.geckoId}, minimum version
 collection), and Chrome omits it.
 
 The extension entry is "${config.extension.entry}": ${entry.description} The files are listed in
-extension/manifests/entries.json and copied without transformation. extension/github-modes.js is a
-frozen, checked-in snapshot of GitHub's mode colors; the build checks its hash and never regenerates it.
-scripts/github-modes.mjs is a separate maintenance tool that fetches github.com, and no build step runs it.
+extension/manifests/entries.json and copied without transformation. vendor/primer/modes.json is a
+frozen, checked-in snapshot of GitHub's mode colors, and no build step regenerates it.
+scripts/refresh-primer.mjs is a separate maintenance tool that fetches github.com, and no build step runs it.
 
 Licenses: LICENSE covers GitHub Reskin. ${entry.notices.map((n) => `${n.file} is the ${n.license} notice for ${n.covers.map((p) => `${entry.root}/${p}`).join(", ")} (${n.upstream})`).join("; ")}. Both browser packages carry them at the same paths, and the userscript embeds each upstream notice in a comment.
 `;
