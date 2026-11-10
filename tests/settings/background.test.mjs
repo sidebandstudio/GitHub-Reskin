@@ -3,15 +3,16 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { STORAGE_KEYS } from "../../packages/contracts/index.js";
 import { createBackground, installBackground } from "../../extension/background/host.js";
-import { CLASSICS, contentSender, context, fakeApi, memoryStorage, pageSender, ROOT } from "./helpers.mjs";
+import { APPROVALS_KEY } from "../../packages/settings/index.js";
+import { builderSender, CLASSICS, contentSender, context, fakeApi, memoryStorage, pageSender, ROOT, standInCss } from "./helpers.mjs";
 
 const nord = CLASSICS.find((t) => t.id === "nord").document;
 const flush = () => new Promise((r) => setImmediate(r));
 
-function setup(initial = {}) {
+function setup(initial = {}, extra = {}) {
   const api = fakeApi();
   const storage = memoryStorage(initial);
-  const background = createBackground({ api, storage, ...context() });
+  const background = createBackground({ api, storage, ...context(extra) });
   return { api, storage, background };
 }
 
@@ -165,4 +166,82 @@ test("disabled Reskin reloads disabled: a restarted worker keeps enabled=false a
   assert.equal(await restarted.handleInstalled({ reason: "update" }), false);
   assert.equal(api.tabs.opened.length, 1);
   assert.equal(storage.data.get(STORAGE_KEYS.boot), null);
+});
+
+// Advanced CSS approval tickets belong to the builder document the browser names as the sender.
+const CSS_A = ".AppHeader { box-shadow: 0 1px 0 var(--reskin-accent); }";
+const EDITOR = "editor-aaaaaaaaaaaaaaaa";
+async function cssSetup() {
+  const setupResult = setup({}, { css: standInCss() });
+  const { api, background } = setupResult;
+  let n = 0;
+  const send = (action, sender, expectedRevision) => background.dispatch({ type: "commit", requestId: `c${++n}`, expectedRevision, action }, sender);
+  const saved = await send({ type: "saveCustom", document: { ...nord, css: CSS_A }, select: true, editor: EDITOR }, builderSender(api), 0);
+  assert.equal(saved.ok, true, JSON.stringify(saved.issues));
+  return { ...setupResult, send, id: saved.settings.selectedThemeId };
+}
+const approve = (id) => ({ type: "approveCss", editor: EDITOR, target: id, css: CSS_A });
+const redeem = (id, ticket) => ({ type: "setCssConsent", id, granted: true, editor: EDITOR, approval: ticket });
+
+test("only the builder's settings page can ask for an approval ticket: never the popup, first run, a content script or an unnamed document", async () => {
+  const { api, storage, send, id } = await cssSetup();
+  const before = storage.snapshot();
+  const senders = {
+    popup: { id: api.runtime.id, url: api.runtime.getURL("pages/popup.html"), documentId: "popup-document" },
+    firstRun: { ...pageSender(api, "pages/onboarding.html"), documentId: "onboarding-document", tab: { id: 9 }, frameId: 0 },
+    content: contentSender(api),
+    settingsWithoutDocument: builderSender(api, { documentId: null, tab: null }),
+    settingsLookalikePath: { ...builderSender(api), url: api.runtime.getURL("pages/settings.html/../popup.html") },
+  };
+  for (const [name, sender] of Object.entries(senders)) {
+    const reply = await send(approve(id), sender, 1);
+    assert.equal(reply.ok, false, name);
+    assert.equal(reply.approval, undefined, name);
+  }
+  assert.deepEqual(storage.snapshot(), before, "no refused request stores a ticket");
+  // Chrome's documentId and Firefox's tab and frame both name a builder document.
+  assert.equal((await send(approve(id), builderSender(api), 1)).ok, true);
+  assert.equal((await send(approve(id), builderSender(api, { documentId: null, tab: 12 }), 1)).ok, true);
+});
+
+test("a ticket requested from the popup cannot be redeemed from settings, and a builder's ticket redeems only in its own document", async () => {
+  const { api, storage, send, id } = await cssSetup();
+  const popup = { id: api.runtime.id, url: api.runtime.getURL("pages/popup.html"), documentId: "popup-document" };
+  // Review finding 3: the popup asks, the settings page redeems with the same strings.
+  const fromPopup = await send(approve(id), popup, 1);
+  assert.equal(fromPopup.ok, false);
+  assert.equal((await send(redeem(id, fromPopup.approval?.ticket ?? "t".repeat(32)), builderSender(api), 1)).ok, false);
+  // A real builder ticket, replayed with the same editor and ticket from any other sender.
+  const ticket = (await send(approve(id), builderSender(api), 1)).approval.ticket;
+  const others = [
+    builderSender(api, { documentId: "builder-document-2" }),
+    builderSender(api, { documentId: null, tab: 7 }),
+    popup,
+    contentSender(api),
+    { ...pageSender(api, "pages/onboarding.html"), documentId: "builder-document-1" },
+  ];
+  for (const sender of others) {
+    const reply = await send(redeem(id, ticket), sender, 1);
+    assert.equal(reply.ok, false, sender.url);
+    assert.equal(storage.data.get(STORAGE_KEYS.settings).cssConsent[id], undefined, sender.url);
+  }
+  // Firefox: another tab, or another frame of the same tab, is another document.
+  const firefox = (await send(approve(id), builderSender(api, { documentId: null, tab: 12 }), 1)).approval.ticket;
+  for (const sender of [builderSender(api, { documentId: null, tab: 13 }), builderSender(api, { documentId: null, tab: 12, frameId: 3 })]) assert.equal((await send(redeem(id, firefox), sender, 1)).ok, false);
+  // The document that asked redeems it, whatever its URL fragment says now.
+  const own = await send(redeem(id, ticket), builderSender(api, { hash: "#backup" }), 1);
+  assert.equal(own.ok, true, JSON.stringify(own.issues));
+  assert.ok(own.settings.cssConsent[id]);
+  assert.ok((storage.data.get(APPROVALS_KEY) ?? []).length >= 1, "the Firefox document's ticket is still pending");
+});
+
+test("a ticket request with a stale expected revision is refused", async () => {
+  const { api, storage, send, id } = await cssSetup();
+  assert.equal((await send({ type: "selectTheme", id: "nord" }, builderSender(api), 1)).ok, true);
+  const before = storage.snapshot();
+  const stale = await send(approve(id), builderSender(api), 1);
+  assert.equal(stale.code, "conflict");
+  assert.equal(stale.approval, undefined);
+  assert.deepEqual(storage.snapshot(), before);
+  assert.equal((await send(approve(id), builderSender(api), 2)).ok, true);
 });

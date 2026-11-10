@@ -10,6 +10,7 @@
 import { compileAppearance, imageAssets, mountAppearance, roleFontFaceCss } from "../appearance/index.js";
 import { CSS_MARKERS, SANITIZER_VERSION } from "../contracts/index.js";
 import { repairTheme, resolveTheme } from "../engine/index.js";
+import { rasterHash, rasterIssues, rasterLayers, rasterTotals } from "../format/raster.js";
 import { admitCss } from "../format/viewer.js";
 import { compileGitHub, coveredModes, CSS_TARGET_REGISTRY, MODE_INDEX, seedFor, selectMode, standardSeed } from "../primer/index.js";
 import { themeCard } from "./catalog.js";
@@ -33,12 +34,14 @@ const FORCED_COLORS = "(forced-colors: active)";
  */
 export function createRenderer({ github, resources, catalog = null, index = MODE_INDEX, slotTimeLimitMs = null }) {
   const bundled = new Map((catalog?.ids ?? []).map((id) => [catalog.sourceHash(id), catalog.document(id)]));
-  // The theme's CSS and whether the host allows it: packaged with a bundled theme, or consented
-  // to for exactly this sanitized hash and sanitizer version. Calm, forced colors and native
-  // policy are refused again where it compiles and is admitted.
-  const themeCss = (resolved, { source = null, consent = null } = {}) => {
-    const packaged = bundled.get(resolved.sourceHash)?.css;
-    if (packaged !== undefined) return { css: packaged, cssAllowed: true, registry: CSS_TARGET_REGISTRY };
+  // The theme's CSS and whether the host allows it: packaged with the bundled theme that is
+  // selected, or consented to for exactly this sanitized hash and sanitizer version. The bundled
+  // exception follows the selected ID, never the source alone: a saved theme whose source equals a
+  // catalog theme's, such as an imported export of it, still needs its own consent. Calm, forced
+  // colors and native policy are refused again where it compiles and is admitted.
+  const themeCss = (resolved, { themeId = null, source = null, consent = null } = {}) => {
+    const selected = typeof themeId === "string" && catalog?.has(themeId) && catalog.sourceHash(themeId) === resolved.sourceHash ? catalog.document(themeId) : null;
+    if (selected) return { css: selected.css ?? null, cssAllowed: typeof selected.css === "string", registry: CSS_TARGET_REGISTRY };
     const css = typeof source?.css === "string" ? source.css : null;
     return { css, cssAllowed: css !== null && consented(css, consent), registry: CSS_TARGET_REGISTRY };
   };
@@ -56,7 +59,8 @@ export function createRenderer({ github, resources, catalog = null, index = MODE
       return { plan, seed: seedFor(index, plan) };
     },
     resolve: resolveTheme,
-    // `context` is {source, consent}: the selected source document and the settings' consent for it.
+    // `context` is {themeId, source, consent}: the selected theme's ID, its source document and the
+    // settings' consent for it.
     compile(resolved, plan, prefs, context) {
       const primer = compileGitHub(resolved, plan, prefs, index);
       if (!primer.css) return { css: "", fingerprint: primer.fingerprint };
@@ -150,6 +154,20 @@ export const CSS_ADMISSION = Object.freeze({
 });
 
 /**
+ * The settings ImageAdmission (packages/settings/admission.js) from C2b's raster admission: a saved
+ * theme's images are stored only when each passes header admission and all of them fit the
+ * document's byte and pixel caps, counting repeats.
+ */
+export const IMAGE_ADMISSION = Object.freeze({
+  inspect(document) {
+    const issues = rasterIssues(document).filter((issue) => issue.severity !== "warning");
+    if (issues.length) return { ok: false, issues };
+    const { bytes, pixels } = rasterTotals(document);
+    return { ok: true, bytes, pixels, hashes: rasterLayers(document).map(({ image }) => rasterHash(image.data)) };
+  },
+});
+
+/**
  * The background's callbacks for settings: the boot snapshot is the selected source resolved for
  * the common page (standard seed of its base, themed, motion allowed), source repair runs against
  * the same standard seed, and saved themes' CSS goes through C2b's sanitizer.
@@ -159,6 +177,7 @@ export function backgroundRendering(index = MODE_INDEX) {
     snapshot: (theme) => resolveTheme(theme, { seed: standardSeed(index, theme.base), policy: "themed", reducedMotion: false, forcedColors: false }),
     repair: (theme) => repairTheme(theme, standardSeed(index, theme.base)),
     css: CSS_ADMISSION,
+    images: IMAGE_ADMISSION,
   };
 }
 

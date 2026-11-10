@@ -5,7 +5,8 @@ import test from "node:test";
 import { strToU8, unzipSync, zipSync } from "fflate";
 import { ROOT, loadEntry, loadReleaseConfig, sha256 } from "../../scripts/build.mjs";
 import { artifactName, packageRelease, zip } from "../../scripts/package.mjs";
-import { verifyArtifacts, zipEntries } from "../../scripts/verify-artifacts.mjs";
+import { packageBudgetProblems, remoteResourceProblems, verifyArtifacts, zipEntries } from "../../scripts/verify-artifacts.mjs";
+import { BUDGETS } from "../../packages/contracts/index.js";
 import { withTempDir } from "../helpers/tmp.mjs";
 
 const { version } = await loadReleaseConfig();
@@ -164,4 +165,15 @@ test("check:artifacts fails a zero-byte userscript even when its checksums agree
     assert.match(problems, new RegExp(`${name.replaceAll(".", "\\.")} is empty`));
     assert.match(problems, /the userscript has no metadata block/);
   });
+});
+
+test("check:artifacts enforces the unpacked and ZIP budgets and admits the reviewed read in its minified form", () => {
+  const files = { "a.js": new Uint8Array(BUDGETS.unpackedRuntimeBytes - 10), "b.js": new Uint8Array(10) };
+  assert.deepEqual(packageBudgetProblems("x.zip", files, BUDGETS.runtimeZipBytes), []);
+  const over = packageBudgetProblems("x.zip", { ...files, "c.js": new Uint8Array(1) }, BUDGETS.runtimeZipBytes + 1);
+  assert.equal(over.length, 2);
+  assert.match(over[0], /over the 5242880-byte budget by 1$/);
+  const read = (text) => ({ "pages/pages.js": Buffer.from(text) });
+  assert.deepEqual(remoteResourceProblems(read('const r=win.fetch(url,{credentials:"omit"});')), []);
+  assert.equal(remoteResourceProblems(read('const r=win.fetch(other,{credentials:"omit"});')).length, 1);
 });

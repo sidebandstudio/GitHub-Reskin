@@ -8,8 +8,8 @@
 //   readPage(document, view) -> {native, forcedColors, reducedMotion}
 //   plan(page, base) -> {plan: ModePlan, seed: ModeSeed | null}
 //   resolve(theme, context) -> ResolvedTheme
-//   compile(resolved, plan, prefs, {source, consent}) -> {css, fingerprint}
-//   decorate?(document, resolved, prefs, {plan, source, consent}) -> {destroy()} | null
+//   compile(resolved, plan, prefs, {themeId, source, consent}) -> {css, fingerprint}
+//   decorate?(document, resolved, prefs, {plan, themeId, source, consent}) -> {destroy()} | null
 //                                                                   owned nodes, CSS admission
 //   modeAttributes?: string[]                                       root attributes to observe
 //   nativeRoute?(document) -> string | null                         why the route stays native
@@ -179,7 +179,7 @@ export function startContent({ storage, document, view, catalog, renderer, onEve
     const snapshot = usableSnapshot(state.boot, current);
     const resolved = snapshot ?? renderer.resolve(source, { seed, policy, reducedMotion: page.reducedMotion, forcedColors: page.forcedColors });
     onEvent({ type: "resolved", from: snapshot ? "snapshot" : "source" });
-    const context = { plan, source, consent: current.cssConsent };
+    const context = { plan, themeId: settings.selectedThemeId, source, consent: current.cssConsent };
     const compiled = renderer.compile(resolved, plan, prefs, context);
     if (compiled.fingerprint !== fingerprint || !style.isConnected) {
       if (compiled.fingerprint !== fingerprint) style.textContent = compiled.css;

@@ -330,6 +330,27 @@ test("a gradient whose stops pass but whose middle fails is not drawn under text
   for (const color of ["#ff0000", "#009900"]) assert.equal(structuredPlan(inked({ color: "#ffffff", layers: [{ kind: "gradientCss", value: `linear-gradient(${color},${color})`, size: "auto" }] }), FULL).page.dropped, null);
 });
 
+test("a theme with Advanced CSS and no effects or flavor text compiles its CSS once allowed, under the same gates", async () => {
+  const { CSS_TARGET_REGISTRY } = await import("../../packages/primer/registry.js");
+  const only = { schemaVersion: 1, name: "Header line", base: "dark", colors: { background: "#161421", text: "#f5ecff", accent: "#ff9fbf" }, css: ".AppHeader, .Header, .HeaderMktg { box-shadow: 0 1px 0 var(--reskin-accent); }" };
+  const resolved = resolve(only);
+  assert.equal(Object.keys(resolved.effects).length, 0);
+  assert.notEqual(resolved.flavor.enabled, true);
+  const options = { css: only.css, cssAllowed: true, registry: CSS_TARGET_REGISTRY };
+  const css = compileAppearance(resolved, FULL, "github", options);
+  assert.match(css, /box-shadow:0 1px 0 var\(--reskin-accent\)/);
+  assert.match(css, /@media not \(forced-colors:active\)\{/);
+  assert.match(css, /\[data-reskin-owned\]\{--reskin-/);
+  // The preview target draws it too.
+  assert.match(compileAppearance(resolved, FULL, "preview", options), /box-shadow:0 1px 0 var\(--reskin-accent\)/);
+  // Without consent, in Calm, with Effects off, disabled or native, it never compiles.
+  for (const [label, prefs, extra] of [["no consent", FULL, { cssAllowed: false }], ["calm", CALM, {}], ["effects off", { ...FULL, effects: false }, {}], ["disabled", { ...FULL, enabled: false }, {}]]) {
+    assert.doesNotMatch(compileAppearance(resolved, prefs, "github", { ...options, ...extra }), /box-shadow:0 1px 0/, label);
+  }
+  const native = resolveTheme(only, { seed: null, policy: "native-unknown", reducedMotion: false, forcedColors: false });
+  assert.equal(compileAppearance(native, FULL, "github", options), "");
+});
+
 // The adapter's authored roots, in the form the structured rules write them.
 const NAMED = AUTHORED_ROOTS.join(",");
 const NOT_NAMED = `:not(:where(${NAMED},:is(${NAMED}) *))`;

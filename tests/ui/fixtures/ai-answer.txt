@@ -1,0 +1,45 @@
+Sure! Here's a moody "rainy neon alley" theme for GitHub Reskin, inspired by late-night city scenes. I kept the text bright enough to read and gave the graph a teal glow.
+
+```json
+{
+  // Rainy neon alley
+  "schemaVersion": 1,
+  "name": "Neon Drizzle",
+  "description": "Wet asphalt, teal signs and a pink accent.",
+  "base": "dark",
+  "colors": {
+    "background": "#0e1320",
+    "text": "#dfe7f5",
+    "accent": "#ff4fa3",
+    "contribution": "#2de2c6"
+  },
+  "fonts": { "heading": "space-grotesk", "body": "system" },
+  "backgrounds": {
+    "page": {
+      "color": "#0e1320",
+      "layers": [
+        { "gradient": { "type": "linear", "angle": 160, "stops": [ { "color": "#1b1f3a", "position": 0 }, { "color": "#0e1320", "position": 100 } ], "opacity": 0.8 } },
+        { "pattern": { "kind": "scanlines", "color": "#2de2c6", "opacity": 0.04, "size": 6 } }
+      ]
+    }
+  },
+  "shape": {
+    "corners": { "style": "rounded", "radius": 10 },
+    "buttons": { "style": "outline", "radius": 10 }
+  },
+  "typography": { "uppercaseHeadings": false, "headingLetterSpacing": 0.03 },
+  "contributions": {
+    "levels": ["#161b2e", "#14524f", "#1a8a7d", "#22b8a5", "#2de2c6"],
+    "cellStyle": "round"
+  },
+  "code": {
+    "background": "#0a0f1a",
+    "text": "#dfe7f5",
+    "syntax": { "keyword": "#ff4fa3", "string": "#9ef0e1", "comment": "#8a93ad", "function": "#7ab8ff" }
+  },
+  "effects": { "glow": {}, "scanlines": {} },
+  "flavor": { "slots": { "profile.tag": "// after hours" } }
+}
+```
+
+Paste that into Reskin's importer. Want a lighter daytime version too?

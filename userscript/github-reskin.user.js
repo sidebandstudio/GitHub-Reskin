@@ -4529,6 +4529,18 @@ html .rs-popup .rs-gallery {
     }
     return out;
   }
+  function rasterTotals(theme, except = null) {
+    let bytes2 = 0;
+    let pixels = 0;
+    for (const { path, image } of rasterLayers(theme)) {
+      if (path === except) continue;
+      const info = rasterInfo(image.data);
+      if (!info.ok) continue;
+      bytes2 += info.bytes.length;
+      pixels += info.width * info.height;
+    }
+    return { bytes: bytes2, pixels };
+  }
   function rasterIssues(theme) {
     const issues = [];
     let bytes2 = 0;
@@ -8194,8 +8206,9 @@ ${rules.join("\n")}
     const effective = effectiveAppearance(resolved, prefs);
     const plan = structuredPlan(resolved, prefs, images);
     const structured = structuredCss(plan, resolved, target, viewport);
-    const owned = effective.text || effective.effects ? ownedThemeCss(resolved, prefs, source, cssAllowed, registry) : null;
-    if (!effective.text && !effective.effects && !plan.banner) return structured ? `/* GitHub Reskin appearance, renderer 1 */
+    const full = resolved?.policy === "themed" && Boolean(prefs?.enabled && prefs?.extras);
+    const owned = full && cssAllowed ? ownedThemeCss(resolved, prefs, source, cssAllowed, registry) : null;
+    if (!effective.text && !effective.effects && !plan.banner && !owned) return structured ? `/* GitHub Reskin appearance, renderer 1 */
 ${structured}
 ` : "";
     const t = colors(resolved.tokens);
@@ -10649,10 +10662,13 @@ ${structured ? `${structured}
     maxDraftBytes: 1.25 * 1024 * 1024,
     maxRecordsBytes: 8 * 1024 * 1024,
     maxRecoveryBytes: 1024 * 1024,
-    maxNotices: 16
+    maxNotices: 16,
+    maxApprovals: 32
   });
   var RECOVERY_KEY = "reskin.recovery";
-  var EXTRA_COMMIT_ACTION_TYPES = freeze4(["setCssConsent", "completeOnboarding", "dismissMigration"]);
+  var APPROVALS_KEY = "reskin.cssApprovals";
+  var EXTRA_COMMIT_ACTION_TYPES = freeze4(["setCssConsent", "approveCss", "withdrawCss", "completeOnboarding", "dismissMigration"]);
+  var APPROVAL_ACTION_TYPES = freeze4(["approveCss", "withdrawCss"]);
   var EXTRA_REQUEST_TYPES = freeze4(["recovery"]);
   var NOTICES = freeze4({
     cyberpunkAlias: "cyberpunk-alias",
@@ -10690,6 +10706,13 @@ ${structured ? `${structured}
   var SHA256_HEX = /^[0-9a-f]{64}$/;
   var NOTICE_CODE = /^[a-z0-9-]{1,40}$/;
   var issue3 = (code, path, message, severity = "error") => ({ code, path, message, severity });
+  var ActionError = class extends Error {
+    constructor(code, issues) {
+      super(issues.map((i) => i.message).join(" "));
+      this.code = code;
+      this.issues = issues;
+    }
+  };
   var invalid = (path, message) => issue3(ISSUE_CODES.invalid, path, message);
   var isPlainObject = (value) => {
     if (!value || typeof value !== "object" || Array.isArray(value)) return false;
@@ -10987,26 +11010,88 @@ ${structured ? `${structured}
     return [issue3(ISSUE_CODES.capacity, "", `Saving needs ${bytes2} bytes; Reskin keeps at most ${STORAGE_LIMITS.maxRecordsBytes}. Export or remove a saved theme, then try again.`)];
   }
 
+  // packages/settings/consent.js
+  var APPROVAL_ISSUE = "approval";
+  var NEW_TARGET = "new";
+  var EDITOR_ID = /^[A-Za-z0-9_-]{16,64}$/;
+  var TICKET = /^[A-Za-z0-9_-]{16,128}$/;
+  var approvalError = (message) => new ActionError("invalid", [{ ...issue3(ISSUE_CODES.invalid, "/action/approval", message), reason: APPROVAL_ISSUE }]);
+  var isTarget = (value) => value === NEW_TARGET || typeof value === "string" && LOCAL_ID.test(value);
+  async function digest(text) {
+    const bytes2 = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+    return [...new Uint8Array(bytes2)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  }
+  function readApprovals(value) {
+    if (!Array.isArray(value)) return [];
+    return value.filter(
+      (a) => isPlainObject(a) && SHA256_HEX.test(a.ticket ?? "") && SHA256_HEX.test(a.editor ?? "") && isTarget(a.target) && SHA256_HEX.test(a.hash ?? "") && Number.isSafeInteger(a.sanitizerVersion)
+    ).slice(-STORAGE_LIMITS.maxApprovals);
+  }
+  function hasher(css) {
+    const memo = /* @__PURE__ */ new Map();
+    return (document2) => {
+      if (css.sanitizerVersion === null || typeof document2?.css !== "string") return null;
+      if (!memo.has(document2.css)) {
+        const result = css.inspect({ css: document2.css }).css;
+        memo.set(document2.css, result?.ok && result.sanitizerVersion === css.sanitizerVersion ? result.hash : null);
+      }
+      return memo.get(document2.css);
+    };
+  }
+  function mintApproval(settings, approvals, { editor, ticket, target, text }, css) {
+    if (target !== NEW_TARGET && !settings.customThemes.some((theme) => theme.id === target)) throw approvalError("That saved theme no longer exists.");
+    const hash = hasher(css)({ css: text });
+    if (!hash) throw approvalError("This advanced CSS cannot be approved: it is missing, invalid or not sanitized by this version of Reskin.");
+    const entry = { ticket, editor, target, hash, sanitizerVersion: css.sanitizerVersion };
+    const kept = approvals.filter((a) => !(a.editor === editor && a.target === target));
+    return { approvals: [...kept, entry].slice(-STORAGE_LIMITS.maxApprovals), hash, sanitizerVersion: css.sanitizerVersion };
+  }
+  var withdrawApprovals = (approvals, editor) => approvals.filter((a) => a.editor !== editor);
+  var revokes = (action, id) => action?.type === "saveCustom" && action.id === id && action.approval === null || action?.type === "setCssConsent" && action.id === id && action.granted === false;
+  function settleConsent(before, next, approvals, { css, action = null, grant = null, editor = null }) {
+    const hashOf = hasher(css);
+    const version = css.sanitizerVersion;
+    const earlier = new Map(before.customThemes.map((theme) => [theme.id, theme]));
+    const present = new Set(next.customThemes.map((theme) => theme.id));
+    const voided = new Set([...earlier.keys()].filter((id) => !present.has(id)));
+    const cssConsent = {};
+    let used = null;
+    for (const theme of next.customThemes) {
+      const hash = hashOf(theme.document);
+      const was = earlier.get(theme.id);
+      const had = before.cssConsent?.[theme.id];
+      const revoked = revokes(action, theme.id);
+      if (was && had && hash && !revoked && hashOf(was.document) === hash && had.hash === hash && had.sanitizerVersion === version) cssConsent[theme.id] = { hash, sanitizerVersion: version };
+      if (grant && grant.id === theme.id) {
+        const entry = approvals.find((a) => a.ticket === grant.ticket && a.editor === grant.editor);
+        if (!entry || entry.target !== grant.target || !hash || entry.hash !== hash || entry.sanitizerVersion !== version) {
+          throw approvalError("Advanced CSS needs your approval again. Turn on Enable advanced CSS, then save.");
+        }
+        cssConsent[theme.id] = { hash, sanitizerVersion: version };
+        used = entry;
+      }
+      if (revoked || was && hashOf(was.document) !== hash || had && !cssConsent[theme.id]) voided.add(theme.id);
+    }
+    if (grant && !used) throw approvalError("Advanced CSS needs your approval again. Turn on Enable advanced CSS, then save.");
+    const kept = action?.type === "resetAll" ? [] : approvals.filter((a) => a !== used && !voided.has(a.target) && a.sanitizerVersion === version && !(editor && a.editor === editor));
+    return { cssConsent, approvals: kept };
+  }
+
   // packages/settings/actions.js
   var ACTION_TYPES = Object.freeze([...COMMIT_ACTION_TYPES, ...EXTRA_COMMIT_ACTION_TYPES]);
   var SHAPES = {
     selectTheme: ["id"],
     setEnabled: ["enabled"],
     setPreference: ["key", "value"],
-    saveCustom: ["id", "document", "basedOn", "select"],
+    saveCustom: ["id", "document", "basedOn", "select", "editor", "approval"],
     deleteCustom: ["id"],
     resetPreferences: [],
     resetAll: [],
-    setCssConsent: ["id", "granted", "hash", "sanitizerVersion"],
+    setCssConsent: ["id", "granted", "editor", "approval"],
+    approveCss: ["editor", "target", "css"],
+    withdrawCss: ["editor"],
     completeOnboarding: [],
     dismissMigration: []
-  };
-  var ActionError = class extends Error {
-    constructor(code, issues) {
-      super(issues.map((i) => i.message).join(" "));
-      this.code = code;
-      this.issues = issues;
-    }
   };
   var reject = (message, path = "/action") => {
     throw new ActionError("invalid", [issue3(ISSUE_CODES.invalid, path, message)]);
@@ -11017,6 +11102,10 @@ ${structured ? `${structured}
     const extra = Object.keys(action).filter((key) => !allowed.includes(key));
     const problems = extra.length ? [`unknown fields ${extra.join(", ")}`] : [];
     const localId = (value) => typeof value === "string" && LOCAL_ID.test(value);
+    const editor = () => {
+      if ("editor" in action && !(typeof action.editor === "string" && EDITOR_ID.test(action.editor))) problems.push("editor must be the editor's token");
+    };
+    const ticket = () => typeof action.approval === "string" && TICKET.test(action.approval) && "editor" in action;
     switch (action.type) {
       case "selectTheme":
         if (typeof action.id !== "string" || !action.id || action.id.length > 128) problems.push("id must be a theme ID");
@@ -11034,6 +11123,8 @@ ${structured ? `${structured}
         if ("basedOn" in action && (typeof action.basedOn !== "string" || action.basedOn.startsWith(LOCAL_THEME_ID_PREFIX))) problems.push("basedOn must be a bundled theme ID");
         if (typeof action.select !== "boolean") problems.push("select must be true or false");
         if (!isPlainObject(action.document)) problems.push("document must be a theme");
+        editor();
+        if ("approval" in action && action.approval !== null && !ticket()) problems.push("approval must be null or an approval ticket with its editor");
         break;
       case "deleteCustom":
         if (!localId(action.id)) problems.push("id must be local:<uuid>");
@@ -11041,33 +11132,53 @@ ${structured ? `${structured}
       case "setCssConsent":
         if (!localId(action.id)) problems.push("id must be local:<uuid>");
         if (typeof action.granted !== "boolean") problems.push("granted must be true or false");
-        if (action.granted && !(typeof action.hash === "string" && SHA256_HEX.test(action.hash) && Number.isSafeInteger(action.sanitizerVersion) && action.sanitizerVersion > 0)) problems.push("a grant needs the sanitized CSS hash and sanitizer version");
+        editor();
+        if (action.granted && !ticket()) problems.push("a grant needs an approval ticket and its editor");
+        if (!action.granted && "approval" in action) problems.push("a revocation takes no approval");
+        break;
+      case "approveCss":
+        if (!(typeof action.editor === "string" && EDITOR_ID.test(action.editor))) problems.push("editor must be the editor's token");
+        if (action.target !== NEW_TARGET && !localId(action.target)) problems.push("target must be new or local:<uuid>");
+        if (typeof action.css !== "string" || !action.css.trim()) problems.push("css must be the CSS to approve");
+        break;
+      case "withdrawCss":
+        if (!(typeof action.editor === "string" && EDITOR_ID.test(action.editor))) problems.push("editor must be the editor's token");
         break;
     }
     return problems.map((message) => issue3(ISSUE_CODES.invalid, "/action", `${action.type}: ${message}.`));
   }
-  function reduceAction(settings, action, { catalog, newId, css = NO_CSS_SANITIZER, images } = {}) {
+  function reduceState(settings, approvals, action, { catalog, newId, css = NO_CSS_SANITIZER, images, redeem = null, editor = null } = {}) {
     const shape2 = actionIssues(action);
     if (shape2.length) throw new ActionError("invalid", shape2);
+    const { next, grant } = reduceSettings(settings, action, { catalog, newId, css, images });
+    const ticket = grant && redeem ? { ...grant, ticket: redeem.ticket, editor: redeem.editor } : null;
+    if (grant && !ticket) reject("An approval ticket needs its editor.", "/action/approval");
+    const saves = action.type === "saveCustom" || action.type === "setCssConsent";
+    const settled = settleConsent(settings, next, approvals, { css, action, grant: ticket, editor: saves ? editor : null });
+    next.cssConsent = settled.cssConsent;
+    return { settings: next, approvals: settled.approvals };
+  }
+  function reduceSettings(settings, action, { catalog, newId, css, images }) {
     const next = structuredClone(settings);
+    const done = (grant = null) => ({ next, grant });
     const customIndex = (id) => next.customThemes.findIndex((theme) => theme.id === id);
     switch (action.type) {
       case "selectTheme": {
         const known = action.id.startsWith(LOCAL_THEME_ID_PREFIX) ? customIndex(action.id) >= 0 : catalog.has(action.id);
         if (!known) reject("That theme is not bundled or saved.", "/action/id");
         next.selectedThemeId = action.id;
-        return next;
+        return done();
       }
       case "setEnabled":
         next.enabled = action.enabled;
-        return next;
+        return done();
       case "setPreference":
         if (action.key === "appearance" || action.key === "extras") {
           const full = action.key === "appearance" ? action.value === "full" : action.value;
           next.preferences.appearance = full ? "full" : "calm";
           next.preferences.extras = full;
         } else next.preferences[action.key] = action.value;
-        return next;
+        return done();
       case "saveCustom": {
         const entry = { id: action.id ?? `${LOCAL_THEME_ID_PREFIX}${newId()}`, document: structuredClone(action.document) };
         if (action.basedOn !== void 0) entry.basedOn = action.basedOn;
@@ -11076,50 +11187,33 @@ ${structured ? `${structured}
         const problems = [...customThemeIssues(entry, "/action", catalog), ...documentAdmissionIssues(entry.document, { css, images })];
         if (problems.length) throw new ActionError("invalid", problems);
         if (index < 0) next.customThemes.push(entry);
-        else {
-          const before = css.inspect(next.customThemes[index].document).css;
-          const after = css.inspect(entry.document).css;
-          if (before?.hash !== after?.hash) delete next.cssConsent[entry.id];
-          next.customThemes[index] = entry;
-        }
+        else next.customThemes[index] = entry;
         if (next.customThemes.length > STORAGE_LIMITS.maxCustomThemes) throw new ActionError("storage", [issue3(ISSUE_CODES.capacity, "/customThemes", "Your theme collection is full. Export or remove a saved theme, then try again.")]);
         if (customSourceBytes(next.customThemes) > STORAGE_LIMITS.maxCustomSourceBytes) throw new ActionError("storage", [issue3(ISSUE_CODES.capacity, "/customThemes", "Saved themes would exceed 4 MiB. Export or remove a saved theme, then try again.")]);
         if (action.select) next.selectedThemeId = entry.id;
-        return next;
+        return done(typeof action.approval === "string" ? { id: entry.id, target: action.id ?? NEW_TARGET } : null);
       }
       case "deleteCustom": {
         const index = customIndex(action.id);
         if (index < 0) reject("That saved theme no longer exists.", "/action/id");
         const [removed] = next.customThemes.splice(index, 1);
-        delete next.cssConsent[action.id];
         if (next.selectedThemeId === action.id) next.selectedThemeId = removed.basedOn && catalog.has(removed.basedOn) ? removed.basedOn : fallbackThemeId(catalog);
-        return next;
+        return done();
       }
       case "resetPreferences":
         next.preferences = { ...DEFAULT_PREFERENCES2 };
-        return next;
+        return done();
       case "resetAll":
-        return { ...defaultSettings(catalog), revision: settings.revision, onboardingCompleted: settings.onboardingCompleted };
-      case "setCssConsent": {
-        const index = customIndex(action.id);
-        if (index < 0) reject("That saved theme no longer exists.", "/action/id");
-        if (!action.granted) {
-          delete next.cssConsent[action.id];
-          return next;
-        }
-        const result = css.inspect(next.customThemes[index].document).css;
-        if (css.sanitizerVersion === null || !result?.ok || result.hash !== action.hash || result.sanitizerVersion !== action.sanitizerVersion) {
-          reject("This advanced CSS cannot be approved: it is missing, changed or not sanitized by this version of Reskin.", "/action/hash");
-        }
-        next.cssConsent[action.id] = { hash: action.hash, sanitizerVersion: action.sanitizerVersion };
-        return next;
-      }
+        return { next: { ...defaultSettings(catalog), revision: settings.revision, onboardingCompleted: settings.onboardingCompleted }, grant: null };
+      case "setCssConsent":
+        if (customIndex(action.id) < 0) reject("That saved theme no longer exists.", "/action/id");
+        return done(action.granted ? { id: action.id, target: action.id } : null);
       case "completeOnboarding":
         next.onboardingCompleted = true;
-        return next;
+        return done();
       case "dismissMigration":
         next.migration = { ...next.migration, notices: [] };
-        return next;
+        return done();
     }
     throw new ActionError("invalid", [issue3(ISSUE_CODES.invalid, "/action/type", "Unknown settings action.")]);
   }
@@ -11330,7 +11424,7 @@ ${structured ? `${structured}
   }
 
   // packages/settings/repository.js
-  var ALL_KEYS = [...Object.values(STORAGE_KEYS), RECOVERY_KEY];
+  var ALL_KEYS = [...Object.values(STORAGE_KEYS), RECOVERY_KEY, APPROVALS_KEY];
   var jsonBytes = (value) => new TextEncoder().encode(JSON.stringify(value)).length;
   var storageIssue = (error) => issue3(ISSUE_CODES.storage, "", `Storage failed: ${error?.message ?? String(error)}`);
   async function readSettings(storage, { catalog, newId = () => "00000000-0000-4000-8000-000000000000", repair: repair2 } = {}) {
@@ -11354,6 +11448,7 @@ ${structured ? `${structured}
   }
   function createRepository(storage, context) {
     const { catalog, snapshot } = context;
+    const css = context.css ?? NO_CSS_SANITIZER;
     let queue = Promise.resolve();
     const serialize = (task) => {
       const run = queue.then(task, task);
@@ -11406,6 +11501,12 @@ ${structured ? `${structured}
       const result = validateSettings(stored, catalog);
       if (result.ok) {
         const changes = {};
+        const pruned2 = settledConsent(raw, result.settings);
+        if (pruned2.approvals) changes[APPROVALS_KEY] = pruned2.approvals;
+        if (pruned2.settings) {
+          result.settings = { ...pruned2.settings, revision: pruned2.settings.revision + 1 };
+          result.upgraded = true;
+        }
         if (result.upgraded) Object.assign(changes, { [STORAGE_KEYS.settings]: result.settings, [STORAGE_KEYS.boot]: boot(result.settings) });
         else if (staleBoot(raw[STORAGE_KEYS.boot], result.settings)) changes[STORAGE_KEYS.boot] = boot(result.settings);
         if (Object.keys(changes).length) await write2(raw, changes);
@@ -11420,9 +11521,19 @@ ${structured ? `${structured}
       const recovery = previous ? { ...previous, salvaged: [...Array.isArray(previous.salvaged) ? previous.salvaged : [], copy2] } : copy2;
       const notices = [...settings.migration.notices, NOTICES.settingsRecovered, ...bounded.truncated ? [NOTICES.recoveryTruncated] : []];
       settings.migration = { ...settings.migration, notices: [...new Set(notices)].slice(0, STORAGE_LIMITS.maxNotices) };
-      settings.revision += 1;
-      await write2(raw, { [STORAGE_KEYS.settings]: settings, [STORAGE_KEYS.boot]: boot(settings), [RECOVERY_KEY]: recovery });
-      return { state: "recovered", settings, issues: result.issues };
+      const pruned = settledConsent(raw, settings);
+      const salvaged = { ...pruned.settings ?? settings, revision: settings.revision + 1 };
+      await write2(raw, { [STORAGE_KEYS.settings]: salvaged, [STORAGE_KEYS.boot]: boot(salvaged), [RECOVERY_KEY]: recovery, [APPROVALS_KEY]: pruned.approvals ?? readApprovals(raw[APPROVALS_KEY]) });
+      return { state: "recovered", settings: salvaged, issues: result.issues };
+    }
+    function settledConsent(raw, settings) {
+      const approvals = readApprovals(raw[APPROVALS_KEY]);
+      const settled = settleConsent(settings, settings, approvals, { css });
+      const sameConsent = JSON.stringify(settled.cssConsent) === JSON.stringify(settings.cssConsent);
+      return {
+        settings: sameConsent ? null : { ...settings, cssConsent: settled.cssConsent },
+        approvals: JSON.stringify(settled.approvals) === JSON.stringify(raw[APPROVALS_KEY] ?? []) ? null : settled.approvals
+      };
     }
     function staleBoot(record, settings) {
       if (record === null || record === void 0) return settings.enabled;
@@ -11436,7 +11547,15 @@ ${structured ? `${structured}
       } catch {
       }
     }
-    function commit(action, expectedRevision) {
+    const boundEditor = (origin, editor) => typeof origin?.document === "string" && origin.document && typeof editor === "string" ? digest(`${origin.document}
+${editor}`) : null;
+    const builderOnly = (current) => ({
+      ok: false,
+      code: "invalid",
+      current,
+      issues: [{ ...issue3(ISSUE_CODES.invalid, "/action/approval", "Advanced CSS can be approved only in Reskin's theme builder."), reason: APPROVAL_ISSUE }]
+    });
+    function commit(action, expectedRevision, origin = null) {
       const ready = initialize();
       return serialize(async () => {
         const init = await ready;
@@ -11450,21 +11569,28 @@ ${structured ? `${structured}
         const result = validateSettings(raw[STORAGE_KEYS.settings], catalog);
         if (!result.ok) return { ok: false, code: "invalid", issues: result.issues };
         const current = result.settings;
+        const approvals = readApprovals(raw[APPROVALS_KEY]);
+        if (APPROVAL_ACTION_TYPES.includes(action?.type)) return approve(raw, current, approvals, action, expectedRevision, origin);
         if (expectedRevision !== current.revision) {
           return { ok: false, code: "conflict", current, issues: [issue3(ISSUE_CODES.conflict, "/revision", "Settings changed in another window. Review the current settings and try again.")] };
         }
         let next;
+        let nextApprovals;
         try {
-          next = reduceAction(current, action, context);
+          const editor = await boundEditor(origin, action?.editor);
+          if (typeof action?.approval === "string" && !editor && typeof action.editor === "string") return builderOnly(current);
+          const redeem = typeof action?.approval === "string" && editor ? { ticket: await digest(action.approval), editor } : null;
+          ({ settings: next, approvals: nextApprovals } = reduceState(current, approvals, action, { ...context, redeem, editor }));
         } catch (error) {
           if (error instanceof ActionError) return { ok: false, code: error.code, current, issues: error.issues };
           throw error;
         }
         next.revision = current.revision + 1;
         const changes = { [STORAGE_KEYS.settings]: next, [STORAGE_KEYS.boot]: boot(next) };
+        if (JSON.stringify(nextApprovals) !== JSON.stringify(approvals)) changes[APPROVALS_KEY] = nextApprovals;
         const notices = [];
         Object.assign(changes, lastGoodChanges(raw[STORAGE_KEYS.lastGood], current, next, notices));
-        if (action.type === "resetAll") Object.assign(changes, { [STORAGE_KEYS.draft]: null, [RECOVERY_KEY]: null, [STORAGE_KEYS.lastGood]: null });
+        if (action.type === "resetAll") Object.assign(changes, { [STORAGE_KEYS.draft]: null, [RECOVERY_KEY]: null, [STORAGE_KEYS.lastGood]: null, [APPROVALS_KEY]: null });
         if (action.type === "dismissMigration") changes[RECOVERY_KEY] = null;
         try {
           await write2(raw, changes);
@@ -11474,6 +11600,35 @@ ${structured ? `${structured}
         }
         return notices.length ? { ok: true, settings: next, notices } : { ok: true, settings: next };
       });
+    }
+    async function approve(raw, current, approvals, action, expectedRevision, origin) {
+      const shape2 = actionIssues(action);
+      if (shape2.length) return { ok: false, code: "invalid", current, issues: shape2 };
+      const editor = await boundEditor(origin, action.editor);
+      if (!editor) return builderOnly(current);
+      if (action.type === "approveCss" && expectedRevision !== current.revision) {
+        return { ok: false, code: "conflict", current, issues: [issue3(ISSUE_CODES.conflict, "/revision", "Settings changed in another window. Review the current settings and try again.")] };
+      }
+      let next = withdrawApprovals(approvals, editor);
+      let reply = { ok: true, settings: current };
+      if (action.type === "approveCss") {
+        const secret = context.newId();
+        try {
+          const minted = mintApproval(current, next, { editor, ticket: await digest(secret), target: action.target, text: action.css }, css);
+          next = minted.approvals;
+          reply = { ok: true, settings: current, approval: { ticket: secret, target: action.target, hash: minted.hash, sanitizerVersion: minted.sanitizerVersion } };
+        } catch (error) {
+          if (error instanceof ActionError) return { ok: false, code: error.code, current, issues: error.issues };
+          throw error;
+        }
+      }
+      try {
+        await write2(raw, { [APPROVALS_KEY]: next });
+      } catch (error) {
+        if (error instanceof ActionError) return { ok: false, code: error.code, current, issues: error.issues };
+        throw error;
+      }
+      return reply;
     }
     function lastGoodChanges(stored, current, next, notices) {
       const deleted = (id) => typeof id === "string" && id.startsWith(LOCAL_THEME_ID_PREFIX) && !next.customThemes.some((t) => t.id === id);
@@ -14940,7 +15095,7 @@ ${structured ? `${structured}
     const [x2, y] = [luminance2(a), luminance2(b)].sort((m, n2) => n2 - m);
     return (x2 + 0.05) / (y + 0.05);
   }
-  function digest(text) {
+  function digest2(text) {
     let a = 2166136261;
     let b = 16777619 ^ text.length;
     for (let i = 0; i < text.length; i++) {
@@ -15006,7 +15161,7 @@ ${structured ? `${structured}
     const preview = target === "preview" ? previewSelection(options) : null;
     if (options.selection !== void 0 && typeof options.selection !== "boolean") throw new TypeError("compileGitHub's selection option must be a boolean");
     const mode = appearanceMode(prefs);
-    const fingerprint = digest(JSON.stringify([
+    const fingerprint = digest2(JSON.stringify([
       COMPILER_VERSION,
       RENDERER_VERSION,
       ENGINE_VERSION,
@@ -15200,9 +15355,9 @@ ${structured ? `${structured}
   var FORCED_COLORS = "(forced-colors: active)";
   function createRenderer({ github, resources, catalog = null, index = MODE_INDEX, slotTimeLimitMs = null }) {
     const bundled = new Map((catalog?.ids ?? []).map((id) => [catalog.sourceHash(id), catalog.document(id)]));
-    const themeCss = (resolved, { source = null, consent = null } = {}) => {
-      const packaged = bundled.get(resolved.sourceHash)?.css;
-      if (packaged !== void 0) return { css: packaged, cssAllowed: true, registry: CSS_TARGET_REGISTRY };
+    const themeCss = (resolved, { themeId = null, source = null, consent = null } = {}) => {
+      const selected = typeof themeId === "string" && catalog?.has(themeId) && catalog.sourceHash(themeId) === resolved.sourceHash ? catalog.document(themeId) : null;
+      if (selected) return { css: selected.css ?? null, cssAllowed: typeof selected.css === "string", registry: CSS_TARGET_REGISTRY };
       const css = typeof source?.css === "string" ? source.css : null;
       return { css, cssAllowed: css !== null && consented(css, consent), registry: CSS_TARGET_REGISTRY };
     };
@@ -15220,7 +15375,8 @@ ${structured ? `${structured}
         return { plan, seed: seedFor(index, plan) };
       },
       resolve: resolveTheme,
-      // `context` is {source, consent}: the selected source document and the settings' consent for it.
+      // `context` is {themeId, source, consent}: the selected theme's ID, its source document and the
+      // settings' consent for it.
       compile(resolved, plan, prefs, context) {
         const primer = compileGitHub(resolved, plan, prefs, index);
         if (!primer.css) return { css: "", fingerprint: primer.fingerprint };
@@ -15291,11 +15447,20 @@ ${structured ? `${structured}
       return { css: admitted.ok ? { ok: true, hash: admitted.value.hash, sanitizerVersion: admitted.value.sanitizerVersion } : { ok: false, issues: admitted.issues } };
     }
   });
+  var IMAGE_ADMISSION = Object.freeze({
+    inspect(document2) {
+      const issues = rasterIssues(document2).filter((issue4) => issue4.severity !== "warning");
+      if (issues.length) return { ok: false, issues };
+      const { bytes: bytes2, pixels } = rasterTotals(document2);
+      return { ok: true, bytes: bytes2, pixels, hashes: rasterLayers(document2).map(({ image }) => rasterHash(image.data)) };
+    }
+  });
   function backgroundRendering(index = MODE_INDEX) {
     return {
       snapshot: (theme) => resolveTheme(theme, { seed: standardSeed(index, theme.base), policy: "themed", reducedMotion: false, forcedColors: false }),
       repair: (theme) => repairTheme(theme, standardSeed(index, theme.base)),
-      css: CSS_ADMISSION
+      css: CSS_ADMISSION,
+      images: IMAGE_ADMISSION
     };
   }
   function standardCard(entry, index = MODE_INDEX) {
@@ -16083,7 +16248,7 @@ ${structured ? `${structured}
       const snapshot = usableSnapshot(state.boot, current);
       const resolved = snapshot ?? renderer.resolve(source, { seed, policy, reducedMotion: page.reducedMotion, forcedColors: page.forcedColors });
       onEvent({ type: "resolved", from: snapshot ? "snapshot" : "source" });
-      const context = { plan, source, consent: current.cssConsent };
+      const context = { plan, themeId: settings.selectedThemeId, source, consent: current.cssConsent };
       const compiled = renderer.compile(resolved, plan, prefs, context);
       if (compiled.fingerprint !== fingerprint || !style.isConnected) {
         if (compiled.fingerprint !== fingerprint) style.textContent = compiled.css;
