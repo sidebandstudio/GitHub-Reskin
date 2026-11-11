@@ -76,8 +76,17 @@ writes `artifacts/reports/budgets.json` and fails on any measurement it can't fi
 browser timings in `artifacts/reports/release-timings.json`. The release surface's `test:e2e`
 writes that file: its timing tests each record one measurement under
 `artifacts/reports/release-timings/`, and the module merges them after the run, replacing the
-last run's file even when a test fails. `capture-release` and the `qa-*` commands still fail
-with exit 2.
+last run's file even when a test fails.
+
+`qa:live -- --read-only` runs `scripts/qa-live.mjs` against public GitHub with the packages in
+`artifacts/`, so `npm run package` comes first. It needs the network, and `check:release` does
+not run it. Each page loads natively and with the extension in Chromium and Firefox, at 1440 and
+390 pixels wide. GitHub's text, labels and controls, without the extension's nodes, must match.
+Chromium also switches through every theme on a profile, the repository and a diff. The report
+and screenshots go to `artifacts/reports/live/`. GitHub outages, rate limits and markup changes
+are counted apart from product failures, and any failure exits 1. The Gist comes from GitHub's
+API, which allows 60 logged-out calls an hour per address; a `GITHUB_TOKEN` lifts that, and the
+browsers stay logged out. `capture-release` and the other `qa-*` commands still fail with exit 2.
 
 ### Browser surfaces
 
