@@ -22,7 +22,9 @@
 //                packages in artifacts/. It needs the network and is not part of check:release.
 //   qa-firefox   qa:firefox: scripts/qa-firefox.mjs, the Firefox package in an actual Firefox
 //                release. It needs that Firefox and the network, and is not part of check:release.
-// capture-release, qa-userscript and qa-published-install are not written yet and fail with exit 2.
+//   qa-userscript qa:userscript: scripts/qa-userscript.mjs, the userscript in real Violentmonkey and
+//                Tampermonkey, in Chromium and an actual Firefox release. It needs the network.
+// capture-release and qa-published-install are not written yet and fail with exit 2.
 // Direct use: node tests/release/checks.mjs <command> [args]
 import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, realpathSync, rmSync } from "node:fs";
@@ -387,6 +389,7 @@ export async function run({ command, args = [], root = DEFAULT_ROOT, outDir = jo
   if (command === "a11y") return releaseSurface({ args, root, a11y: true });
   if (command === "qa-live") return (await import("../../scripts/qa-live.mjs")).qaLive({ args, root });
   if (command === "qa-firefox") return (await import("../../scripts/qa-firefox.mjs")).qaFirefox({ args, root });
+  if (command === "qa-userscript") return (await import("../../scripts/qa-userscript.mjs")).qaUserscript({ args, root });
   console.error(`NOT IMPLEMENTED: ${command} (owner C9): tests/release/checks.mjs does not serve it yet. Until it exists this gate fails.`);
   return { exitCode: 2, testCount: 0 };
 }
