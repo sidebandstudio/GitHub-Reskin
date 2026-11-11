@@ -18,7 +18,11 @@
 //                RESKIN_RELEASE_TIMINGS), which this clears first and then merges into
 //                artifacts/reports/release-timings.json for check:budgets.
 //   a11y         The release surface's @a11y tests: the add-on's pages at 320px in both engines.
-// capture-release and the qa-* commands are not written yet and fail with exit 2.
+//   qa-live      qa:live -- --read-only: scripts/qa-live.mjs, the live public GitHub check of the
+//                packages in artifacts/. It needs the network and is not part of check:release.
+//   qa-firefox   qa:firefox: scripts/qa-firefox.mjs, the Firefox package in an actual Firefox
+//                release. It needs that Firefox and the network, and is not part of check:release.
+// capture-release, qa-userscript and qa-published-install are not written yet and fail with exit 2.
 // Direct use: node tests/release/checks.mjs <command> [args]
 import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, realpathSync, rmSync } from "node:fs";
@@ -381,6 +385,8 @@ export async function run({ command, args = [], root = DEFAULT_ROOT, outDir = jo
   if (command === "store-links") return checkStoreLinks({ args, root });
   if (command === "test:e2e") return releaseSurface({ args, root });
   if (command === "a11y") return releaseSurface({ args, root, a11y: true });
+  if (command === "qa-live") return (await import("../../scripts/qa-live.mjs")).qaLive({ args, root });
+  if (command === "qa-firefox") return (await import("../../scripts/qa-firefox.mjs")).qaFirefox({ args, root });
   console.error(`NOT IMPLEMENTED: ${command} (owner C9): tests/release/checks.mjs does not serve it yet. Until it exists this gate fails.`);
   return { exitCode: 2, testCount: 0 };
 }
