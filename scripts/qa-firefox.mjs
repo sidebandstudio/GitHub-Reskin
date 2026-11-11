@@ -19,8 +19,9 @@ import { fileURLToPath } from "node:url";
 import { randomUUID } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { firefox } from "@playwright/test";
+import { FONT_BY_ID } from "../packages/appearance/registry.js";
 import { catalogCards, readCatalogEntries } from "../packages/ui/bundle.mjs";
-import { unpack } from "./qa-live.mjs";
+import { deadline, provenance, unpack } from "./qa-live.mjs";
 
 const DEFAULT_ROOT = fileURLToPath(new URL("..", import.meta.url));
 export const OUT = "artifacts/reports/firefox";
@@ -45,33 +46,53 @@ export function findFirefox(args, env = process.env, exists = existsSync) {
 
 /** How to repeat the run by hand with web-ext, in a visible Firefox. */
 export function procedure({ firefoxPath, zip }) {
+  const run = [
+    "npx web-ext run --source-dir <add-on folder>",
+    `--firefox "${firefoxPath ?? "<path to firefox>"}"`,
+    "--firefox-profile <profile folder> --profile-create-if-missing --keep-profile-changes",
+    "--pref extensions.webextensions.keepStorageOnUninstall=true --pref extensions.webextensions.keepUuidOnUninstall=true",
+    `--start-url ${GITHUB}`,
+  ].join(" ");
   return [
     "To repeat this by hand in a visible Firefox:",
-    `  1. Unzip ${zip} into an empty folder.`,
-    `  2. npx web-ext run --source-dir <that folder> --firefox "${firefoxPath ?? "<path to firefox>"}" --start-url ${GITHUB}`,
-    "     web-ext makes a fresh temporary profile and installs the folder as a temporary add-on.",
-    "  3. One welcome tab opens. Pick Frieren there; the GitHub tab turns cream, with the theme's own fonts.",
-    "  4. In the add-on's settings, Make a theme > Import > Choose file, import a .reskin.json, save it, then export it from Backup & help.",
-    "  5. Quit with Ctrl+C and run step 2 again with --profile-create-if-missing --keep-profile-changes --firefox-profile <a folder>: the theme stays.",
+    `  1. Unzip ${zip} into an empty <add-on folder>, and make an empty <profile folder>.`,
+    `  2. ${run}`,
+    "     web-ext installs the add-on folder as a temporary add-on in that profile, and keeps the profile and the add-on's storage.",
+    "  3. One welcome tab opens. Pick Frieren there; the GitHub tab turns cream, in the theme's own fonts.",
+    "  4. In the add-on's settings, Make a theme > Import > Choose file, pick a .reskin.json, Preview theme, Use theme and Save as theme. Export it from Backup & help.",
+    "  5. Press Ctrl+C in the terminal to quit, then run step 2's command again: no welcome tab, and GitHub keeps the saved theme.",
     "  6. Turn GitHub Reskin off in its popup: GitHub goes back to its own look. Turn it on again.",
+    "  After steps 3, 4, 5 and 6, take a screenshot with Firefox's screenshot tool (Ctrl+Shift+S, Save visible) into artifacts/reports/firefox/manual/.",
   ].join("\n");
 }
 
 /**
- * A Firefox remote debugging client: request(packet) resolves with the reply from packet.to, and
- * on(listener) sees every packet, including events.
+ * A Firefox remote debugging client: request(packet) resolves with the reply from packet.to, or
+ * rejects after `ms`, and on(listener) sees every packet, including events. When the connection
+ * closes, pending requests reject and listeners see {type: "connection-closed"}. A run stops on a
+ * timeout, since a late reply would answer the next request to that actor.
  */
-export function remoteClient(port, host = "127.0.0.1") {
+export function remoteClient(port, { host = "127.0.0.1", ms = 30000 } = {}) {
   return new Promise((resolve, reject) => {
     const socket = net.createConnection({ port, host });
     const waiting = new Map();
     const listeners = new Set();
     let buffer = Buffer.alloc(0);
     let greeted = false;
+    const greeting = setTimeout(() => {
+      socket.destroy();
+      reject(new Error(`Firefox's debugging server did not greet within ${ms / 1000} s`));
+    }, ms);
     const client = {
       request(packet) {
         return new Promise((done, fail) => {
-          waiting.set(packet.to, [...(waiting.get(packet.to) ?? []), { done, fail }]);
+          const entry = { done, fail };
+          entry.timer = setTimeout(() => {
+            const queue = waiting.get(packet.to) ?? [];
+            queue.splice(queue.indexOf(entry), 1);
+            fail(new Error(`Firefox did not answer ${packet.type} within ${ms / 1000} s`));
+          }, ms);
+          waiting.set(packet.to, [...(waiting.get(packet.to) ?? []), entry]);
           const body = Buffer.from(JSON.stringify(packet));
           socket.write(Buffer.concat([Buffer.from(`${body.length}:`), body]));
         });
@@ -93,6 +114,7 @@ export function remoteClient(port, host = "127.0.0.1") {
         buffer = buffer.subarray(colon + 1 + length);
         if (!greeted) {
           greeted = true;
+          clearTimeout(greeting);
           resolve(client);
           continue;
         }
@@ -100,29 +122,39 @@ export function remoteClient(port, host = "127.0.0.1") {
         // Events carry a type; a reply has none, or carries an error.
         const queue = waiting.get(packet.from);
         if (queue?.length && (!packet.type || packet.error)) {
-          const { done, fail } = queue.shift();
+          const { done, fail, timer } = queue.shift();
+          clearTimeout(timer);
           if (packet.error) fail(new Error(`${packet.error}: ${packet.message}`));
           else done(packet);
         }
       }
     });
-    socket.on("error", reject);
+    socket.on("error", (error) => {
+      clearTimeout(greeting);
+      reject(error);
+    });
     socket.on("close", () => {
-      for (const queue of waiting.values()) for (const { fail } of queue) fail(new Error("Firefox closed the debugging connection"));
+      for (const queue of waiting.values())
+        for (const { fail, timer } of queue) {
+          clearTimeout(timer);
+          fail(new Error("Firefox closed the debugging connection"));
+        }
       waiting.clear();
+      for (const listener of listeners) listener({ type: "connection-closed" });
     });
   });
 }
 
 async function connect(port) {
-  for (let attempt = 0; attempt < 100; attempt++) {
+  const end = Date.now() + 30000;
+  for (;;) {
     try {
-      return await remoteClient(port);
-    } catch {
+      return await remoteClient(port, { ms: 10000 });
+    } catch (error) {
+      if (Date.now() > end) throw new Error(`Firefox's debugging server never answered on port ${port}: ${error.message}`);
       await new Promise((done) => setTimeout(done, 200));
     }
   }
-  throw new Error(`Firefox's debugging server never answered on port ${port}`);
 }
 
 const wait = (ms) => new Promise((done) => setTimeout(done, ms));
@@ -138,7 +170,8 @@ async function until(check, ms = 15000) {
 /**
  * Firefox with the add-on installed as a temporary add-on: {context, addon, close}. `addon` reaches
  * the add-on's frames: evaluate(match, fn, ...args) runs fn in the newest frame whose URL contains
- * `match` and resolves with its JSON result, and screenshot(match, path) photographs that tab.
+ * `match` and resolves with its JSON result, screenshot(match, path) photographs that tab, and
+ * problems collects the errors and CSP reports from the add-on's own pages and background.
  */
 async function launch({ executablePath, profile, dir, uuid, id, downloads }) {
   const port = 6000 + Math.floor(Math.random() * 2000);
@@ -171,28 +204,39 @@ async function launch({ executablePath, profile, dir, uuid, id, downloads }) {
     const addon = await until(async () => (await client.request({ to: "root", type: "listAddons" })).addons.find((entry) => entry.id === id));
     const watcher = await client.request({ to: addon.actor, type: "getWatcher" });
     const frames = [];
+    const problems = [];
     client.on((packet) => {
       if (packet.type === "target-available-form") frames.push(packet.target);
       const gone = packet.type === "target-destroyed-form" ? frames.findIndex((form) => form.actor === packet.target.actor) : -1;
       if (gone >= 0) frames.splice(gone, 1);
+      if (packet.type === "resources-available-array")
+        for (const [kind, resources] of packet.array ?? [])
+          for (const { pageError } of kind === "error-message" ? resources : [])
+            if (pageError && (!pageError.warning || /CSP/i.test(pageError.category ?? ""))) problems.push(`${pageError.category ?? ""} ${pageError.errorMessage} (${pageError.sourceName ?? ""})`.trim());
     });
     await client.request({ to: watcher.actor, type: "watchTargets", targetType: "frame" });
+    await client.request({ to: watcher.actor, type: "watchResources", resourceTypes: ["error-message"] });
     const frame = (match) => until(async () => frames.findLast((form) => form.url?.includes(match)));
     const evaluate = async (match, fn, ...args) => {
       const form = await frame(match);
       if (!form) throw new Error(`no add-on frame at ${match}`);
-      const result = new Promise((resolve) => {
-        const off = client.on((packet) => {
-          if (packet.type === "evaluationResult" && packet.from === form.consoleActor) {
-            off();
-            resolve(packet);
-          }
+      let off = () => {};
+      // The value arrives as its own event, which a closed connection or page never sends.
+      const result = new Promise((resolve, reject) => {
+        off = client.on((packet) => {
+          if (packet.type === "evaluationResult" && packet.from === form.consoleActor) resolve(packet);
+          else if (packet.type === "connection-closed") reject(new Error("Firefox closed the debugging connection"));
+          else if (packet.type === "target-destroyed-form" && packet.target?.actor === form.actor) reject(new Error(`${match} closed during an evaluation`));
         });
       });
-      await client.request({ to: form.consoleActor, type: "evaluateJSAsync", text: `(async () => JSON.stringify(await (${fn})(...${JSON.stringify(args)})))()`, mapped: { await: true } });
-      const packet = await result;
-      if (packet.exceptionMessage) throw new Error(`${match}: ${packet.exceptionMessage}`);
-      return typeof packet.result === "string" ? JSON.parse(packet.result) : undefined;
+      try {
+        await client.request({ to: form.consoleActor, type: "evaluateJSAsync", text: `(async () => JSON.stringify(await (${fn})(...${JSON.stringify(args)})))()`, mapped: { await: true } });
+        const packet = await deadline(result, 30000, `Evaluating in ${match}`);
+        if (packet.exceptionMessage) throw new Error(`${match}: ${packet.exceptionMessage}`);
+        return typeof packet.result === "string" ? JSON.parse(packet.result) : undefined;
+      } finally {
+        off();
+      }
     };
     const screenshot = async (match, path) => {
       const form = await frame(match);
@@ -204,7 +248,7 @@ async function launch({ executablePath, profile, dir, uuid, id, downloads }) {
       client.close();
       await context.close();
     };
-    return { context, addon: { evaluate, screenshot, frame }, close };
+    return { context, addon: { evaluate, screenshot, frame, problems }, close };
   } catch (error) {
     client?.close();
     await context.close();
@@ -237,16 +281,50 @@ async function textOf(selector, pattern, ms = 15000) {
   }
 }
 
-// In the GitHub tab: what the add-on did there.
-function pageState() {
+// In a GitHub tab, before it loads: keeps every CSP report with what it blocked and where from.
+function recordViolations() {
+  window.__reskinViolations = [];
+  document.addEventListener("securitypolicyviolation", (event) =>
+    window.__reskinViolations.push(`${event.disposition} ${event.effectiveDirective} blocked=${event.blockedURI} source=${event.sourceFile}`),
+  );
+}
+
+// In a GitHub tab: what the add-on did there, and the computed colors and fonts a theme changes.
+function pageLook() {
   const root = document.documentElement;
+  const css = (element, name) => (element ? getComputedStyle(element).getPropertyValue(name).trim() : null);
+  const header = document.querySelector("header");
+  const link = document.querySelector("main a[href]");
   return {
     boot: root.getAttribute("data-reskin-boot"),
     styled: Boolean(document.getElementById("reskin-style")?.textContent),
     owned: document.querySelectorAll("[data-reskin-owned]").length,
-    canvas: getComputedStyle(root).getPropertyValue("--bgColor-default").trim(),
-    body: getComputedStyle(document.body).fontFamily,
+    canvas: css(root, "--bgColor-default"),
+    look: {
+      "--bgColor-default": css(root, "--bgColor-default"),
+      "--fgColor-default": css(root, "--fgColor-default"),
+      "--fgColor-accent": css(root, "--fgColor-accent"),
+      "body color": css(document.body, "color"),
+      "body background": css(document.body, "background-color"),
+      "body font": css(document.body, "font-family"),
+      "header background": css(header, "background-color"),
+      "link color": css(link, "color"),
+    },
+    violations: window.__reskinViolations ?? [],
   };
+}
+
+// In a GitHub tab: every font face once loaded, and how many text-bearing elements use each family first.
+async function pageFonts(families) {
+  const faces = [...document.fonts];
+  await Promise.all(faces.map((face) => face.load().catch(() => null)));
+  const first = (element) => getComputedStyle(element).fontFamily.split(",")[0].trim().replace(/^"|"$/g, "");
+  const users = Object.fromEntries(families.map((family) => [family, 0]));
+  for (const element of document.body.querySelectorAll("*")) {
+    const family = first(element);
+    if (family in users && [...element.childNodes].some((node) => node.nodeType === 3 && node.data.trim())) users[family]++;
+  }
+  return { faces: faces.map((face) => ({ family: face.family.replace(/^"|"$/g, ""), weight: String(face.weight), status: face.status })), body: first(document.body), users };
 }
 
 /** Runs the actual-Firefox check and writes its report. Resolves to {exitCode, testCount}. */
@@ -262,7 +340,14 @@ export async function qaFirefox({ args = [], root = DEFAULT_ROOT } = {}) {
   await rm(out, { recursive: true, force: true });
   await mkdir(out, { recursive: true });
   const shot = (name) => join(OUT, `${name}.png`).replaceAll("\\", "/");
-  const report = { startedAt: new Date().toISOString(), firefox: { path: executablePath }, candidate: { version: config.version, commit: execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).trim() }, checks: [] };
+  const report = {
+    startedAt: new Date().toISOString(),
+    firefox: { path: executablePath },
+    candidate: null,
+    harness: { commit: execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).trim() },
+    checks: [],
+    notes: ["The import gives the file input its file from script, so Firefox's own file picker is not exercised. Step 4 of the printed procedure covers it by hand."],
+  };
   const record = (step, check, pass, detail, screenshot) => {
     report.checks.push({ step, check, pass, ...(detail === undefined ? {} : { detail }), ...(screenshot ? { screenshot } : {}) });
     console.log(`${pass ? "ok  " : "FAIL"} ${step}: ${check}${detail === undefined ? "" : ` (${JSON.stringify(detail)})`}`);
@@ -273,13 +358,27 @@ export async function qaFirefox({ args = [], root = DEFAULT_ROOT } = {}) {
   await mkdir(downloads, { recursive: true });
   let session = null;
   let unpacked = null;
+  const problems = [];
   try {
     unpacked = await unpack(root, config.version, "firefox");
-    report.candidate.package = { file: unpacked.file, sha256: unpacked.sha256 };
+    report.candidate = await provenance(root, { firefox: unpacked });
     const id = JSON.parse(await readFile(join(unpacked.dir, "manifest.json"), "utf8")).browser_specific_settings.gecko.id;
     const options = { executablePath, profile, dir: unpacked.dir, uuid: randomUUID(), id, downloads };
-    const canvasOf = Object.fromEntries(catalogCards(await readCatalogEntries(root)).map((card) => [card.id, card.mini.canvas]));
+    const entries = await readCatalogEntries(root);
+    const canvasOf = Object.fromEntries(catalogCards(entries).map((card) => [card.id, card.mini.canvas]));
     const settings = () => session.addon.evaluate("_generated_background_page", async () => (await browser.storage.local.get("reskin.settings"))["reskin.settings"]);
+
+    // GitHub in the same Firefox without the add-on, for what native looks like and reports.
+    const plain = await firefox.launch({ channel: "moz-firefox", executablePath, headless: true });
+    try {
+      const page = await (await plain.newContext({ locale: "en-US", timezoneId: "UTC", viewport: { width: 1280, height: 800 } })).newPage();
+      await page.addInitScript(recordViolations);
+      await page.goto(GITHUB, { waitUntil: "load", timeout: 60000 });
+      await page.waitForTimeout(2500);
+      report.baseline = await page.evaluate(pageLook);
+    } finally {
+      await plain.close();
+    }
 
     session = await launch(options);
     report.firefox.version = session.context.browser()?.version() ?? null;
@@ -303,26 +402,24 @@ export async function qaFirefox({ args = [], root = DEFAULT_ROOT } = {}) {
     await session.addon.screenshot("pages/onboarding.html", join(root, shot("2-welcome-frieren")));
     record("first run", "Frieren chosen in the welcome tab", chose && status === "Applied to GitHub." && chosen.selectedThemeId === FRIEREN && chosen.onboardingCompleted, { status, selected: chosen.selectedThemeId }, shot("2-welcome-frieren"));
 
-    // GitHub, logged out: themed, and the add-on's fonts load under GitHub's CSP.
+    // GitHub, logged out: themed, in Frieren's own fonts, and GitHub's CSP reports nothing new.
     const github = await session.context.newPage();
-    await github.addInitScript(() => {
-      window.__reskinViolations = [];
-      document.addEventListener("securitypolicyviolation", (event) => window.__reskinViolations.push(`${event.violatedDirective} ${event.blockedURI}`));
-    });
+    await github.addInitScript(recordViolations);
     await github.goto(GITHUB, { waitUntil: "load", timeout: 60000 });
     await github.waitForTimeout(2500);
-    let state = await github.evaluate(pageState);
+    let state = await github.evaluate(pageLook);
     await github.screenshot({ path: join(root, shot("3-github-frieren")) });
-    record("GitHub", "themed in Frieren", state.boot === "ready" && state.styled && state.canvas === canvasOf[FRIEREN], state, shot("3-github-frieren"));
-    const fonts = await github.evaluate(async () => {
-      const faces = [...document.fonts];
-      await Promise.all(faces.map((face) => face.load().catch(() => null)));
-      return { faces: faces.map((face) => `${face.family} ${face.weight} ${face.status}`), violations: window.__reskinViolations };
-    });
-    const extensionFaces = fonts.faces.filter((face) => !/Mona Sans|Noto Sans Backtick/.test(face));
-    record("GitHub", "the theme's fonts load and GitHub's CSP blocks nothing of the add-on's", extensionFaces.length > 0 && extensionFaces.every((face) => face.endsWith(" loaded")) && !fonts.violations.some((v) => /moz-extension/.test(v)), { ...fonts, body: state.body });
-    const bodyFamily = state.body.split(",")[0].trim().replace(/^"|"$/g, "");
-    record("GitHub", "body text uses one of the add-on's fonts", extensionFaces.some((face) => face.startsWith(`${bodyFamily} `) && face.endsWith(" loaded")), state.body);
+    record("GitHub", "themed in Frieren", state.boot === "ready" && state.styled && state.canvas === canvasOf[FRIEREN], { boot: state.boot, styled: state.styled, canvas: state.canvas }, shot("3-github-frieren"));
+    const frieren = entries.find((entry) => entry.id === FRIEREN).document.fonts;
+    const expected = { body: FONT_BY_ID[frieren.body], heading: FONT_BY_ID[frieren.heading] };
+    const fonts = await github.evaluate(pageFonts, [expected.body.cssFamily, expected.heading.cssFamily]);
+    const missing = Object.values(expected).flatMap((font) =>
+      font.weights.map(String).filter((weight) => !fonts.faces.some((face) => face.family === font.cssFamily && face.weight === weight && face.status === "loaded")).map((weight) => `${font.cssFamily} ${weight}`),
+    );
+    record("GitHub", "Frieren's body and heading faces are all declared and load", missing.length === 0, { missing, faces: fonts.faces.map((face) => `${face.family} ${face.weight} ${face.status}`) });
+    record("GitHub", "body text is in Frieren's body font, and headings use its heading font", fonts.body === expected.body.cssFamily && fonts.users[expected.heading.cssFamily] > 0, { body: fonts.body, users: fonts.users });
+    const added = state.violations.filter((violation) => !report.baseline.violations.includes(violation));
+    record("GitHub", "GitHub's CSP reports nothing the native page does not", added.length === 0 && !state.violations.some((violation) => /moz-extension/.test(violation)), { added, native: report.baseline.violations.length });
 
     // Import a theme file in Make a theme and save it, then export it from Backup & help.
     await session.addon.evaluate("pages/onboarding.html", (url) => (location.href = url), "settings.html#make");
@@ -349,6 +446,11 @@ export async function qaFirefox({ args = [], root = DEFAULT_ROOT } = {}) {
         if (!(await press("Import"))) return { trace };
         if (!(await press("Choose file", dialog))) return { trace };
         const input = await until(() => dialog()?.querySelector('[data-rb="file"]'));
+        // The control someone would use: enabled, not hidden, with it or its label on screen.
+        const label = input && document.querySelector(`label[for="${input.id}"]`);
+        const usable = Boolean(input && !input.disabled && !input.closest("[hidden]") && (input.getClientRects().length || label?.getClientRects().length));
+        trace.push(`file control: ${usable ? "usable" : "not usable"}`);
+        if (!usable) return { trace };
         const files = new DataTransfer();
         files.items.add(new File([JSON.stringify(theme, null, 2)], "firefox-check.reskin.json", { type: "application/json" }));
         input.files = files.files;
@@ -380,6 +482,7 @@ export async function qaFirefox({ args = [], root = DEFAULT_ROOT } = {}) {
 
     // Restart: the same profile and a reinstall keep settings, and no second welcome tab opens.
     const before = await settings();
+    problems.push(...session.addon.problems);
     await session.close();
     session = await launch(options);
     await wait(3000);
@@ -389,10 +492,10 @@ export async function qaFirefox({ args = [], root = DEFAULT_ROOT } = {}) {
     const tab = await session.context.newPage();
     await tab.goto(GITHUB, { waitUntil: "load", timeout: 60000 });
     await tab.waitForTimeout(2500);
-    state = await tab.evaluate(pageState);
+    state = await tab.evaluate(pageLook);
     await tab.screenshot({ path: join(root, shot("5-github-after-restart")) });
-    const expected = after.selectedThemeId === FRIEREN ? canvasOf[FRIEREN] : IMPORTED.colors.background;
-    record("restart", "GitHub keeps the selected theme", state.boot === "ready" && state.canvas === expected, state, shot("5-github-after-restart"));
+    const canvas = after.selectedThemeId === FRIEREN ? canvasOf[FRIEREN] : IMPORTED.colors.background;
+    record("restart", "GitHub keeps the selected theme", state.boot === "ready" && state.canvas === canvas, { boot: state.boot, canvas: state.canvas, expected: canvas }, shot("5-github-after-restart"));
 
     // Off in the popup: GitHub goes back to its own look, and on again.
     await session.addon.evaluate("_generated_background_page", () => browser.tabs.create({ url: browser.runtime.getURL("pages/popup.html") }).then(() => true));
@@ -408,17 +511,20 @@ export async function qaFirefox({ args = [], root = DEFAULT_ROOT } = {}) {
       return !box.checked;
     });
     await tab.waitForTimeout(1500);
-    state = await tab.evaluate(pageState);
+    state = await tab.evaluate(pageLook);
     await tab.screenshot({ path: join(root, shot("6-github-off")) });
-    record("off", "turning it off leaves GitHub native", off && !state.styled && state.owned === 0 && state.canvas !== expected, state, shot("6-github-off"));
+    const differs = Object.keys(report.baseline.look).filter((key) => state.look[key] !== report.baseline.look[key]);
+    record("off", "turning it off leaves GitHub as it looks without the add-on", off && state.boot === "native" && !state.styled && state.owned === 0 && differs.length === 0, { boot: state.boot, styled: state.styled, owned: state.owned, differs: differs.map((key) => `${key}: ${state.look[key]}, natively ${report.baseline.look[key]}`) }, shot("6-github-off"));
     await session.addon.evaluate("pages/popup.html", () => {
       const box = document.querySelector('[data-rs="enabled"]');
       if (!box.checked) box.click();
       return box.checked;
     });
     await tab.waitForTimeout(1500);
-    state = await tab.evaluate(pageState);
-    record("off", "turning it on again restyles the open tab", state.styled && state.canvas === expected, state);
+    state = await tab.evaluate(pageLook);
+    record("off", "turning it on again restyles the open tab", state.boot === "ready" && state.styled && state.canvas === canvas, { boot: state.boot, canvas: state.canvas });
+    problems.push(...session.addon.problems);
+    record("add-on pages", "no errors or CSP reports in the add-on's own pages and background", problems.length === 0, problems.slice(0, 5));
   } catch (error) {
     record("run", "completed", false, error.message.split("\n")[0]);
   } finally {
