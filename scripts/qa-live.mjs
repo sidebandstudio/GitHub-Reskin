@@ -232,7 +232,7 @@ async function routeExpression(root) {
 }
 
 /** Unpacks one release package from artifacts/ and returns {dir, file, sha256}. */
-async function unpack(root, version, kind) {
+export async function unpack(root, version, kind) {
   const file = join(root, "artifacts", artifactName(version, kind));
   const bytes = await readFile(file).catch(() => null);
   if (!bytes) throw new Error(`${relative(root, file)} is missing. Run npm run package first.`);

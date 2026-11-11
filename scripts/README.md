@@ -86,7 +86,19 @@ Chromium also switches through every theme on a profile, the repository and a di
 and screenshots go to `artifacts/reports/live/`. GitHub outages, rate limits and markup changes
 are counted apart from product failures, and any failure exits 1. The Gist comes from GitHub's
 API, which allows 60 logged-out calls an hour per address; a `GITHUB_TOKEN` lifts that, and the
-browsers stay logged out. `capture-release` and the other `qa-*` commands still fail with exit 2.
+browsers stay logged out.
+
+`qa:firefox [-- --firefox <path>]` runs `scripts/qa-firefox.mjs` in an actual Firefox release, not
+Playwright's patched build. It takes `--firefox`, then `RESKIN_FIREFOX`, then the usual install
+path, and fails without one. It installs the Firefox package from `artifacts/` as a temporary
+add-on in a fresh profile, as `web-ext run` does, and checks the first-run tab, a theme chosen
+there reaching public GitHub, the add-on's fonts under GitHub's CSP, importing a theme file and
+exporting it again, settings across a restart and the on/off switch. Playwright's WebDriver BiDi
+mode drives the GitHub tab, and Firefox's remote debugging protocol drives and photographs the
+add-on's own pages, which BiDi does not reach. The report and screenshots go to
+`artifacts/reports/firefox/`, and it prints how to repeat the run by hand.
+
+`capture-release`, `qa-userscript` and `qa-published-install` still fail with exit 2.
 
 ### Browser surfaces
 
