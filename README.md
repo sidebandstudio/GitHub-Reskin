@@ -88,7 +88,7 @@ Themes live in `themes/anime` and `themes/classics` as `.reskin.json` files, lis
 
 GitHub's standard mode colors live in `vendor/primer`, a frozen snapshot. `node scripts/refresh-primer.mjs` fetches a newer one for review.
 
-The userscript is generated from the same packages by `userscript/build.mjs`. `npm run build:userscript` writes it to `dist/userscript/`, and the site build publishes it on Pages at the address its `@updateURL` names. `userscript/github-reskin.user.js` is a frozen copy, version 1.1.1, that moves installs of the first userscripts (1.0.0 and 1.1.0) to that address, so leave it as it is. Userscript managers only install an update when its version goes up, so raise `version` in `release.config.json` when you change what users see.
+The userscript is generated from the same packages by `userscript/build.mjs`. `npm run build:userscript` writes it to `dist/userscript/`, and the site build publishes it on Pages at the address its `@updateURL` names. `userscript/github-reskin.user.js` is a frozen copy, version 1.1.2, that moves installs of the first userscripts (1.0.0 and 1.1.0) to that address, so leave it as it is. Userscript managers only install an update when its version goes up, so raise `version` in `release.config.json` when you change what users see.
 
 ## Contribution graph for your profile
 

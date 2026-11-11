@@ -5,8 +5,10 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { build, builderDocument, cardDocument, fixtureAssets, GRANTS, MAX_BYTES, metadata, updateUrl } from "../../userscript/build.mjs";
+import vm from "node:vm";
+import { build, builderDocument, cardDocument, DEFINE, fixtureAssets, GRANTS, INJECT, MAX_BYTES, metadata, updateUrl } from "../../userscript/build.mjs";
 import { CSS_NOTE, IMPORT_CSS_NOTE } from "../../userscript/copy.js";
 import { REVIEWED_PREVIEW_READ } from "../../userscript/verify.mjs";
 import { metadataEntries, scriptProblems } from "../../userscript/verify.mjs";
@@ -23,6 +25,43 @@ test("the same inputs build the same bytes, within the 3.5 MiB budget", async ()
 
 test("the generated script passes every static check", async () => {
   assert.deepEqual(await scriptProblems(script, { config, root }), []);
+});
+
+test("CSS checking works where a manager binds window's functions to the window, as Violentmonkey does", async () => {
+  const { build: esbuild } = await import("esbuild");
+  const color = async (define) => {
+    const entry = 'import { lexer, parse } from "css-tree"; globalThis.matched = lexer.matchType("color", parse("transparent", { context: "value" })).matched !== null;';
+    const result = await esbuild({ stdin: { contents: entry, resolveDir: root, loader: "js" }, bundle: true, format: "iife", platform: "browser", write: false, logLevel: "silent", define });
+    const sandbox = vm.createContext({});
+    vm.runInContext("globalThis.hasOwnProperty = Object.prototype.hasOwnProperty.bind(globalThis);", sandbox);
+    vm.runInContext(result.outputFiles[0].text, sandbox);
+    return sandbox.matched;
+  };
+  assert.equal(await color({}), false, "the bound global breaks css-tree's lexer");
+  assert.equal(await color(DEFINE), true);
+  // The script itself leaves no call on a global hasOwnProperty.
+  assert.doesNotMatch(script, /(?<![.\w$])hasOwnProperty\.call\(/);
+});
+
+test("a bare structuredClone comes from the script's own realm, where a manager resolves globals through the page", async () => {
+  const { build: esbuild } = await import("esbuild");
+  const run = async (inject) => {
+    const entry = "globalThis.result = (() => { const copy = structuredClone({ a: {} }); copy.a = { b: 1 }; return copy.a.b; })();";
+    const result = await esbuild({ stdin: { contents: entry, resolveDir: root, loader: "js" }, bundle: true, format: "iife", platform: "browser", write: false, logLevel: "silent", define: DEFINE, inject });
+    // As Violentmonkey in Firefox: globals resolve through the page first, and the page's copies
+    // refuse the script's values, while the script's own global has a working structuredClone.
+    const refuse = () => {
+      throw new Error("Not allowed to define cross-origin object as property on [Object] or [Array] XrayWrapper");
+    };
+    const page = { structuredClone: (value) => new Proxy(structuredClone(value), { set: refuse, defineProperty: refuse }) };
+    const sandbox = vm.createContext({ structuredClone, page });
+    vm.runInContext(`with (page) {\n${result.outputFiles[0].text}\n}`, sandbox);
+    return sandbox.result;
+  };
+  await assert.rejects(run([]), /cross-origin object/, "the page's copy refuses the script's values");
+  assert.equal(await run(INJECT.map((path) => join(root, path))), 1);
+  // The script itself binds structuredClone from own-globals.js, so no reference reaches the page's.
+  assert.match(script, /\/\/ userscript\/own-globals\.js\n[\s\S]{0,400}?var structuredClone = typeof \w+\?\.structuredClone === "function"/);
 });
 
 test("metadata keeps the 1.1.0 identity, updates from Pages and requests nothing", () => {

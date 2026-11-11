@@ -150,6 +150,20 @@ export function detectGmStorage(scope = {}) {
   };
 }
 
+/**
+ * The Firefox content-script bridge createGmStorage takes, or null outside isolation.js's Xray.
+ * Callbacks are exported to the document's own window: Violentmonkey's `window` is a proxy, which
+ * exportFunction refuses, and its Promise is the script's own, which the page's LockManager cannot
+ * read, so every lock would fail and nothing would ever be saved.
+ * @param {{exportFunction?: Function}} scope the manager's grants
+ * @param {{document: Document, view: Window, isolation: {method: string|null}}} page
+ */
+export function lockBridge(scope, { document, view, isolation }) {
+  if (isolation.method !== "xray" || typeof scope.exportFunction !== "function") return null;
+  const target = document.defaultView ?? view;
+  return { exportFunction: (fn) => scope.exportFunction(fn, target), Promise: target.Promise };
+}
+
 /** The records of a stored STATE_KEY value; a missing one is empty, a malformed one is refused. */
 export function stateRecords(value) {
   if (value === undefined || value === null) return {};
