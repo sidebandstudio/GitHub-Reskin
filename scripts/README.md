@@ -79,10 +79,12 @@ writes that file: its timing tests each record one measurement under
 last run's file even when a test fails.
 
 `qa:live -- --read-only` runs `scripts/qa-live.mjs` against public GitHub with the packages in
-`artifacts/`, so `npm run package` comes first. It needs the network, and `check:release` does
-not run it. Each page loads natively and with the extension in Chromium and Firefox, at 1440 and
-390 pixels wide. GitHub's text, labels and controls, without the extension's nodes, must match.
-Chromium also switches through every theme on a profile, the repository and a diff. The report
+`artifacts/`, so `npm run package` comes first, and records the commit `build-info.json` names.
+It needs the network, and `check:release` does not run it. Each page loads natively and with the
+extension in Chromium and Firefox, at 1440 and 390 pixels wide. GitHub's text, labels, controls
+and accessibility tree, without the extension's nodes, must match, and rendered text may not
+read worse than WCAG AA where GitHub's own does. Chromium also switches through every theme on a
+profile, the repository and a diff, and checks each is the selected theme with its own canvas. The report
 and screenshots go to `artifacts/reports/live/`. GitHub outages, rate limits and markup changes
 are counted apart from product failures, and any failure exits 1. The Gist comes from GitHub's
 API, which allows 60 logged-out calls an hour per address; a `GITHUB_TOKEN` lifts that, and the

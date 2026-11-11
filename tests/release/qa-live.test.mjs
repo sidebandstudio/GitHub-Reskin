@@ -1,9 +1,14 @@
 // scripts/qa-live.mjs without the network: the pages it visits come from GitHub's answers at test
-// time, a GitHub failure is told apart from a markup change, snapshots report what changed, and
-// themes with the same identity colors are caught. The live run itself is npm run qa:live.
+// time, a GitHub failure is told apart from a markup change and a steady product change, rendered
+// contrast is judged against GitHub's own, the candidate is the packaged build, setup is bounded,
+// and themes with the same identity colors are caught. The live run itself is npm run qa:live.
 import assert from "node:assert/strict";
+import { mkdtempSync, rmSync } from "node:fs";
+import { mkdir, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
-import { DEMO_PULL, REFERENCE_PROFILES, arrivalFailure, compareSnapshots, contrast, qaLive, resolveTargets, sameIdentities, snapshotVerdict } from "../../scripts/qa-live.mjs";
+import { DEMO_PULL, REFERENCE_PROFILES, arrivalFailure, compareSnapshots, contrast, contrastRegressions, deadline, provenance, qaLive, resolveTargets, sameIdentities, snapshotVerdict } from "../../scripts/qa-live.mjs";
 
 const answers = (routes) => async (path) => {
   for (const [pattern, answer] of routes) if (pattern.test(path)) return answer;
@@ -39,6 +44,8 @@ test("a Gist GitHub's API cannot supply is an error, not a guessed URL", async (
 test("outages and rate limits are GitHub's, an unexpected status is markup", () => {
   assert.equal(arrivalFailure({ status: 200 }, {}), null);
   assert.equal(arrivalFailure({ status: 404 }, { status: 404 }), null);
+  assert.equal(arrivalFailure({ status: 304 }, {}), null, "a reload answered from cache");
+  assert.equal(arrivalFailure({ status: 304 }, { status: 404 }).kind, "markup");
   assert.deepEqual(arrivalFailure({ status: 429 }, {}), { kind: "github", detail: "rate limited" });
   assert.deepEqual(arrivalFailure({ status: 403, text: "You have exceeded a secondary rate limit." }, {}), { kind: "github", detail: "rate limited" });
   assert.deepEqual(arrivalFailure({ status: 503 }, {}), { kind: "github", detail: "HTTP 503" });
@@ -55,14 +62,51 @@ test("a snapshot comparison names what the themed page lost and gained", () => {
 });
 
 test("a page GitHub serves differently on each load is GitHub's, a steady difference is the product's", () => {
-  const page = (text) => ({ text: [text], names: [], controls: [] });
-  const [a, b, c] = [page("13 comments"), page("6 comments"), page("Problems")];
-  assert.equal(snapshotVerdict([a], [a]).kind, null);
-  assert.deepEqual(snapshotVerdict([a, b], [c, b]), { kind: null, native: b, themed: b }, "any matching pair passes");
-  assert.equal(snapshotVerdict([a, a], [c, c]).kind, "product");
-  assert.equal(snapshotVerdict([a], [c]).kind, "product", "no retry, no evidence GitHub changed");
-  assert.equal(snapshotVerdict([a, b], [c, c]).kind, "github");
-  assert.equal(snapshotVerdict([a, a], [c, b]).kind, "github");
+  const page = (text, names = ["button aria-label=Code"]) => ({ text, names, controls: [], accessibility: [] });
+  const kinds = (verdict) => Object.fromEntries(Object.entries(verdict).map(([part, { kind }]) => [part, kind]));
+  const [a, b] = [page(["13 comments"]), page(["6 comments"])];
+  assert.deepEqual(kinds(snapshotVerdict([a], [a])), { text: null, names: null, controls: null, accessibility: null });
+  assert.equal(snapshotVerdict([a, b], [page(["Problems"]), b]).text.kind, null, "any agreeing pair passes");
+  assert.equal(snapshotVerdict([a, a], [page(["Problems"]), page(["Problems"])]).text.kind, "product");
+  assert.equal(snapshotVerdict([a], [page(["Problems"])]).text.kind, "product", "no second load, no evidence GitHub changed");
+  assert.equal(snapshotVerdict([a, b], [b, page(["7 comments"])]).text.kind, null, "the first themed load matched");
+  assert.equal(snapshotVerdict([a, b], [page(["7 comments"]), page(["8 comments"])]).text.kind, "github", "every difference varied between loads");
+  assert.equal(snapshotVerdict([a, b], [page(["7 comments"]), page(["7 comments"])]).text.kind, "product", "only the themed loads ever show it, so it is not excused");
+  assert.equal(snapshotVerdict([a, a], [page(["13 comments", "x"]), page(["6 comments", "x"])]).text.kind, "product", "the steady extra item is the product's");
+  // GitHub's activity changes between loads while the extension steadily renames a control.
+  const noisy = snapshotVerdict([a, b], [page(["7 comments"], ["button aria-label=Problems"]), page(["8 comments"], ["button aria-label=Problems"])]);
+  assert.deepEqual(kinds(noisy), { text: "github", names: "product", controls: null, accessibility: null });
+  assert.deepEqual(noisy.names, { kind: "product", missing: ["button aria-label=Code"], added: ["button aria-label=Problems"] });
+  const reordered = snapshotVerdict([page(["a", "b"])], [page(["b", "a"])]);
+  assert.deepEqual(reordered.text, { kind: "product", missing: [], added: [] }, "order alone is the product's");
+});
+
+test("rendered contrast fails only where the theme reads worse than GitHub's own page", () => {
+  const entry = (key, ratio, extra = {}) => ({ key, ratio, large: false, overImage: false, ...extra });
+  const native = [entry("a Code", 7), entry("span 3 open", 3.2), entry("h2 Title", 8)];
+  const themed = [entry("a Code", 4.2), entry("span 3 open", 3.1), entry("h2 Title", 3.2, { large: true }), entry("p Over art", 1.5, { overImage: true }), entry("p New", 4.4)];
+  assert.deepEqual(contrastRegressions(native, themed).map((e) => e.key), ["a Code", "p New"]);
+});
+
+test("the candidate is what build-info.json names, and its packages must match SHA256SUMS", async () => {
+  const root = mkdtempSync(join(tmpdir(), "reskin-qa-provenance-"));
+  try {
+    await mkdir(join(root, "artifacts"));
+    await writeFile(join(root, "artifacts/build-info.json"), JSON.stringify({ version: "9.9.9", commit: "abc123", sourceDirty: false }));
+    await writeFile(join(root, "artifacts/SHA256SUMS"), "aaa  github-reskin-9.9.9-chrome.zip\r\nbbb  github-reskin-9.9.9-firefox.zip\r\n");
+    const chrome = { dir: "x", file: "artifacts/github-reskin-9.9.9-chrome.zip", sha256: "aaa" };
+    assert.deepEqual(await provenance(root, { chrome }), { version: "9.9.9", commit: "abc123", sourceDirty: false, packages: { chrome: { file: chrome.file, sha256: "aaa" } } });
+    await assert.rejects(provenance(root, { chrome: { ...chrome, sha256: "old" } }), /does not match artifacts\/SHA256SUMS/);
+    await rm(join(root, "artifacts/build-info.json"));
+    await assert.rejects(provenance(root, { chrome }), /build-info\.json is missing/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("a setup step that never answers fails at its deadline", async () => {
+  await assert.rejects(deadline(new Promise(() => {}), 20, "Installing"), /Installing took longer than 0.02 s/);
+  assert.equal(await deadline(Promise.resolve(5), 20, "x"), 5);
 });
 
 test("contrast follows WCAG, and themes sharing canvas, text and accent are caught", () => {
