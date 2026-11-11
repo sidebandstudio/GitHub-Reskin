@@ -7,9 +7,10 @@ the frame shell and the build.
 `github-reskin.user.js` in this folder is a frozen copy, not regenerated. Versions 1.0.0 and 1.1.0
 first shipped from that path on `main` and check it for updates. This copy is 1.1.2, above both, and
 its `@updateURL` moves those installs to the Pages download, which they take from the next release
-above 1.1.2. Don't rebuild it, except to fix it. 1.1.1 was this build before `DEFINE` in
-`build.mjs`, and under Violentmonkey it left every page native. Installs that took 1.1.1 already
-check Pages, so they get the fix from the next release.
+above 1.1.2. Don't rebuild it, except to fix it. 1.1.1 was this build before the Violentmonkey
+fixes (`DEFINE` and `INJECT` in `build.mjs`, `lockBridge` in `storage.js`), and under Violentmonkey
+it left every page native. Installs that took 1.1.1 already check Pages, so they get the fixes from
+the next release.
 
 | File | Contents |
 | --- | --- |
