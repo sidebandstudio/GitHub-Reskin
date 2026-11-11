@@ -9,7 +9,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { sha256 } from "../../scripts/build.mjs";
-import { DEMO_PULL, REFERENCE_PROFILES, arrivalFailure, compareSnapshots, contrast, contrastRegressions, deadline, provenance, qaLive, resolveTargets, sameIdentities, snapshotVerdict } from "../../scripts/qa-live.mjs";
+import { DEMO_PULL, REFERENCE_PROFILES, arrivalFailure, compareSnapshots, contrast, contrastRegressions, deadline, missingContent, provenance, qaLive, resolveTargets, sameIdentities, snapshotVerdict } from "../../scripts/qa-live.mjs";
 
 const answers = (routes) => async (path) => {
   for (const [pattern, answer] of routes) if (pattern.test(path)) return answer;
@@ -90,6 +90,13 @@ test("rendered contrast fails only where the theme reads worse than GitHub's own
   const native = [entry("a Code", 7), entry("span 3 open", 3.2), entry("h2 Title", 8)];
   const themed = [entry("a Code", 4.2), entry("span 3 open", 3.1), entry("h2 Title", 3.2, { large: true }), entry("p Over art", 1.5, { overImage: true }), entry("p New", 4.4)];
   assert.deepEqual(contrastRegressions(native, themed).map((e) => e.key), ["a Code", "p New"]);
+});
+
+test("text a theme hides is missing content, and times that tick are left out", () => {
+  const entry = (key, extra = {}) => ({ key, ratio: 7, large: false, overImage: false, tick: false, ...extra });
+  const before = [entry("a Code"), entry("p Readme"), entry("span 3 hours ago", { tick: true }), entry("h1 Title", { overImage: true, ratio: null })];
+  assert.deepEqual(missingContent(before, [entry("a Code"), entry("h1 Title", { overImage: true, ratio: null }), entry("span 4 hours ago", { tick: true })]), ["p Readme"]);
+  assert.deepEqual(missingContent(before, [...before, entry("p New")]), []);
 });
 
 test("the candidate is what a checksummed build-info.json names, for exactly the packages tested", async () => {

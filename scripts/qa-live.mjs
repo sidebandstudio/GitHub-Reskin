@@ -168,6 +168,15 @@ export function contrastRegressions(native, themed) {
   return themed.filter((entry) => low(entry) && !nativeLow.has(entry.key));
 }
 
+/**
+ * Rendered texts that a change on the same document hid: keys measured in `before` and gone from
+ * `after`. Times that tick are left out.
+ */
+export function missingContent(before, after) {
+  const keys = (entries) => entries.filter((entry) => !entry.tick).map((entry) => entry.key);
+  return compareSnapshots(keys(before), keys(after), Infinity).missing;
+}
+
 /** Palette keys that make an identity: the canvas, the text and the accent. */
 export const IDENTITY = Object.freeze(["--bgColor-default", "--fgColor-default", "--fgColor-accent"]);
 
@@ -239,7 +248,7 @@ async function snapshotOf(page) {
 }
 
 // In the page: each rendered text's contrast with what is painted under it, keyed by its tag and
-// words. Each ancestor's background and opacity group is composited, as the browser paints them,
+// words, and whether it is a time that ticks. Each ancestor's background and opacity group is composited, as the browser paints them,
 // over a white canvas. Hidden or fully transparent text reads at 1:1. Text with a background image
 // under it is marked, not measured.
 function pageContrast() {
@@ -275,7 +284,7 @@ function pageContrast() {
     const chain = [];
     for (let at = element; at; at = at.parentElement) chain.unshift(at);
     if (chain.some((at) => style(at).backgroundImage !== "none")) {
-      entries.push({ key: `${element.localName} ${words.slice(0, 60)}`, ratio: null, large: false, overImage: true });
+      entries.push({ key: `${element.localName} ${words.slice(0, 60)}`, ratio: null, large: false, overImage: true, tick: Boolean(element.closest("relative-time,time,local-time")) });
       continue;
     }
     // Each element's own background, then what it contains, then its opacity on the whole group.
@@ -292,7 +301,7 @@ function pageContrast() {
     const [high, low] = [luminance(text), luminance(background)].sort((x, y) => y - x);
     const size = parseFloat(own.fontSize);
     const ratio = own.visibility === "visible" ? Math.round(((high + 0.05) / (low + 0.05)) * 100) / 100 : 1;
-    entries.push({ key: `${element.localName} ${words.slice(0, 60)}`, ratio, large: size >= 24 || (size >= 18.66 && Number(own.fontWeight) >= 700), overImage: false });
+    entries.push({ key: `${element.localName} ${words.slice(0, 60)}`, ratio, large: size >= 24 || (size >= 18.66 && Number(own.fontWeight) >= 700), overImage: false, tick: Boolean(element.closest("relative-time,time,local-time")) });
   }
   return entries;
 }
@@ -426,21 +435,20 @@ async function chromiumWithExtension(dir, viewport) {
     } catch {}
     if (extensionUrl(from) && !extensionUrl(request.url()) && !/^(data|blob):/.test(request.url())) seen.requests.push(request.url());
   });
-  // Playwright reports a worker's console but not its uncaught errors, so the worker keeps its own.
+  // Playwright reports a worker's console but not its uncaught errors, so each worker, including
+  // one started again, reports them on its console as they happen, which the listener above keeps.
   const arm = (worker) =>
-    worker
-      .evaluate(() => {
-        if (self.__reskinQaErrors) return;
-        self.__reskinQaErrors = [];
-        self.addEventListener("error", (event) => self.__reskinQaErrors.push(String(event.message || event.error)));
-        self.addEventListener("unhandledrejection", (event) => self.__reskinQaErrors.push(`unhandled rejection: ${String(event.reason?.message ?? event.reason)}`));
-      })
-      .catch(() => {});
+    deadline(
+      worker.evaluate(() => {
+        if (self.__reskinQaWatching) return;
+        self.__reskinQaWatching = true;
+        self.addEventListener("error", (event) => console.error(`uncaught: ${event.message || event.error}`));
+        self.addEventListener("unhandledrejection", (event) => console.error(`unhandled rejection: ${event.reason?.message ?? event.reason}`));
+      }),
+      10000,
+      "Watching the extension's service worker",
+    ).catch((error) => seen.errors.push(error.message));
   context.on("serviceworker", arm);
-  const workerErrors = async () => {
-    const lists = await Promise.all(context.serviceWorkers().map((worker) => worker.evaluate(() => self.__reskinQaErrors ?? ["the worker restarted before its errors were read"]).catch(() => [])));
-    return lists.flat();
-  };
   try {
     let [worker] = context.serviceWorkers();
     worker ??= await context.waitForEvent("serviceworker", { timeout: SETUP_TIMEOUT });
@@ -450,7 +458,7 @@ async function chromiumWithExtension(dir, viewport) {
     const welcome = await context.waitForEvent("page", { predicate: (p) => p.url().includes("/pages/onboarding.html"), timeout: 10000 }).catch(() => null);
     const control = welcome ?? (await context.newPage());
     if (!welcome) await control.goto(`chrome-extension://${id}/pages/onboarding.html`);
-    return { context, id, control, seen, workerErrors, close };
+    return { context, id, control, seen, close };
   } catch (error) {
     await close();
     throw error;
@@ -540,7 +548,7 @@ export async function qaLive({ args = [], root = DEFAULT_ROOT, api = githubApi }
       "Chromium is Playwright's build, because branded Chrome no longer loads unpacked extensions from the command line. Firefox is Playwright's build with the add-on installed as a temporary add-on.",
       "Firefox keeps the default theme and Full, because Playwright cannot open the add-on's pages to change settings. Its console does not report content script errors, so Firefox has no extension error check; npm run qa:firefox drives the add-on's pages in an actual Firefox.",
       "Contrast is measured on rendered text in the first 2000 text nodes of each page, compositing each ancestor's background and opacity. Text with a background image under it is counted in overImage and not measured.",
-      "The service worker's uncaught errors are read from listeners added once it runs, so an error in the moment a restarted worker starts is not seen.",
+      "The service worker reports its uncaught errors from listeners added once it runs, so an error in the moment a worker starts is not seen.",
     ],
   };
   const budget = { navigations: 0, rateLimited: false };
@@ -632,6 +640,7 @@ export async function qaLive({ args = [], root = DEFAULT_ROOT, api = githubApi }
                 }
                 const modes = engine === "chromium" && viewport.width > 1000 ? ["full", "calm"] : ["full"];
                 let full = null;
+                let fullContrast = null;
                 for (const appearance of modes) {
                   const at = { ...base, appearance, theme: CHOOM };
                   if (appearance === "calm") {
@@ -663,6 +672,11 @@ export async function qaLive({ args = [], root = DEFAULT_ROOT, api = githubApi }
                   const measured = await page.evaluate(pageContrast);
                   const worse = contrastRegressions(first.contrast, measured);
                   record({ ...at, check: "rendered text reads at AA where GitHub's does", pass: worse.length === 0, kind: "product", detail: { measured: measured.filter((e) => !e.overImage).length, overImage: measured.filter((e) => e.overImage).length, worse: worse.slice(0, 5) } });
+                  if (appearance === "full") fullContrast = measured;
+                  else {
+                    const hidden = missingContent(fullContrast, measured);
+                    record({ ...at, check: "Calm hides none of GitHub's rendered text", pass: hidden.length === 0, kind: "product", detail: hidden.length ? hidden.slice(0, 5) : `${measured.length} texts` });
+                  }
                 }
                 if (modes.includes("calm")) {
                   const reply = await commit(themed.control, { type: "setPreference", key: "appearance", value: "full" });
@@ -674,15 +688,14 @@ export async function qaLive({ args = [], root = DEFAULT_ROOT, api = githubApi }
                   record({ ...base, check: "no requests from the extension on the page", pass: seen.requests.length === 0, kind: "product", detail: seen.requests.slice(0, 5) });
                 }
                 if (engine === "chromium" && viewport.width > 1000 && SWEEP[target.name])
-                  await sweep({ page, control: themed.control, target, entries, canvasOf, native: first.contrast, root, report, record, shot });
+                  await sweep({ page, control: themed.control, target, entries, canvasOf, native: first.contrast, rendered: fullContrast, root, report, record, shot });
               } finally {
                 await page.close();
               }
             }
             if (themed.seen) {
               const at = { engine, viewport: size };
-              const errors = [...themed.seen.errors, ...(await themed.workerErrors())];
-              record({ ...at, check: "no errors in the extension's pages and worker", pass: errors.length === 0, kind: "product", detail: errors.slice(0, 5) });
+              record({ ...at, check: "no errors in the extension's pages and worker", pass: themed.seen.errors.length === 0, kind: "product", detail: themed.seen.errors.slice(0, 5) });
               record({ ...at, check: "no outside requests from the extension's pages and worker", pass: themed.seen.requests.length === 0, kind: "product", detail: themed.seen.requests.slice(0, 5) });
             }
           } finally {
@@ -723,9 +736,10 @@ export async function qaLive({ args = [], root = DEFAULT_ROOT, api = githubApi }
 
 /**
  * Selects every catalog theme on a loaded page in SWEEP's appearances. Each must be the theme the
- * settings hold, with its own canvas, and read as well as the native page.
+ * settings hold, with its own canvas, read as well as the native page, and hide none of the text
+ * `rendered` measured on the same document in the default theme.
  */
-async function sweep({ page, control, target, entries, canvasOf, native, root, report, record, shot }) {
+async function sweep({ page, control, target, entries, canvasOf, native, rendered, root, report, record, shot }) {
   for (const appearance of SWEEP[target.name]) {
     const set = await commit(control, { type: "setPreference", key: "appearance", value: appearance });
     if (!set?.ok || set.settings.preferences.appearance !== appearance) throw new Error(`the sweep could not set ${appearance}`);
@@ -749,6 +763,8 @@ async function sweep({ page, control, target, entries, canvasOf, native, root, r
       record({ ...at, check: "theme applied in this appearance", pass: Boolean(selected && state.boot === "ready" && state.styled && changed && ownCanvas), kind: "product", detail: { selected, appearance: reply?.settings?.preferences.appearance ?? null, boot: state.boot, styled: state.styled, changed, canvas, expected: canvasOf[id] } });
       record({ ...at, check: `default and muted text read at ${CONTRAST}:1 on the canvas`, pass: Object.values(reads).every((ratio) => ratio !== null && ratio >= CONTRAST), kind: "product", detail: reads });
       record({ ...at, check: "rendered text reads at AA where GitHub's does", pass: worse.length === 0, kind: "product", detail: { measured: measured.filter((e) => !e.overImage).length, overImage: measured.filter((e) => e.overImage).length, worse: worse.slice(0, 5) } });
+      const hidden = missingContent(rendered, measured);
+      record({ ...at, check: "the theme hides none of GitHub's rendered text", pass: hidden.length === 0, kind: "product", detail: hidden.length ? hidden.slice(0, 5) : `${measured.length} texts` });
     }
   }
   for (const action of [
