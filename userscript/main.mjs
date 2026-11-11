@@ -52,7 +52,7 @@ import { createMenu } from "./menu.js";
 import { BUILDER_MODES, createPanel, PANEL_HASH } from "./panel.js";
 import { xrayRasterEnv } from "./raster.js";
 import { COPY } from "./copy.js";
-import { createGmStorage } from "./storage.js";
+import { createGmStorage, lockBridge } from "./storage.js";
 
 // The marker that keeps a second copy of this script (two managers, or a reinjection) from
 // running beside the first.
@@ -120,7 +120,7 @@ export function start(scope, { document, view, realm = null }) {
 
   const catalog = catalogFromData(CATALOG);
   // Firefox content scripts (isolation.js's Xray) hand the lock manager page-compartment callbacks.
-  const bridge = isolation.method === "xray" && typeof scope.exportFunction === "function" ? { exportFunction: (fn) => scope.exportFunction(fn, view), Promise: view.Promise } : null;
+  const bridge = lockBridge(scope, { document, view, isolation });
   // Not isolated: session storage only, with no GM grant in reach of the page's built-ins.
   const { storage, kind, capabilities } = createGmStorage(isolation.isolated ? scope : {}, { document, locks: view.navigator?.locks ?? null, bridge });
   const rendering = backgroundRendering();

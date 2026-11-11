@@ -68,6 +68,52 @@ A command with a selector (`budgets --surface=site`) takes the first matching ro
 the command's default row. Arguments are forwarded either way, so C2's contrast `run` sees
 `--scope=primer` and loads C3's data itself.
 
+`check:release` runs DONE.md's gate one step at a time, each as its own `node scripts/check.mjs`
+process, and stops at the first failure. With `RESKIN_CHECK_RESULT` set to a file path,
+`check.mjs` writes its `{ exitCode, testCount }` there, which is how the release check reads each
+step's test count. It writes `artifacts/reports/release.json`. `check:budgets` without a surface
+writes `artifacts/reports/budgets.json` and fails on any measurement it can't find, including the
+browser timings in `artifacts/reports/release-timings.json`. The release surface's `test:e2e`
+writes that file: its timing tests each record one measurement under
+`artifacts/reports/release-timings/`, and the module merges them after the run, replacing the
+last run's file even when a test fails.
+
+`qa:live -- --read-only` runs `scripts/qa-live.mjs` against public GitHub with the packages in
+`artifacts/`, so `npm run package` comes first, and records the commit `build-info.json` names.
+It needs the network, and `check:release` does not run it. Each page loads natively and with the
+extension in Chromium and Firefox, at 1440 and 390 pixels wide. GitHub's text, labels, controls
+and accessibility tree, without the extension's nodes, must match, and rendered text may not
+read worse than WCAG AA where GitHub's own does. Chromium also switches through every theme on a
+profile, the repository and a diff, and checks each is the selected theme with its own canvas. The report
+and screenshots go to `artifacts/reports/live/`. GitHub outages, rate limits and markup changes
+are counted apart from product failures, and any failure exits 1. The Gist comes from GitHub's
+API, which allows 60 logged-out calls an hour per address; a `GITHUB_TOKEN` lifts that, and the
+browsers stay logged out.
+
+`qa:firefox [-- --firefox <path>]` runs `scripts/qa-firefox.mjs` in an actual Firefox release, not
+Playwright's patched build. It takes `--firefox`, then `RESKIN_FIREFOX`, then the usual install
+path, and fails without one. It installs the Firefox package from `artifacts/` as a temporary
+add-on in a fresh profile, as `web-ext run` does, and checks the first-run tab, a theme chosen
+there reaching public GitHub, the add-on's fonts under GitHub's CSP, importing a theme file and
+exporting it again, settings across a restart and the on/off switch. Playwright's WebDriver BiDi
+mode drives the GitHub tab, and Firefox's remote debugging protocol drives and photographs the
+add-on's own pages, which BiDi does not reach. The report and screenshots go to
+`artifacts/reports/firefox/`, and it prints how to repeat the run by hand.
+
+`qa:userscript [-- --firefox <path>]` runs `scripts/qa-userscript.mjs`: the packaged userscript in
+real Violentmonkey and Tampermonkey, in Chromium and an actual Firefox release, installed through
+each manager's own install page. On public GitHub, logged out, it checks the default theme, the
+panel from `#reskin` with its controls, a pick, typing and Escape in the panel, the pick after a
+reload, importing and saving a theme file in Make a theme, and disabling the script in the
+manager's dashboard. The panel has its controls only where the manager keeps the script apart from
+GitHub's own JavaScript, so a manager that runs it in the page fails that check with the panel's
+note. Violentmonkey and Tampermonkey for Firefox are pinned by SHA-256; Tampermonkey for Chrome
+comes from the Chrome Web Store, which serves only its current version, so its version and hash are
+recorded. Downloads are kept in `artifacts/qa-cache/managers/`; the report and screenshots go to
+`artifacts/reports/userscript/`.
+
+`capture-release` and `qa-published-install` still fail with exit 2.
+
 ### Browser surfaces
 
 `test:e2e` and `a11y` dispatch by surface, calling each selected surface module's `run` with
