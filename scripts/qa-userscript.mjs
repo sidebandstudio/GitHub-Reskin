@@ -428,8 +428,18 @@ export async function qaUserscript({ args = [], root = DEFAULT_ROOT } = {}) {
       } catch (error) {
         record(where, "completed", false, error.message.split("\n")[0]);
       } finally {
-        // A start that outran its deadline is closed once it finishes, before the next manager.
-        if (!env && starting) env = await deadline(starting, 60000, "A late start").catch(() => null);
+        if (!env && starting) {
+          // A start that outran its deadline keeps its manager's files, and is closed and they are
+          // removed whenever it finishes. The open browser keeps this process alive until then.
+          const dir = unpacked?.dir;
+          unpacked = null;
+          starting
+            .then(
+              (late) => late.close(),
+              () => {},
+            )
+            .finally(() => dir && rm(dir, { recursive: true, force: true }));
+        }
         await env?.close().catch(() => {});
         if (unpacked) await rm(unpacked.dir, { recursive: true, force: true });
       }
