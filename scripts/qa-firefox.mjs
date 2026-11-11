@@ -174,7 +174,7 @@ async function until(check, ms = 15000) {
  * `match` and resolves with its JSON result, screenshot(match, path) photographs that tab, and
  * problems collects the errors and CSP reports from the add-on's own pages and background.
  */
-async function launch({ executablePath, profile, dir, uuid, id, downloads }, beforeInstall = async () => {}) {
+export async function launch({ executablePath, profile, dir, uuid, id, downloads }, beforeInstall = async () => {}) {
   const port = 6000 + Math.floor(Math.random() * 2000);
   const context = await firefox.launchPersistentContext(profile, {
     channel: "moz-firefox",
