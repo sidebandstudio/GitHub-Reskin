@@ -5,7 +5,7 @@
 // storage gets session memory that is never page storage.
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createGmStorage, detectGmStorage, STATE_KEY, WATCHED_KEYS, WRITE_LOST } from "../../userscript/storage.js";
+import { createGmStorage, detectGmStorage, lockBridge, STATE_KEY, WATCHED_KEYS, WRITE_LOST } from "../../userscript/storage.js";
 import { fakeDocument, fakeGm, records } from "./helpers.mjs";
 
 const fast = { confirmMs: 1 };
@@ -186,4 +186,18 @@ test("detection prefers the synchronous API, then GM.*, and accepts GM.addValueC
   assert.equal(gm4.kind, "async");
   gm4.listen("reskin.settings", () => {});
   assert.deepEqual(added, ["reskin.settings"]);
+});
+
+test("the Firefox lock bridge exports to the document's own window, not a manager's window proxy", () => {
+  const page = { Promise: class PagePromise {} };
+  // Violentmonkey's window: a proxy that exportFunction refuses, with the script's own Promise.
+  const proxy = new Proxy(page, { get: (target, key) => (key === "Promise" ? Promise : Reflect.get(target, key)) });
+  const targets = [];
+  const scope = { exportFunction: (fn, target) => (targets.push(target), fn) };
+  const bridge = lockBridge(scope, { document: { defaultView: page }, view: proxy, isolation: { method: "xray" } });
+  bridge.exportFunction(() => {});
+  assert.equal(targets[0], page);
+  assert.equal(bridge.Promise, page.Promise);
+  assert.equal(lockBridge(scope, { document: { defaultView: page }, view: proxy, isolation: { method: "report" } }), null, "only Firefox's content-script realm needs one");
+  assert.equal(lockBridge({}, { document: { defaultView: page }, view: proxy, isolation: { method: "xray" } }), null);
 });
