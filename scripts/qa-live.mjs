@@ -417,7 +417,7 @@ const extensionUrl = (url) => typeof url === "string" && url.startsWith("chrome-
  * Chromium with the unpacked package in a fresh profile: {context, id, control, seen, close}.
  * `seen` collects errors and outside requests from the extension's own pages and worker.
  */
-async function chromiumWithExtension(dir, viewport) {
+export async function chromiumWithExtension(dir, viewport) {
   const profile = await mkdtemp(join(tmpdir(), "reskin-qa-chromium-"));
   const context = await chromium.launchPersistentContext(profile, { ...CONTEXT, channel: "chromium", headless: true, viewport, args: [`--disable-extensions-except=${dir}`, `--load-extension=${dir}`] });
   const close = () => context.close().finally(() => rm(profile, { recursive: true, force: true }));
@@ -466,7 +466,7 @@ async function chromiumWithExtension(dir, viewport) {
 }
 
 /** Commits a settings action from an extension page, as the popup does, and returns the reply. */
-const commit = (control, action) =>
+export const commit = (control, action) =>
   control.evaluate(async (action) => {
     const current = await chrome.runtime.sendMessage({ type: "get", requestId: "qa-get" });
     return chrome.runtime.sendMessage({ type: "commit", requestId: "qa-commit", expectedRevision: current.settings.revision, action });

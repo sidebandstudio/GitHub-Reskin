@@ -112,7 +112,19 @@ comes from the Chrome Web Store, which serves only its current version, so its v
 recorded. Downloads are kept in `artifacts/qa-cache/managers/`; the report and screenshots go to
 `artifacts/reports/userscript/`.
 
-`capture-release` and `qa-published-install` still fail with exit 2.
+`capture:release` runs `scripts/capture.mjs`, which makes DONE.md's store and promo images from
+the release candidate. It checks the Chrome package in `artifacts/` against `SHA256SUMS` and
+`build-info.json` as `qa:live` does, installs it in a fresh logged-out Chromium and captures five
+1280x800 screenshots: whoisaldo in Choom Circuit and in Longroad Petals, the popup over
+Alitleis123, torvalds in Full beside Calm, and the AI answer in `assets/store/ai-answer.md` in Make
+a theme's import preview. It also saves a close-up of whoisaldo's contribution graph. The 1400x560
+marquee, the 1200x630 site image and the 440x280 tile are composed from those captures with the
+icon and Manrope in `assets/brand/`, and the icon PNGs are copied from there. Everything goes to
+`artifacts/release/store/`, with `capture.json` recording what each file shows, its source page,
+theme, appearance and store caption. The command fails if any file is missing or the wrong size.
+It takes about 30 seconds and needs `npm run package` first.
+
+`qa-published-install` still fails with exit 2.
 
 ### Browser surfaces
 
