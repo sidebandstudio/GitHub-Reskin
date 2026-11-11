@@ -168,12 +168,13 @@ async function until(check, ms = 15000) {
 }
 
 /**
- * Firefox with the add-on installed as a temporary add-on: {context, addon, close}. `addon` reaches
+ * Firefox with the add-on installed as a temporary add-on, after `beforeInstall(context)` has used
+ * the same browser without it: {context, addon, close}. `addon` reaches
  * the add-on's frames: evaluate(match, fn, ...args) runs fn in the newest frame whose URL contains
  * `match` and resolves with its JSON result, screenshot(match, path) photographs that tab, and
  * problems collects the errors and CSP reports from the add-on's own pages and background.
  */
-async function launch({ executablePath, profile, dir, uuid, id, downloads }) {
+async function launch({ executablePath, profile, dir, uuid, id, downloads }, beforeInstall = async () => {}) {
   const port = 6000 + Math.floor(Math.random() * 2000);
   const context = await firefox.launchPersistentContext(profile, {
     channel: "moz-firefox",
@@ -199,6 +200,7 @@ async function launch({ executablePath, profile, dir, uuid, id, downloads }) {
   let client;
   try {
     client = await connect(port);
+    await beforeInstall(context);
     const root = await client.request({ to: "root", type: "getRoot" });
     await client.request({ to: root.addonsActor, type: "installTemporaryAddon", addonPath: dir });
     const addon = await until(async () => (await client.request({ to: "root", type: "listAddons" })).addons.find((entry) => entry.id === id));
@@ -229,6 +231,8 @@ async function launch({ executablePath, profile, dir, uuid, id, downloads }) {
           else if (packet.type === "target-destroyed-form" && packet.target?.actor === form.actor) reject(new Error(`${match} closed during an evaluation`));
         });
       });
+      // Handled now, so a disconnect while the request is pending leaves no unhandled rejection.
+      result.catch(() => {});
       try {
         await client.request({ to: form.consoleActor, type: "evaluateJSAsync", text: `(async () => JSON.stringify(await (${fn})(...${JSON.stringify(args)})))()`, mapped: { await: true } });
         const packet = await deadline(result, 30000, `Evaluating in ${match}`);
@@ -301,6 +305,7 @@ function pageLook() {
     owned: document.querySelectorAll("[data-reskin-owned]").length,
     canvas: css(root, "--bgColor-default"),
     look: {
+      "color mode": ["data-color-mode", "data-light-theme", "data-dark-theme"].map((name) => root.getAttribute(name)).join(" "),
       "--bgColor-default": css(root, "--bgColor-default"),
       "--fgColor-default": css(root, "--fgColor-default"),
       "--fgColor-accent": css(root, "--fgColor-accent"),
@@ -361,26 +366,29 @@ export async function qaFirefox({ args = [], root = DEFAULT_ROOT } = {}) {
   const problems = [];
   try {
     unpacked = await unpack(root, config.version, "firefox");
-    report.candidate = await provenance(root, { firefox: unpacked });
+    report.candidate = await provenance(root, { firefox: unpacked }, config.version);
     const id = JSON.parse(await readFile(join(unpacked.dir, "manifest.json"), "utf8")).browser_specific_settings.gecko.id;
     const options = { executablePath, profile, dir: unpacked.dir, uuid: randomUUID(), id, downloads };
     const entries = await readCatalogEntries(root);
     const canvasOf = Object.fromEntries(catalogCards(entries).map((card) => [card.id, card.mini.canvas]));
     const settings = () => session.addon.evaluate("_generated_background_page", async () => (await browser.storage.local.get("reskin.settings"))["reskin.settings"]);
 
-    // GitHub in the same Firefox without the add-on, for what native looks like and reports.
-    const plain = await firefox.launch({ channel: "moz-firefox", executablePath, headless: true });
-    try {
-      const page = await (await plain.newContext({ locale: "en-US", timezoneId: "UTC", viewport: { width: 1280, height: 800 } })).newPage();
-      await page.addInitScript(recordViolations);
-      await page.goto(GITHUB, { waitUntil: "load", timeout: 60000 });
-      await page.waitForTimeout(2500);
-      report.baseline = await page.evaluate(pageLook);
-    } finally {
-      await plain.close();
-    }
+    // GitHub in the same browser and profile before the add-on is there: what native looks like and reports.
+    const native = async (context) => {
+      const page = await context.newPage();
+      try {
+        await page.addInitScript(recordViolations);
+        await page.goto(GITHUB, { waitUntil: "load", timeout: 60000 });
+        await page.waitForTimeout(2500);
+        return await page.evaluate(pageLook);
+      } finally {
+        await page.close();
+      }
+    };
 
-    session = await launch(options);
+    session = await launch(options, async (context) => {
+      report.baseline = await native(context);
+    });
     report.firefox.version = session.context.browser()?.version() ?? null;
     console.log(`qa:firefox: Firefox ${report.firefox.version} at ${executablePath}, ${zip} as a temporary add-on.\n${procedure({ firefoxPath: executablePath, zip })}`);
     record("install", "installed as a temporary add-on", true);
@@ -446,9 +454,16 @@ export async function qaFirefox({ args = [], root = DEFAULT_ROOT } = {}) {
         if (!(await press("Import"))) return { trace };
         if (!(await press("Choose file", dialog))) return { trace };
         const input = await until(() => dialog()?.querySelector('[data-rb="file"]'));
-        // The control someone would use: enabled, not hidden, with it or its label on screen.
+        // The control someone would use: enabled, and it or its label visible within the window.
         const label = input && document.querySelector(`label[for="${input.id}"]`);
-        const usable = Boolean(input && !input.disabled && !input.closest("[hidden]") && (input.getClientRects().length || label?.getClientRects().length));
+        const onScreen = (element) => {
+          if (!element) return false;
+          element.scrollIntoView({ block: "center" });
+          const box = element.getBoundingClientRect();
+          const style = getComputedStyle(element);
+          return style.visibility === "visible" && style.display !== "none" && box.width > 1 && box.height > 1 && box.bottom > 0 && box.right > 0 && box.top < innerHeight && box.left < innerWidth;
+        };
+        const usable = Boolean(input && !input.disabled && !input.closest("[hidden]") && (onScreen(input) || onScreen(label)));
         trace.push(`file control: ${usable ? "usable" : "not usable"}`);
         if (!usable) return { trace };
         const files = new DataTransfer();
@@ -484,7 +499,9 @@ export async function qaFirefox({ args = [], root = DEFAULT_ROOT } = {}) {
     const before = await settings();
     problems.push(...session.addon.problems);
     await session.close();
-    session = await launch(options);
+    session = await launch(options, async (context) => {
+      report.baselineAfterRestart = await native(context);
+    });
     await wait(3000);
     const after = await settings();
     const again = session.context.pages().filter((page) => page.url().includes("/pages/onboarding.html")).length;
@@ -513,8 +530,9 @@ export async function qaFirefox({ args = [], root = DEFAULT_ROOT } = {}) {
     await tab.waitForTimeout(1500);
     state = await tab.evaluate(pageLook);
     await tab.screenshot({ path: join(root, shot("6-github-off")) });
-    const differs = Object.keys(report.baseline.look).filter((key) => state.look[key] !== report.baseline.look[key]);
-    record("off", "turning it off leaves GitHub as it looks without the add-on", off && state.boot === "native" && !state.styled && state.owned === 0 && differs.length === 0, { boot: state.boot, styled: state.styled, owned: state.owned, differs: differs.map((key) => `${key}: ${state.look[key]}, natively ${report.baseline.look[key]}`) }, shot("6-github-off"));
+    const nativeLook = report.baselineAfterRestart.look;
+    const differs = Object.keys(nativeLook).filter((key) => state.look[key] !== nativeLook[key]);
+    record("off", "turning it off leaves GitHub as it looked in this browser before the add-on", off && state.boot === "native" && !state.styled && state.owned === 0 && differs.length === 0, { boot: state.boot, styled: state.styled, owned: state.owned, differs: differs.map((key) => `${key}: ${state.look[key]}, natively ${nativeLook[key]}`) }, shot("6-github-off"));
     await session.addon.evaluate("pages/popup.html", () => {
       const box = document.querySelector('[data-rs="enabled"]');
       if (!box.checked) box.click();
