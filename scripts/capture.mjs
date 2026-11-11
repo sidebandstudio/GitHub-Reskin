@@ -12,11 +12,12 @@
 // visited logged out and only read.
 // Writes artifacts/release/store/ with capture.json: each file's size, what it shows, its source
 // address, theme and appearance, the store caption for each screenshot, and the candidate. Every
-// file must have its exact size, or the command fails.
+// file must exist with its exact size, or the command fails.
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "@playwright/test";
+import { STYLE_ID } from "../packages/settings/constants.js";
 import { catalogCards, readCatalogEntries } from "../packages/ui/bundle.mjs";
 import { chromiumWithExtension, commit, provenance, unpack } from "./qa-live.mjs";
 
@@ -53,13 +54,26 @@ async function open(page, url) {
   await page.waitForTimeout(2500);
 }
 
-/** Selects a theme and appearance, and waits until the page shows that theme's canvas. */
+/**
+ * Selects a theme and appearance, and waits until the page shows them: the theme's canvas, and,
+ * when the selection changed, a new stylesheet. Full and Calm share a canvas, so the canvas alone
+ * would accept the appearance that was there before.
+ */
 async function choose(control, page, canvas, id, appearance = "full") {
+  const before = await page.evaluate((styleId) => document.getElementById(styleId)?.textContent ?? "", STYLE_ID);
+  const { settings } = await control.evaluate(() => chrome.runtime.sendMessage({ type: "get", requestId: "capture-get" }));
+  const changes = settings.selectedThemeId !== id || settings.preferences.appearance !== appearance;
   for (const action of [{ type: "setPreference", key: "appearance", value: appearance }, { type: "selectTheme", id }]) {
     const reply = await commit(control, action);
     if (!reply?.ok) throw new Error(`could not ${JSON.stringify(action)}`);
   }
-  await page.waitForFunction((canvas) => getComputedStyle(document.documentElement).getPropertyValue("--bgColor-default").trim() === canvas, canvas, { timeout: 10000 });
+  await page.waitForFunction(
+    ({ canvas, before, changes, styleId }) =>
+      getComputedStyle(document.documentElement).getPropertyValue("--bgColor-default").trim() === canvas &&
+      (!changes || (document.getElementById(styleId)?.textContent ?? "") !== before),
+    { canvas, before, changes, styleId: STYLE_ID },
+    { timeout: 10000 },
+  );
   await page.waitForTimeout(800);
 }
 
@@ -105,13 +119,12 @@ export async function captureRelease({ root = DEFAULT_ROOT } = {}) {
     await page.screenshot({ path: at("screenshot-1.png") });
     note("screenshot-1.png", { shows: "whoisaldo in Choom Circuit, Full", url: PROFILES.whoisaldo, theme: CHOOM, appearance: "full", caption: CAPTIONS[0] });
     const graph = page.locator(".js-yearly-contributions").first();
-    if (await graph.count()) {
-      await graph.scrollIntoViewIfNeeded();
-      await page.waitForTimeout(500);
-      await graph.screenshot({ path: at("graph-choom.png") });
-      note("graph-choom.png", { shows: "whoisaldo's contribution graph in Choom Circuit", url: PROFILES.whoisaldo, theme: CHOOM, appearance: "full" });
-      await page.evaluate(() => scrollTo(0, 0));
-    }
+    await graph.waitFor({ state: "visible", timeout: 15000 });
+    await graph.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(500);
+    await graph.screenshot({ path: at("graph-choom.png") });
+    note("graph-choom.png", { shows: "whoisaldo's contribution graph in Choom Circuit", url: PROFILES.whoisaldo, theme: CHOOM, appearance: "full" });
+    await page.evaluate(() => scrollTo(0, 0));
     await choose(control, page, canvasOf[FRIEREN], FRIEREN);
     await page.screenshot({ path: at("screenshot-2.png") });
     note("screenshot-2.png", { shows: "whoisaldo in Longroad Petals, Full", url: PROFILES.whoisaldo, theme: FRIEREN, appearance: "full", caption: CAPTIONS[1] });
@@ -152,7 +165,13 @@ export async function captureRelease({ root = DEFAULT_ROOT } = {}) {
     await dialog.getByRole("textbox", { name: "Chatbot answer" }).fill(answer);
     await dialog.getByRole("button", { name: "Preview theme" }).click();
     await dialog.locator('[data-rb="import-css-warning"]').waitFor({ state: "visible", timeout: 15000 });
-    await dialog.locator('[data-rb="import-frame"] iframe').first().waitFor({ state: "attached" });
+    // The preview has shown its newest render: that generation completed, without an error, and
+    // its frame is in view. The hidden layout frame comes first and says nothing about this.
+    await builder.waitForFunction(() => {
+      const host = document.querySelector('[data-rb="import-frame"] [data-reskin-preview]');
+      const frame = host?.querySelector('iframe[title^="Interactive preview"]');
+      return host && !host.hasAttribute("data-error") && Number(host.dataset.requested) > 0 && host.dataset.completed === host.dataset.requested && frame && getComputedStyle(frame).visibility === "visible" && frame.getBoundingClientRect().height > 0;
+    }, null, { timeout: 15000 });
     // The result at the top of the dialog: its title, notes, CSS review and the preview below.
     await dialog.locator('[data-rb="import-show"]').evaluate((element) => element.scrollIntoView({ block: "start" }));
     await builder.waitForTimeout(1500);
@@ -230,14 +249,14 @@ export async function captureRelease({ root = DEFAULT_ROOT } = {}) {
     if (chrome) await rm(chrome.dir, { recursive: true, force: true });
   }
 
-  // Each file at its exact size.
-  const expected = { "screenshot-1.png": SIZE, "screenshot-2.png": SIZE, "screenshot-3.png": SIZE, "screenshot-4.png": SIZE, "screenshot-5.png": SIZE, "marquee-1400x560.png": { width: 1400, height: 560 }, "og-1200x630.png": { width: 1200, height: 630 }, "tile-440x280.png": { width: 440, height: 280 }, ...Object.fromEntries(ICON_SIZES.map((size) => [`icons/icon-${size}.png`, { width: size, height: size }])) };
+  // Each file at its exact size. The graph close-up is as big as GitHub draws the graph.
+  const expected = { "screenshot-1.png": SIZE, "screenshot-2.png": SIZE, "screenshot-3.png": SIZE, "screenshot-4.png": SIZE, "screenshot-5.png": SIZE, "graph-choom.png": null, "marquee-1400x560.png": { width: 1400, height: 560 }, "og-1200x630.png": { width: 1200, height: 630 }, "tile-440x280.png": { width: 440, height: 280 }, ...Object.fromEntries(ICON_SIZES.map((size) => [`icons/icon-${size}.png`, { width: size, height: size }])) };
   let failed = 0;
   for (const [file, size] of Object.entries(expected)) {
     const got = pngSize(await readFile(at(file)).catch(() => Buffer.alloc(0)));
-    const pass = got?.width === size.width && got?.height === size.height;
+    const pass = size ? got?.width === size.width && got?.height === size.height : got?.width > 0 && got?.height > 0;
     if (!pass) failed++;
-    console.log(`${pass ? "ok  " : "FAIL"} ${OUT}/${file}: ${got ? `${got.width}x${got.height}` : "missing"}, needs ${size.width}x${size.height}`);
+    console.log(`${pass ? "ok  " : "FAIL"} ${OUT}/${file}: ${got ? `${got.width}x${got.height}` : "missing"}, needs ${size ? `${size.width}x${size.height}` : "a picture"}`);
   }
   console.log(`capture:release: ${Object.keys(expected).length} files, ${failed} wrong. ${OUT}/capture.json lists what each shows.`);
   return { exitCode: failed || error ? 1 : 0, testCount: Object.keys(expected).length };
