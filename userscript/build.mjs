@@ -237,6 +237,8 @@ function plugins(root, modules) {
 // which calls a bare hasOwnProperty, would ask the window whether it has a type and find none:
 // every theme would fail validation and pages would stay native. Bundled, it means Object's own.
 export const DEFINE = Object.freeze({ hasOwnProperty: "Object.prototype.hasOwnProperty" });
+// Bare globals that come from the script's own realm instead, see own-globals.js.
+export const INJECT = Object.freeze(["userscript/own-globals.js"]);
 
 async function bundle(root, modules) {
   const { build } = await import("esbuild");
@@ -254,6 +256,7 @@ async function bundle(root, modules) {
     // module path comments and bytes.
     preserveSymlinks: true,
     define: DEFINE,
+    inject: INJECT.map((path) => join(root, path)),
     write: false,
     logLevel: "silent",
     plugins: plugins(root, modules),
