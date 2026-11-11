@@ -6,7 +6,8 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
-import { build, builderDocument, cardDocument, fixtureAssets, GRANTS, MAX_BYTES, metadata, updateUrl } from "../../userscript/build.mjs";
+import vm from "node:vm";
+import { build, builderDocument, cardDocument, DEFINE, fixtureAssets, GRANTS, MAX_BYTES, metadata, updateUrl } from "../../userscript/build.mjs";
 import { CSS_NOTE, IMPORT_CSS_NOTE } from "../../userscript/copy.js";
 import { REVIEWED_PREVIEW_READ } from "../../userscript/verify.mjs";
 import { metadataEntries, scriptProblems } from "../../userscript/verify.mjs";
@@ -23,6 +24,22 @@ test("the same inputs build the same bytes, within the 3.5 MiB budget", async ()
 
 test("the generated script passes every static check", async () => {
   assert.deepEqual(await scriptProblems(script, { config, root }), []);
+});
+
+test("CSS checking works where a manager binds window's functions to the window, as Violentmonkey does", async () => {
+  const { build: esbuild } = await import("esbuild");
+  const color = async (define) => {
+    const entry = 'import { lexer, parse } from "css-tree"; globalThis.matched = lexer.matchType("color", parse("transparent", { context: "value" })).matched !== null;';
+    const result = await esbuild({ stdin: { contents: entry, resolveDir: root, loader: "js" }, bundle: true, format: "iife", platform: "browser", write: false, logLevel: "silent", define });
+    const sandbox = vm.createContext({});
+    vm.runInContext("globalThis.hasOwnProperty = Object.prototype.hasOwnProperty.bind(globalThis);", sandbox);
+    vm.runInContext(result.outputFiles[0].text, sandbox);
+    return sandbox.matched;
+  };
+  assert.equal(await color({}), false, "the bound global breaks css-tree's lexer");
+  assert.equal(await color(DEFINE), true);
+  // The script itself leaves no call on a global hasOwnProperty.
+  assert.doesNotMatch(script, /(?<![.\w$])hasOwnProperty\.call\(/);
 });
 
 test("metadata keeps the 1.1.0 identity, updates from Pages and requests nothing", () => {
