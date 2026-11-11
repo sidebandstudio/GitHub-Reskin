@@ -1,0 +1,78 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+    }
+  </style>
+  <!-- [465,585): four more anime themes in Full on the same whoisaldo page, 30 frames each with
+       six-frame header-edge wipes: Demon Slayer, Chainsaw Man, One Piece, Spy x Family. This holds
+       the builder's slot (T09) while the theme builder is not on main. Scene time 0 is frame 465.
+       Captures: P11-V (outgoing), A-DS-V, A-CSM-V, A-OP-V, A-SXF-V. -->
+  <div id="root" data-composition-id="more" data-width="1080" data-height="1920">
+    <div id="mo-bg-0" class="clip backdrop" data-layout-ignore data-start="0" data-duration="0.2" data-track-index="0"><img src="assets/backdrops/P11-V.jpg" alt="" /></div>
+    <div id="mo-bg-1" class="clip backdrop" data-layout-ignore data-start="0" data-duration="1.2" data-track-index="0"><div id="mo-bg-1-w" class="layer"><img src="assets/backdrops/A-DS-V.jpg" alt="" /></div></div>
+    <div id="mo-bg-2" class="clip backdrop" data-layout-ignore data-start="1" data-duration="1.2" data-track-index="0"><div id="mo-bg-2-w" class="layer"><img src="assets/backdrops/A-CSM-V.jpg" alt="" /></div></div>
+    <div id="mo-bg-3" class="clip backdrop" data-layout-ignore data-start="2" data-duration="1.2" data-track-index="0"><div id="mo-bg-3-w" class="layer"><img src="assets/backdrops/A-OP-V.jpg" alt="" /></div></div>
+    <div id="mo-bg-4" class="clip backdrop" data-layout-ignore data-start="3" data-duration="1" data-track-index="0"><div id="mo-bg-4-w" class="layer"><img src="assets/backdrops/A-SXF-V.jpg" alt="" /></div></div>
+    <div class="scrim"></div>
+
+    <!-- One eyebrow across the four themes, set where each head's eyebrow line would sit: the head
+         box ends at y=476; theme (43 px), its 6 px margin, the gaps and the 96 px title fill 157 px. -->
+    <div id="mo-eyebrow" class="clip head" data-start="0" data-duration="4" data-track-index="3" style="padding-bottom: 157px">
+      <div class="eyebrow">13 anime-inspired themes</div>
+    </div>
+    <div id="mo-head-1" class="clip head" data-start="0" data-duration="1" data-track-index="2">
+      <div class="title">Demon Slayer</div>
+      <div class="theme">Wisteria Emberline</div>
+    </div>
+    <div id="mo-head-2" class="clip head" data-start="1" data-duration="1" data-track-index="2">
+      <div class="title">Chainsaw Man</div>
+      <div class="theme">Ripcord Bureau</div>
+    </div>
+    <div id="mo-head-3" class="clip head" data-start="2" data-duration="1" data-track-index="2">
+      <div class="title">One Piece</div>
+      <div class="theme">Sunward Voyage</div>
+    </div>
+    <div id="mo-head-4" class="clip head" data-start="3" data-duration="1" data-track-index="2">
+      <div class="title">Spy x Family</div>
+      <div class="theme">Peanut Dossier</div>
+    </div>
+
+    <div class="shot">
+      <div id="mo-shot-0" class="clip layer" data-start="0" data-duration="0.2" data-track-index="1"><img class="page" src="assets/captures/P11-V.png" alt="" style="top: calc(-56 * var(--k))" /></div>
+      <div id="mo-shot-1" class="clip layer" data-start="0" data-duration="1.2" data-track-index="1">
+        <div id="mo-shot-1-w" class="layer"><img id="mo-img-1" class="page" src="assets/captures/A-DS-V.png" alt="" /></div>
+      </div>
+      <div id="mo-shot-2" class="clip layer" data-start="1" data-duration="1.2" data-track-index="1">
+        <div id="mo-shot-2-w" class="layer"><img id="mo-img-2" class="page" src="assets/captures/A-CSM-V.png" alt="" /></div>
+      </div>
+      <div id="mo-shot-3" class="clip layer" data-start="2" data-duration="1.2" data-track-index="1">
+        <div id="mo-shot-3-w" class="layer"><img id="mo-img-3" class="page" src="assets/captures/A-OP-V.png" alt="" /></div>
+      </div>
+      <div id="mo-shot-4" class="clip layer" data-start="3" data-duration="1" data-track-index="1">
+        <div id="mo-shot-4-w" class="layer"><img id="mo-img-4" class="page" src="assets/captures/A-SXF-V.png" alt="" /></div>
+      </div>
+      <div id="mo-edge-1" class="edge"></div>
+      <div id="mo-edge-2" class="edge"></div>
+      <div id="mo-edge-3" class="edge"></div>
+      <div id="mo-edge-4" class="edge"></div>
+    </div>
+
+    <div id="mo-src" class="clip src" data-start="0" data-duration="4" data-track-index="4"><span><b>github.com/whoisaldo</b> · Full</span></div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    const f = (n) => n / 30;
+    [1, 2, 3, 4].forEach((i) => {
+      const at = i - 1;
+      tl.fromTo(`#mo-shot-${i}-w`, { clipPath: "inset(0 0 100% 0)" }, { clipPath: "inset(0 0 0% 0)", duration: f(6), ease: "power2.inOut" }, at);
+      tl.fromTo(`#mo-bg-${i}-w`, { clipPath: "inset(0 0 100% 0)" }, { clipPath: "inset(0 0 0% 0)", duration: f(6), ease: "power2.inOut" }, at);
+      tl.fromTo(`#mo-edge-${i}`, { y: 0, opacity: 0 }, { y: 734, opacity: 0.9, duration: f(6), ease: "power2.inOut" }, at);
+      tl.to(`#mo-edge-${i}`, { opacity: 0, duration: f(2) }, at + f(6));
+      tl.fromTo(`#mo-img-${i}`, { scale: 1 }, { scale: 1.03, duration: f(30), ease: "none", transformOrigin: "50% 0%" }, at);
+      tl.fromTo(`#mo-head-${i} .title`, { y: 18, opacity: 0.4 }, { y: 0, opacity: 1, duration: f(6), ease: "power3.out" }, at);
+    });
+    window.__timelines["more"] = tl;
+  </script>
+</template>

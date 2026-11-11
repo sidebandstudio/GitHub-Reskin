@@ -1,0 +1,66 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+    }
+  </style>
+  <!-- [600,780): three more anime themes in Full on the same whoisaldo page, 60 frames each with
+       six-frame header-edge wipes: Demon Slayer, Chainsaw Man, One Piece. This holds the builder's
+       slot (H10) while the theme builder is not on main. Scene time 0 is frame 600. Captures:
+       P10K-D (outgoing), A-DS-D, A-CSM-D, A-OP-D. -->
+  <div id="root" data-composition-id="more" data-width="1920" data-height="1080">
+    <div id="mo-bg-0" class="clip backdrop" data-layout-ignore data-start="0" data-duration="0.2" data-track-index="0"><img src="assets/backdrops/P10K-D.jpg" alt="" /></div>
+    <div id="mo-bg-1" class="clip backdrop" data-layout-ignore data-start="0" data-duration="2.2" data-track-index="0"><div id="mo-bg-1-w" class="layer"><img src="assets/backdrops/A-DS-D.jpg" alt="" /></div></div>
+    <div id="mo-bg-2" class="clip backdrop" data-layout-ignore data-start="2" data-duration="2.2" data-track-index="0"><div id="mo-bg-2-w" class="layer"><img src="assets/backdrops/A-CSM-D.jpg" alt="" /></div></div>
+    <div id="mo-bg-3" class="clip backdrop" data-layout-ignore data-start="4" data-duration="2" data-track-index="0"><div id="mo-bg-3-w" class="layer"><img src="assets/backdrops/A-OP-D.jpg" alt="" /></div></div>
+    <div class="scrim"></div>
+
+    <div id="mo-head-1" class="clip head" data-start="0" data-duration="2" data-track-index="2">
+      <div class="eyebrow">13 anime-inspired themes</div>
+      <div class="title">Demon Slayer</div>
+      <div class="theme">Wisteria Emberline</div>
+    </div>
+    <div id="mo-head-2" class="clip head" data-start="2" data-duration="2" data-track-index="2">
+      <div class="eyebrow">13 anime-inspired themes</div>
+      <div class="title">Chainsaw Man</div>
+      <div class="theme">Ripcord Bureau</div>
+    </div>
+    <div id="mo-head-3" class="clip head" data-start="4" data-duration="2" data-track-index="2">
+      <div class="eyebrow">13 anime-inspired themes</div>
+      <div class="title">One Piece</div>
+      <div class="theme">Sunward Voyage</div>
+    </div>
+    <div id="mo-src" class="clip src" data-start="0" data-duration="6" data-track-index="4"><span><b>github.com/whoisaldo</b><br />Full</span></div>
+
+    <div class="shot">
+      <div id="mo-shot-0" class="clip layer" data-start="0" data-duration="0.2" data-track-index="1"><img class="page" src="assets/captures/P10K-D.png" alt="" /></div>
+      <div id="mo-shot-1" class="clip layer" data-start="0" data-duration="2.2" data-track-index="1">
+        <div id="mo-shot-1-w" class="layer"><img id="mo-img-1" class="page" src="assets/captures/A-DS-D.png" alt="" /></div>
+      </div>
+      <div id="mo-shot-2" class="clip layer" data-start="2" data-duration="2.2" data-track-index="1">
+        <div id="mo-shot-2-w" class="layer"><img id="mo-img-2" class="page" src="assets/captures/A-CSM-D.png" alt="" /></div>
+      </div>
+      <div id="mo-shot-3" class="clip layer" data-start="4" data-duration="2" data-track-index="1">
+        <div id="mo-shot-3-w" class="layer"><img id="mo-img-3" class="page" src="assets/captures/A-OP-D.png" alt="" /></div>
+      </div>
+      <div id="mo-edge-1" class="edge"></div>
+      <div id="mo-edge-2" class="edge"></div>
+      <div id="mo-edge-3" class="edge"></div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    const f = (n) => n / 30;
+    [1, 2, 3].forEach((i) => {
+      const at = (i - 1) * 2;
+      tl.fromTo(`#mo-shot-${i}-w`, { clipPath: "inset(0 0 100% 0)" }, { clipPath: "inset(0 0 0% 0)", duration: f(6), ease: "power2.inOut" }, at);
+      tl.fromTo(`#mo-bg-${i}-w`, { clipPath: "inset(0 0 100% 0)" }, { clipPath: "inset(0 0 0% 0)", duration: f(6), ease: "power2.inOut" }, at);
+      tl.fromTo(`#mo-edge-${i}`, { y: 0, opacity: 0 }, { y: 560, opacity: 0.9, duration: f(6), ease: "power2.inOut" }, at);
+      tl.to(`#mo-edge-${i}`, { opacity: 0, duration: f(2) }, at + f(6));
+      tl.fromTo(`#mo-img-${i}`, { scale: 1 }, { scale: 1.03, duration: f(60), ease: "none", transformOrigin: "50% 0%" }, at);
+      tl.fromTo(`#mo-head-${i} .title`, { y: 16, opacity: 0.4 }, { y: 0, opacity: 1, duration: f(6), ease: "power3.out" }, at);
+    });
+    window.__timelines["more"] = tl;
+  </script>
+</template>

@@ -1,0 +1,69 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+    }
+  </style>
+  <!-- T03 [105,165), T04 [165,225), T05 [225,285): the same whoisaldo page in three anime themes,
+       Full. Six-frame header-edge wipes into T03 and T04, a hard cut into T05. Scene time 0 is
+       frame 105. Captures: P02-V (outgoing), P04-V, P05-V, P06-V. -->
+  <div id="root" data-composition-id="worlds" data-width="1080" data-height="1920">
+    <div id="wd-bg-0" class="clip backdrop" data-layout-ignore data-start="0" data-duration="0.2" data-track-index="0"><img src="assets/backdrops/P02-V.jpg" alt="" /></div>
+    <div id="wd-bg-1" class="clip backdrop" data-layout-ignore data-start="0" data-duration="2.2" data-track-index="0"><div id="wd-bg-1-w" class="layer"><img src="assets/backdrops/P04-V.jpg" alt="" /></div></div>
+    <div id="wd-bg-2" class="clip backdrop" data-layout-ignore data-start="2" data-duration="2" data-track-index="0"><div id="wd-bg-2-w" class="layer"><img src="assets/backdrops/P05-V.jpg" alt="" /></div></div>
+    <div id="wd-bg-3" class="clip backdrop" data-layout-ignore data-start="4" data-duration="2" data-track-index="0"><img src="assets/backdrops/P06-V.jpg" alt="" /></div>
+    <div class="scrim"></div>
+
+    <div id="wd-head-1" class="clip head" data-start="0" data-duration="2" data-track-index="2">
+      <div class="title">Neon Genesis<br />Evangelion</div>
+      <div class="theme">Violet Synchrony</div>
+    </div>
+    <div id="wd-head-2" class="clip head" data-start="2" data-duration="2" data-track-index="2">
+      <div class="title">Dandadan</div>
+      <div class="theme">Occult Orbit</div>
+    </div>
+    <div id="wd-head-3" class="clip head" data-start="4" data-duration="2" data-track-index="2">
+      <div class="title">Frieren: Beyond<br />Journey's End</div>
+      <div class="theme">Longroad Petals</div>
+    </div>
+
+    <div class="shot">
+      <div id="wd-shot-0" class="clip layer" data-start="0" data-duration="0.2" data-track-index="1"><img class="page" src="assets/captures/P02-V.png" alt="" /></div>
+      <div id="wd-shot-1" class="clip layer" data-start="0" data-duration="2.2" data-track-index="1">
+        <div id="wd-shot-1-w" class="layer"><img id="wd-img-1" class="page" src="assets/captures/P04-V.png" alt="" /></div>
+      </div>
+      <div id="wd-shot-2" class="clip layer" data-start="2" data-duration="2" data-track-index="1">
+        <div id="wd-shot-2-w" class="layer"><img id="wd-img-2" class="page" src="assets/captures/P05-V.png" alt="" /></div>
+      </div>
+      <div id="wd-shot-3" class="clip layer" data-start="4" data-duration="2" data-track-index="1">
+        <div class="layer"><img id="wd-img-3" class="page" src="assets/captures/P06-V.png" alt="" /></div>
+      </div>
+      <div id="wd-edge-1" class="edge"></div>
+      <div id="wd-edge-2" class="edge"></div>
+    </div>
+
+    <div id="wd-src" class="clip src" data-start="0" data-duration="6" data-track-index="4"><b>github.com/whoisaldo</b> · Full</div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    const f = (n) => n / 30;
+    const wipe = (layer, bg, edge, at) => {
+      tl.fromTo(layer, { clipPath: "inset(0 0 100% 0)" }, { clipPath: "inset(0 0 0% 0)", duration: f(6), ease: "power2.inOut" }, at);
+      tl.fromTo(bg, { clipPath: "inset(0 0 100% 0)" }, { clipPath: "inset(0 0 0% 0)", duration: f(6), ease: "power2.inOut" }, at);
+      tl.fromTo(edge, { y: 0, opacity: 0 }, { y: 734, opacity: 0.9, duration: f(6), ease: "power2.inOut" }, at);
+      tl.to(edge, { opacity: 0, duration: f(2) }, at + f(6));
+    };
+    wipe("#wd-shot-1-w", "#wd-bg-1-w", "#wd-edge-1", 0);
+    wipe("#wd-shot-2-w", "#wd-bg-2-w", "#wd-edge-2", 2);
+    // Slow push-ins on each settled hold.
+    tl.fromTo("#wd-img-1", { scale: 1 }, { scale: 1.03, duration: f(54), ease: "none", transformOrigin: "50% 0%" }, f(6));
+    tl.fromTo("#wd-img-2", { scale: 1 }, { scale: 1.03, duration: f(54), ease: "none", transformOrigin: "50% 0%" }, f(66));
+    tl.fromTo("#wd-img-3", { scale: 1 }, { scale: 1.03, duration: f(60), ease: "none", transformOrigin: "50% 0%" }, f(120));
+    // Each title steps in with its picture.
+    ["#wd-head-1", "#wd-head-2", "#wd-head-3"].forEach((head, i) => {
+      tl.fromTo(`${head} .title`, { y: 18, opacity: 0.4 }, { y: 0, opacity: 1, duration: f(6), ease: "power3.out" }, f(i * 60));
+    });
+    window.__timelines["worlds"] = tl;
+  </script>
+</template>

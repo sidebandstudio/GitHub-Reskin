@@ -1,0 +1,5 @@
+# The shared video/assets folder, linked here by scripts/verify-video.mjs (check:video creates it).
+/assets
+# Hyperframes preview, snapshot and render output.
+/.hyperframes/
+/renders/

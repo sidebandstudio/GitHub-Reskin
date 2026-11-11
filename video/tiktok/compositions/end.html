@@ -1,0 +1,75 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+    }
+    #en-card {
+      position: absolute;
+      left: 90px;
+      top: 420px;
+      width: 790px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    #en-mark {
+      width: 112px;
+      height: 112px;
+      display: block;
+    }
+    #en-name {
+      margin-top: 62px;
+      font-size: 64px;
+      font-weight: 650;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+    }
+    #en-name span {
+      color: var(--coral);
+    }
+    #en-cta {
+      margin-top: 34px;
+      font-size: 64px;
+      font-weight: 650;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+    }
+    #en-desk {
+      margin-top: 60px;
+      font-size: 36px;
+      font-weight: 600;
+      color: var(--muted);
+    }
+    #en-fan {
+      margin-top: 88px;
+      font-size: 32px;
+      font-weight: 600;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+    #en-bg img {
+      opacity: 0.55;
+    }
+  </style>
+  <!-- T10 [585,660): original brand end card. Every word is readable at frame 585 and holds
+       unchanged through 659 (75 frames). Only the dimmed backdrop drifts. No store badge, install
+       button or listing URL. -->
+  <div id="root" data-composition-id="end" data-width="1080" data-height="1920">
+    <div id="en-bg" class="clip backdrop" data-layout-ignore data-start="0" data-duration="2.5" data-track-index="0"><img id="en-bg-img" src="assets/backdrops/P02-V.jpg" alt="" /></div>
+    <div class="scrim"></div>
+    <div id="en-card" class="clip" data-start="0" data-duration="2.5" data-track-index="1">
+      <img id="en-mark" src="assets/brand/icon.svg" alt="GitHub Reskin" />
+      <div id="en-name">GitHub <span>Reskin</span></div>
+      <div id="en-cta">Free. Link in bio.</div>
+      <div id="en-desk">For your desktop browser.</div>
+      <div id="en-fan">Fan-made.<br />Independent of GitHub.</div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    tl.fromTo("#en-bg-img", { y: 0 }, { y: -60, duration: 2.5, ease: "none" }, 0);
+    window.__timelines["end"] = tl;
+  </script>
+</template>

@@ -1,0 +1,14 @@
+GitHub Reskin, 30-second site film. It starts muted; everything it claims is on screen. Visual transcript; there is no speech.
+
+0:00 Headline "Cyberpunk: Edgerunners", theme name "Choom Circuit". The owner's plain profile, github.com/whoisaldo, wipes into the yellow, cyan and midnight Choom Circuit theme.
+0:01 The real extension popup opens with Reskin off; its switch is tapped, the page turns Choom Circuit and the popup closes.
+0:04 "13 anime-inspired themes": the same page in Neon Genesis Evangelion (Violet Synchrony).
+0:06 Frieren: Beyond Journey's End (Longroad Petals) in Full with its embedded botanical wallpaper, then the same profile's plum contribution calendar.
+0:09 "Your browser view.": github.com/Alitleis123 in Choom Circuit.
+0:11 "12 Classics": github.com/torvalds in Editing Suite, with the popup's Classics group.
+0:13 The project repository in Choom Circuit: its file list, extension/content.js with its syntax colors, then the commit diff with line and word highlights.
+0:17 Full to Calm with the popup's real control: the wallpaper, glow and extra text go, the colors stay.
+0:20 "13 anime-inspired themes": the same profile in Demon Slayer (Wisteria Emberline), Chainsaw Man (Ripcord Bureau) and One Piece (Sunward Voyage).
+0:26 End card: the GitHub Reskin mark, "Free. Pick a theme.", sidebandstudio.github.io/GitHub-Reskin/, "Fan-made. Independent of GitHub."
+
+All anime titles are set in plain type. No show art, logos, footage, dialogue or music.
