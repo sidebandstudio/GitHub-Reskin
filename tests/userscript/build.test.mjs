@@ -60,6 +60,8 @@ test("a bare structuredClone comes from the script's own realm, where a manager 
   };
   await assert.rejects(run([]), /cross-origin object/, "the page's copy refuses the script's values");
   assert.equal(await run(INJECT.map((path) => join(root, path))), 1);
+  // The script itself binds structuredClone from own-globals.js, so no reference reaches the page's.
+  assert.match(script, /\/\/ userscript\/own-globals\.js\n[\s\S]{0,400}?var structuredClone = typeof \w+\?\.structuredClone === "function"/);
 });
 
 test("metadata keeps the 1.1.0 identity, updates from Pages and requests nothing", () => {
