@@ -6,10 +6,11 @@
 //   the script runs and themes the page with the default theme
 //   the panel opens from an address ending in #reskin, with its controls, which it has only where
 //     the manager keeps the script apart from GitHub's own JavaScript, and a theme picked there applies
-//   typing in the panel stays out of GitHub's shortcuts, and Escape closes it and returns focus
+//   no key typed in the panel reaches GitHub's page
+//   opened from a control on the page, Escape closes the panel and returns focus to that control
 //   the pick survives a reload
-//   a theme file imports and saves in Make a theme, and applies
-//   disabling the script in the manager's dashboard leaves GitHub native
+//   a theme file imports and saves in Make a theme, applies, and survives a reload
+//   switched off in the manager's dashboard, the script leaves GitHub native over several loads
 // Violentmonkey is pinned to its 2.50.0 release builds and Tampermonkey for Firefox to 5.5.0 from
 // AMO, each checked against its SHA-256. Tampermonkey for Chrome comes from the Chrome Web Store,
 // which serves only its current version, so its version and hash are recorded instead. Downloads
@@ -55,7 +56,7 @@ function clickInstall() {
   });
 }
 
-// In Violentmonkey's dashboard: the GitHub Reskin row's enable switch.
+// In Violentmonkey's dashboard: turns the GitHub Reskin row's switch off, and whether it is off.
 function violentmonkeyDisable() {
   return new Promise((resolve) => {
     const end = Date.now() + 15000;
@@ -64,7 +65,7 @@ function violentmonkeyDisable() {
       const toggle = row?.querySelector("a[data-hotkey=space]");
       if (toggle) {
         toggle.click();
-        setTimeout(() => resolve(true), 800);
+        setTimeout(() => resolve(row.classList.contains("disabled")), 800);
       } else if (Date.now() > end) resolve(false);
       else setTimeout(look, 200);
     };
@@ -72,7 +73,7 @@ function violentmonkeyDisable() {
   });
 }
 
-// In Tampermonkey's dashboard: the GitHub Reskin row's enabler.
+// In Tampermonkey's dashboard: turns the GitHub Reskin row's enabler off, and whether it is off.
 function tampermonkeyDisable() {
   return new Promise((resolve) => {
     const end = Date.now() + 15000;
@@ -80,7 +81,7 @@ function tampermonkeyDisable() {
       const toggle = [...document.querySelectorAll(".enabler")].find((element) => /GitHub Reskin/.test(element.closest("tr")?.textContent ?? ""));
       if (toggle) {
         toggle.click();
-        setTimeout(() => resolve(true), 800);
+        setTimeout(() => resolve(!toggle.classList.contains("enabler_enabled")), 800);
       } else if (Date.now() > end) resolve(false);
       else setTimeout(look, 200);
     };
@@ -179,10 +180,15 @@ async function chromiumManager(manager, unpacked, record) {
           page = await until(() => context.pages().find((p) => p.url().startsWith(`${base}${manager.install.slice(1)}`)), 8000);
         }
         if (!page) return false;
-        const button = page.getByRole("button", { name: /^Install\b/ }).first();
-        if (!(await button.isEnabled({ timeout: 15000 }).catch(() => false))) return false;
-        await button.click();
-        return true;
+        // The click waits for the button to be enabled while the manager reads the script.
+        return page
+          .getByRole("button", { name: /^Install\b/ })
+          .first()
+          .click({ timeout: 15000 })
+          .then(
+            () => true,
+            () => false,
+          );
       },
       async disable() {
         const page = await context.newPage();
@@ -226,6 +232,7 @@ function pageState() {
     styled: Boolean(document.getElementById("reskin-style")?.textContent),
     canvas: getComputedStyle(root).getPropertyValue("--bgColor-default").trim(),
     active: document.activeElement?.localName ?? null,
+    activeId: document.activeElement?.id || null,
     dialog: Boolean(document.querySelector("dialog[open]")),
   };
 }
@@ -296,10 +303,12 @@ export async function qaUserscript({ args = [], root = DEFAULT_ROOT } = {}) {
       }
       let env = null;
       let unpacked = null;
+      let starting = null;
       try {
         unpacked = await fetchManager(root, manager);
         report.managers.push({ name: manager.name, engine: manager.engine, version: unpacked.version, sha256: unpacked.sha256, pinned: Boolean(manager.sha256), source: manager.url });
-        env = await deadline(manager.engine === "chromium" ? chromiumManager(manager, unpacked, (check, pass, detail) => record(where, check, pass, detail)) : firefoxManager(manager, unpacked, firefoxPath), 120000, `Starting ${where}`);
+        starting = manager.engine === "chromium" ? chromiumManager(manager, unpacked, (check, pass, detail) => record(where, check, pass, detail)) : firefoxManager(manager, unpacked, firefoxPath);
+        env = await deadline(starting, 120000, `Starting ${where}`);
         record(where, "installs through the manager's own install page", await env.install(scriptUrl));
 
         const page = await env.context.newPage();
@@ -323,12 +332,6 @@ export async function qaUserscript({ args = [], root = DEFAULT_ROOT } = {}) {
           const note = controls ? null : (await panel.locator("[data-us=storage-note]").textContent().catch(() => "")).trim();
           record(where, "the manager keeps the script apart from GitHub's page, so the panel has its controls", controls > 0, controls ? `${controls} themes` : note);
         }
-        if (panel && !controls) {
-          await page.keyboard.press("Escape");
-          const closed = await until(async () => !(await panelFrame(page, 300)), 3000);
-          state = await page.evaluate(pageState);
-          record(where, "Escape closes the panel and returns focus to the page", Boolean(closed) && state.active === "body", { closed: Boolean(closed), active: state.active });
-        }
         if (controls) {
           await panel.locator(`[data-theme="${FRIEREN}"]`).click();
           state = await until(async () => {
@@ -336,72 +339,97 @@ export async function qaUserscript({ args = [], root = DEFAULT_ROOT } = {}) {
             return now.canvas === canvasOf[FRIEREN] && now;
           }, 5000) || (await page.evaluate(pageState));
           record(where, "a theme picked in the panel applies", state.canvas === canvasOf[FRIEREN], { canvas: state.canvas });
+          // Every key event and input on GitHub's own document, while the panel's search has focus.
+          await page.evaluate(() => {
+            window.__reskinQaKeys = [];
+            for (const type of ["keydown", "keypress", "keyup", "beforeinput", "input"]) document.addEventListener(type, (event) => window.__reskinQaKeys.push(`${type} ${event.key ?? ""}`.trim()), true);
+          });
           const search = panel.getByPlaceholder(/Search themes/);
           await search.click();
           await page.keyboard.type("/fri");
           const typed = await search.inputValue();
+          const leaked = await page.evaluate(() => window.__reskinQaKeys);
           state = await page.evaluate(pageState);
-          record(where, "typing in the panel stays out of GitHub's shortcuts", typed === "/fri" && !state.dialog, { typed, githubDialog: state.dialog });
-          await page.keyboard.press("Escape");
-          const closed = await until(async () => !(await panelFrame(page, 300)), 3000);
-          state = await page.evaluate(pageState);
-          record(where, "Escape closes the panel and returns focus to the page", Boolean(closed) && state.active === "body", { closed: Boolean(closed), active: state.active });
+          record(where, "typing in the panel stays out of GitHub's page", typed === "/fri" && leaked.length === 0 && !state.dialog, { typed, leaked: leaked.slice(0, 5), githubDialog: state.dialog });
         }
 
+        // Opened from a control on the page, Escape closes the panel and gives that control focus.
+        // The panel opens on a navigation the browser reports as the person's own, and GitHub's
+        // scripts turn its in-page links into their own navigations, so the link opts out of them.
+        await load(page, GITHUB);
+        await page.evaluate(() => {
+          const link = Object.assign(document.createElement("a"), { id: "reskin-qa-open", href: "#reskin", textContent: "Open GitHub Reskin" });
+          link.dataset.turbo = "false";
+          document.body.prepend(link);
+        });
+        await page.locator("#reskin-qa-open").click();
+        const opened = Boolean(await panelFrame(page));
+        await page.keyboard.press("Escape");
+        const closed = Boolean(await until(async () => !(await panelFrame(page, 300)), 3000));
+        state = await page.evaluate(pageState);
+        record(where, "Escape closes the panel and returns focus to the control that opened it", opened && closed && state.activeId === "reskin-qa-open", { opened, closed, active: state.activeId ?? state.active });
+
         if (controls) {
-          await page.reload({ waitUntil: "load" });
-          await page.waitForTimeout(1500);
+          await load(page, GITHUB);
           state = await page.evaluate(pageState);
           record(where, "the pick survives a reload", state.boot === "ready" && state.canvas === canvasOf[FRIEREN] && !(await panelFrame(page, 300)), { boot: state.boot, canvas: state.canvas });
-        }
 
-        // Make a theme: import a file, save it, and see it applied.
-        let saved = null;
-        if (controls) {
+          // Make a theme: import a file, save it, see it applied, and still there after a reload.
           await load(page, `${GITHUB}#reskin`);
           panel = await panelFrame(page);
-        }
-        if (controls && panel) {
-          await panel.getByRole("button", { name: "Make a theme" }).click();
-          const builder = await until(async () => {
-            for (const frame of page.frames()) if (frame.url() === "about:srcdoc" && (await frame.locator('[data-rb="builder"][data-rb-ready]').count().catch(() => 0))) return frame;
-            return null;
-          });
-          if (builder) {
-            const fresh = builder.getByRole("button", { name: "Start with your saved theme" });
-            if (await fresh.isVisible().catch(() => false)) await fresh.click();
-            await builder.getByRole("button", { name: "Import", exact: true }).click();
-            const dialog = builder.getByRole("dialog", { name: "Import a theme" });
-            await dialog.getByRole("button", { name: "Choose file" }).click();
-            await dialog.getByLabel("Theme file (.json or .reskin.json)").setInputFiles({ name: "manager-check.reskin.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(IMPORTED)) });
-            await dialog.getByRole("button", { name: "Preview theme" }).click();
-            await dialog.getByRole("button", { name: "Use theme" }).click();
-            const copy = builder.getByRole("button", { name: "Save a copy" });
-            if (await copy.isVisible().catch(() => false)) await copy.click();
-            else await builder.getByRole("button", { name: "Save as theme" }).click();
-            saved = await until(async () => {
-              const status = (await builder.locator('[data-rb="status"]').textContent().catch(() => "")).trim();
-              return /^Saved /.test(status) && status;
-            }, 10000);
+          let saved = null;
+          if (panel) {
+            await panel.getByRole("button", { name: "Make a theme" }).click();
+            const builder = await until(async () => {
+              for (const frame of page.frames()) if (frame.url() === "about:srcdoc" && (await frame.locator('[data-rb="builder"][data-rb-ready]').count().catch(() => 0))) return frame;
+              return null;
+            });
+            if (builder) {
+              const fresh = builder.getByRole("button", { name: "Start with your saved theme" });
+              if (await fresh.isVisible().catch(() => false)) await fresh.click();
+              await builder.getByRole("button", { name: "Import", exact: true }).click();
+              const dialog = builder.getByRole("dialog", { name: "Import a theme" });
+              await dialog.getByRole("button", { name: "Choose file" }).click();
+              await dialog.getByLabel("Theme file (.json or .reskin.json)").setInputFiles({ name: "manager-check.reskin.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(IMPORTED)) });
+              await dialog.getByRole("button", { name: "Preview theme" }).click();
+              await dialog.getByRole("button", { name: "Use theme" }).click();
+              const copy = builder.getByRole("button", { name: "Save a copy" });
+              if (await copy.isVisible().catch(() => false)) await copy.click();
+              else await builder.getByRole("button", { name: "Save as theme" }).click();
+              saved = await until(async () => {
+                const status = (await builder.locator('[data-rb="status"]').textContent().catch(() => "")).trim();
+                return /^Saved /.test(status) && status;
+              }, 10000);
+            }
           }
-        }
-        if (controls) {
-          state = await page.evaluate(pageState);
+          // The page restyles on its next frame after the save, so its canvas is waited for.
+          state = await until(async () => {
+            const now = await page.evaluate(pageState);
+            return now.canvas === IMPORTED.colors.background && now;
+          }, 5000) || (await page.evaluate(pageState));
           await page.screenshot({ path: join(root, shot(`${slug}-3-imported`)) });
           record(where, "a theme file imports and saves in Make a theme, and applies", saved === `Saved ${IMPORTED.name} and applied it to GitHub.` && state.canvas === IMPORTED.colors.background, { status: saved, canvas: state.canvas }, shot(`${slug}-3-imported`));
+          await load(page, GITHUB);
+          state = await page.evaluate(pageState);
+          record(where, "the saved theme survives a reload", state.boot === "ready" && state.canvas === IMPORTED.colors.background, { boot: state.boot, canvas: state.canvas });
         }
 
+        // Off in the dashboard: the switch shows off, and GitHub stays native over several loads.
         const disabled = await env.disable();
-        state = await until(async () => {
+        const loads = [];
+        for (let i = 0; i < 3; i++) {
           await load(page, GITHUB);
-          const now = await page.evaluate(pageState);
-          return !now.runs && now;
-        }, 20000) || (await page.evaluate(pageState));
+          await page.waitForTimeout(1000);
+          loads.push(await page.evaluate(pageState));
+        }
         await page.screenshot({ path: join(root, shot(`${slug}-4-disabled`)) });
-        record(where, "disabled in the manager's dashboard, GitHub stays native", disabled && !state.runs && !state.styled && state.boot === null, { switched: disabled, runs: state.runs, styled: state.styled }, shot(`${slug}-4-disabled`));
+        const native = loads.every((now) => !now.runs && !now.styled && now.boot === null);
+        record(where, "disabled in the manager's dashboard, GitHub stays native", disabled && native, { switchedOff: disabled, loads: loads.map((now) => ({ runs: now.runs, styled: now.styled, boot: now.boot })) }, shot(`${slug}-4-disabled`));
       } catch (error) {
         record(where, "completed", false, error.message.split("\n")[0]);
       } finally {
+        // A start that outran its deadline is closed once it finishes, before the next manager.
+        if (!env && starting) env = await deadline(starting, 60000, "A late start").catch(() => null);
         await env?.close().catch(() => {});
         if (unpacked) await rm(unpacked.dir, { recursive: true, force: true });
       }
