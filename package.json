@@ -1,6 +1,6 @@
 {
   "name": "github-reskin",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "private": true,
   "description": "Themes for GitHub, including the contribution graph. Build and release tooling for the extension, userscript and site.",
   "license": "MIT",
