@@ -1,0 +1,33 @@
+{
+  "product": "GitHub Reskin",
+  "studio": "Sideband Studio",
+  "date": "2026-11-08",
+  "originalArtwork": {
+    "author": "Sideband Studio",
+    "method": "Hand-authored SVG geometry, rendered with resvg. No generated or stock bitmap art.",
+    "files": ["icon.svg", "icon-16.png", "icon-32.png", "icon-48.png", "icon-64.png", "icon-128.png", "icon-512.png", "sources/build.mjs"],
+    "permission": "Sideband Studio may use, modify, reproduce and redistribute this artwork with GitHub Reskin and its promotion.",
+    "thirdPartyArtwork": [],
+    "excluded": ["Octocat", "GitHub mark", "GitHub logotype artwork", "franchise art", "franchise emblems", "the earlier extension icons' geometry and pixels"]
+  },
+  "font": {
+    "family": "Manrope",
+    "copyright": "Copyright 2018 The Manrope Project Authors (https://github.com/googlefonts/manrope)",
+    "source": "https://github.com/google/fonts/tree/main/ofl/manrope",
+    "license": "OFL-1.1",
+    "licenseFile": "fonts/OFL.txt",
+    "fontFile": "fonts/Manrope-Variable.ttf",
+    "fontSha256": "3ae11c49db0455a3cc33e37d380f20fdb8c7f8b41dc07625c177e3d87a9d6ae6",
+    "licenseSha256": "58172e0c0fac2cda8a37b348164bb55e44b0e69051e557e92b1d3f6910141f7b",
+    "redistribution": "Unmodified, with its copyright notice and license."
+  },
+  "sha256": {
+    "icon.svg": "1acc6bfa09de1cd5df665876755019bcd2565280752de1c723bd2a6321edcef6",
+    "icon-16.png": "86aa71a445121a51af228b0794c0d73ad3c966d2ea64aa3ba99b329a0830bfd3",
+    "icon-32.png": "06684cb33eca2fdc2751eceef9a6738bef8e9601742ccb046598d61ae1be9b80",
+    "icon-48.png": "fd02c05e47d3c5ebc69b9cff2ae04a967fe6fe6f274e9bb37f1c0fcd16d6a11b",
+    "icon-64.png": "e43576366ad09049cfb66c7ac8ae3d1274b7801730f7fa3542af861d27a650c3",
+    "icon-128.png": "d967fbd6327e87e85217e31d776b18681576d447c248165e4673427dabe20148",
+    "icon-512.png": "66ef2656f18b7b1328baf7de4b7b0ddb474083c3f8c44b3219cfc987282f46ca"
+  }
+}

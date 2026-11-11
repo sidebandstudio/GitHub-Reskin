@@ -24,7 +24,9 @@
 //                release. It needs that Firefox and the network, and is not part of check:release.
 //   qa-userscript qa:userscript: scripts/qa-userscript.mjs, the userscript in real Violentmonkey and
 //                Tampermonkey, in Chromium and an actual Firefox release. It needs the network.
-// capture-release and qa-published-install are not written yet and fail with exit 2.
+//   capture-release capture:release: scripts/capture.mjs, the store and promo images, made from the
+//                Chrome package in artifacts/ on public GitHub. It needs the network.
+// qa-published-install is not written yet and fails with exit 2.
 // Direct use: node tests/release/checks.mjs <command> [args]
 import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, realpathSync, rmSync } from "node:fs";
@@ -390,6 +392,7 @@ export async function run({ command, args = [], root = DEFAULT_ROOT, outDir = jo
   if (command === "qa-live") return (await import("../../scripts/qa-live.mjs")).qaLive({ args, root });
   if (command === "qa-firefox") return (await import("../../scripts/qa-firefox.mjs")).qaFirefox({ args, root });
   if (command === "qa-userscript") return (await import("../../scripts/qa-userscript.mjs")).qaUserscript({ args, root });
+  if (command === "capture-release") return (await import("../../scripts/capture.mjs")).captureRelease({ root });
   console.error(`NOT IMPLEMENTED: ${command} (owner C9): tests/release/checks.mjs does not serve it yet. Until it exists this gate fails.`);
   return { exitCode: 2, testCount: 0 };
 }
