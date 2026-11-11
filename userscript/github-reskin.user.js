@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GitHub Reskin
 // @namespace    https://github.com/sidebandstudio/GitHub-Reskin
-// @version      1.1.1
+// @version      1.1.2
 // @description  Anime-inspired and classic themes for GitHub, including the contribution graph. Changes only your own browser view.
 // @license      MIT
 // @homepageURL  https://github.com/sidebandstudio/GitHub-Reskin
@@ -2722,6 +2722,15 @@ input {
 .rb-changes summary {
   color: var(--brand-hover);
 }
+/* The changes take the whole row, and on a narrow window their table scrolls inside it instead of
+   the page scrolling sideways. */
+.rb-changes {
+  flex: 1 1 100%;
+  min-width: 0;
+}
+.rb-repair-scroll {
+  overflow-x: auto;
+}
 .rb-repair-table {
   width: 100%;
   border-collapse: collapse;
@@ -3420,7 +3429,7 @@ html .rs-popup .rs-gallery {
               <p data-rb-text></p>
               <details class="rb-changes">
                 <summary>See changes</summary>
-                <div data-rb="repair-list"></div>
+                <div class="rb-repair-scroll" data-rb="repair-list" tabindex="0" role="region" aria-label="Color adjustments, scrollable"></div>
               </details>
             </div>
             <p class="rs-note">A fixed offline copy of GitHub pages, with no network or account. GitHub changes only when you save.</p>
@@ -3654,7 +3663,7 @@ html .rs-popup .rs-gallery {
             </div>
             <details class="rb-changes" data-rb="import-changes" hidden>
               <summary>See changes</summary>
-              <div data-rb="import-repair-list"></div>
+              <div class="rb-repair-scroll" data-rb="import-repair-list" tabindex="0" role="region" aria-label="Color adjustments, scrollable"></div>
             </details>
             <p class="rs-note" data-rb="import-images" hidden></p>
             <div class="rb-css-review" data-rb="import-css" hidden>
@@ -10818,10 +10827,12 @@ My idea: {{IDEA}}`;
       const solid = `linear-gradient(${c2},${c2})`;
       const base = `.rs-fx-seal{left:4px;top:calc(50% - ${num(size / 2)}px);width:${size}px;height:${size}px}`;
       const badge = `.rs-box--badge>.rs-fx-seal{position:relative;left:auto;top:auto;flex:none;width:${Math.min(size, 16)}px;height:${Math.min(size, 16)}px}`;
+      const clear = `.rs-box--strip:where(:has(>.rs-fx-seal)){padding-left:${size + 8}px}`;
       const pseudo = (part, rule) => `.rs-fx-seal::${part}{content:"";position:absolute;box-sizing:border-box;${rule}}`;
       const shapes = {
         diamond: [pseudo("before", `inset:15%;border:1.5px solid ${c2};transform:rotate(45deg)`)],
-        brackets: [pseudo("before", `left:0;top:0;bottom:0;width:30%;border:1.5px solid ${c2};border-right:0`), pseudo("after", `right:0;top:0;bottom:0;width:30%;border:1.5px solid ${c2};border-left:0`)],
+        // A square mark between the two brackets, so the seal frames something.
+        brackets: [`.rs-fx-seal{background:${solid} center/26% 26% no-repeat}`, pseudo("before", `left:0;top:0;bottom:0;width:30%;border:1.5px solid ${c2};border-right:0`), pseudo("after", `right:0;top:0;bottom:0;width:30%;border:1.5px solid ${c2};border-left:0`)],
         compass: [`.rs-fx-seal{border:1.5px solid ${c2};border-radius:50%}`, pseudo("after", `width:1.5px;height:35%;right:12%;top:-10%;background:${c2};transform:rotate(35deg)`)],
         sprig: [
           `.rs-fx-seal{background:radial-gradient(ellipse 18% 32% at 50% 40%,${c2} 0 96%,transparent 100%)}`,
@@ -10830,7 +10841,7 @@ My idea: {{IDEA}}`;
         ],
         rosette: [`.rs-fx-seal{background:${solid} 35% 0/32% 32% no-repeat,${solid} 100% 35%/32% 32% no-repeat,${solid} 65% 100%/32% 32% no-repeat,${solid} 0 65%/32% 32% no-repeat}`]
       };
-      return [base, badge, ...shapes[shape2]];
+      return [base, badge, clear, ...shapes[shape2]];
     },
     drift({ shape: shape2, durationMs, distance, opacity }, t) {
       const c2 = rgba(t.mutedText, opacity);
@@ -15040,7 +15051,7 @@ ${structured ? `${structured}
       return (n2.vendor && r ? this.properties[n2.name] || this.properties[n2.basename] : this.properties[n2.name]) || null;
     }
     getType(t) {
-      return hasOwnProperty.call(this.types, t) ? this.types[t] : null;
+      return Object.prototype.hasOwnProperty.call(this.types, t) ? this.types[t] : null;
     }
     validate() {
       function t(l, s) {
@@ -15051,7 +15062,7 @@ ${structured ? `${structured}
         c2.set(s, false), h.syntax !== null && Xt(h.syntax, function(m) {
           if (m.type !== "Type" && m.type !== "Property") return;
           let f = m.type === "Type" ? l.types : l.properties, w2 = m.type === "Type" ? i2 : o;
-          hasOwnProperty.call(f, m.name) ? r(l, m.name, w2, f[m.name]) && (n2.push(`${t(s, c2 === i2)} used broken syntax definition ${t(m.name, m.type === "Type")}`), c2.set(s, true)) : (n2.push(`${t(s, c2 === i2)} used missed syntax definition ${t(m.name, m.type === "Type")}`), c2.set(s, true));
+          Object.prototype.hasOwnProperty.call(f, m.name) ? r(l, m.name, w2, f[m.name]) && (n2.push(`${t(s, c2 === i2)} used broken syntax definition ${t(m.name, m.type === "Type")}`), c2.set(s, true)) : (n2.push(`${t(s, c2 === i2)} used missed syntax definition ${t(m.name, m.type === "Type")}`), c2.set(s, true));
         }, this);
       }
       let n2 = [], i2 = /* @__PURE__ */ new Map(), o = /* @__PURE__ */ new Map();
@@ -15241,7 +15252,7 @@ ${structured ? `${structured}
         this.next();
         break;
       case 23:
-        hasOwnProperty.call(this.atrule, n2) && typeof this.atrule[n2].block == "function" ? o = this.atrule[n2].block.call(this, e2) : o = this.Block(Kc.call(this));
+        Object.prototype.hasOwnProperty.call(this.atrule, n2) && typeof this.atrule[n2].block == "function" ? o = this.atrule[n2].block.call(this, e2) : o = this.Block(Kc.call(this));
         break;
     }
     return { type: "Atrule", loc: this.getLocation(t, this.tokenStart), name: r, prelude: i2, block: o };
@@ -15256,7 +15267,7 @@ ${structured ? `${structured}
   var eu = { children: [[]] };
   function en(e2) {
     let t = null;
-    return e2 !== null && (e2 = e2.toLowerCase()), this.skipSC(), hasOwnProperty.call(this.atrule, e2) && typeof this.atrule[e2].prelude == "function" ? t = this.atrule[e2].prelude.call(this) : t = this.readSequence(this.scope.AtrulePrelude), this.skipSC(), this.eof !== true && this.tokenType !== 23 && this.tokenType !== 17 && this.error("Semicolon or block is expected"), { type: "AtrulePrelude", loc: this.getLocationFromList(t), children: t };
+    return e2 !== null && (e2 = e2.toLowerCase()), this.skipSC(), Object.prototype.hasOwnProperty.call(this.atrule, e2) && typeof this.atrule[e2].prelude == "function" ? t = this.atrule[e2].prelude.call(this) : t = this.readSequence(this.scope.AtrulePrelude), this.skipSC(), this.eof !== true && this.tokenType !== 23 && this.tokenType !== 17 && this.error("Semicolon or block is expected"), { type: "AtrulePrelude", loc: this.getLocationFromList(t), children: t };
   }
   function tu(e2) {
     this.children(e2);
@@ -15872,7 +15883,7 @@ ${structured ? `${structured}
   var vh = { name: String, children: [["Raw"], null] };
   function hi() {
     let e2 = this.tokenStart, t = null, r, n2;
-    return this.eat(16), this.tokenType === 2 ? (r = this.consumeFunctionName(), n2 = r.toLowerCase(), this.lookupNonWSType(0) == 22 ? t = this.createList() : hasOwnProperty.call(this.pseudo, n2) ? (this.skipSC(), t = this.pseudo[n2].call(this), this.skipSC()) : (t = this.createList(), t.push(this.Raw(null, false))), this.eat(22)) : r = this.consume(1), { type: "PseudoClassSelector", loc: this.getLocation(e2, this.tokenStart), name: r, children: t };
+    return this.eat(16), this.tokenType === 2 ? (r = this.consumeFunctionName(), n2 = r.toLowerCase(), this.lookupNonWSType(0) == 22 ? t = this.createList() : Object.prototype.hasOwnProperty.call(this.pseudo, n2) ? (this.skipSC(), t = this.pseudo[n2].call(this), this.skipSC()) : (t = this.createList(), t.push(this.Raw(null, false))), this.eat(22)) : r = this.consume(1), { type: "PseudoClassSelector", loc: this.getLocation(e2, this.tokenStart), name: r, children: t };
   }
   function Sh(e2) {
     this.token(16, ":"), e2.children === null ? this.token(1, e2.name) : (this.token(2, e2.name + "("), this.children(e2), this.token(22, ")"));
@@ -15884,7 +15895,7 @@ ${structured ? `${structured}
   var Ah = { name: String, children: [["Raw"], null] };
   function fi() {
     let e2 = this.tokenStart, t = null, r, n2;
-    return this.eat(16), this.eat(16), this.tokenType === 2 ? (r = this.consumeFunctionName(), n2 = r.toLowerCase(), this.lookupNonWSType(0) == 22 ? t = this.createList() : hasOwnProperty.call(this.pseudo, n2) ? (this.skipSC(), t = this.pseudo[n2].call(this), this.skipSC()) : (t = this.createList(), t.push(this.Raw(null, false))), this.eat(22)) : r = this.consume(1), { type: "PseudoElementSelector", loc: this.getLocation(e2, this.tokenStart), name: r, children: t };
+    return this.eat(16), this.eat(16), this.tokenType === 2 ? (r = this.consumeFunctionName(), n2 = r.toLowerCase(), this.lookupNonWSType(0) == 22 ? t = this.createList() : Object.prototype.hasOwnProperty.call(this.pseudo, n2) ? (this.skipSC(), t = this.pseudo[n2].call(this), this.skipSC()) : (t = this.createList(), t.push(this.Raw(null, false))), this.eat(22)) : r = this.consume(1), { type: "PseudoElementSelector", loc: this.getLocation(e2, this.tokenStart), name: r, children: t };
   }
   function Lh(e2) {
     this.token(16, ":"), this.token(16, ":"), e2.children === null ? this.token(1, e2.name) : (this.token(2, e2.name + "("), this.children(e2), this.token(22, ")"));
