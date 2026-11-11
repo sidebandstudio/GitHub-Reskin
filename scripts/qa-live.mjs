@@ -18,7 +18,6 @@
 // or rate limit and a GitHub markup change are counted apart from product failures, and any
 // failure exits 1: an outage is not a pass.
 import { execFileSync } from "node:child_process";
-import { createHash } from "node:crypto";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, relative } from "node:path";
@@ -27,6 +26,7 @@ import { chromium, firefox } from "@playwright/test";
 import { unzipSync } from "fflate";
 import { INTERACTIVE } from "../extension/content/github/selectors.js";
 import { catalogCards, readCatalogEntries } from "../packages/ui/bundle.mjs";
+import { sha256, treeHash } from "./build.mjs";
 import { artifactName } from "./package.mjs";
 
 const DEFAULT_ROOT = fileURLToPath(new URL("..", import.meta.url));
@@ -129,9 +129,10 @@ export const PARTS = Object.freeze(["text", "names", "controls", "accessibility"
 
 /**
  * Judges a page's themed loads against its native loads, part by part: {part: {kind, missing,
- * added}}. A part passes, kind null, when some native and themed load agree on it. Otherwise an
- * item that changed between GitHub's own loads, native or themed, is GitHub's, and any other
- * difference, including order alone, is the product's.
+ * added}}. A part passes, kind null, when some native and themed load agree on it. Otherwise items
+ * that changed between GitHub's own loads, native or themed, are set aside, and what remains of the
+ * last native and themed loads is compared in order: any difference there, including order alone,
+ * is the product's, and none means GitHub's changing content explains it all.
  */
 export function snapshotVerdict(natives, themeds) {
   const verdict = {};
@@ -146,13 +147,13 @@ export function snapshotVerdict(natives, themeds) {
         const changed = compareSnapshots(loads[0][part], load[part], Infinity);
         for (const item of [...changed.missing, ...changed.added]) noise.add(item);
       }
-    const diff = compareSnapshots(natives.at(-1)[part], themeds.at(-1)[part], Infinity);
-    const missing = diff.missing.filter((item) => !noise.has(item));
-    const added = diff.added.filter((item) => !noise.has(item));
-    verdict[part] =
-      missing.length || added.length || !noise.size
-        ? { kind: "product", missing: missing.slice(0, 5), added: added.slice(0, 5) }
-        : { kind: "github", missing: diff.missing.slice(0, 5), added: diff.added.slice(0, 5) };
+    const steady = (items) => items.filter((item) => !noise.has(item));
+    const rest = compareSnapshots(steady(natives.at(-1)[part]), steady(themeds.at(-1)[part]));
+    if (!rest.same) verdict[part] = { kind: "product", missing: rest.missing, added: rest.added };
+    else {
+      const diff = compareSnapshots(natives.at(-1)[part], themeds.at(-1)[part]);
+      verdict[part] = { kind: "github", missing: diff.missing, added: diff.added };
+    }
   }
   return verdict;
 }
@@ -193,19 +194,26 @@ export function arrivalFailure({ status, error, text = "" }, expected) {
 }
 
 /**
- * What is under test: the version and commit artifacts/build-info.json records for the packages,
- * whose hashes must match artifacts/SHA256SUMS. `packages` maps a kind to unpack()'s result.
+ * What is under test: the version and commit artifacts/build-info.json records for the packages.
+ * build-info.json and each package must match artifacts/SHA256SUMS, and each unpacked package's
+ * files must be the tree build-info.json records for it. `packages` maps a kind to unpack()'s result.
  */
-export async function provenance(root, packages) {
+export async function provenance(root, packages, version) {
   const read = (name) =>
-    readFile(join(root, "artifacts", name), "utf8").catch(() => {
+    readFile(join(root, "artifacts", name)).catch(() => {
       throw new Error(`artifacts/${name} is missing. Run npm run package first.`);
     });
-  const info = JSON.parse(await read("build-info.json"));
-  const sums = new Map((await read("SHA256SUMS")).trim().split(/\r?\n/).map((line) => line.trim().split(/\s+/).reverse()));
-  for (const { file, sha256 } of Object.values(packages))
-    if (sums.get(file.split("/").at(-1)) !== sha256) throw new Error(`${file} does not match artifacts/SHA256SUMS. Run npm run package again.`);
-  return { version: info.version, commit: info.commit, sourceDirty: info.sourceDirty, packages: Object.fromEntries(Object.entries(packages).map(([kind, { file, sha256 }]) => [kind, { file, sha256 }])) };
+  const sums = new Map((await read("SHA256SUMS")).toString("utf8").trim().split(/\r?\n/).map((line) => line.trim().split(/\s+/).reverse()));
+  const infoBytes = await read("build-info.json");
+  if (sums.get("build-info.json") !== sha256(infoBytes)) throw new Error("artifacts/build-info.json does not match artifacts/SHA256SUMS. Run npm run package again.");
+  const info = JSON.parse(infoBytes.toString("utf8"));
+  if (info.version !== version || !/^[0-9a-f]{40}$/.test(info.commit ?? "") || typeof info.sourceDirty !== "boolean")
+    throw new Error(`artifacts/build-info.json does not name version ${version}, a commit and whether its source was dirty. Run npm run package again.`);
+  for (const [kind, { file, sha256: hash, tree }] of Object.entries(packages)) {
+    if (sums.get(file.split("/").at(-1)) !== hash) throw new Error(`${file} does not match artifacts/SHA256SUMS. Run npm run package again.`);
+    if (info.targets?.[kind]?.tree !== tree) throw new Error(`${file}'s files are not the ${kind} build artifacts/build-info.json records. Run npm run package again.`);
+  }
+  return { version: info.version, commit: info.commit, sourceDirty: info.sourceDirty, packages: Object.fromEntries(Object.entries(packages).map(([kind, { file, sha256: hash }]) => [kind, { file, sha256: hash }])) };
 }
 
 // In the page: GitHub's own text and names, without the extension's nodes, scripts, styles or
@@ -230,19 +238,30 @@ async function snapshotOf(page) {
   return { ...parts, accessibility: tree.split("\n").filter((line) => line.trim()) };
 }
 
-// In the page: each rendered text's contrast with the colors painted under it, keyed by its tag
-// and words. Text with a background image under it is marked, not measured.
+// In the page: each rendered text's contrast with what is painted under it, keyed by its tag and
+// words. Each ancestor's background and opacity group is composited, as the browser paints them,
+// over a white canvas. Hidden or fully transparent text reads at 1:1. Text with a background image
+// under it is marked, not measured.
 function pageContrast() {
   const context = Object.assign(document.createElement("canvas"), { width: 1, height: 1 }).getContext("2d", { willReadFrequently: true });
-  const paint = (layers) => {
-    context.clearRect(0, 0, 1, 1);
-    for (const layer of layers) {
-      context.fillStyle = layer;
+  const colors = new Map();
+  const rgba = (value) => {
+    if (!colors.has(value)) {
+      context.clearRect(0, 0, 1, 1);
+      context.fillStyle = value;
       context.fillRect(0, 0, 1, 1);
+      const [r, g, b, a] = context.getImageData(0, 0, 1, 1).data;
+      colors.set(value, [r, g, b, a / 255]);
     }
-    return [...context.getImageData(0, 0, 1, 1).data];
+    return colors.get(value);
   };
-  const luminance = (rgb) => rgb.map((v) => v / 255).map((c) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4)).reduce((sum, c, i) => sum + c * [0.2126, 0.7152, 0.0722][i], 0);
+  // Source-over with straight alpha.
+  const over = ([r, g, b, a], [r2, g2, b2, a2]) => {
+    const alpha = a + a2 * (1 - a);
+    if (!alpha) return [0, 0, 0, 0];
+    return [(r * a + r2 * a2 * (1 - a)) / alpha, (g * a + g2 * a2 * (1 - a)) / alpha, (b * a + b2 * a2 * (1 - a)) / alpha, alpha];
+  };
+  const luminance = (rgb) => rgb.slice(0, 3).map((v) => v / 255).map((c) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4)).reduce((sum, c, i) => sum + c * [0.2126, 0.7152, 0.0722][i], 0);
   const styles = new Map();
   const style = (element) => styles.get(element) ?? styles.set(element, getComputedStyle(element)).get(element);
   const entries = [];
@@ -251,26 +270,29 @@ function pageContrast() {
     const element = node.parentElement;
     const words = node.data.replace(/\s+/g, " ").trim();
     if (!element || !words || element.closest("[data-reskin-owned],script,style,noscript,template,svg,[aria-hidden='true']")) continue;
-    const own = style(element);
     const box = element.getBoundingClientRect();
-    if (own.visibility !== "visible" || own.opacity === "0" || box.width <= 1 || box.height <= 1) continue;
-    // The background colors under the text, nearest first, down to the first opaque one.
-    const under = [];
-    let overImage = false;
-    for (let at = element; at; at = at.parentElement) {
-      const layer = style(at);
-      if (layer.backgroundImage !== "none") {
-        overImage = true;
-        break;
-      }
-      under.push(layer.backgroundColor);
-      if (paint([layer.backgroundColor])[3] === 255) break;
+    if (box.width <= 1 || box.height <= 1) continue;
+    const chain = [];
+    for (let at = element; at; at = at.parentElement) chain.unshift(at);
+    if (chain.some((at) => style(at).backgroundImage !== "none")) {
+      entries.push({ key: `${element.localName} ${words.slice(0, 60)}`, ratio: null, large: false, overImage: true });
+      continue;
     }
-    const layers = ["#fff", ...under.reverse()];
-    const [background, text] = [paint(layers), paint([...layers, own.color])].map((rgba) => rgba.slice(0, 3));
+    // Each element's own background, then what it contains, then its opacity on the whole group.
+    const paint = (index, text) => {
+      const layer = style(chain[index]);
+      let group = rgba(layer.backgroundColor);
+      if (index + 1 < chain.length) group = over(paint(index + 1, text), group);
+      else if (text) group = over(rgba(layer.color), group);
+      return [...group.slice(0, 3), group[3] * Number(layer.opacity)];
+    };
+    const white = [255, 255, 255, 1];
+    const [text, background] = [over(paint(0, true), white), over(paint(0, false), white)];
+    const own = style(element);
     const [high, low] = [luminance(text), luminance(background)].sort((x, y) => y - x);
     const size = parseFloat(own.fontSize);
-    entries.push({ key: `${element.localName} ${words.slice(0, 60)}`, ratio: Math.round(((high + 0.05) / (low + 0.05)) * 100) / 100, large: size >= 24 || (size >= 18.66 && Number(own.fontWeight) >= 700), overImage });
+    const ratio = own.visibility === "visible" ? Math.round(((high + 0.05) / (low + 0.05)) * 100) / 100 : 1;
+    entries.push({ key: `${element.localName} ${words.slice(0, 60)}`, ratio, large: size >= 24 || (size >= 18.66 && Number(own.fontWeight) >= 700), overImage: false });
   }
   return entries;
 }
@@ -363,18 +385,20 @@ async function routeExpression(root) {
   return `(() => { ${result.outputFiles[0].text}; return __reskinQaRoutes.classifyRoute(document); })()`;
 }
 
-/** Unpacks one release package from artifacts/ and returns {dir, file, sha256}. */
+/** Unpacks one release package from artifacts/ and returns {dir, file, sha256, tree}, tree as build-info.json records it. */
 export async function unpack(root, version, kind) {
   const file = join(root, "artifacts", artifactName(version, kind));
   const bytes = await readFile(file).catch(() => null);
   if (!bytes) throw new Error(`${relative(root, file)} is missing. Run npm run package first.`);
   const dir = await mkdtemp(join(tmpdir(), `reskin-qa-${kind}-`));
+  const files = {};
   for (const [path, data] of Object.entries(unzipSync(bytes))) {
     if (path.endsWith("/")) continue;
     await mkdir(dirname(join(dir, path)), { recursive: true });
     await writeFile(join(dir, path), data);
+    files[path] = sha256(data);
   }
-  return { dir, file: relative(root, file).replaceAll("\\", "/"), sha256: createHash("sha256").update(bytes).digest("hex") };
+  return { dir, file: relative(root, file).replaceAll("\\", "/"), sha256: sha256(bytes), tree: treeHash(files) };
 }
 
 const CONTEXT = { locale: "en-US", timezoneId: "UTC" };
@@ -402,15 +426,31 @@ async function chromiumWithExtension(dir, viewport) {
     } catch {}
     if (extensionUrl(from) && !extensionUrl(request.url()) && !/^(data|blob):/.test(request.url())) seen.requests.push(request.url());
   });
+  // Playwright reports a worker's console but not its uncaught errors, so the worker keeps its own.
+  const arm = (worker) =>
+    worker
+      .evaluate(() => {
+        if (self.__reskinQaErrors) return;
+        self.__reskinQaErrors = [];
+        self.addEventListener("error", (event) => self.__reskinQaErrors.push(String(event.message || event.error)));
+        self.addEventListener("unhandledrejection", (event) => self.__reskinQaErrors.push(`unhandled rejection: ${String(event.reason?.message ?? event.reason)}`));
+      })
+      .catch(() => {});
+  context.on("serviceworker", arm);
+  const workerErrors = async () => {
+    const lists = await Promise.all(context.serviceWorkers().map((worker) => worker.evaluate(() => self.__reskinQaErrors ?? ["the worker restarted before its errors were read"]).catch(() => [])));
+    return lists.flat();
+  };
   try {
     let [worker] = context.serviceWorkers();
     worker ??= await context.waitForEvent("serviceworker", { timeout: SETUP_TIMEOUT });
+    await arm(worker);
     const id = new URL(worker.url()).host;
     // The first-run tab opens on its own after a genuine install, and is where settings are sent from.
     const welcome = await context.waitForEvent("page", { predicate: (p) => p.url().includes("/pages/onboarding.html"), timeout: 10000 }).catch(() => null);
     const control = welcome ?? (await context.newPage());
     if (!welcome) await control.goto(`chrome-extension://${id}/pages/onboarding.html`);
-    return { context, id, control, seen, close };
+    return { context, id, control, seen, workerErrors, close };
   } catch (error) {
     await close();
     throw error;
@@ -499,7 +539,8 @@ export async function qaLive({ args = [], root = DEFAULT_ROOT, api = githubApi }
     notes: [
       "Chromium is Playwright's build, because branded Chrome no longer loads unpacked extensions from the command line. Firefox is Playwright's build with the add-on installed as a temporary add-on.",
       "Firefox keeps the default theme and Full, because Playwright cannot open the add-on's pages to change settings. Its console does not report content script errors, so Firefox has no extension error check; npm run qa:firefox drives the add-on's pages in an actual Firefox.",
-      "Contrast is measured on rendered text in the first 2000 text nodes of each page. Text with a background image under it is counted in overImage and not measured.",
+      "Contrast is measured on rendered text in the first 2000 text nodes of each page, compositing each ancestor's background and opacity. Text with a background image under it is counted in overImage and not measured.",
+      "The service worker's uncaught errors are read from listeners added once it runs, so an error in the moment a restarted worker starts is not seen.",
     ],
   };
   const budget = { navigations: 0, rateLimited: false };
@@ -517,7 +558,7 @@ export async function qaLive({ args = [], root = DEFAULT_ROOT, api = githubApi }
     unpacked.push(chrome.dir);
     const gecko = await unpack(root, config.version, "firefox");
     unpacked.push(gecko.dir);
-    report.candidate = await provenance(root, { chrome, firefox: gecko });
+    report.candidate = await provenance(root, { chrome, firefox: gecko }, config.version);
     const entries = await readCatalogEntries(root);
     const groups = { anime: entries.filter((e) => e.group === "anime").length, classics: entries.filter((e) => e.group === "classics").length };
     record({ engine: "both", check: `the catalog has ${ANIME_THEMES} anime themes and ${CLASSIC_THEMES} Classics`, pass: groups.anime === ANIME_THEMES && groups.classics === CLASSIC_THEMES && entries.length === ANIME_THEMES + CLASSIC_THEMES, kind: "product", detail: groups });
@@ -640,7 +681,8 @@ export async function qaLive({ args = [], root = DEFAULT_ROOT, api = githubApi }
             }
             if (themed.seen) {
               const at = { engine, viewport: size };
-              record({ ...at, check: "no errors in the extension's pages and worker", pass: themed.seen.errors.length === 0, kind: "product", detail: themed.seen.errors.slice(0, 5) });
+              const errors = [...themed.seen.errors, ...(await themed.workerErrors())];
+              record({ ...at, check: "no errors in the extension's pages and worker", pass: errors.length === 0, kind: "product", detail: errors.slice(0, 5) });
               record({ ...at, check: "no outside requests from the extension's pages and worker", pass: themed.seen.requests.length === 0, kind: "product", detail: themed.seen.requests.slice(0, 5) });
             }
           } finally {
@@ -686,7 +728,7 @@ export async function qaLive({ args = [], root = DEFAULT_ROOT, api = githubApi }
 async function sweep({ page, control, target, entries, canvasOf, native, root, report, record, shot }) {
   for (const appearance of SWEEP[target.name]) {
     const set = await commit(control, { type: "setPreference", key: "appearance", value: appearance });
-    if (!set?.ok) throw new Error(`the sweep could not set ${appearance}`);
+    if (!set?.ok || set.settings.preferences.appearance !== appearance) throw new Error(`the sweep could not set ${appearance}`);
     for (const { id, group, document: theme } of entries) {
       const before = (await page.evaluate(pageState, PALETTE)).styleHash;
       const reply = await commit(control, { type: "selectTheme", id });
@@ -702,9 +744,9 @@ async function sweep({ page, control, target, entries, canvasOf, native, root, r
       const worse = contrastRegressions(native, measured);
       report.sweep.push({ target: target.name, theme: id, name: theme.name, inspiredBy: theme.inspiredBy ?? null, group, appearance, screenshot: file, palette: state.palette, contrast: reads });
       const at = { engine: "chromium", target: target.name, viewport: "1440", appearance, theme: id };
-      const selected = reply?.ok && reply.settings.selectedThemeId === id;
+      const selected = reply?.ok && reply.settings.selectedThemeId === id && reply.settings.preferences.appearance === appearance;
       const ownCanvas = JSON.stringify(canvas) === JSON.stringify(rgbOf(canvasOf[id]));
-      record({ ...at, check: "theme applied", pass: Boolean(selected && state.boot === "ready" && state.styled && changed && ownCanvas), kind: "product", detail: { selected, boot: state.boot, styled: state.styled, changed, canvas, expected: canvasOf[id] } });
+      record({ ...at, check: "theme applied in this appearance", pass: Boolean(selected && state.boot === "ready" && state.styled && changed && ownCanvas), kind: "product", detail: { selected, appearance: reply?.settings?.preferences.appearance ?? null, boot: state.boot, styled: state.styled, changed, canvas, expected: canvasOf[id] } });
       record({ ...at, check: `default and muted text read at ${CONTRAST}:1 on the canvas`, pass: Object.values(reads).every((ratio) => ratio !== null && ratio >= CONTRAST), kind: "product", detail: reads });
       record({ ...at, check: "rendered text reads at AA where GitHub's does", pass: worse.length === 0, kind: "product", detail: { measured: measured.filter((e) => !e.overImage).length, overImage: measured.filter((e) => e.overImage).length, worse: worse.slice(0, 5) } });
     }

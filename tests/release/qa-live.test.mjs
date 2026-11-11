@@ -8,6 +8,7 @@ import { mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
+import { sha256 } from "../../scripts/build.mjs";
 import { DEMO_PULL, REFERENCE_PROFILES, arrivalFailure, compareSnapshots, contrast, contrastRegressions, deadline, provenance, qaLive, resolveTargets, sameIdentities, snapshotVerdict } from "../../scripts/qa-live.mjs";
 
 const answers = (routes) => async (path) => {
@@ -79,6 +80,9 @@ test("a page GitHub serves differently on each load is GitHub's, a steady differ
   assert.deepEqual(noisy.names, { kind: "product", missing: ["button aria-label=Code"], added: ["button aria-label=Problems"] });
   const reordered = snapshotVerdict([page(["a", "b"])], [page(["b", "a"])]);
   assert.deepEqual(reordered.text, { kind: "product", missing: [], added: [] }, "order alone is the product's");
+  // Star counts change between every load while the extension steadily swaps two tabs.
+  const swapped = snapshotVerdict([page(["Code", "Issues", "13 stars"]), page(["Code", "Issues", "14 stars"])], [page(["Issues", "Code", "15 stars"]), page(["Issues", "Code", "16 stars"])]);
+  assert.deepEqual(swapped.text, { kind: "product", missing: [], added: [] }, "noise elsewhere does not excuse a steady reorder");
 });
 
 test("rendered contrast fails only where the theme reads worse than GitHub's own page", () => {
@@ -88,17 +92,30 @@ test("rendered contrast fails only where the theme reads worse than GitHub's own
   assert.deepEqual(contrastRegressions(native, themed).map((e) => e.key), ["a Code", "p New"]);
 });
 
-test("the candidate is what build-info.json names, and its packages must match SHA256SUMS", async () => {
+test("the candidate is what a checksummed build-info.json names, for exactly the packages tested", async () => {
   const root = mkdtempSync(join(tmpdir(), "reskin-qa-provenance-"));
+  const commit = "a".repeat(40);
+  const write = async (info, sums = {}) => {
+    const bytes = JSON.stringify(info);
+    await writeFile(join(root, "artifacts/build-info.json"), bytes);
+    const lines = { "build-info.json": sha256(Buffer.from(bytes)), "github-reskin-9.9.9-chrome.zip": "aaa", ...sums };
+    await writeFile(join(root, "artifacts/SHA256SUMS"), Object.entries(lines).map(([name, hash]) => `${hash}  ${name}\r\n`).join(""));
+  };
+  const chrome = { dir: "x", file: "artifacts/github-reskin-9.9.9-chrome.zip", sha256: "aaa", tree: "t1" };
+  const info = { version: "9.9.9", commit, sourceDirty: false, targets: { chrome: { files: 1, tree: "t1" } } };
   try {
     await mkdir(join(root, "artifacts"));
-    await writeFile(join(root, "artifacts/build-info.json"), JSON.stringify({ version: "9.9.9", commit: "abc123", sourceDirty: false }));
-    await writeFile(join(root, "artifacts/SHA256SUMS"), "aaa  github-reskin-9.9.9-chrome.zip\r\nbbb  github-reskin-9.9.9-firefox.zip\r\n");
-    const chrome = { dir: "x", file: "artifacts/github-reskin-9.9.9-chrome.zip", sha256: "aaa" };
-    assert.deepEqual(await provenance(root, { chrome }), { version: "9.9.9", commit: "abc123", sourceDirty: false, packages: { chrome: { file: chrome.file, sha256: "aaa" } } });
-    await assert.rejects(provenance(root, { chrome: { ...chrome, sha256: "old" } }), /does not match artifacts\/SHA256SUMS/);
+    await write(info);
+    assert.deepEqual(await provenance(root, { chrome }, "9.9.9"), { version: "9.9.9", commit, sourceDirty: false, packages: { chrome: { file: chrome.file, sha256: "aaa" } } });
+    await assert.rejects(provenance(root, { chrome: { ...chrome, sha256: "old" } }, "9.9.9"), /chrome\.zip does not match artifacts\/SHA256SUMS/);
+    await assert.rejects(provenance(root, { chrome: { ...chrome, tree: "other" } }, "9.9.9"), /not the chrome build/);
+    await assert.rejects(provenance(root, { chrome }, "9.9.8"), /does not name version 9\.9\.8/);
+    await write({});
+    await assert.rejects(provenance(root, { chrome }, "9.9.9"), /does not name version/);
+    await write(info, { "build-info.json": "stale" });
+    await assert.rejects(provenance(root, { chrome }, "9.9.9"), /build-info\.json does not match/);
     await rm(join(root, "artifacts/build-info.json"));
-    await assert.rejects(provenance(root, { chrome }), /build-info\.json is missing/);
+    await assert.rejects(provenance(root, { chrome }, "9.9.9"), /build-info\.json is missing/);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
