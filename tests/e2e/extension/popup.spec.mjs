@@ -19,7 +19,26 @@ const CHOOM_COPY = FLAVOR.map((slot) => choom[slot]).sort();
 const copyOf = (state) => [...state.copy].sort();
 const TEXT = "Extra theme text";
 
-test("a new install paints Choom Circuit on GitHub with its flavor, and the popup leads with the anime", async ({ extension }) => {
+test.describe("a new install", () => {
+  test.use({ theme: null });
+  test("leaves GitHub native with no theme selected, and the first pick applies at once", async ({ extension }) => {
+    const github = await openGitHub(extension);
+    expect(await painted(github)).toMatchObject({ boot: "native", styled: false });
+    const popup = await openPage(extension, "popup");
+    await expect(popup.locator("[data-rs=summary-show]")).toHaveText("No theme");
+    await expect(popup.locator("[data-rs=summary-name]")).toHaveText("GitHub's own look");
+    await expect(popup.locator("[data-rs=summary-note]")).toHaveText("Pick a theme to change GitHub and Gist.");
+    await expect(popup.locator(".rs-card[aria-pressed=true]")).toHaveCount(0);
+    expect((await storage(extension.worker))["reskin.settings"]).toMatchObject({ enabled: true, selectedThemeId: null });
+    await card(popup, "Cyberpunk: Edgerunners").click();
+    await expect(popup.locator("[data-rs=status]")).toHaveText("Applied to GitHub.");
+    expect((await waitPainted(github, (s) => s.canvas === CHOOM_CANVAS)).styled).toBe(true);
+    // No theme is nothing for Undo to go back to.
+    await expect(popup.locator("[data-rs=undo]")).toBeHidden();
+  });
+});
+
+test("Choom Circuit paints GitHub with its flavor, and the popup leads with the anime", async ({ extension }) => {
   const github = await openGitHub(extension);
   const state = await waitPainted(github, (s) => s.owned.length > 0);
   expect(state).toMatchObject({ boot: "ready", styled: true, canvas: CHOOM_CANVAS });

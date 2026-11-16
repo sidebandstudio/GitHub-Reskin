@@ -34,7 +34,8 @@ export const CSS_REGISTRY_VERSION = 1;
 // conversion, the added font files, CSS conveniences and the full editing controls arrive in 2.
 export const EXPANSION_INCREMENT = 1;
 
-// The first-run theme, Choom Circuit. Always chosen by ID, never by catalog order.
+// Choom Circuit, which carries forward 1.x's default Cyberpunk: 1.x settings that name no theme
+// migrate to it. A new install selects no theme. Always chosen by ID, never by catalog order.
 export const DEFAULT_THEME_ID = "anime.cyberpunk-edgerunners";
 
 // The twelve 1.x palettes keep these exact IDs in Classics. 1.x's "cyberpunk" is an alias.

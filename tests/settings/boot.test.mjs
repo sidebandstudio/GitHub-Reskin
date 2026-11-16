@@ -6,7 +6,7 @@ import { resolveTheme } from "../../packages/engine/index.js";
 import { bootMismatches, bootRecordProblems, buildBootRecord, defaultSettings, effectivePreferences, RUNNING_VERSIONS, snapshotProblems, usableSnapshot } from "../../packages/settings/index.js";
 import { catalog, CHOOM, ROOT, SEEDS, snapshot } from "./helpers.mjs";
 
-const settings = { ...defaultSettings(catalog), revision: 12 };
+const settings = { ...defaultSettings(catalog), selectedThemeId: DEFAULT_THEME_ID, revision: 12 };
 const record = () => buildBootRecord(settings, { catalog, snapshot });
 const current = (overrides = {}) => ({
   settingsRevision: 12,
@@ -35,6 +35,10 @@ test("a built record validates and is reused when everything matches", () => {
   assert.equal(value.sanitizerVersion, 1);
   assert.deepEqual(bootMismatches(value, current()), []);
   assert.equal(usableSnapshot(value, current()), value.validatedTokenSnapshot);
+});
+
+test("settings with no theme have no boot record", () => {
+  assert.equal(buildBootRecord({ ...settings, selectedThemeId: null }, { catalog, snapshot }), null);
 });
 
 test("a snapshot without expansion or sanitizer versions is invalid", () => {

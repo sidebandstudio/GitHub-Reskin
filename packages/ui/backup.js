@@ -17,7 +17,7 @@ export const COPY = Object.freeze({
   removed: (name) => `Removed ${name}.`,
   confirmReset: (count) =>
     `Reset all of Reskin in this browser? This removes ${count === 1 ? "your saved theme" : `your ${count} saved themes`}, your unsaved draft and your Advanced CSS approvals, and turns every preference back to its default. This can't be undone.\n\nTo keep your themes, choose Cancel, then Export each one.`,
-  reset: (name) => `Reskin is reset. ${name} is selected.`,
+  reset: "Reskin is reset. No theme is selected, so GitHub keeps its own look.",
   failed: "We couldn't change your settings. Nothing was removed. Try again.",
   readFailed: "We couldn't read your settings. Try again.",
   conflict: "Your settings changed in another window. Check the list and try again.",
@@ -175,7 +175,7 @@ export function mountBackup(doc, { host, catalog, download, builder = null, conf
       renderThemes();
       await builder?.restart?.();
       renderDraft();
-      say(COPY.reset(catalog.document(reply.settings.selectedThemeId)?.name ?? ""));
+      say(COPY.reset);
     }
     part("reset-all").focus();
   }

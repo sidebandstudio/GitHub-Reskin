@@ -2,7 +2,6 @@
 // Pure; storage and migration persistence live in repository.js.
 import { ISSUE_CODES, LOCAL_THEME_ID_PREFIX, SETTINGS_VERSION } from "../contracts/index.js";
 import { canonicalize, validateTheme } from "../format/index.js";
-import { fallbackThemeId } from "./catalog.js";
 import { APPEARANCE_MODES, BOOLEAN_PREFERENCE_KEYS, DEFAULT_PREFERENCES, STORAGE_LIMITS } from "./constants.js";
 
 export const SETTINGS_KEYS = Object.freeze(["settingsVersion", "revision", "enabled", "selectedThemeId", "preferences", "cssConsent", "customThemes", "onboardingCompleted", "migration"]);
@@ -36,7 +35,8 @@ export function defaultSettings(catalog) {
     settingsVersion: SETTINGS_VERSION,
     revision: 0,
     enabled: true,
-    selectedThemeId: fallbackThemeId(catalog),
+    // No theme until the person picks one, so GitHub keeps its own look.
+    selectedThemeId: null,
     preferences: { ...DEFAULT_PREFERENCES },
     cssConsent: {},
     customThemes: [],
@@ -146,7 +146,7 @@ export function validateSettings(value, catalog) {
   }
   if ("cssConsent" in value) issues.push(...consentIssues(value.cssConsent, customIds, "/cssConsent"));
   const selected = value.selectedThemeId;
-  if (typeof selected !== "string" || !(selected.startsWith(LOCAL_THEME_ID_PREFIX) ? customIds.has(selected) : catalog.has(selected))) {
+  if (selected !== null && (typeof selected !== "string" || !(selected.startsWith(LOCAL_THEME_ID_PREFIX) ? customIds.has(selected) : catalog.has(selected)))) {
     issues.push(invalid("/selectedThemeId", "The selected theme is not bundled or saved."));
   }
   if (issues.length) return { ok: false, newer: false, issues };
@@ -209,7 +209,7 @@ export function salvageSettings(value, catalog) {
     if (Object.keys(consent).length) dropped.cssConsent = consent;
   } else if ("cssConsent" in value) dropped.cssConsent = value.cssConsent;
   const selected = value.selectedThemeId;
-  if (typeof selected === "string" && (selected.startsWith(LOCAL_THEME_ID_PREFIX) ? ids.has(selected) : catalog.has(selected))) settings.selectedThemeId = selected;
+  if (selected === null || (typeof selected === "string" && (selected.startsWith(LOCAL_THEME_ID_PREFIX) ? ids.has(selected) : catalog.has(selected)))) settings.selectedThemeId = selected;
   else if ("selectedThemeId" in value) dropped.selectedThemeId = selected;
   if (!migrationIssues(value.migration, "").length) settings.migration = structuredClone(value.migration);
   else if ("migration" in value) dropped.migration = value.migration;

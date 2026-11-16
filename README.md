@@ -45,7 +45,7 @@ What differs by manager:
 
 Thirteen anime themes lead the picker. Each has an original name and credits its show in plain text: Choom Circuit for Cyberpunk: Edgerunners, Violet Synchrony for Neon Genesis Evangelion, Occult Orbit for Dandadan, Gatewake Protocol for Solo Leveling, Wisteria Emberline for Demon Slayer, Sunward Voyage for One Piece, Fifth Leaf Forge for Black Clover, Cursed Aperture for Jujutsu Kaisen, Peanut Dossier for Spy x Family, Wallward Scout for Attack on Titan, Longroad Petals for Frieren, Ripcord Bureau for Chainsaw Man and Shinigami Margins for Death Note. No logos, character art, screenshots or dialogue from any show are included.
 
-Choom Circuit is the default. It carries forward the Cyberpunk theme from earlier versions.
+A new install starts with no theme, so GitHub keeps its own look until you pick one. Choom Circuit carries forward the Cyberpunk theme from earlier versions.
 
 The twelve classics are Editing Suite, Dracula, Nord, Catppuccin Mocha, Gruvbox, Tokyo Night, Rosé Pine, One Dark and Solarized Dark, plus the light Catppuccin Latte, Rosé Pine Dawn and Solarized Light.
 

@@ -3,7 +3,7 @@
 // through each manager's own install page into Violentmonkey in Chromium, and into Violentmonkey and
 // Tampermonkey in an actual Firefox release (--firefox, RESKIN_FIREFOX or the usual install path), and
 // on public GitHub, logged out and read-only, checks that:
-//   the script runs and themes the page with the default theme
+//   the script runs and leaves the page in GitHub's own look, since a new install has no theme
 //   the panel opens from an address ending in #reskin, with its controls, which it has only where
 //     the manager keeps the script apart from GitHub's own JavaScript, and a theme picked there applies
 //   no key typed in the panel reaches GitHub's page
@@ -36,7 +36,6 @@ const DEFAULT_ROOT = fileURLToPath(new URL("..", import.meta.url));
 export const OUT = "artifacts/reports/userscript";
 const CACHE = "artifacts/qa-cache/managers";
 const GITHUB = "https://github.com/sidebandstudio/GitHub-Reskin";
-const CHOOM = "anime.cyberpunk-edgerunners";
 const FRIEREN = "anime.frieren";
 const VIOLENTMONKEY = "https://github.com/violentmonkey/violentmonkey/releases/download/v2.50.0";
 
@@ -300,10 +299,10 @@ export async function qaUserscript({ args = [], root = DEFAULT_ROOT } = {}) {
         let state = await until(async () => {
           await load(page, GITHUB);
           const now = await page.evaluate(pageState);
-          return now.runs && now.boot === "ready" && now;
+          return now.runs && now.boot && now;
         }, 45000) || (await page.evaluate(pageState));
-        await page.screenshot({ path: join(root, shot(`${slug}-1-themed`)) });
-        record(where, "runs on GitHub and themes it in Choom Circuit", state.runs && state.boot === "ready" && state.styled && state.canvas === canvasOf[CHOOM], state, shot(`${slug}-1-themed`));
+        await page.screenshot({ path: join(root, shot(`${slug}-1-native`)) });
+        record(where, "runs on GitHub and leaves it native, with no theme picked yet", state.runs && state.boot === "native" && !state.styled, state, shot(`${slug}-1-native`));
 
         await load(page, `${GITHUB}#reskin`);
         let panel = await panelFrame(page);

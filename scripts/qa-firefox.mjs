@@ -26,7 +26,6 @@ import { provenance, unpack } from "./qa-live.mjs";
 const DEFAULT_ROOT = fileURLToPath(new URL("..", import.meta.url));
 export const OUT = "artifacts/reports/firefox";
 const GITHUB = "https://github.com/sidebandstudio/GitHub-Reskin";
-const CHOOM = "anime.cyberpunk-edgerunners";
 const FRIEREN = "anime.frieren";
 // A three-color theme file, as someone would import one.
 export const IMPORTED = Object.freeze({ schemaVersion: 1, name: "Firefox Check", base: "dark", colors: { background: "#14212b", text: "#e8f1f7", accent: "#ff806c" } });
@@ -248,13 +247,13 @@ export async function qaFirefox({ args = [], root = DEFAULT_ROOT } = {}) {
     console.log(`qa:firefox: Firefox ${report.firefox.version} at ${executablePath}, ${zip} as a temporary add-on.\n${procedure({ firefoxPath: executablePath, zip })}`);
     record("install", "installed as a temporary add-on", true);
 
-    // First run: one welcome tab, Choom Circuit selected.
+    // First run: one welcome tab, no theme selected.
     await session.addon.frame("pages/onboarding.html");
     await wait(2000);
     const welcomeTabs = session.context.pages().filter((page) => page.url().includes("/pages/onboarding.html")).length;
     const first = await settings();
     await session.addon.screenshot("pages/onboarding.html", join(root, shot("1-welcome")));
-    record("first run", "one welcome tab, Choom Circuit selected", welcomeTabs === 1 && first?.selectedThemeId === CHOOM && first.enabled && !first.onboardingCompleted, { welcomeTabs, selected: first?.selectedThemeId }, shot("1-welcome"));
+    record("first run", "one welcome tab, no theme selected", welcomeTabs === 1 && first?.selectedThemeId === null && first.enabled && !first.onboardingCompleted, { welcomeTabs, selected: first?.selectedThemeId }, shot("1-welcome"));
 
     const chose = await session.addon.evaluate("pages/onboarding.html", clickButton, "Frieren");
     const status = await session.addon.evaluate("pages/onboarding.html", textOf, "[data-rs=status]", "Applied");

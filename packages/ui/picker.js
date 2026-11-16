@@ -302,10 +302,10 @@ export function mountPicker(doc, host, { cards, catalog, cardFor = null, onChang
     if (!settings) return;
     const selectedId = pendingTheme ?? settings.selectedThemeId;
     const selected = cardById(selectedId);
-    const labels = selected ? cardLabels(selected) : { primary: "", secondary: "" };
+    const labels = selected ? cardLabels(selected) : selectedId === null ? { primary: COPY.noTheme, secondary: COPY.noThemeName } : { primary: "", secondary: "" };
     if (parts["summary-show"]) parts["summary-show"].textContent = labels.primary;
     if (parts["summary-name"]) parts["summary-name"].textContent = labels.secondary;
-    if (parts["summary-note"]) parts["summary-note"].textContent = settings.enabled ? COPY.where : COPY.off;
+    if (parts["summary-note"]) parts["summary-note"].textContent = !settings.enabled ? COPY.off : selectedId === null ? COPY.pick : COPY.where;
     doc.documentElement.dataset.rsEnabled = String(settings.enabled);
     if (parts.enabled) parts.enabled.checked = settings.enabled;
     const prefs = settings.preferences;

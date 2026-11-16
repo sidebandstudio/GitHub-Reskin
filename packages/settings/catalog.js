@@ -34,7 +34,7 @@ export function createCatalogSource(entries) {
   });
 }
 
-/** The theme a fresh or unrecoverable selection uses: Choom Circuit, or Editing Suite while the catalog lacks it. */
+/** The theme 1.x settings that name none migrate to: Choom Circuit, or Editing Suite while the catalog lacks it. */
 export function fallbackThemeId(catalog) {
   if (catalog.has(DEFAULT_THEME_ID)) return DEFAULT_THEME_ID;
   if (catalog.has(LEGACY_EDITED_COLORS_THEME_ID)) return LEGACY_EDITED_COLORS_THEME_ID;
@@ -44,6 +44,7 @@ export function fallbackThemeId(catalog) {
 /** The selected theme's source document, from the catalog or the saved custom themes, or null. */
 export function selectedSource(settings, catalog) {
   const id = settings.selectedThemeId;
+  if (id === null) return null;
   if (id.startsWith(LOCAL_THEME_ID_PREFIX)) return settings.customThemes.find((theme) => theme.id === id)?.document ?? null;
   return catalog.document(id);
 }

@@ -106,7 +106,8 @@ async function save(frame) {
 }
 
 test("makes a theme from three colors, saves and applies it, then Save changes and Save a copy", async ({ manager }) => {
-  const gm = await manager({ kind: "sync" });
+  // A new install, as this check has always started from.
+  const gm = await manager({ kind: "sync", seed: null });
   const page = await gm.open();
   const frame = await openBuilder(page);
   await expect(frame.locator('[data-us="storage-note"]')).toHaveText(COPY.durable);
@@ -481,7 +482,7 @@ test("two tabs editing one saved theme: the later save is held for Keep editing 
 });
 
 test("without durable storage the builder is a labeled session preview: it saves for this tab only", async ({ manager }) => {
-  const gm = await manager({ kind: "none" });
+  const gm = await manager({ kind: "none", seed: null });
   const page = await gm.open(`${PROFILE_URL}#reskin`);
   const card = await panelFrame(page);
   await card.getByRole("button", { name: "Make a theme" }).click();
@@ -494,9 +495,10 @@ test("without durable storage the builder is a labeled session preview: it saves
   await save(frame);
   await expect(statusOf(frame)).toHaveText("Saved Tab Only and applied it to GitHub.");
   await expect.poll(async () => (await painted(page)).canvas).toBe("#102030");
+  // Nothing was kept, so the reload is a new install again: no theme.
   await page.reload();
   await waitSettled(page);
-  await expect.poll(async () => (await painted(page)).canvas).toBe(CHOOM_CANVAS);
+  await expect.poll(() => painted(page)).toMatchObject({ boot: "native", styled: false });
   expect(await page.evaluate(() => ({ local: Object.keys(localStorage), session: Object.keys(sessionStorage) }))).toEqual({ local: [], session: [] });
 });
 

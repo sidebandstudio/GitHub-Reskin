@@ -264,8 +264,9 @@ export const actions: CommitAction[] = [
   { type: "resetAll" },
 ];
 
-export async function commitWith(host: UiHost): Promise<string> {
+export async function commitWith(host: UiHost): Promise<string | null> {
   const reply: SettingsReply = await host.commit({ type: "setEnabled", enabled: false }, 3);
+  // A new install has no theme selected.
   return reply.ok ? reply.settings.selectedThemeId : reply.code;
 }
 

@@ -3,6 +3,7 @@
 import { LEGACY_EDITED_COLORS_THEME_ID, LEGACY_STORAGE_KEYS, LEGACY_THEME_ALIASES, LOCAL_THEME_ID_PREFIX } from "../contracts/index.js";
 import { validateTheme } from "../format/index.js";
 import { basePolarityIssue } from "../engine/index.js";
+import { fallbackThemeId } from "./catalog.js";
 import { NOTICES, STORAGE_LIMITS } from "./constants.js";
 import { defaultSettings, isPlainObject } from "./model.js";
 
@@ -38,7 +39,8 @@ export function migrateLegacy(raw, { catalog, newId, repair } = {}) {
 
   // The selected source. 1.0 saved edited colors without a theme; they belong to Editing Suite.
   let sourceId;
-  if (theme === undefined || theme === null) sourceId = custom != null ? LEGACY_EDITED_COLORS_THEME_ID : settings.selectedThemeId;
+  // 1.x showed Cyberpunk when it had no theme saved, so those settings keep Choom Circuit.
+  if (theme === undefined || theme === null) sourceId = custom != null ? LEGACY_EDITED_COLORS_THEME_ID : fallbackThemeId(catalog);
   else if (typeof theme === "string" && Object.hasOwn(LEGACY_THEME_ALIASES, theme) && catalog.has(LEGACY_THEME_ALIASES[theme])) {
     sourceId = LEGACY_THEME_ALIASES[theme];
     notices.push(NOTICES.cyberpunkAlias, NOTICES.controlSwapsRemoved);

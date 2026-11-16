@@ -3,7 +3,6 @@
 // approval is never decided here: every action's result goes through consent.js.
 import { COMMIT_ACTION_TYPES, ISSUE_CODES, LOCAL_THEME_ID_PREFIX } from "../contracts/index.js";
 import { documentAdmissionIssues, NO_CSS_SANITIZER } from "./admission.js";
-import { fallbackThemeId } from "./catalog.js";
 import { EDITOR_ID, NEW_TARGET, settleConsent, TICKET } from "./consent.js";
 import { APPEARANCE_MODES, BOOLEAN_PREFERENCE_KEYS, DEFAULT_PREFERENCES, EXTRA_COMMIT_ACTION_TYPES, STORAGE_LIMITS } from "./constants.js";
 import { ActionError, customSourceBytes, customThemeIssues, defaultSettings, isPlainObject, issue, LOCAL_ID } from "./model.js";
@@ -154,8 +153,8 @@ function reduceSettings(settings, action, { catalog, newId, css, images }) {
       const index = customIndex(action.id);
       if (index < 0) reject("That saved theme no longer exists.", "/action/id");
       const [removed] = next.customThemes.splice(index, 1);
-      // Removing the selected theme first switches to a known built-in.
-      if (next.selectedThemeId === action.id) next.selectedThemeId = removed.basedOn && catalog.has(removed.basedOn) ? removed.basedOn : fallbackThemeId(catalog);
+      // Removing the selected theme switches to the built-in it came from, or to no theme.
+      if (next.selectedThemeId === action.id) next.selectedThemeId = removed.basedOn && catalog.has(removed.basedOn) ? removed.basedOn : null;
       return done();
     }
     case "resetPreferences":

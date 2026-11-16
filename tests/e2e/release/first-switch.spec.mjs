@@ -8,7 +8,7 @@ import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { BUDGETS, DEFAULT_THEME_ID, STORAGE_KEYS } from "../../../packages/contracts/index.js";
-import { createRepository } from "../../../packages/settings/index.js";
+import { createRepository, defaultSettings } from "../../../packages/settings/index.js";
 import { catalogData, readCatalogEntries } from "../../../packages/ui/bundle.mjs";
 import { catalogFromData } from "../../../packages/ui/catalog.js";
 import { backgroundRendering } from "../../../packages/ui/renderer.js";
@@ -27,7 +27,8 @@ test("the content script styles a first switch to each bundled theme within the 
     const content = await readFile(join(built.dir, "content.js"), "utf8");
     const catalog = catalogFromData(catalogData(await readCatalogEntries(ROOT)));
     // The background's repository over in-memory storage, keeping what each commit wrote.
-    const data = new Map();
+    // The page starts in Choom Circuit, picked as a person would before switching.
+    const data = new Map([[STORAGE_KEYS.settings, { ...defaultSettings(), selectedThemeId: DEFAULT_THEME_ID }]]);
     let written = null;
     const memory = {
       get: async (keys) => Object.fromEntries(keys.filter((key) => data.has(key)).map((key) => [key, structuredClone(data.get(key))])),

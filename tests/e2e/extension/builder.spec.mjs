@@ -699,11 +699,12 @@ async function backupAndHelp(env) {
   page.once("dialog", (dialog) => (messages.push([dialog.type(), dialog.message()]), dialog.accept()));
   await backup.getByRole("button", { name: "Reset all" }).click();
   expect(messages.at(-1)[1]).toContain(themes.length === 2 ? "your saved theme," : `your ${themes.length - 1} saved themes`);
-  await expect(backup.locator('[data-rk="status"]')).toHaveText("Reskin is reset. Choom Circuit is selected.");
+  await expect(backup.locator('[data-rk="status"]')).toHaveText("Reskin is reset. No theme is selected, so GitHub keeps its own look.");
   await expect(backup.getByRole("button", { name: "Reset all" })).toBeFocused();
   await expect(backup.getByText("Your saved themes will appear here.")).toBeVisible();
   const records = await env.records();
   expect(settingsOf(records).customThemes).toEqual([]);
+  expect(settingsOf(records).selectedThemeId).toBeNull();
   expect(records[STORAGE_KEYS.draft] ?? null).toBeNull();
   await expect(backup.locator('[data-rk="draft-text"]')).toHaveText("There is no unsaved draft.");
   await page.close();

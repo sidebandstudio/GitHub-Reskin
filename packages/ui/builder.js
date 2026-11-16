@@ -198,7 +198,7 @@ export function mountBuilder(doc, { host, catalog, standardSeed, mountPreview, f
   // The draft a selected theme starts: a saved one is edited; a bundled one starts a new theme from
   // its three colors alone, or with `remix` every detail of it as "My <name>".
   function startFrom(themeId, { remix = false } = {}) {
-    if (themeId.startsWith(LOCAL_THEME_ID_PREFIX) && customTheme(themeId)) {
+    if (themeId?.startsWith(LOCAL_THEME_ID_PREFIX) && customTheme(themeId)) {
       const saved = customTheme(themeId);
       return createDraft({ document: structuredClone(saved.document), basedOn: saved.basedOn ?? null, savedId: saved.id, cssEnabled: consentMatches(saved.id, saved.document), baseHash: sourceHash(saved.document) });
     }

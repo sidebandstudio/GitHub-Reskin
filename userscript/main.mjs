@@ -40,6 +40,7 @@ import { createRepository, selectedSource } from "../packages/settings/index.js"
 import { mountBackup } from "../packages/ui/backup.js";
 import { mountBuilder } from "../packages/ui/builder.js";
 import { catalogFromData } from "../packages/ui/catalog.js";
+import { COPY as PICKER_COPY } from "../packages/ui/model.js";
 import { mountPicker } from "../packages/ui/picker.js";
 import { backgroundRendering, createRenderer, standardCard } from "../packages/ui/renderer.js";
 import * as github from "../extension/content/github/index.js";
@@ -263,8 +264,8 @@ function mountNote(doc, { host, kind, controls, note }) {
     } catch {
       // An unreadable saved theme: no name to show.
     }
-    doc.querySelector("[data-rs=summary-show]").textContent = card?.show ?? card?.name ?? "";
-    doc.querySelector("[data-rs=summary-name]").textContent = card?.show ? card.name : "";
+    doc.querySelector("[data-rs=summary-show]").textContent = card?.show ?? card?.name ?? (id === null ? PICKER_COPY.noTheme : "");
+    doc.querySelector("[data-rs=summary-name]").textContent = card?.show ? card.name : id === null ? PICKER_COPY.noThemeName : "";
     doc.querySelector("[data-rs=summary-note]").textContent = read.settings.enabled ? "" : "GitHub Reskin is off.";
   };
   void show();
@@ -313,7 +314,7 @@ function mountCard(doc, { host, catalog, kind, controls }) {
     const read = await host.read();
     const source = read.settings ? selectedSource(read.settings, catalog) : null;
     const result = source ? await host.downloadFile(exportTheme(source), doc) : { ok: false };
-    status.textContent = result.ok ? COPY.exported : COPY.exportFailed;
+    status.textContent = result.ok ? COPY.exported : read.settings?.selectedThemeId === null ? COPY.exportNone : COPY.exportFailed;
   });
   listen(part("close"), "click", () => controls.close());
   listen(part("make"), "click", () => controls.show("make"));

@@ -478,7 +478,8 @@ export interface SettingsV2 {
   settingsVersion: 2;
   revision: number;
   enabled: boolean;
-  selectedThemeId: ThemeId;
+  /** Null until the person picks a theme: GitHub keeps its own look. */
+  selectedThemeId: ThemeId | null;
   preferences: Preferences;
   customThemes: CustomTheme[];
   /** Advanced CSS acceptance per imported local theme. Never part of exported theme data. */

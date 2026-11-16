@@ -8,7 +8,7 @@ import { STORAGE_KEYS } from "../../packages/contracts/index.js";
 import { createRepository } from "../../packages/settings/index.js";
 import { createGmHost } from "../../userscript/host.js";
 import { createGmStorage } from "../../userscript/storage.js";
-import { context } from "../settings/helpers.mjs";
+import { context, picked } from "../settings/helpers.mjs";
 import { fakeGm, records, STATE_KEY } from "./helpers.mjs";
 
 const VIEW = { navigator: {}, matchMedia: () => ({ matches: false }) };
@@ -27,14 +27,14 @@ test("read initializes first, then returns settings, lastGood and the UI record"
   const { gm, host } = setup("sync", state({ [STORAGE_KEYS.ui]: { group: "classics", undoneAt: 3, extra: true } }));
   const read = await host.read();
   assert.equal(read.ok, true);
-  assert.equal(read.settings.selectedThemeId, "anime.cyberpunk-edgerunners");
+  assert.equal(read.settings.selectedThemeId, null, "a new install has no theme");
   assert.equal(read.lastGood, null);
   assert.deepEqual(read.ui, { group: "classics", undoneAt: 3 });
   assert.ok(records(gm.snapshot())[STORAGE_KEYS.settings]);
 });
 
 test("a commit goes through the revision check and leaves the prior selection for Undo", async () => {
-  const { host } = setup("async");
+  const { host } = setup("async", state(picked()));
   const { settings } = await host.read();
   const reply = await host.commit({ type: "selectTheme", id: "nord" }, settings.revision);
   assert.equal(reply.ok, true);
@@ -183,7 +183,7 @@ for (const kind of ["sync", "async"]) {
       [{ type: "resetAll" }, [STORAGE_KEYS.settings, STORAGE_KEYS.boot, STORAGE_KEYS.draft]],
     ]) {
       for (const key of keys) {
-        const { gm, host } = setup(kind);
+        const { gm, host } = setup(kind, state(picked()));
         const { settings } = await host.read();
         if (action.type === "resetAll") await host.saveDraft({ draft: true });
         const before = records(gm.snapshot());

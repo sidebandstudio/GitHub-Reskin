@@ -3,9 +3,9 @@
 // synthetic seeds, and a small DOM with a virtual clock. Not a test file itself.
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
-import { DEFAULT_THEME_ID } from "../../packages/contracts/index.js";
+import { DEFAULT_THEME_ID, STORAGE_KEYS } from "../../packages/contracts/index.js";
 import { repairTheme, resolveTheme, sha256 } from "../../packages/engine/index.js";
-import { createCatalogSource } from "../../packages/settings/index.js";
+import { createCatalogSource, defaultSettings } from "../../packages/settings/index.js";
 
 export const ROOT = new URL("../../", import.meta.url).pathname;
 const readJson = (path) => JSON.parse(readFileSync(join(ROOT, path), "utf8"));
@@ -27,6 +27,9 @@ export function counter(prefix = "00000000-0000-4000-8000-") {
 }
 
 export const context = (extra = {}) => ({ catalog, snapshot, repair, newId: counter(), ...extra });
+
+/** Storage holding a new install's settings with a theme picked, Choom unless named. A new install itself has none. */
+export const picked = (id = DEFAULT_THEME_ID) => ({ [STORAGE_KEYS.settings]: { ...defaultSettings(catalog), selectedThemeId: id } });
 
 /**
  * A CssAdmission shaped like C2b's: it reads only `css`, refuses text containing "INVALID", and

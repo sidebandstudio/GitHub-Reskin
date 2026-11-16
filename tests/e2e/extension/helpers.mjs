@@ -1,6 +1,7 @@
 // Fixtures for the installed-extension surface. Each test gets the real Chrome package, built once
 // per worker, installed into a fresh persistent Chromium profile, so first run, settings and
-// storage start clean. GitHub pages are C3's guarded profile fixture, or a page a test serves at a
+// storage start clean. A new install has no theme; the fixture picks `theme`, Choom unless a test
+// asks for another or for null, from an extension page before the test starts. GitHub pages are C3's guarded profile fixture, or a page a test serves at a
 // path, served as github.com through request routing; nothing reaches the network.
 import { readFileSync } from "node:fs";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
@@ -9,6 +10,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium, firefox } from "@playwright/test";
 import { build } from "../../../scripts/build.mjs";
+import { attachAddon, connect, pickTheme } from "../../../scripts/firefox-addon.mjs";
 import { requireBrowser } from "../../helpers/browsers.mjs";
 import { expect, test as base } from "../../helpers/e2e.mjs";
 
@@ -17,8 +19,10 @@ export const PROFILE_HTML = readFileSync(join(ROOT, "tests/primer/fixtures/profi
 export const PROFILE_URL = "https://github.com/octo-sample";
 export const CHOOM = "anime.cyberpunk-edgerunners";
 export const CHOOM_CANVAS = "#0a0a17";
+const ADDON_ID = "github-reskin@sideband.studio";
 
 export const test = base.extend({
+  theme: [CHOOM, { option: true }],
   packageDir: [
     async ({}, use) => {
       const dir = await mkdtemp(join(tmpdir(), "reskin-e2e-extension-"));
@@ -28,7 +32,7 @@ export const test = base.extend({
     },
     { scope: "worker" },
   ],
-  extension: async ({ packageDir }, use) => {
+  extension: async ({ packageDir, theme }, use) => {
     requireBrowser("chromium");
     const profile = await mkdtemp(join(tmpdir(), "reskin-e2e-profile-"));
     const context = await chromium.launchPersistentContext(profile, {
@@ -48,11 +52,24 @@ export const test = base.extend({
     worker ??= await context.waitForEvent("serviceworker");
     const id = new URL(worker.url()).host;
     const url = (page) => `chrome-extension://${id}/pages/${page}.html`;
+    if (theme) await pick(context, url("popup"), theme);
     await use({ context, worker, id, url, requests, profile, serve: (path, html) => pages.set(path, html) });
     await context.close();
     await rm(profile, { recursive: true, force: true });
   },
 });
+
+// Picks a theme from an extension page, as a person does in the popup, and closes the page.
+async function pick(context, pageUrl, id) {
+  const page = await context.newPage();
+  try {
+    await page.goto(pageUrl);
+    const reply = await commit(page, { type: "selectTheme", id });
+    if (!reply?.ok) throw new Error(`Picking ${id} failed: ${JSON.stringify(reply)}`);
+  } finally {
+    await page.close();
+  }
+}
 
 // The page served at a github.com URL's path, or the profile fixture.
 const pageAt = (pages, url) => pages.get(new URL(url).pathname) ?? PROFILE_HTML;
@@ -61,8 +78,9 @@ const pageAt = (pages, url) => pages.get(new URL(url).pathname) ?? PROFILE_HTML;
  * The Firefox build installed as a temporary add-on through Firefox's remote debugging protocol
  * (web-ext's client), since Playwright cannot load a Firefox extension itself. The add-on gets a
  * fixed internal UUID, so its pages have a known address. `pages` maps github.com paths to HTML.
+ * It starts in `theme`, Choom unless a test names another or null, a new install's no theme.
  */
-export async function firefoxExtension(pages = new Map()) {
+export async function firefoxExtension(pages = new Map(), { theme = CHOOM } = {}) {
   requireBrowser("firefox");
   const { connectWithMaxRetries } = await import(new URL("../../../node_modules/web-ext/lib/firefox/remote.js", import.meta.url).href);
   const out = await mkdtemp(join(tmpdir(), "reskin-e2e-firefox-package-"));
@@ -77,7 +95,7 @@ export async function firefoxExtension(pages = new Map()) {
       "devtools.debugger.remote-enabled": true,
       "devtools.chrome.enabled": true,
       "devtools.debugger.prompt-connection": false,
-      "extensions.webextensions.uuids": JSON.stringify({ "github-reskin@sideband.studio": uuid }),
+      "extensions.webextensions.uuids": JSON.stringify({ [ADDON_ID]: uuid }),
     },
   });
   const close = async () => {
@@ -98,6 +116,16 @@ export async function firefoxExtension(pages = new Map()) {
     // The install opens the welcome tab; a page opened before it settles can land in a window
     // Playwright's Firefox cannot address.
     await new Promise((resolve) => setTimeout(resolve, 2000));
+    // Playwright cannot open the add-on's pages, so its popup picks the theme through Firefox's
+    // debugging protocol.
+    if (theme) {
+      const client = await connect(port);
+      try {
+        await pickTheme(await attachAddon(client, ADDON_ID), theme);
+      } finally {
+        client.close();
+      }
+    }
   } catch (error) {
     await close();
     throw error;

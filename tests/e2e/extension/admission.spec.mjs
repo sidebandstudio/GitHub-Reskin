@@ -15,7 +15,7 @@ import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { firefox } from "@playwright/test";
-import { SANITIZER_VERSION, STORAGE_KEYS } from "../../../packages/contracts/index.js";
+import { DEFAULT_THEME_ID, SANITIZER_VERSION, STORAGE_KEYS } from "../../../packages/contracts/index.js";
 import { admitCss } from "../../../packages/format/index.js";
 import { createRepository, defaultSettings } from "../../../packages/settings/index.js";
 import { catalogData, readCatalogEntries } from "../../../packages/ui/bundle.mjs";
@@ -294,7 +294,7 @@ test("Firefox: the built content script never applies theme CSS in Calm, and a s
     const built = await build({ target: "firefox", outDir: out });
     const content = await readFile(join(built.dir, "content.js"), "utf8");
     const catalog = catalogFromData(catalogData(await readCatalogEntries(BUILD_ROOT)));
-    let settings = { ...defaultSettings(catalog), onboardingCompleted: true };
+    let settings = { ...defaultSettings(catalog), selectedThemeId: DEFAULT_THEME_ID, onboardingCompleted: true };
     let ids = 0;
     const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
     await context.route("https://github.com/**", (route) =>

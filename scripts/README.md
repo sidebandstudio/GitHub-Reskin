@@ -103,7 +103,7 @@ add-on's own pages, which BiDi does not reach. The report and screenshots go to
 `qa:userscript [-- --firefox <path>]` runs `scripts/qa-userscript.mjs`: the packaged userscript in
 real Violentmonkey in Chromium, and in real Violentmonkey and Tampermonkey in an actual Firefox
 release, installed through each manager's own install page. Tampermonkey in Chrome isn't checked:
-its MV3 build runs every script in GitHub's page, so the panel there is only the note. On public GitHub, logged out, it checks the default theme, the
+its MV3 build runs every script in GitHub's page, so the panel there is only the note. On public GitHub, logged out, it checks that a new install stays native, the
 panel from `#reskin` with its controls, a pick, typing and Escape in the panel, the pick after a
 reload, importing and saving a theme file in Make a theme, and disabling the script in the
 manager's dashboard. The panel has its controls only where the manager keeps the script apart from

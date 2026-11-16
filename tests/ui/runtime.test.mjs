@@ -363,7 +363,7 @@ test("admission runs while the theme's CSS may apply, with the plan's covered mo
 
 test("the background's boot snapshot is reused by the content script on the common page", () => {
   const { snapshot, repair } = backgroundRendering();
-  const settings = defaultSettings(catalog);
+  const settings = { ...defaultSettings(catalog), selectedThemeId: DEFAULT_THEME_ID };
   const record = buildBootRecord(settings, { catalog, snapshot });
   assert.deepEqual(bootRecordProblems(record), []);
   const page = renderer.readPage(null, null);

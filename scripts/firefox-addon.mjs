@@ -1,5 +1,7 @@
 // Firefox's remote debugging protocol, for a temporary add-on's own pages, which Playwright cannot
-// open. remoteClient speaks the protocol and attachAddon reaches an installed add-on's frames.
+// open. remoteClient speaks the protocol, attachAddon reaches an installed add-on's frames, and
+// pickTheme commits a theme from the add-on's popup as a person would there. qa:firefox, qa:live
+// and the installed-add-on tests share them.
 import net from "node:net";
 import { writeFile } from "node:fs/promises";
 
@@ -163,4 +165,23 @@ export async function attachAddon(client, id) {
     await writeFile(path, Buffer.from(value.data.split(",")[1], "base64"));
   };
   return { evaluate, screenshot, frame, problems };
+}
+
+/**
+ * Picks a theme in the add-on attached as `addon`, from a popup tab its background opens, then
+ * closes that tab. A new install has no theme; the installed-add-on checks pick one first.
+ */
+export async function pickTheme(addon, themeId) {
+  const tab = await addon.evaluate("_generated_background_page", () => browser.tabs.create({ url: browser.runtime.getURL("pages/popup.html"), active: false }).then((created) => created.id));
+  const reply = await addon.evaluate(
+    "pages/popup.html",
+    async (id) => {
+      const got = await browser.runtime.sendMessage({ type: "get", requestId: "pick-get" });
+      return browser.runtime.sendMessage({ type: "commit", requestId: "pick-commit", expectedRevision: got.settings.revision, action: { type: "selectTheme", id } });
+    },
+    themeId,
+  );
+  await addon.evaluate("_generated_background_page", (id) => browser.tabs.remove(id).then(() => true), tab);
+  if (!reply?.ok) throw new Error(`Picking ${themeId} failed: ${JSON.stringify(reply)}`);
+  return reply.settings;
 }

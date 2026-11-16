@@ -6,7 +6,7 @@
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { STORAGE_KEYS } from "../../../packages/contracts/index.js";
+import { DEFAULT_THEME_ID, STORAGE_KEYS } from "../../../packages/contracts/index.js";
 import { createRepository, defaultSettings } from "../../../packages/settings/index.js";
 import { catalogData, readCatalogEntries } from "../../../packages/ui/bundle.mjs";
 import { catalogFromData } from "../../../packages/ui/catalog.js";
@@ -24,7 +24,7 @@ test("a settings write reaches the page's style in Firefox, timed for the releas
     const built = await build({ target: "firefox", outDir: out });
     const content = await readFile(join(built.dir, "content.js"), "utf8");
     const catalog = catalogFromData(catalogData(await readCatalogEntries(ROOT)));
-    const first = { ...defaultSettings(catalog), onboardingCompleted: true };
+    const first = { ...defaultSettings(catalog), selectedThemeId: DEFAULT_THEME_ID, onboardingCompleted: true };
     const records = (settings) => ({ [STORAGE_KEYS.settings]: settings, [STORAGE_KEYS.selected]: catalog.record(settings.selectedThemeId) });
     const data = new Map([[STORAGE_KEYS.settings, first]]);
     const memory = {

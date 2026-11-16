@@ -6,7 +6,7 @@
       "raw": {},
       "expect": {
         "enabled": true,
-        "selectedThemeId": "anime.cyberpunk-edgerunners",
+        "selectedThemeId": null,
         "notices": [],
         "recovery": [],
         "firstRun": true

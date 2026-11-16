@@ -15,7 +15,7 @@ import {
   STORAGE_LIMITS,
   validateSettings,
 } from "../../packages/settings/index.js";
-import { catalog, CHOOM, CLASSICS, context, deferred, memoryStorage, standInCss } from "./helpers.mjs";
+import { catalog, CHOOM, CLASSICS, context, deferred, memoryStorage, picked, standInCss } from "./helpers.mjs";
 
 const nord = CLASSICS.find((t) => t.id === "nord").document;
 const EDITOR = "editor-aaaaaaaaaaaaaaaa";
@@ -25,7 +25,7 @@ const BUILDER = { document: "document:builder-1" };
 const CSS_A = ".AppHeader { box-shadow: 0 1px 0 var(--reskin-accent); }";
 const CSS_B = ".AppHeader { box-shadow: none; }";
 
-async function ready(initial = {}, hooks, extra) {
+async function ready(initial = picked(), hooks, extra) {
   const storage = memoryStorage(initial, hooks);
   const repository = createRepository(storage, context(extra));
   const init = await repository.initialize();
@@ -97,7 +97,7 @@ test("a restarted worker rehydrates from storage; in-memory queues are not autho
 
 test("a failed write keeps the committed state and reports storage", async () => {
   let fail = false;
-  const { storage, repository } = await ready({}, { set: async () => { if (fail) throw new Error("QUOTA_BYTES quota exceeded"); } });
+  const { storage, repository } = await ready(picked(), { set: async () => { if (fail) throw new Error("QUOTA_BYTES quota exceeded"); } });
   await repository.commit({ type: "selectTheme", id: "nord" }, 0);
   const before = storage.snapshot();
   fail = true;
@@ -112,7 +112,7 @@ test("a failed write keeps the committed state and reports storage", async () =>
 
 test("a read failure inside a commit reports storage without writing", async () => {
   let fail = false;
-  const { storage, repository } = await ready({}, { get: async () => { if (fail) throw new Error("denied"); } });
+  const { storage, repository } = await ready(picked(), { get: async () => { if (fail) throw new Error("denied"); } });
   const before = storage.snapshot();
   fail = true;
   const result = await repository.commit({ type: "setEnabled", enabled: false }, 0);
@@ -246,7 +246,7 @@ test("the current build rejects advanced CSS, images and CSS consent safely", as
 
 test("consent is keyed by sanitized hash and version, and a CSS change needs a fresh choice", async () => {
   const css = standInCss();
-  const { storage, repository } = await ready({}, undefined, { css });
+  const { storage, repository } = await ready(picked(), undefined, { css });
   const saved = await repository.commit({ type: "saveCustom", document: { ...nord, css: CSS_A }, select: true, editor: EDITOR }, 0, BUILDER);
   const id = saved.settings.selectedThemeId;
   assert.deepEqual(stored(storage).cssConsent, {}, "saving alone approves nothing");
@@ -285,7 +285,7 @@ test("reset all clears drafts, recovery and lastGood but does not repeat first r
   await repository.commit({ type: "selectTheme", id: "nord" }, 0);
   const reply = await repository.commit({ type: "resetAll" }, 1);
   assert.equal(reply.ok, true);
-  assert.equal(reply.settings.selectedThemeId, DEFAULT_THEME_ID);
+  assert.equal(reply.settings.selectedThemeId, null);
   assert.equal(reply.settings.onboardingCompleted, true);
   for (const key of [STORAGE_KEYS.draft, RECOVERY_KEY, STORAGE_KEYS.lastGood]) assert.equal(storage.data.get(key), null, key);
 });
@@ -393,7 +393,7 @@ test("a newer settings record is never overwritten and commits are refused", asy
   assert.deepEqual(stored(storage), newer);
   const read = await repository.read();
   assert.equal(read.ok, false);
-  assert.equal(read.fallback.selectedThemeId, DEFAULT_THEME_ID);
+  assert.equal(read.fallback.selectedThemeId, null);
 });
 
 test("an update that invalidates the boot record rewrites it without changing settings", async () => {
@@ -412,7 +412,7 @@ test("an update that invalidates the boot record rewrites it without changing se
 
 test("given selectedRecord, every settings write stores the selected bundled theme's record beside them, and startup refreshes a stale one", async () => {
   const record = (settings) => (catalog.has(settings.selectedThemeId) ? `record of ${settings.selectedThemeId}` : null);
-  const { storage, repository } = await ready({}, undefined, { selectedRecord: record });
+  const { storage, repository } = await ready(picked(), undefined, { selectedRecord: record });
   assert.equal(storage.data.get(STORAGE_KEYS.selected), `record of ${DEFAULT_THEME_ID}`, "the install write");
   await repository.commit({ type: "selectTheme", id: "nord" }, 0);
   assert.equal(storage.data.get(STORAGE_KEYS.selected), "record of nord");
@@ -431,6 +431,26 @@ test("given selectedRecord, every settings write stores the selected bundled the
   assert.deepEqual(stored(storage), before);
 });
 
+test("a new install selects no theme and writes no snapshot or theme record until one is picked", async () => {
+  const record = (settings) => (catalog.has(settings.selectedThemeId) ? `record of ${settings.selectedThemeId}` : null);
+  const { storage, repository, init } = await ready({}, undefined, { selectedRecord: record });
+  assert.equal(init.state, "fresh");
+  assert.equal(stored(storage).selectedThemeId, null);
+  assert.equal(stored(storage).enabled, true);
+  assert.equal(storage.data.get(STORAGE_KEYS.boot), null);
+  assert.equal(storage.data.get(STORAGE_KEYS.selected), null);
+  // Starting again writes nothing: a missing snapshot is current while there is no theme.
+  const writes = storage.log.filter(([op]) => op === "set").length;
+  assert.equal((await createRepository(storage, context({ selectedRecord: record })).initialize()).state, "current");
+  assert.equal(storage.log.filter(([op]) => op === "set").length, writes);
+  const reply = await repository.commit({ type: "selectTheme", id: "nord" }, 0);
+  assert.equal(reply.ok, true);
+  assert.deepEqual(bootRecordProblems(storage.data.get(STORAGE_KEYS.boot)), []);
+  assert.equal(storage.data.get(STORAGE_KEYS.selected), "record of nord");
+  // No theme is nothing for Undo to go back to.
+  assert.equal(storage.data.get(STORAGE_KEYS.lastGood), null);
+});
+
 test("without selectedRecord, as in the userscript, no selected record is written", async () => {
   const { storage, repository } = await ready();
   await repository.commit({ type: "selectTheme", id: "nord" }, 0);
@@ -438,7 +458,7 @@ test("without selectedRecord, as in the userscript, no selected record is writte
 });
 
 test("a snapshot callback failure writes no snapshot but still commits", async () => {
-  const { storage, repository } = await ready({}, undefined, { snapshot: () => { throw new Error("renderer down"); } });
+  const { storage, repository } = await ready(picked(), undefined, { snapshot: () => { throw new Error("renderer down"); } });
   const reply = await repository.commit({ type: "selectTheme", id: "nord" }, 0);
   assert.equal(reply.ok, true);
   assert.equal(storage.data.get(STORAGE_KEYS.boot), null);
@@ -466,7 +486,7 @@ test("the Choom stand-in resolves and its snapshot carries no resource or CSS te
 test("saveCustom writes a theme and its CSS approval in one commit, or neither", async () => {
   const css = standInCss();
   let failNext = false;
-  const { storage, repository } = await ready({}, { set: async () => { if (failNext) { failNext = false; throw new Error("QUOTA_BYTES quota exceeded"); } } }, { css });
+  const { storage, repository } = await ready(picked(), { set: async () => { if (failNext) { failNext = false; throw new Error("QUOTA_BYTES quota exceeded"); } } }, { css });
   const ticket = (await repository.commit({ type: "approveCss", editor: EDITOR, target: "new", css: CSS_A }, 0, BUILDER)).approval.ticket;
   const save = { type: "saveCustom", document: { ...nord, css: CSS_A }, select: true, editor: EDITOR, approval: ticket };
   // A failed write leaves no theme behind and the ticket still good, so trying again saves exactly one.
@@ -494,7 +514,7 @@ test("saveCustom writes a theme and its CSS approval in one commit, or neither",
 
 test("an approval ticket is issued and redeemed only for the builder document the background names, at the current revision", async () => {
   const css = standInCss();
-  const { storage, repository } = await ready({}, undefined, { css });
+  const { storage, repository } = await ready(picked(), undefined, { css });
   const id = (await repository.commit({ type: "saveCustom", document: { ...nord, css: CSS_A }, select: true, editor: EDITOR }, 0, BUILDER)).settings.selectedThemeId;
   const before = storage.snapshot();
   // No sender document: the popup, the first-run page, a content script or any other caller.
@@ -525,7 +545,7 @@ test("an approval ticket is issued and redeemed only for the builder document th
 
 test("startup keeps a stored approval only for a saved theme's exact sanitized CSS under the current sanitizer", async () => {
   const css = standInCss();
-  const { storage, repository } = await ready({}, undefined, { css });
+  const { storage, repository } = await ready(picked(), undefined, { css });
   const save = async (name, document, revision) => (await repository.commit({ type: "saveCustom", document: { ...document, name }, select: true }, revision)).settings.selectedThemeId;
   const exact = await save("Exact", { ...nord, css: CSS_A }, 0);
   const other = await save("Other CSS", { ...nord, css: CSS_B }, 1);
