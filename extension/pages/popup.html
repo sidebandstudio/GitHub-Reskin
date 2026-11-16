@@ -39,6 +39,7 @@
     </section>
 
     <div class="rs-browse">
+      <h2 class="rs-heading">Theme</h2>
       <div class="rs-groups" data-rs="groups" role="group" aria-label="Theme groups"></div>
       <div class="rs-search-row">
         <label class="rs-visually-hidden" for="rs-search">Search themes or shows</label>
@@ -52,6 +53,15 @@
       <p data-rs-text></p>
       <button type="button" class="rs-link-button" data-rs-clear>Clear search</button>
     </div>
+
+    <section class="rs-colors" aria-labelledby="rs-colors-heading">
+      <div class="rs-heading-row">
+        <h2 class="rs-heading" id="rs-colors-heading">Colors</h2>
+        <button type="button" class="rs-link-button" data-rc="reset">Reset to theme</button>
+      </div>
+      <div class="rs-color-grid" data-rc="rows"></div>
+      <p class="rs-note" role="status" aria-live="polite" data-rc="note"></p>
+    </section>
 
     <section class="rs-prefs" aria-label="Appearance">
       <fieldset class="rs-segmented" data-rs="appearance" aria-describedby="rs-appearance-note">
