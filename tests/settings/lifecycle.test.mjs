@@ -592,6 +592,46 @@ test("only the selected saved theme is checked here, so a damaged one that is no
   content.destroy();
 });
 
+test("decoration waits for the frame that draws a new stylesheet or a parsed page, then takes the next frame", async () => {
+  const { storage, repository } = await stored();
+  const { page, renderer, content } = start(storage, { idleCallbacks: true });
+  await content.ready;
+  page.document.readyState = "interactive";
+  page.fire("document", "DOMContentLoaded");
+  await page.frame();
+  assert.equal(renderer.calls.decorate, 0, "nothing in the frame GitHub lays out the parsed page");
+  assert.equal(page.idles.size, 1);
+  assert.deepEqual([...page.idles.values()].map((entry) => entry.timeout), [100]);
+  await page.idle();
+  assert.equal(renderer.calls.decorate, 0, "the idle callback only asks for a frame");
+  await page.frame();
+  assert.equal(renderer.calls.decorate, 1);
+  // A theme change: the new stylesheet's frame first, the pass after it.
+  await repository.commit({ type: "selectTheme", id: "nord" }, 0);
+  await page.settle();
+  await page.frame();
+  await page.settle();
+  assert.equal(renderer.calls.decorate, 1);
+  await page.idle();
+  await page.frame();
+  assert.equal(renderer.calls.decorate, 2);
+  // Leaving the page cancels a waiting pass and keeps it queued; destroy cancels it for good.
+  await repository.commit({ type: "selectTheme", id: "dracula" }, 1);
+  await page.settle();
+  await page.frame();
+  await page.settle();
+  assert.equal(page.idles.size, 1);
+  page.fire("view", "pagehide");
+  assert.equal(page.idles.size, 0);
+  page.fire("view", "pageshow", { persisted: false });
+  await page.frame();
+  assert.equal(renderer.calls.decorate, 3);
+  page.fire("document", "turbo:load");
+  assert.equal(page.idles.size, 1);
+  content.destroy();
+  assert.equal(page.idles.size, 0);
+});
+
 test("startup does not wait for the background: it reads extension storage directly", async () => {
   const { storage } = await stored();
   const { content } = start(storage);

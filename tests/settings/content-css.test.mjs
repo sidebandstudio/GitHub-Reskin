@@ -2,6 +2,7 @@
 // packages/format/authoring.js (packages/ui/bundle.mjs), so this file loads the lifecycle the same
 // way and installs the sanitizer the way extension/content/index.mjs does. The tests run in order:
 // the sanitizer, once installed, stays.
+import { readFileSync } from "node:fs";
 import { registerHooks } from "node:module";
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -18,11 +19,12 @@ const { cssSanitizerInstalled, installCssSanitizer } = await import("../../packa
 const { admitGradientCss, sanitizeCss, useCssParser } = await import("../../packages/format/css/sanitize.js");
 const { defaultSettings } = await import("../../packages/settings/index.js");
 const { startContent } = await import("../../extension/content/lifecycle/index.js");
-const { catalog, CLASSICS, fakePage, memoryStorage, testRenderer } = await import("./helpers.mjs");
+const { catalog, fakePage, memoryStorage, testRenderer } = await import("./helpers.mjs");
 
-const nord = CLASSICS.find((theme) => theme.id === "nord").document;
+// Choom Circuit as a saved theme: Advanced CSS, and backgrounds whose only layers are gradients.
+const choom = JSON.parse(readFileSync(new URL("../../themes/anime/choom-circuit.reskin.json", import.meta.url), "utf8"));
 const SAVED = "local:00000000-0000-4000-8000-000000000001";
-const withCss = { ...nord, name: "Mine", css: ".AppHeader { box-shadow: 0 1px 0 var(--reskin-accent); }" };
+const withCss = { ...choom, name: "Mine" };
 
 function settingsWith({ selected }) {
   const settings = defaultSettings(catalog);
@@ -30,6 +32,8 @@ function settingsWith({ selected }) {
   settings.selectedThemeId = selected;
   return { [STORAGE_KEYS.settings]: settings };
 }
+
+const phase = (page) => page.root.getAttribute("data-reskin-boot");
 
 function start(records, loadCssSanitizer) {
   const page = fakePage();
@@ -53,19 +57,29 @@ test("a bundled theme, beside a saved theme with CSS, needs no sanitizer", async
   content.destroy();
 });
 
-test("a sanitizer that fails to load leaves GitHub native rather than drawing unchecked CSS", async () => {
-  const { page, events, content } = start(settingsWith({ selected: SAVED }), async () => {
-    throw new Error("the parser chunk is missing");
-  });
-  assert.equal(await content.ready, "native");
-  assert.equal(page.style(), null);
+test("while the sanitizer loads, the page gets the saved theme without its CSS; one that fails to load leaves it so, never with unchecked CSS", async () => {
+  let fail;
+  const { page, events, content } = start(settingsWith({ selected: SAVED }), () => new Promise((_resolve, reject) => (fail = reject)));
+  assert.equal(await content.ready, "ready", "themed before the parser arrives");
+  assert.ok(page.style());
+  assert.ok(events.some((e) => e.type === "without-css"));
+  fail(new Error("the parser chunk is missing"));
+  await page.settle();
   assert.ok(events.some((e) => e.type === "error"));
+  assert.equal(phase(page), "ready", "still themed");
+  assert.ok(page.style());
+  assert.equal(cssSanitizerInstalled(), false);
   content.destroy();
 });
 
-test("the selected saved theme's CSS loads the sanitizer once, before the page reads its settings again", async () => {
-  const { page, content } = start(settingsWith({ selected: SAVED }), install);
+test("the selected saved theme's CSS loads the sanitizer once, and the page reads its settings again with it", async () => {
+  const { page, events, content } = start(settingsWith({ selected: SAVED }), install);
   assert.equal(await content.ready, "ready");
+  for (let i = 0; i < 20 && !cssSanitizerInstalled(); i++) await page.settle();
+  await page.settle();
+  assert.equal(cssSanitizerInstalled(), true);
+  // Drawn twice: without the CSS while the parser loaded, then the whole theme.
+  assert.equal(events.filter((e) => e.type === "resolved").length, 2);
   assert.ok(page.style());
   assert.deepEqual(loads, ["load"]);
   const again = start(settingsWith({ selected: SAVED }), install);
