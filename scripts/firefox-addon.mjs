@@ -173,15 +173,20 @@ export async function attachAddon(client, id) {
  */
 export async function pickTheme(addon, themeId) {
   const tab = await addon.evaluate("_generated_background_page", () => browser.tabs.create({ url: browser.runtime.getURL("pages/popup.html"), active: false }).then((created) => created.id));
-  const reply = await addon.evaluate(
-    "pages/popup.html",
-    async (id) => {
-      const got = await browser.runtime.sendMessage({ type: "get", requestId: "pick-get" });
-      return browser.runtime.sendMessage({ type: "commit", requestId: "pick-commit", expectedRevision: got.settings.revision, action: { type: "selectTheme", id } });
-    },
-    themeId,
-  );
-  await addon.evaluate("_generated_background_page", (id) => browser.tabs.remove(id).then(() => true), tab);
+  let reply;
+  try {
+    reply = await addon.evaluate(
+      "pages/popup.html",
+      async (id) => {
+        const got = await browser.runtime.sendMessage({ type: "get", requestId: "pick-get" });
+        return browser.runtime.sendMessage({ type: "commit", requestId: "pick-commit", expectedRevision: got.settings.revision, action: { type: "selectTheme", id } });
+      },
+      themeId,
+    );
+  } finally {
+    // The tab goes either way; a failure to close it never hides why the pick failed.
+    await addon.evaluate("_generated_background_page", (id) => browser.tabs.remove(id).then(() => true), tab).catch(() => {});
+  }
   if (!reply?.ok) throw new Error(`Picking ${themeId} failed: ${JSON.stringify(reply)}`);
   return reply.settings;
 }

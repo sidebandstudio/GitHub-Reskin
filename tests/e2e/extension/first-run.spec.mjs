@@ -59,10 +59,13 @@ test("the welcome preview shows GitHub's own look until a choice, then the theme
   await welcome.setViewportSize({ width: 1440, height: 900 });
   const host = welcome.locator("[data-reskin-preview]");
   await expect(host).toHaveAttribute("data-completed", /\d+/, { timeout: 15000 });
-  // Nothing is painted before a choice: none of a theme's owned nodes.
+  // Nothing is painted before a choice: none of a theme's owned nodes, and first run is not done.
   await expect(host).toHaveAttribute("data-owned-nodes", "0");
+  expect((await storage(extension.worker))["reskin.settings"].onboardingCompleted).toBe(false);
   await welcome.getByRole("button", { name: "Cyberpunk: Edgerunners" }).click();
   await expect(welcome.locator("[data-rs=status]")).toHaveText("Applied to GitHub.");
+  // The first choice completes first run.
+  await expect.poll(async () => (await storage(extension.worker))["reskin.settings"].onboardingCompleted).toBe(true);
   await expect(host).toHaveAttribute("data-policy", "themed");
   await expect.poll(() => host.getAttribute("data-owned-nodes")).not.toBe("0");
   const choomHash = await host.getAttribute("data-source-hash");
@@ -76,7 +79,6 @@ test("the welcome preview shows GitHub's own look until a choice, then the theme
   await expect(welcome.locator("[data-rs=summary-name]")).toHaveText("Longroad Petals");
   await expect.poll(() => host.getAttribute("data-source-hash")).not.toBe(choomHash);
   await expect(welcome.locator("[data-rs=undo]")).toBeVisible();
-  await expect.poll(async () => (await storage(extension.worker))["reskin.settings"].onboardingCompleted).toBe(true);
 
   // All 13 anime opens the full gallery in place.
   await welcome.getByRole("button", { name: "All 13 anime" }).click();

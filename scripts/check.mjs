@@ -220,13 +220,14 @@ async function lintChrome({ outDir }) {
 
   // Load the package unpacked, with a test-only match for the local fixture origin.
   const { launchTestExtension } = await import("../tests/helpers/browsers.mjs");
-  const { expectThemedByDefault } = await import("../tests/helpers/platform.mjs");
+  const { expectThemed, pickChoom } = await import("../tests/helpers/platform.mjs");
   const server = await serve({ root: join(ROOT, "tests/fixture-app/platform"), host: "127.0.0.1" });
   const browser = await launchTestExtension({ releaseConfig: config });
   try {
+    await pickChoom(browser.context);
     const page = await browser.context.newPage();
     await page.goto(server.url);
-    const background = await expectThemedByDefault(page);
+    const background = await expectThemed(page);
     console.log(`Unpacked load in Chromium ${browser.version}: content script themed the fixture (--bgColor-default ${background}).`);
   } finally {
     await browser.close();
