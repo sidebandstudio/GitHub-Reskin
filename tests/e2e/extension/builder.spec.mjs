@@ -853,7 +853,8 @@ test.describe("Chromium builder", () => {
     const github = await extension.context.newPage();
     await github.setViewportSize({ width: 1280, height: 900 });
     await github.goto(REGISTRY_URL);
-    expect(settingsOf(await env.records()).selectedThemeId).toBe(DEFAULT_THEME_ID);
+    // A new profile's background may not have stored its first settings yet.
+    await expect.poll(async () => settingsOf(await env.records())?.selectedThemeId).toBe(DEFAULT_THEME_ID);
     await expectCss(github, true, "the bundled theme's own CSS");
     // The open tab follows the selection to the saved copy without a reload.
     await bundledExport(env, { onSaved: () => expectCss(github, false, "the saved copy without consent") });
