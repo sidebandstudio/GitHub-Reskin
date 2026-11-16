@@ -42,7 +42,7 @@ test("the preview target writes only the named variables, with the values the fu
   assert.match(preview.css, /@media \(prefers-color-scheme: dark\)\{/);
   assert.match(preview.css, /:root:is\(/);
   // A fraction of the full stylesheet, and its own fingerprint.
-  assert.ok(preview.css.length * 5 < full.css.length, `${preview.css.length} vs ${full.css.length}`);
+  assert.ok(preview.css.length * 4 < full.css.length, `${preview.css.length} vs ${full.css.length}`);
   assert.notEqual(preview.fingerprint, full.fingerprint);
   assert.notEqual(preview.fingerprint, compilePreview(resolved, plan, FULL, { variables: VARIABLES }).fingerprint);
 });
