@@ -24,7 +24,7 @@ import { DEFAULT_THEME_ID, STORAGE_KEYS } from "../../../packages/contracts/inde
 import { sourceHash } from "../../../packages/engine/index.js";
 import { admitCss, encodeShare, makeAiPrompt } from "../../../packages/format/index.js";
 import { SHARE_PAGE } from "../../../packages/ui/importer.js";
-import { CLIPBOARD_STAND_IN, CONTENT_PACKAGE_ORIGIN, expect, firefoxPages, PROFILE_URL, serveContentPackage, storage, test } from "./helpers.mjs";
+import { CLIPBOARD_STAND_IN, CONTENT_GET_URL, expect, firefoxPages, PROFILE_URL, serveContentPackage, storage, test } from "./helpers.mjs";
 
 const ROOT = new URL("../../../", import.meta.url);
 const ANSWER = readFileSync(new URL("tests/ui/fixtures/ai-answer.txt", ROOT), "utf8");
@@ -876,7 +876,7 @@ async function firefoxGitHub({ contentScript, packageDir }, records) {
   const stand = `(() => {
     const records = ${JSON.stringify(records)};
     globalThis.browser = {
-      runtime: { id: "e2e", getURL: (path) => ${JSON.stringify(`${CONTENT_PACKAGE_ORIGIN}/`)} + path },
+      runtime: { id: "e2e", getURL: ${CONTENT_GET_URL} },
       storage: { local: { get: async () => structuredClone(records), set: async () => {}, remove: async () => {} }, onChanged: { addListener() {}, removeListener() {} } },
     };
   })();`;

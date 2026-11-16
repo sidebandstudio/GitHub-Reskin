@@ -191,8 +191,11 @@ export const FIREFOX_PAGES_ORIGIN = "https://reskin-pages.test";
 const MEDIA_TYPES = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png", ".webp": "image/webp", ".woff2": "font/woff2", ".json": "application/json" };
 
 // The built content script on a plain Gecko page imports its CSS parser chunk from here, as it would
-// from moz-extension:// (extension/content/index.mjs). Stand-in namespaces give it as runtime.getURL.
+// from moz-extension:// (extension/content/index.mjs), which a plain page cannot load.
 export const CONTENT_PACKAGE_ORIGIN = "https://reskin-package.test";
+// A stand-in runtime.getURL, as source text: the parser chunk at CONTENT_PACKAGE_ORIGIN, and every
+// other path, the fonts included, at the add-on address the resource adapter expects.
+export const CONTENT_GET_URL = `(path) => (path === "content/css-parser.js" ? ${JSON.stringify(`${CONTENT_PACKAGE_ORIGIN}/`)} : "moz-extension://e2e/") + path`;
 
 /** Serves a built package's files at CONTENT_PACKAGE_ORIGIN in `context`, as modules a page may import. */
 export async function serveContentPackage(context, dir) {
