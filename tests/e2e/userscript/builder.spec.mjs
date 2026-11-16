@@ -163,10 +163,11 @@ test("imports a chatbot's answer wrapped in prose, previews it and saves it", as
   await dialog.getByRole("textbox", { name: "Chatbot answer" }).fill(ANSWER);
   await dialog.getByRole("button", { name: "Preview theme" }).click();
   await expect(dialog.getByText("We found your theme inside the answer.")).toBeVisible();
-  await expect(dialog.getByText("We spaced the graph colors so activity levels stay visible.")).toBeVisible();
+  // Its graph levels are kept as written; its code and link colors are made readable.
+  await expect(dialog.getByText("We adjusted 5 colors so links and text are easier to read.")).toBeVisible();
   await expect(dialog.locator('[data-rb="import-show"]')).toHaveText("Neon Drizzle");
   await dialog.getByText("See changes").click();
-  await expect(dialog.getByRole("rowheader", { name: /Graph levels/ })).toBeVisible();
+  await expect(dialog.getByRole("rowheader", { name: /Code syntax keyword/ })).toBeVisible();
   await expect(dialog.locator('[data-rb="import-frame"] iframe').first()).toBeAttached();
   // Escape closes the dialog and leaves the panel open.
   await page.keyboard.press("Escape");
