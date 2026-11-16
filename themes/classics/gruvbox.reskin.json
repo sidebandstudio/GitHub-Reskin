@@ -8,10 +8,15 @@
     "text": "#ebdbb2"
   },
   "description": "Palette from the Gruvbox color scheme, MIT license.",
+  "details": {
+    "headerText": "#a89984"
+  },
   "name": "Gruvbox",
   "overrides": {
     "border": "#504945",
     "mutedText": "#bcb0a0",
+    "primaryBackground": "#8a681a",
+    "primaryText": "#ffffff",
     "surface": "#32302f"
   },
   "schemaVersion": 1,

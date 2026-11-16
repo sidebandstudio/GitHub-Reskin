@@ -8,7 +8,14 @@
     "text": "#ededea"
   },
   "description": "The amber and near-black from Ali Tleis's GitHub profile.",
+  "details": {
+    "headerText": "#9e9e9c"
+  },
   "name": "Editing Suite",
+  "overrides": {
+    "primaryBackground": "#916523",
+    "primaryText": "#ffffff"
+  },
   "schemaVersion": 1,
   "tags": [
     "classic",

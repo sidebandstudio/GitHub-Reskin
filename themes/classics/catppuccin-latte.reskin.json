@@ -8,10 +8,15 @@
     "text": "#4c4f69"
   },
   "description": "Latte palette from the Catppuccin project, MIT license.",
+  "details": {
+    "headerText": "#65687d"
+  },
   "name": "Catppuccin Latte",
   "overrides": {
     "border": "#ccd0da",
     "mutedText": "#5b5d70",
+    "primaryBackground": "#8839ef",
+    "primaryText": "#ffffff",
     "surface": "#e6e9ef"
   },
   "schemaVersion": 1,

@@ -203,7 +203,9 @@ async function checkClassics(root) {
       tags: ["classic", base],
       base,
       colors: { background: p.bg, text: p.text, accent: p.accent, contribution: p.graph },
-      ...(p.surface ? { overrides: { surface: p.surface, border: p.border, mutedText: p.muted } } : {}),
+      // 1.x's primary button, its accent darkened for white text, and its muted header text.
+      overrides: { ...(p.surface ? { surface: p.surface, border: p.border, mutedText: p.muted } : {}), primaryBackground: p.primary, primaryText: p.onPrimary },
+      details: { headerText: p.header },
     };
     const repaired = repairTheme(original, seeds[`standard-${base}`]);
     check(Buffer.from(exportTheme(repaired.theme).bytes).equals(bytes), `${entry.file} differs from its repaired 1.x palette`);

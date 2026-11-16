@@ -77,11 +77,16 @@ export function migrateLegacy(raw, { catalog, newId, repair } = {}) {
 }
 
 // Clones the source and applies the four 1.x colors. 1.1.0 dropped a theme's extra surface, border
-// and muted colors once you edited it, so its overrides and graph levels go too; fonts, effects and
-// flavor stay, as they did. A base the colors contradict is switched, as an import would offer.
+// and muted colors once you edited it, so its overrides, graph levels and header text go too;
+// fonts, effects and flavor stay, as they did. A base the colors contradict is switched, as an
+// import would offer.
 function localTheme(source, custom, repair) {
   if (!source) return null;
   const { overrides, contributions, ...rest } = structuredClone(source);
+  if (rest.details?.headerText) {
+    delete rest.details.headerText;
+    if (!Object.keys(rest.details).length) delete rest.details;
+  }
   const name = source.name.length + EDITED.length > NAME_LIMIT ? source.name.slice(0, NAME_LIMIT - EDITED.length).trimEnd() : source.name;
   let document = {
     ...rest,

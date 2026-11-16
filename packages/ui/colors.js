@@ -62,6 +62,11 @@ export function editedDocument(document, key, value, { copy }) {
     for (const role of DERIVED[key]) delete next.overrides[role];
     if (!Object.keys(next.overrides).length) delete next.overrides;
   }
+  // A Classic's header text is 1.0's muted shade of its background and text, so it follows them.
+  if ((key === "background" || key === "text") && next.details?.headerText) {
+    delete next.details.headerText;
+    if (!Object.keys(next.details).length) delete next.details;
+  }
   // The page backdrop takes the new background; other backdrops drop their colors, which were
   // shades of the old one, and keep their layers.
   if (key === "background" && next.backgrounds) {

@@ -76,6 +76,19 @@ test("a color change drops what the theme set for the colors it derives, as 1.0 
   if (BUNDLED_CHOOM.backgrounds.header) assert.equal(background.backgrounds.header?.color, undefined);
 });
 
+test("a Classic keeps 1.0's primary button and header text until the colors they come from change", () => {
+  assert.deepEqual(SUITE.overrides, { primaryBackground: "#916523", primaryText: "#ffffff" });
+  assert.deepEqual(SUITE.details, { headerText: "#9e9e9c" });
+  const graph = editedDocument(SUITE, "contribution", "#33cc66", { copy: true });
+  assert.deepEqual([graph.overrides, graph.details], [SUITE.overrides, SUITE.details]);
+  const accent = editedDocument(SUITE, "accent", "#ff5577", { copy: true });
+  assert.deepEqual([accent.overrides, accent.details], [undefined, SUITE.details]);
+  for (const key of ["background", "text"]) {
+    const edited = editedDocument(SUITE, key, key === "text" ? "#ffffff" : "#101010", { copy: true });
+    assert.deepEqual([edited.overrides, edited.details], [SUITE.overrides, undefined], key);
+  }
+});
+
 // A small stand-in for the popup's document: the three parts and the elements mountColors makes.
 function fakeDocument() {
   const element = (tag) => {

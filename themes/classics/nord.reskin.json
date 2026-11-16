@@ -8,10 +8,15 @@
     "text": "#eceff4"
   },
   "description": "Palette from the Nord theme project, MIT license.",
+  "details": {
+    "headerText": "#99a2b3"
+  },
   "name": "Nord",
   "overrides": {
     "border": "#4c566a",
     "mutedText": "#c0c5cf",
+    "primaryBackground": "#52737d",
+    "primaryText": "#ffffff",
     "surface": "#3b4252"
   },
   "schemaVersion": 1,

@@ -8,10 +8,15 @@
     "text": "#073642"
   },
   "description": "Light palette from Ethan Schoonover's Solarized, MIT license.",
+  "details": {
+    "headerText": "#597079"
+  },
   "name": "Solarized Light",
   "overrides": {
     "border": "#ddd6c1",
     "mutedText": "#4f6067",
+    "primaryBackground": "#2076b3",
+    "primaryText": "#ffffff",
     "surface": "#eee8d5"
   },
   "schemaVersion": 1,

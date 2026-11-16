@@ -8,10 +8,15 @@
     "text": "#cdd6f4"
   },
   "description": "Mocha palette from the Catppuccin project, MIT license.",
+  "details": {
+    "headerText": "#a6adc8"
+  },
   "name": "Catppuccin Mocha",
   "overrides": {
     "border": "#313244",
     "mutedText": "#a6adc8",
+    "primaryBackground": "#846ca1",
+    "primaryText": "#ffffff",
     "surface": "#181825"
   },
   "schemaVersion": 1,

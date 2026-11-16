@@ -8,10 +8,15 @@
     "text": "#98a6a6"
   },
   "description": "Dark palette from Ethan Schoonover's Solarized, MIT license.",
+  "details": {
+    "headerText": "#819294"
+  },
   "name": "Solarized Dark",
   "overrides": {
     "border": "#174652",
     "mutedText": "#98a6aa",
+    "primaryBackground": "#2076b3",
+    "primaryText": "#ffffff",
     "surface": "#073642"
   },
   "schemaVersion": 1,
