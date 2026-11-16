@@ -1,7 +1,8 @@
 // Contribution graph ramps, levels 0..4. A ramp is valid when its five colors are distinct,
 // luminance moves away from the canvas level by level (up on dark bases, down on light),
 // contrast against level 0 strictly increases, adjacent OKLab lightness differs by at least 0.04
-// and every active level reaches 3:1 against the graph canvas.
+// and the busiest level, 4, reaches 3:1 against the graph canvas. Lower levels may sit closer to
+// the canvas, as GitHub's own ramps and Reskin 1.x's do.
 import { BLACK, WHITE, contrast, luminance, mix, oklab } from "./color.js";
 
 export const GRAPH_MIN_CONTRAST = 3;
@@ -31,7 +32,7 @@ export function graphProblems(levels, canvas, direction, { first = false } = {})
   for (let i = 1; i < 5; i++) {
     const [a, b] = [luminance(levels[i - 1]), luminance(levels[i])];
     if ((direction === "up" ? !(b > a) : !(b < a)) && push(`level ${i} is not ${direction === "up" ? "lighter" : "darker"} than level ${i - 1}`)) return problems;
-    if (contrast(levels[i], canvas) < GRAPH_MIN_CONTRAST && push(`level ${i} is below ${GRAPH_MIN_CONTRAST}:1 against the canvas`)) return problems;
+    if (i === 4 && contrast(levels[i], canvas) < GRAPH_MIN_CONTRAST && push(`level ${i} is below ${GRAPH_MIN_CONTRAST}:1 against the canvas`)) return problems;
     if (i > 1 && !(contrast(levels[i], levels[0]) > contrast(levels[i - 1], levels[0])) && push(`level ${i} does not stand out more from level 0 than level ${i - 1}`)) return problems;
     if (Math.abs(lightness(levels[i].toLowerCase()) - lightness(levels[i - 1].toLowerCase())) < GRAPH_MIN_OKLAB_STEP && push(`levels ${i - 1} and ${i} are too close in lightness`)) return problems;
   }
@@ -55,9 +56,11 @@ function spacedRamp(canvas, text, seed) {
 }
 
 /**
- * A valid ramp for this canvas, trying in a fixed order: the supplied ramp, the derived ramp,
- * the derived ramp with its seed moved toward the direction's extreme in 1/255 steps, an evenly
- * spaced ramp along the same path, then the documented seed ramp. `method` names the step used.
+ * A valid ramp for this canvas, trying in a fixed order: the supplied ramp, the derived ramp, an
+ * evenly spaced ramp along the same path with its seed moved toward the direction's extreme in
+ * 1/255 steps only as far as it needs, then the documented seed ramp. `method` names the step used.
+ * The spaced ramp keeps a seed that already reads on the canvas as level 4. Moving the derived
+ * ramp's seed instead until its 0.35 step reads would wash a saturated seed out to near white.
  * @returns {{levels:string[], method:string, problems:string[]}}
  */
 export function resolveRamp({ supplied, canvas, text, seed, base, fallback }) {
@@ -67,10 +70,6 @@ export function resolveRamp({ supplied, canvas, text, seed, base, fallback }) {
   const derived = deriveRamp(canvas, text, seed);
   if (ok(derived)) return { levels: derived, method: "derived", problems: [] };
   const extreme = direction === "up" ? WHITE : BLACK;
-  for (let k = 1; k <= 255; k++) {
-    const levels = deriveRamp(canvas, text, mix(seed, extreme, k / 255));
-    if (ok(levels)) return { levels, method: "derived-strengthened", problems: [] };
-  }
   for (let k = 0; k <= 255; k++) {
     const levels = spacedRamp(canvas, text, mix(seed, extreme, k / 255));
     if (ok(levels)) return { levels, method: "spaced", problems: [] };

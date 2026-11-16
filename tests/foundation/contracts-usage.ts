@@ -244,7 +244,7 @@ export const withFavorites: SettingsV2 = { ...settings, favorites: [] };
 export const boot: BootRecord = {
   settingsRevision: 0,
   rendererVersion: 1,
-  engineVersion: 1,
+  engineVersion: 2,
   pairMatrixVersion: 2,
   expansionVersion: 1,
   sanitizerVersion: 1,

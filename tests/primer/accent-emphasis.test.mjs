@@ -3,7 +3,8 @@
 // selected year link, the skip links and the page-load bar on github.com/whoisaldo), which the
 // mapping emits from tokens.accentEmphasis and tokens.emphasisText, in Full and Calm. Native
 // islands stay native, and a theme without the override compiles as main 127233c did. The
-// art-additions fixture's hashes were recorded again when its body font, Barlow, gained files.
+// art-additions fixture's hashes were recorded again when its body font, Barlow, gained files, and
+// those of every theme whose contribution ramp engine 2 keeps closer to its seed when it changed.
 import assert from "node:assert/strict";
 import test from "node:test";
 import { contrast, repairTheme, resolveTheme } from "../../packages/engine/index.js";
