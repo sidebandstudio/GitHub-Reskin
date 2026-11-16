@@ -10,6 +10,7 @@ export const ORIGIN = release.site.origin;
 export const BASE = `${release.site.base.replace(/\/+$/, "")}/`;
 export const CANONICAL = `${ORIGIN}${BASE}`;
 export const SUPPORT = release.support;
+export const USERSCRIPT = release.userscript.output;
 export const STORES = release.stores;
 export const DEFAULT_SLUG = "choom-circuit";
 
