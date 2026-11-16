@@ -9,7 +9,7 @@
     {
       "file": "themes/classics/editing-suite.reskin.json",
       "seed": "fixture.standard-dark",
-      "sha256": "51b90597e3873afe45e3b6aaa2243c88cd08de9b1fca9a8765daabb7789c6550"
+      "sha256": "753796d8df4770fa2d1b3e5c0c57145b063d4cacdfd32f320458adb8f8ae75c5"
     },
     {
       "file": "themes/classics/editing-suite.reskin.json",
@@ -84,12 +84,12 @@
     {
       "file": "themes/classics/tokyo-night.reskin.json",
       "seed": "fixture.standard-dark",
-      "sha256": "bc307ef04eec8d4118a349976dcd596957f7808867e7b0e1555e90c165527deb"
+      "sha256": "3372c2ecc35c12b702f52ada0d048c275ba469ac26ae0d4e2bb1f79a022bfadc"
     },
     {
       "file": "themes/classics/tokyo-night.reskin.json",
       "seed": "fixture.colorblind-dark",
-      "sha256": "af29a7a63d82e275d1255467a7676498d91d8cb6610359154edc43b5c80854a7"
+      "sha256": "f16523028f191704d94ab4efc6819741ec86155bde37ff25f3991b48bb2ad49d"
     },
     {
       "file": "themes/classics/rose-pine.reskin.json",

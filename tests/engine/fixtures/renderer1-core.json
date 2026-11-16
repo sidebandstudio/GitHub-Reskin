@@ -169,7 +169,7 @@
     {
       "file": "themes/classics/editing-suite.reskin.json",
       "seed": "fixture.standard-dark",
-      "sha256": "23097ca76640feb6223db951da872deae3734f3b4b97787effc6ef512ca44b4f"
+      "sha256": "521fed09a0efe91425d6dc4b8bcdd55e3fc9634610b9c493a22413ca413cf3a7"
     },
     {
       "file": "themes/classics/editing-suite.reskin.json",
@@ -289,12 +289,12 @@
     {
       "file": "themes/classics/tokyo-night.reskin.json",
       "seed": "fixture.standard-dark",
-      "sha256": "945f53aca2d45a385c40e092aa28ba8fa8ce2d2f7f6ef315798ef3923ae8c926"
+      "sha256": "e1a2a841358062b34b42c529233480127211095457eacd530304300782d0ea6b"
     },
     {
       "file": "themes/classics/tokyo-night.reskin.json",
       "seed": "fixture.colorblind-dark",
-      "sha256": "1ded74a0099e3206e80c12ea320af640e4523303e58d69abc23602544d988963"
+      "sha256": "7cbc163a0a2c0b9f519309fd224a84b170fe97517ce642b13bbd828717cc1beb"
     },
     {
       "file": "themes/classics/tokyo-night.reskin.json",
