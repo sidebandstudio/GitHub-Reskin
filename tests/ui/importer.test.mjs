@@ -33,9 +33,11 @@ test("a chatbot answer with prose, a fence and comments imports, saying where th
   assert.ok(result.messages[0].details.length);
   // Everything the answer asked for survives: backgrounds, fonts, shape, graph, code, effects, flavor.
   for (const key of ["backgrounds", "fonts", "shape", "typography", "contributions", "code", "effects", "flavor"]) assert.ok(result.theme[key], key);
-  // The answer's graph levels sit too close together, so they are spaced and that is explained.
-  assert.ok(result.messages.some((m) => m.text === COPY.graph));
-  assert.deepEqual(result.repairs.find((r) => r.path === "/contributions/levels").before, ["#161b2e", "#14524f", "#1a8a7d", "#22b8a5", "#2de2c6"]);
+  // The answer's graph levels are ordered and well spaced, and level 4 reads at 3:1, so they are kept
+  // as written with no graph message.
+  assert.ok(!result.messages.some((m) => m.text === COPY.graph));
+  assert.equal(result.repairs.find((r) => r.path === "/contributions/levels"), undefined);
+  assert.deepEqual(result.theme.contributions.levels, ["#161b2e", "#14524f", "#1a8a7d", "#22b8a5", "#2de2c6"]);
   assert.equal(result.theme.contributions.cellStyle, "round");
   assert.equal(result.css, null);
   assert.deepEqual(result.images, []);
