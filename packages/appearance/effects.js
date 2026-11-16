@@ -135,10 +135,14 @@ const TEMPLATES = {
     const solid = `linear-gradient(${c},${c})`;
     const base = `.rs-fx-seal{left:4px;top:calc(50% - ${num(size / 2)}px);width:${size}px;height:${size}px}`;
     const badge = `.rs-box--badge>.rs-fx-seal{position:relative;left:auto;top:auto;flex:none;width:${Math.min(size, 16)}px;height:${Math.min(size, 16)}px}`;
+    // A strip's copy ends at its right edge and grows left, so it keeps clear of the seal at its
+    // start. :where() leaves this at the skin rule's weight, so a theme's owned CSS can still set it.
+    const clear = `.rs-box--strip:where(:has(>.rs-fx-seal)){padding-left:${size + 8}px}`;
     const pseudo = (part, rule) => `.rs-fx-seal::${part}{content:"";position:absolute;box-sizing:border-box;${rule}}`;
     const shapes = {
       diamond: [pseudo("before", `inset:15%;border:1.5px solid ${c};transform:rotate(45deg)`)],
-      brackets: [pseudo("before", `left:0;top:0;bottom:0;width:30%;border:1.5px solid ${c};border-right:0`), pseudo("after", `right:0;top:0;bottom:0;width:30%;border:1.5px solid ${c};border-left:0`)],
+      // A square mark between the two brackets, so the seal frames something.
+      brackets: [`.rs-fx-seal{background:${solid} center/26% 26% no-repeat}`, pseudo("before", `left:0;top:0;bottom:0;width:30%;border:1.5px solid ${c};border-right:0`), pseudo("after", `right:0;top:0;bottom:0;width:30%;border:1.5px solid ${c};border-left:0`)],
       compass: [`.rs-fx-seal{border:1.5px solid ${c};border-radius:50%}`, pseudo("after", `width:1.5px;height:35%;right:12%;top:-10%;background:${c};transform:rotate(35deg)`)],
       sprig: [
         `.rs-fx-seal{background:radial-gradient(ellipse 18% 32% at 50% 40%,${c} 0 96%,transparent 100%)}`,
@@ -147,7 +151,7 @@ const TEMPLATES = {
       ],
       rosette: [`.rs-fx-seal{background:${solid} 35% 0/32% 32% no-repeat,${solid} 100% 35%/32% 32% no-repeat,${solid} 65% 100%/32% 32% no-repeat,${solid} 0 65%/32% 32% no-repeat}`],
     };
-    return [base, badge, ...shapes[shape]];
+    return [base, badge, clear, ...shapes[shape]];
   },
   drift({ shape, durationMs, distance, opacity }, t) {
     const c = rgba(t.mutedText, opacity);

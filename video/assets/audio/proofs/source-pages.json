@@ -1,0 +1,107 @@
+[
+  {
+    "id": "bed-cyberpunk",
+    "source_url": "https://opengameart.org/content/t-t-free-cyberpunk-pack",
+    "final_source_url": "https://opengameart.org/content/t-t-free-cyberpunk-pack",
+    "title": "Experiment G",
+    "author": "tricksntraps",
+    "retrieved_at_utc": "2026-11-08T20:05:10.028562+00:00",
+    "source_page_sha256": "41c073b73656a71976ea563bd914b566903257effb9ec5748521a0a14787916a",
+    "license_label": "CC0",
+    "source_license_links": [
+      "http://creativecommons.org/publicdomain/zero/1.0/"
+    ],
+    "linked_download_url": "https://opengameart.org/sites/default/files/Experiment%20G.ogg",
+    "verified_before_audio_download": true
+  },
+  {
+    "id": "bed-house",
+    "source_url": "https://opengameart.org/content/synthwave-house-loop",
+    "final_source_url": "https://opengameart.org/content/synthwave-house-loop",
+    "title": "Synthwave House Loop",
+    "author": "Fupi",
+    "retrieved_at_utc": "2026-11-08T20:05:14.700293+00:00",
+    "source_page_sha256": "f9c1cb81023dfe3d10e9a00369faef0590a30018f0c3e8cd08eb321d82ab4680",
+    "license_label": "CC0",
+    "source_license_links": [
+      "http://creativecommons.org/publicdomain/zero/1.0/"
+    ],
+    "linked_download_url": "https://opengameart.org/sites/default/files/synthwavehouse_0.ogg",
+    "verified_before_audio_download": true
+  },
+  {
+    "id": "bed-synthwave",
+    "source_url": "https://opengameart.org/content/synthwavetype",
+    "final_source_url": "https://opengameart.org/content/synthwavetype",
+    "title": "synthwave_type",
+    "author": "G_P",
+    "retrieved_at_utc": "2026-11-08T20:05:18.939453+00:00",
+    "source_page_sha256": "90e80b14ee2c90ab8d2c374cce7baea719673b7f54a7329dce8421afff1daaf8",
+    "license_label": "CC0",
+    "source_license_links": [
+      "http://creativecommons.org/publicdomain/zero/1.0/"
+    ],
+    "linked_download_url": "https://opengameart.org/sites/default/files/synth_type_1.mp3",
+    "verified_before_audio_download": true
+  },
+  {
+    "id": "sfx-glitch",
+    "source_url": "https://freesound.org/people/JacksonMiller0/sounds/237607/",
+    "final_source_url": "https://freesound.org/people/JacksonMiller0/sounds/237607/",
+    "title": "Glitch 01",
+    "author": "JacksonMiller0",
+    "retrieved_at_utc": "2026-11-08T20:05:24.173793+00:00",
+    "source_page_sha256": "cf6d0be9bce9b2ac858dc0743f6447fabe2f785686dae3f29835d84ed4fc81c2",
+    "license_label": "Creative Commons 0",
+    "source_license_links": [
+      "http://creativecommons.org/publicdomain/zero/1.0/"
+    ],
+    "linked_download_url": "https://cdn.freesound.org/previews/237/237607_3717478-hq.mp3",
+    "verified_before_audio_download": true
+  },
+  {
+    "id": "sfx-whoosh",
+    "source_url": "https://freesound.org/people/florianreichelt/sounds/683101/",
+    "final_source_url": "https://freesound.org/people/florianreichelt/sounds/683101/",
+    "title": "quick woosh",
+    "author": "florianreichelt",
+    "retrieved_at_utc": "2026-11-08T20:05:28.728521+00:00",
+    "source_page_sha256": "1856b8c6bda6545ee1a7270a42bf3887e89dac512b3520a6e3fc5346e3e86ec3",
+    "license_label": "Creative Commons 0",
+    "source_license_links": [
+      "http://creativecommons.org/publicdomain/zero/1.0/"
+    ],
+    "linked_download_url": "https://cdn.freesound.org/previews/683/683101_6253486-hq.mp3",
+    "verified_before_audio_download": true
+  },
+  {
+    "id": "sfx-click",
+    "source_url": "https://freesound.org/people/Pixeliota/sounds/678248/",
+    "final_source_url": "https://freesound.org/people/Pixeliota/sounds/678248/",
+    "title": "Mouse Click Sound.mp3",
+    "author": "Pixeliota",
+    "retrieved_at_utc": "2026-11-08T20:05:31.720290+00:00",
+    "source_page_sha256": "ff25862398b739eab206b6e62b0a2017afbc7bc62d8efa09f91bdb282b4821fb",
+    "license_label": "Creative Commons 0",
+    "source_license_links": [
+      "http://creativecommons.org/publicdomain/zero/1.0/"
+    ],
+    "linked_download_url": "https://cdn.freesound.org/previews/678/678248_7806746-hq.mp3",
+    "verified_before_audio_download": true
+  },
+  {
+    "id": "sfx-snap",
+    "source_url": "https://freesound.org/people/BMacZero/sounds/106095/",
+    "final_source_url": "https://freesound.org/people/BMacZero/sounds/106095/",
+    "title": "snap.wav",
+    "author": "BMacZero",
+    "retrieved_at_utc": "2026-11-08T20:05:33.301254+00:00",
+    "source_page_sha256": "f36ad68917078813acc2ee65c04dc8eaa36744ad37bc5454ea8c0c9802c0cb50",
+    "license_label": "Creative Commons 0",
+    "source_license_links": [
+      "http://creativecommons.org/publicdomain/zero/1.0/"
+    ],
+    "linked_download_url": "https://cdn.freesound.org/previews/106/106095_1554918-hq.mp3",
+    "verified_before_audio_download": true
+  }
+]

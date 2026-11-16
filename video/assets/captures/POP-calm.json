@@ -1,0 +1,79 @@
+{
+  "captured": "2026-11-10T03:11:54.487Z",
+  "browser": "Chromium 156.0.8078.4",
+  "extension": {
+    "name": "GitHub Reskin",
+    "version": "1.1.0",
+    "commit": "3365cdc6bf6ad0cd182b807725681cd9f731e571",
+    "sourceDirty": false,
+    "package": "npm run build:stores, dist/chrome unpacked"
+  },
+  "session": "fresh logged-out profile, en-US, light color scheme, 100% zoom",
+  "id": "POP-calm",
+  "file": "POP-calm.png",
+  "url": "chrome-extension://<id>/pages/popup.html",
+  "extensionId": "fambbdgfmacpmfojcfogfmhahgafpapg",
+  "theme": "anime.cyberpunk-edgerunners",
+  "themeSource": {
+    "file": "themes/anime/choom-circuit.reskin.json",
+    "sha256": "f57146f4d86255458ac69a69017bb0efa719b253268654dd1dbcd9d981d7abc2"
+  },
+  "appearance": "calm",
+  "viewport": {
+    "width": 400,
+    "height": 600,
+    "dpr": 3
+  },
+  "preset": "POP",
+  "group": "anime",
+  "tapped": "calm",
+  "enabled": true,
+  "boxes": {
+    "choom": {
+      "x": 14,
+      "y": 239,
+      "width": 182,
+      "height": 106
+    },
+    "editingSuite": null,
+    "classics": {
+      "x": 124,
+      "y": 132,
+      "width": 113,
+      "height": 44
+    },
+    "calm": {
+      "x": 315,
+      "y": 424,
+      "width": 70,
+      "height": 44
+    },
+    "enabled": {
+      "x": 316,
+      "y": 12,
+      "width": 70,
+      "height": 44
+    }
+  },
+  "settings": {
+    "cssConsent": {},
+    "customThemes": [],
+    "enabled": true,
+    "migration": {
+      "notices": []
+    },
+    "onboardingCompleted": false,
+    "preferences": {
+      "appearance": "calm",
+      "effects": true,
+      "extras": false,
+      "fonts": true,
+      "motion": true,
+      "text": true
+    },
+    "revision": 7,
+    "selectedThemeId": "anime.cyberpunk-edgerunners",
+    "settingsVersion": 2
+  },
+  "sha256": "3563a2ab3df1760ec78aa46938b0a5b2a8bbf86c462a69998fa61056152f364d"
+}

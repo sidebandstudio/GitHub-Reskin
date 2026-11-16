@@ -464,6 +464,15 @@
 .rb-changes summary {
   color: var(--brand-hover);
 }
+/* The changes take the whole row, and on a narrow window their table scrolls inside it instead of
+   the page scrolling sideways. */
+.rb-changes {
+  flex: 1 1 100%;
+  min-width: 0;
+}
+.rb-repair-scroll {
+  overflow-x: auto;
+}
 .rb-repair-table {
   width: 100%;
   border-collapse: collapse;

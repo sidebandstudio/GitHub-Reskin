@@ -17,12 +17,13 @@ import { join } from "node:path";
 import { firefox } from "@playwright/test";
 import { SANITIZER_VERSION, STORAGE_KEYS } from "../../../packages/contracts/index.js";
 import { admitCss } from "../../../packages/format/index.js";
-import { createCatalogSource, createRepository, defaultSettings } from "../../../packages/settings/index.js";
-import { readCatalogEntries } from "../../../packages/ui/bundle.mjs";
+import { createRepository, defaultSettings } from "../../../packages/settings/index.js";
+import { catalogData, readCatalogEntries } from "../../../packages/ui/bundle.mjs";
+import { catalogFromData } from "../../../packages/ui/catalog.js";
 import { CSS_ADMISSION } from "../../../packages/ui/renderer.js";
 import { build, ROOT as BUILD_ROOT } from "../../../scripts/build.mjs";
 import { requireBrowser } from "../../helpers/browsers.mjs";
-import { commit, expect, firefoxExtension, openFirefoxGitHub, openPage, test } from "./helpers.mjs";
+import { commit, CONTENT_GET_URL, expect, firefoxExtension, openFirefoxGitHub, openPage, serveContentPackage, test } from "./helpers.mjs";
 
 const ROOT = new URL("../../../", import.meta.url);
 // C3b's registry fixture without its bare island: an island without theme attributes is unsafe, so
@@ -262,23 +263,26 @@ test("Firefox: the installed add-on admits the same subjects, refuses protected 
 });
 
 // The built Firefox content script on a plain Gecko page, over a stand-in for extension storage
-// that delivers changes as storage.onChanged does.
+// that delivers each write's records in one change, as storage.onChanged does.
 const STAND_IN = `(() => {
   const records = {};
   const listeners = new Set();
   globalThis.browser = {
-    runtime: { id: "e2e", getURL: (path) => "moz-extension://e2e/" + path },
+    runtime: { id: "e2e", getURL: ${CONTENT_GET_URL} },
     storage: {
       local: { get: async () => structuredClone(records), set: async () => {}, remove: async () => {} },
       onChanged: { addListener: (l) => listeners.add(l), removeListener: (l) => listeners.delete(l) },
     },
   };
-  globalThis.__reskinWrite = (key, value) => {
-    const oldValue = records[key];
-    records[key] = value;
-    for (const listener of listeners) listener({ [key]: { oldValue, newValue: value } }, "local");
+  globalThis.__reskinWrite = (written) => {
+    const changes = {};
+    for (const [key, value] of Object.entries(written)) {
+      changes[key] = { oldValue: records[key], newValue: value };
+      records[key] = value;
+    }
+    for (const listener of listeners) listener(changes, "local");
   };
-  globalThis.__reskinWrite(${JSON.stringify(STORAGE_KEYS.settings)}, __SETTINGS__);
+  globalThis.__reskinWrite(__RECORDS__);
 })();`;
 
 test("Firefox: the built content script never applies theme CSS in Calm, and a saved theme's only while consent stands, off without a reload once revoked", async () => {
@@ -289,14 +293,16 @@ test("Firefox: the built content script never applies theme CSS in Calm, and a s
   try {
     const built = await build({ target: "firefox", outDir: out });
     const content = await readFile(join(built.dir, "content.js"), "utf8");
-    const catalog = createCatalogSource(await readCatalogEntries(BUILD_ROOT));
+    const catalog = catalogFromData(catalogData(await readCatalogEntries(BUILD_ROOT)));
     let settings = { ...defaultSettings(catalog), onboardingCompleted: true };
     let ids = 0;
     const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
     await context.route("https://github.com/**", (route) =>
       route.request().resourceType() === "document" ? route.fulfill({ contentType: "text/html", body: PAGES.get(new URL(route.request().url()).pathname) }) : route.abort(),
     );
-    await context.addInitScript({ content: `${STAND_IN.replace("__SETTINGS__", JSON.stringify(settings))}\n${content}` });
+    await serveContentPackage(context, built.dir);
+    const pageRecords = (settings) => ({ [STORAGE_KEYS.settings]: settings, [STORAGE_KEYS.selected]: catalog.record(settings.selectedThemeId) });
+    await context.addInitScript({ content: `${STAND_IN.replace("__RECORDS__", () => JSON.stringify(pageRecords(settings)))}\n${content}` });
     const page = await context.newPage();
     // The background's commit: the settings repository over in-memory storage, then the write the
     // content script sees.
@@ -307,12 +313,12 @@ test("Firefox: the built content script never applies theme CSS in Calm, and a s
       remove: async (keys) => keys.forEach((key) => data.delete(key)),
       subscribe: () => () => {},
     };
-    const repository = createRepository(memory, { catalog, css: CSS_ADMISSION, newId: () => `00000000-0000-4000-8000-${String(++ids).padStart(12, "0")}` });
+    const repository = createRepository(memory, { catalog, css: CSS_ADMISSION, newId: () => `00000000-0000-4000-8000-${String(++ids).padStart(12, "0")}`, selectedRecord: (settings) => catalog.record(settings.selectedThemeId) });
     const act = async (action) => {
       const reply = await repository.commit(action, data.get(STORAGE_KEYS.settings).revision, { document: "firefox-content-builder" });
       if (reply.ok && !reply.approval) {
         settings = reply.settings;
-        await page.evaluate(([key, value]) => globalThis.__reskinWrite(key, value), [STORAGE_KEYS.settings, settings]);
+        await page.evaluate((written) => globalThis.__reskinWrite(written), pageRecords(settings));
       }
       return reply;
     };

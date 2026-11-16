@@ -1,0 +1,73 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+    }
+    #en-card {
+      position: absolute;
+      left: 192px;
+      top: 230px;
+      width: 1536px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    #en-mark {
+      width: 128px;
+      height: 128px;
+      display: block;
+    }
+    #en-name {
+      margin-top: 44px;
+      font-size: 88px;
+      font-weight: 650;
+      letter-spacing: -0.03em;
+      line-height: 1.05;
+    }
+    #en-name span {
+      color: var(--coral);
+    }
+    #en-cta {
+      margin-top: 22px;
+      font-size: 56px;
+      font-weight: 650;
+      letter-spacing: -0.02em;
+    }
+    #en-url {
+      margin-top: 26px;
+      font-size: 40px;
+      font-weight: 600;
+      color: var(--ivory);
+    }
+    #en-fan {
+      margin-top: 40px;
+      font-size: 32px;
+      font-weight: 600;
+      color: var(--muted);
+    }
+    #en-bg img {
+      opacity: 0.5;
+    }
+  </style>
+  <!-- H11 [780,900): original brand end card, every word visible from frame 780 and unchanged
+       through 899 (120 frames). The URL is the project's canonical page, not a store listing.
+       Only the dimmed backdrop drifts. -->
+  <div id="root" data-composition-id="end" data-width="1920" data-height="1080">
+    <div id="en-bg" class="clip backdrop" data-layout-ignore data-start="0" data-duration="4" data-track-index="0"><img id="en-bg-img" src="assets/backdrops/P02-D.jpg" alt="" /></div>
+    <div class="scrim"></div>
+    <div id="en-card" class="clip" data-start="0" data-duration="4" data-track-index="1">
+      <img id="en-mark" src="assets/brand/icon.svg" alt="GitHub Reskin" />
+      <div id="en-name">GitHub <span>Reskin</span></div>
+      <div id="en-cta">Free. Pick a theme.</div>
+      <div id="en-url">sidebandstudio.github.io/GitHub-Reskin/</div>
+      <div id="en-fan">Fan-made. Independent of GitHub.</div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    tl.fromTo("#en-bg-img", { scale: 1 }, { scale: 1.05, duration: 4, ease: "none", transformOrigin: "50% 50%" }, 0);
+    window.__timelines["end"] = tl;
+  </script>
+</template>

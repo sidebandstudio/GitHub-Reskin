@@ -1,0 +1,60 @@
+{
+  "captured": "2026-11-10T03:10:21.007Z",
+  "browser": "Chromium 156.0.8078.4",
+  "extension": {
+    "name": "GitHub Reskin",
+    "version": "1.1.0",
+    "commit": "3365cdc6bf6ad0cd182b807725681cd9f731e571",
+    "sourceDirty": false,
+    "package": "npm run build:stores, dist/chrome unpacked"
+  },
+  "session": "fresh logged-out profile, en-US, light color scheme, 100% zoom",
+  "id": "R01-D",
+  "file": "R01-D.png",
+  "url": "https://github.com/sidebandstudio/GitHub-Reskin/tree/1a67a0508e97121acea07b33eba7dc89147f9e6e",
+  "httpStatus": 200,
+  "theme": "anime.cyberpunk-edgerunners",
+  "themeSource": {
+    "file": "themes/anime/choom-circuit.reskin.json",
+    "sha256": "f57146f4d86255458ac69a69017bb0efa719b253268654dd1dbcd9d981d7abc2"
+  },
+  "appearance": "full",
+  "flavorText": true,
+  "viewport": {
+    "width": 1440,
+    "height": 1000,
+    "dpr": 2
+  },
+  "preset": "D",
+  "scrollRule": "T",
+  "scrollY": 0,
+  "anchor": null,
+  "pageHeight": null,
+  "state": {
+    "boot": "ready",
+    "styled": true,
+    "cssScope": "active",
+    "canvas": "rgb(10, 10, 23)"
+  },
+  "settings": {
+    "cssConsent": {},
+    "customThemes": [],
+    "enabled": true,
+    "migration": {
+      "notices": []
+    },
+    "onboardingCompleted": false,
+    "preferences": {
+      "appearance": "full",
+      "effects": true,
+      "extras": true,
+      "fonts": true,
+      "motion": true,
+      "text": true
+    },
+    "revision": 13,
+    "selectedThemeId": "anime.cyberpunk-edgerunners",
+    "settingsVersion": 2
+  },
+  "sha256": "5ed5edbfa4af310c3b97985bc0c4540d14d825d0fae874a8f85fb155e7e26e60"
+}

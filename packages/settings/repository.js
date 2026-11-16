@@ -43,12 +43,14 @@ export async function readSettings(storage, { catalog, newId = () => "00000000-0
 
 /**
  * @param {import("../contracts/index.js").StorageAdapter} storage
- * @param {{catalog, snapshot?, repair?, newId:()=>string, css?, images?}} context
+ * @param {{catalog, snapshot?, repair?, newId:()=>string, css?, images?, selectedRecord?}} context
  *   snapshot: renderer callback for the boot record (see boot.js); repair: engine source repair
- *   for migrated colors; css/images: admission interfaces (admission.js).
+ *   for migrated colors; css/images: admission interfaces (admission.js); selectedRecord: the
+ *   content script's record of a selected bundled theme (STORAGE_KEYS.selected), or null for a
+ *   saved one. Without it, no selected record is written.
  */
 export function createRepository(storage, context) {
-  const { catalog, snapshot } = context;
+  const { catalog, snapshot, selectedRecord } = context;
   const css = context.css ?? NO_CSS_SANITIZER;
   let queue = Promise.resolve();
   // Serializes writer work in this context. Errors never poison the queue.
@@ -61,6 +63,13 @@ export function createRepository(storage, context) {
 
   const readAll = () => storage.get(ALL_KEYS);
   const boot = (settings) => buildBootRecord(settings, { catalog, snapshot });
+  // The records every settings write carries: the settings, their boot snapshot and, where the
+  // content script needs it, the selected bundled theme's record.
+  const records = (settings) => ({
+    [STORAGE_KEYS.settings]: settings,
+    [STORAGE_KEYS.boot]: boot(settings),
+    ...(selectedRecord && { [STORAGE_KEYS.selected]: selectedRecord(settings) }),
+  });
 
   // The record a write leaves, measured with every other extension record before it is attempted.
   // A cleared draft, recovery or lastGood is written as null in the same set, never removed in a
@@ -98,7 +107,7 @@ export function createRepository(storage, context) {
         // Existing v2 state wins over a migration computed from an older read.
         const again = await storage.get([STORAGE_KEYS.settings]);
         if (again[STORAGE_KEYS.settings] !== undefined) return await settle(raw, again[STORAGE_KEYS.settings]);
-        const changes = { [STORAGE_KEYS.settings]: plan.settings, [STORAGE_KEYS.boot]: boot(plan.settings) };
+        const changes = records(plan.settings);
         if (plan.recovery) changes[RECOVERY_KEY] = plan.recovery;
         await write(raw, changes);
         if (legacy) await removeLegacyKeys(plan.settings);
@@ -124,8 +133,13 @@ export function createRepository(storage, context) {
         result.settings = { ...pruned.settings, revision: pruned.settings.revision + 1 };
         result.upgraded = true;
       }
-      if (result.upgraded) Object.assign(changes, { [STORAGE_KEYS.settings]: result.settings, [STORAGE_KEYS.boot]: boot(result.settings) });
-      else if (staleBoot(raw[STORAGE_KEYS.boot], result.settings)) changes[STORAGE_KEYS.boot] = boot(result.settings);
+      if (result.upgraded) Object.assign(changes, records(result.settings));
+      else {
+        if (staleBoot(raw[STORAGE_KEYS.boot], result.settings)) changes[STORAGE_KEYS.boot] = boot(result.settings);
+        // An update that changed the selected theme, or a record written by another version.
+        const selected = selectedRecord?.(result.settings);
+        if (selectedRecord && raw[STORAGE_KEYS.selected] !== selected) changes[STORAGE_KEYS.selected] = selected;
+      }
       if (Object.keys(changes).length) await write(raw, changes);
       if (hasLegacyKeys(raw)) await removeLegacyKeys(result.settings);
       return { state: "current", settings: result.settings };
@@ -142,7 +156,7 @@ export function createRepository(storage, context) {
     settings.migration = { ...settings.migration, notices: [...new Set(notices)].slice(0, STORAGE_LIMITS.maxNotices) };
     const pruned = settledConsent(raw, settings);
     const salvaged = { ...(pruned.settings ?? settings), revision: settings.revision + 1 };
-    await write(raw, { [STORAGE_KEYS.settings]: salvaged, [STORAGE_KEYS.boot]: boot(salvaged), [RECOVERY_KEY]: recovery, [APPROVALS_KEY]: pruned.approvals ?? readApprovals(raw[APPROVALS_KEY]) });
+    await write(raw, { ...records(salvaged), [RECOVERY_KEY]: recovery, [APPROVALS_KEY]: pruned.approvals ?? readApprovals(raw[APPROVALS_KEY]) });
     return { state: "recovered", settings: salvaged, issues: result.issues };
   }
 
@@ -188,7 +202,7 @@ export function createRepository(storage, context) {
 
   /**
    * Applies one action. Checks expectedRevision against storage, reduces onto the latest state,
-   * writes settings, boot and lastGood in one set, and replies only after the write resolves.
+   * writes settings, boot, the selected record and lastGood in one set, and replies only after the write resolves.
    * `origin.document` is the browser-provided identity of the builder document that sent it (the
    * background supplies it, and null for any other sender); only that document can ask for or
    * redeem an approval ticket.
@@ -224,7 +238,7 @@ export function createRepository(storage, context) {
         throw error;
       }
       next.revision = current.revision + 1;
-      const changes = { [STORAGE_KEYS.settings]: next, [STORAGE_KEYS.boot]: boot(next) };
+      const changes = records(next);
       // Approvals change in the same set as the settings they belong to, so a failed write leaves
       // the ticket for a retry and a successful one never leaves it redeemable.
       if (JSON.stringify(nextApprovals) !== JSON.stringify(approvals)) changes[APPROVALS_KEY] = nextApprovals;

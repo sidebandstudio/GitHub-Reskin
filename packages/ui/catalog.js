@@ -1,9 +1,26 @@
 // The bundled catalog as the extension runtime carries it. The build (bundle.mjs catalogData)
 // validates every document once, proves its CSS with the sanitizer and resolves each theme for
-// the picker miniatures; at runtime the content script, background and pages wrap that data
-// without validating or hashing 25 documents again on every GitHub page load.
+// the picker miniatures; at runtime the background and pages wrap that data without validating
+// 25 documents again. The content script carries only the catalog's index (bundle.mjs
+// catalogIndex) and gets the one theme a page shows from storage (contentCatalog).
+import { sha256 } from "../engine/sha256.js";
 import { registerCssProofs } from "../format/viewer.js";
 import { deepFreeze } from "../settings/catalog.js";
+
+/**
+ * A bundled theme's record for the content script, as JSON text: its document and the sanitizer's
+ * proofs for its CSS. The background stores it beside the settings (STORAGE_KEYS.selected), and
+ * the build hashes the same text for the content script's index, so both must come from here.
+ * @returns {string|null} null for an ID the catalog lacks
+ */
+export function catalogRecord(data, id) {
+  if (!Object.hasOwn(data.documents, id)) return null;
+  const [start, end] = data.proofRanges[id];
+  return JSON.stringify({ document: data.documents[id], cssProofs: data.cssProofs.slice(start, end) });
+}
+
+/** The SHA-256 of a record's UTF-8 text, as the index keeps it. */
+export const recordHash = (text) => sha256(new TextEncoder().encode(text));
 
 /**
  * Runtime: a CatalogSource (packages/settings) over embedded build data. Same shape and values
@@ -20,6 +37,41 @@ export function catalogFromData(data) {
     has: (id) => documents.has(id),
     document: (id) => documents.get(id) ?? null,
     sourceHash: (id) => (documents.has(id) ? data.hashes[id] : null),
+    record: (id) => (documents.has(id) ? catalogRecord(data, id) : null),
+  });
+}
+
+/**
+ * The content script's CatalogSource, over the build's index (bundle.mjs catalogIndex): every
+ * bundled theme's ID, source hash and record hash, with the document of only the theme the page
+ * shows. That theme's record comes from storage, and `admit` keeps it only when its text hashes to
+ * the build's record for a bundled theme, so the document is exactly the one the build validated
+ * and its CSS is admitted from the build's proofs, with no parser.
+ */
+export function contentCatalog(index) {
+  const ids = Object.freeze([...index.ids]);
+  const known = new Set(ids);
+  const byRecord = new Map(ids.map((id) => [index.records[id], id]));
+  const documents = new Map();
+  let last = null;
+  return Object.freeze({
+    hash: index.hash,
+    ids,
+    has: (id) => known.has(id),
+    document: (id) => documents.get(id) ?? null,
+    sourceHash: (id) => (known.has(id) ? index.hashes[id] : null),
+    /** Whether `id` is a bundled theme whose record has not arrived. */
+    pending: (id) => known.has(id) && !documents.has(id),
+    /** Keeps a stored record that is a bundled theme's, and ignores anything else. */
+    admit(text) {
+      if (typeof text !== "string" || text === last) return;
+      last = text;
+      const id = byRecord.get(recordHash(text));
+      if (id === undefined || documents.has(id)) return;
+      const record = JSON.parse(text);
+      registerCssProofs(record.cssProofs);
+      documents.set(id, deepFreeze(record.document));
+    },
   });
 }
 

@@ -1,0 +1,60 @@
+{
+  "captured": "2026-11-10T18:59:59.123Z",
+  "browser": "Chromium 156.0.8078.4",
+  "extension": {
+    "name": "GitHub Reskin",
+    "version": "1.1.0",
+    "commit": "4f3d0eb1540d64e83ab93283b583d05299eabecb",
+    "sourceDirty": false,
+    "package": "npm run build:stores, dist/chrome unpacked"
+  },
+  "session": "fresh logged-out profile, en-US, light color scheme, 100% zoom",
+  "id": "P05-V",
+  "file": "P05-V.png",
+  "url": "https://github.com/whoisaldo",
+  "httpStatus": 200,
+  "theme": "anime.dandadan",
+  "themeSource": {
+    "file": "themes/anime/occult-orbit.reskin.json",
+    "sha256": "e5f900f0d6c94fecac732c00e5b6c573c4a80bee43b681986c2839ac45d82fe1"
+  },
+  "appearance": "full",
+  "flavorText": true,
+  "viewport": {
+    "width": 390,
+    "height": 844,
+    "dpr": 3
+  },
+  "preset": "V",
+  "scrollRule": "T",
+  "scrollY": 0,
+  "anchor": null,
+  "pageHeight": null,
+  "state": {
+    "boot": "ready",
+    "styled": true,
+    "cssScope": "active",
+    "canvas": "rgb(23, 13, 35)"
+  },
+  "settings": {
+    "cssConsent": {},
+    "customThemes": [],
+    "enabled": true,
+    "migration": {
+      "notices": []
+    },
+    "onboardingCompleted": false,
+    "preferences": {
+      "appearance": "full",
+      "effects": true,
+      "extras": true,
+      "fonts": true,
+      "motion": true,
+      "text": true
+    },
+    "revision": 6,
+    "selectedThemeId": "anime.dandadan",
+    "settingsVersion": 2
+  },
+  "sha256": "7bdeb7e0cbc6559a144ae00a09f7606cdb0b1a1254c5b0aed8ff1f357c1d38eb"
+}

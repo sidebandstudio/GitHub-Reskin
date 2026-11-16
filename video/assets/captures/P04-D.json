@@ -1,0 +1,60 @@
+{
+  "captured": "2026-11-10T19:00:41.721Z",
+  "browser": "Chromium 156.0.8078.4",
+  "extension": {
+    "name": "GitHub Reskin",
+    "version": "1.1.0",
+    "commit": "4f3d0eb1540d64e83ab93283b583d05299eabecb",
+    "sourceDirty": false,
+    "package": "npm run build:stores, dist/chrome unpacked"
+  },
+  "session": "fresh logged-out profile, en-US, light color scheme, 100% zoom",
+  "id": "P04-D",
+  "file": "P04-D.png",
+  "url": "https://github.com/whoisaldo",
+  "httpStatus": 200,
+  "theme": "anime.evangelion",
+  "themeSource": {
+    "file": "themes/anime/violet-synchrony.reskin.json",
+    "sha256": "7c6aaef361de87f78b0d040ea047a218be804722b673b9ca5c51a54878ba1ddd"
+  },
+  "appearance": "full",
+  "flavorText": true,
+  "viewport": {
+    "width": 1440,
+    "height": 1000,
+    "dpr": 2
+  },
+  "preset": "D",
+  "scrollRule": "T",
+  "scrollY": 0,
+  "anchor": null,
+  "pageHeight": null,
+  "state": {
+    "boot": "ready",
+    "styled": true,
+    "cssScope": "active",
+    "canvas": "rgb(20, 13, 32)"
+  },
+  "settings": {
+    "cssConsent": {},
+    "customThemes": [],
+    "enabled": true,
+    "migration": {
+      "notices": []
+    },
+    "onboardingCompleted": false,
+    "preferences": {
+      "appearance": "full",
+      "effects": true,
+      "extras": true,
+      "fonts": true,
+      "motion": true,
+      "text": true
+    },
+    "revision": 1,
+    "selectedThemeId": "anime.evangelion",
+    "settingsVersion": 2
+  },
+  "sha256": "9f0b1c822e797003b6b4052b905ec6855e4616044ac2f9be5a6f972c07326a2a"
+}

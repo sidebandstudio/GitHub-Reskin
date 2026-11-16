@@ -1,0 +1,55 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+    }
+  </style>
+  <!-- H03 [120,195): six-frame wipe from Choom Circuit into Neon Genesis Evangelion, Violet
+       Synchrony, on the same whoisaldo page. H04a [195,240): hard cut to Frieren: Beyond Journey's
+       End, Longroad Petals, in Full with its embedded wallpaper. H04b [240,270): the same page's
+       plum contribution calendar and legend. Scene time 0 is frame 120. Captures: P02-D, P04-D,
+       P06-D, P06C-D. -->
+  <div id="root" data-composition-id="worlds" data-width="1920" data-height="1080">
+    <div id="wd-bg-0" class="clip backdrop" data-layout-ignore data-start="0" data-duration="0.2" data-track-index="0"><img src="assets/backdrops/P02-D.jpg" alt="" /></div>
+    <div id="wd-bg-1" class="clip backdrop" data-layout-ignore data-start="0" data-duration="2.5" data-track-index="0"><div id="wd-bg-1-w" class="layer"><img src="assets/backdrops/P04-D.jpg" alt="" /></div></div>
+    <div id="wd-bg-2" class="clip backdrop" data-layout-ignore data-start="2.5" data-duration="2.5" data-track-index="0"><img src="assets/backdrops/P06-D.jpg" alt="" /></div>
+    <div class="scrim"></div>
+
+    <div id="wd-head-1" class="clip head" data-start="0" data-duration="2.5" data-track-index="2">
+      <div class="eyebrow">13 anime-inspired themes</div>
+      <div class="title">Neon Genesis Evangelion</div>
+      <div class="theme">Violet Synchrony</div>
+    </div>
+    <div id="wd-head-2" class="clip head" data-start="2.5" data-duration="2.5" data-track-index="2">
+      <div class="title">Frieren: Beyond Journey's End</div>
+      <div class="theme">Longroad Petals</div>
+    </div>
+    <div id="wd-src-1" class="clip src" data-start="0" data-duration="4" data-track-index="4"><span><b>github.com/whoisaldo</b><br />Full</span></div>
+    <div id="wd-src-2" class="clip src" data-start="4" data-duration="1" data-track-index="4"><span><b>github.com/whoisaldo</b><br />contributions</span></div>
+
+    <div class="shot">
+      <div id="wd-shot-0" class="clip layer" data-start="0" data-duration="0.2" data-track-index="1"><img class="page" src="assets/captures/P02-D.png" alt="" /></div>
+      <div id="wd-shot-1" class="clip layer" data-start="0" data-duration="2.5" data-track-index="1">
+        <div id="wd-shot-1-w" class="layer"><img id="wd-img-1" class="page" src="assets/captures/P04-D.png" alt="" /></div>
+      </div>
+      <div id="wd-shot-2" class="clip layer" data-start="2.5" data-duration="1.5" data-track-index="1"><img id="wd-img-2" class="page" src="assets/captures/P06-D.png" alt="" /></div>
+      <div id="wd-shot-3" class="clip layer" data-start="4" data-duration="1" data-track-index="1" style="--k: 1.9px; --x0: 400; --y0: 80"><img id="wd-img-3" class="page" src="assets/captures/P06C-D.png" alt="" /></div>
+      <div id="wd-edge-1" class="edge"></div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    const f = (n) => n / 30;
+    tl.fromTo("#wd-shot-1-w", { clipPath: "inset(0 0 100% 0)" }, { clipPath: "inset(0 0 0% 0)", duration: f(6), ease: "power2.inOut" }, 0);
+    tl.fromTo("#wd-bg-1-w", { clipPath: "inset(0 0 100% 0)" }, { clipPath: "inset(0 0 0% 0)", duration: f(6), ease: "power2.inOut" }, 0);
+    tl.fromTo("#wd-edge-1", { y: 0, opacity: 0 }, { y: 560, opacity: 0.9, duration: f(6), ease: "power2.inOut" }, 0);
+    tl.to("#wd-edge-1", { opacity: 0, duration: f(2) }, f(6));
+    tl.fromTo("#wd-img-1", { scale: 1 }, { scale: 1.03, duration: f(69), ease: "none", transformOrigin: "50% 0%" }, f(6));
+    tl.fromTo("#wd-img-2", { scale: 1 }, { scale: 1.03, duration: f(45), ease: "none", transformOrigin: "50% 0%" }, f(75));
+    tl.fromTo("#wd-img-3", { scale: 1 }, { scale: 1.03, duration: f(30), ease: "none", transformOrigin: "40% 30%" }, f(120));
+    tl.fromTo("#wd-head-1 .title", { y: 16, opacity: 0.4 }, { y: 0, opacity: 1, duration: f(6), ease: "power3.out" }, 0);
+    tl.fromTo("#wd-head-2 .title", { y: 16, opacity: 0.4 }, { y: 0, opacity: 1, duration: f(6), ease: "power3.out" }, f(75));
+    window.__timelines["worlds"] = tl;
+  </script>
+</template>

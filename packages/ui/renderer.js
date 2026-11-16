@@ -33,7 +33,12 @@ const FORCED_COLORS = "(forced-colors: active)";
  * @returns the renderer startContent takes
  */
 export function createRenderer({ github, resources, catalog = null, index = MODE_INDEX, slotTimeLimitMs = null }) {
-  const bundled = new Map((catalog?.ids ?? []).map((id) => [catalog.sourceHash(id), catalog.document(id)]));
+  // A bundled theme's document by its source hash. Looked up when it is drawn: the content
+  // script's catalog holds a document only once its record has arrived.
+  const bundled = (hash) => {
+    const id = catalog?.ids.find((candidate) => catalog.sourceHash(candidate) === hash);
+    return id === undefined ? null : catalog.document(id);
+  };
   // The theme's CSS and whether the host allows it: packaged with the bundled theme that is
   // selected, or consented to for exactly this sanitized hash and sanitizer version. The bundled
   // exception follows the selected ID, never the source alone: a saved theme whose source equals a
@@ -68,7 +73,7 @@ export function createRenderer({ github, resources, catalog = null, index = MODE
       const faces = prefs.fonts ? roleFontFaceCss(resolved, resources) : "";
       const theme = themeCss(resolved, context);
       // Image layers draw the admitted data of the very source that was resolved.
-      const images = imageAssets(context?.source ?? bundled.get(resolved.sourceHash) ?? null);
+      const images = imageAssets(context?.source ?? bundled(resolved.sourceHash));
       const css = [primer.css, faces, compileAppearance(resolved, prefs, "github", { ...theme, images })].join("\n");
       return { css, fingerprint: `${primer.fingerprint}:${faces ? 1 : 0}:${theme.cssAllowed ? 1 : 0}` };
     },

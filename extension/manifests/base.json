@@ -83,6 +83,15 @@
         "https://github.com/*",
         "https://gist.github.com/*"
       ]
+    },
+    {
+      "resources": [
+        "content/css-parser.js"
+      ],
+      "matches": [
+        "https://github.com/*",
+        "https://gist.github.com/*"
+      ]
     }
   ]
 }

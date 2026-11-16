@@ -2,11 +2,13 @@
 // which every synchronous format call (parseImport, validateTheme, normalizeTheme, decodeShare)
 // admits and canonicalizes CSS exactly as the full entry does. The site loads it on import or
 // edit intent so landing pages never pay for the parser; the extension loads it with the engine.
-import { admitGradientCss as admitGradientValue, sanitizeCss, transportEquivalent } from "./css/sanitize.js";
+import * as csstree from "css-tree/dist/csstree.esm";
+import { admitGradientCss as admitGradientValue, sanitizeCss, transportEquivalent, useCssParser } from "./css/sanitize.js";
 import { installCssSanitizer } from "./css/admission.js";
 import { POLICY_HASH } from "./css/policy.js";
 import { SANITIZER_VERSION } from "../contracts/index.js";
 
+useCssParser(csstree);
 installCssSanitizer({ sanitizeCss, admitGradientCss: admitGradientValue });
 
 export { sanitizeCss, transportEquivalent };

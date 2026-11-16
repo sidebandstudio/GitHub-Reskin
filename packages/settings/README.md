@@ -17,13 +17,15 @@ page-storage call removes 1.1.0's `github-reskin-css` key, without reading it, a
 | --- | --- |
 | `reskin.settings` | `SettingsV2`: `settingsVersion: 2`, `revision`, `enabled`, `selectedThemeId`, `preferences {appearance, extras, text, motion, fonts, effects}`, `cssConsent {[localId]: {hash, sanitizerVersion}}`, `customThemes`, `onboardingCompleted`, `migration {from?, notices}` |
 | `reskin.boot` | `BootRecord`, or `null` when disabled or no snapshot could be made. Written in the same `storage.set` as settings. |
+| `reskin.selected` | The selected bundled theme for the content script, as the JSON text of its document and CSS proofs (packages/ui/catalog.js `catalogRecord`), or `null` for a saved theme. Written in the same `storage.set` as settings by a repository given `selectedRecord`, as the extension's background is; the content script uses it only when its text hashes to the build's record for that theme. |
 | `reskin.lastGood` | `{themeId, sourceHash, revision}` of the previous selection, for Undo. Cleared, with an `undo-cleared` notice, when its local theme is deleted, including when that theme was the selection being replaced. |
 | `reskin.draft` | One editor draft, up to 1.25 MiB. It carries no CSS approval. |
 | `reskin.cssApprovals` | Up to 32 pending Enable advanced CSS approvals not yet redeemed: SHA-256 digests of the ticket and editor secrets, the target (`new` or a local ID), the sanitized CSS hash and sanitizer version. Written with the settings it belongs to; Reset all clears it. |
 | `reskin.recovery` | One bounded copy (1 MiB) of 1.x or damaged v2 data that could not be used. It is kept until `dismissMigration` or `resetAll`. A later salvage never replaces it: its copy is appended to `salvaged` within the room left, and what does not fit is marked truncated. |
 
 A commit clears `reskin.lastGood`, `reskin.draft` or `reskin.recovery` by writing `null` in the same
-`storage.set` as settings and boot, never by a separate removal, and readers treat `null` as absent.
+`storage.set` as settings, boot and the selected record, never by a separate removal, and readers
+treat `null` as absent.
 
 The limits: 50 saved themes, 4 MiB of canonical custom source and 8 MiB across every record. The
 8 MiB is measured, keys included, before each write. A write that would exceed it is refused, and

@@ -1,0 +1,19 @@
+{
+  "url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "final_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "retrieved_at_utc": "2026-11-08T20:05:07.998738+00:00",
+  "page_sha256": "abb4d48fc8b85de52b377dd105532c6c549f515d492a8e1712bc99e7316a1f12",
+  "verified_permissions": [
+    "copy",
+    "modify",
+    "distribute",
+    "perform",
+    "commercial use"
+  ],
+  "verification": "Read the CC0 deed and checked the linked legal code. Attribution is not a CC0 condition; no endorsement is implied.",
+  "legalcode": {
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/legalcode",
+    "final_url": "https://creativecommons.org/publicdomain/zero/1.0/legalcode",
+    "page_sha256": "b43732f4c1463b087cf10d4daf8d8766514b2bf8f21bc5ef50905f95be227726"
+  }
+}

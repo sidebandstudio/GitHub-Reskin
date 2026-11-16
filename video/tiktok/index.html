@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <title>GitHub Reskin, TikTok/Reels cut</title>
+    <script src="assets/vendor/gsap-3.15.0.min.js"></script>
+    <style>
+      /* GitHub Reskin vertical film, 1080x1920, 30 fps, 660 frames. Brand shell from content/brand:
+         canvas, ivory, muted, coral and charcoal around real extension captures. Every word and
+         product crop sits inside x=90..880, y=180..1280; the right rail and the bottom 590 px carry
+         only backdrop texture. */
+      @font-face {
+        font-family: "Manrope";
+        src: url("assets/fonts/Manrope-Variable.ttf") format("truetype");
+        font-weight: 200 800;
+        font-style: normal;
+      }
+      :root {
+        --canvas: #0c0f14;
+        --ivory: #f5f3ee;
+        --muted: #b0b8c5;
+        --coral: #ff806c;
+        --charcoal: #151a22;
+        /* A V capture is 390 CSS px at DPR 3. The window shows 374 CSS px (x=8..382) across 790
+           output px, so one CSS px is 2.1123 output px and a native 14 px label renders at 29.6 px. */
+        --k: 2.1123px;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+        background: var(--canvas);
+      }
+      #root {
+        position: relative;
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+        background: var(--canvas);
+        font-family: "Manrope", sans-serif;
+        color: var(--ivory);
+      }
+      /* Full-bleed backdrop: the same capture as the window, dimmed, so the theme's colors carry the
+         whole frame without any text outside the safe box. */
+      .backdrop {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+      }
+      /* Backdrops are blurred derivatives of the captures (assets/backdrops/make.mjs). */
+      .backdrop img {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 1080px;
+        height: 1938px;
+        opacity: 0.75;
+      }
+      .scrim {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, rgba(12, 15, 20, 0.82) 0%, rgba(12, 15, 20, 0.72) 24%, rgba(12, 15, 20, 0.3) 46%, rgba(12, 15, 20, 0.25) 70%, rgba(12, 15, 20, 0.55) 100%);
+      }
+      /* Headline box: anime title 96 px, theme name 36 px beneath it, optional 36 px eyebrow. */
+      .head {
+        position: absolute;
+        left: 90px;
+        top: 172px;
+        width: 790px;
+        height: 304px;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        gap: 6px;
+      }
+      .eyebrow {
+        font-size: 36px;
+        font-weight: 600;
+        color: var(--muted);
+        letter-spacing: -0.01em;
+        line-height: 1.15;
+      }
+      .title {
+        font-size: 96px;
+        font-weight: 650;
+        letter-spacing: -0.03em;
+        line-height: 1;
+        color: var(--ivory);
+      }
+      .theme {
+        font-size: 36px;
+        font-weight: 600;
+        color: var(--coral);
+        line-height: 1.2;
+        margin-top: 6px;
+      }
+      /* Product window, x=90..880, y=490..1230. */
+      .shot {
+        position: absolute;
+        left: 90px;
+        top: 490px;
+        width: 790px;
+        height: 740px;
+        border-radius: 22px;
+        overflow: hidden;
+        background: var(--charcoal);
+        box-shadow: 0 0 0 2px rgba(245, 243, 238, 0.14), 0 30px 80px rgba(0, 0, 0, 0.55);
+      }
+      .layer {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+      }
+      .page {
+        position: absolute;
+        left: calc(-8 * var(--k));
+        top: 0;
+        width: calc(390 * var(--k));
+      }
+      .src {
+        position: absolute;
+        left: 90px;
+        top: 1244px;
+        width: 790px;
+        font-size: 30px;
+        font-weight: 600;
+        color: var(--muted);
+        line-height: 1.2;
+      }
+      .src span {
+        display: inline-block;
+        padding: 4px 14px;
+        border-radius: 10px;
+        background: rgba(12, 15, 20, 0.78);
+      }
+      .src b {
+        color: var(--ivory);
+        font-weight: 650;
+      }
+      /* A wipe's leading edge. */
+      .edge {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 6px;
+        background: var(--ivory);
+        opacity: 0;
+      }
+      /* The real popup page, cropped at its native geometry. */
+      .popup {
+        position: absolute;
+        overflow: hidden;
+        border-radius: 16px;
+        box-shadow: 0 0 0 2px rgba(245, 243, 238, 0.22), 0 24px 60px rgba(0, 0, 0, 0.6);
+        background: #0d1117;
+      }
+      .popup img {
+        position: absolute;
+        left: 0;
+        top: 0;
+      }
+      .tap {
+        position: absolute;
+        width: 96px;
+        height: 96px;
+        margin: -48px 0 0 -48px;
+        border-radius: 50%;
+        border: 5px solid var(--ivory);
+        background: rgba(245, 243, 238, 0.18);
+        opacity: 0;
+      }
+      .chip {
+        position: absolute;
+        padding: 6px 16px;
+        border-radius: 999px;
+        background: rgba(12, 15, 20, 0.88);
+        box-shadow: 0 0 0 2px rgba(245, 243, 238, 0.2);
+        font-size: 28px;
+        font-weight: 650;
+        color: var(--ivory);
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="tiktok"
+      data-start="0"
+      data-duration="22"
+      data-width="1080"
+      data-height="1920"
+    >
+      <!-- Picture: six scenes, frame ranges end-exclusive at 30 fps. -->
+      <div id="hook" data-composition-id="hook" data-composition-src="compositions/hook.html" data-start="0" data-duration="3.5" data-track-index="1" data-track-kind="graphics" data-width="1080" data-height="1920"></div>
+      <div id="worlds" data-composition-id="worlds" data-composition-src="compositions/worlds.html" data-start="3.5" data-duration="6" data-track-index="1" data-track-kind="graphics" data-width="1080" data-height="1920"></div>
+      <div id="people" data-composition-id="people" data-composition-src="compositions/people.html" data-start="9.5" data-duration="4" data-track-index="1" data-track-kind="graphics" data-width="1080" data-height="1920"></div>
+      <div id="details" data-composition-id="details" data-composition-src="compositions/details.html" data-start="13.5" data-duration="2" data-track-index="1" data-track-kind="graphics" data-width="1080" data-height="1920"></div>
+      <div id="more" data-composition-id="more" data-composition-src="compositions/more.html" data-start="15.5" data-duration="4" data-track-index="1" data-track-kind="graphics" data-width="1080" data-height="1920"></div>
+      <div id="end" data-composition-id="end" data-composition-src="compositions/end.html" data-start="19.5" data-duration="2.5" data-track-index="1" data-track-kind="graphics" data-width="1080" data-height="1920"></div>
+
+      <!-- Effects, CC0 (assets/audio/rights.json). Each peak lands one frame after its picture.
+           snap: frame 11, peak 0.024 s into the file. click: the real Reskin switch tap at frame 48,
+           the file trimmed to its press at 0.35 s. whoosh: the 0.1-0.5 s segment, peak at the
+           cuts on frames 225 and 585. glitch: once, very low, under the settle at frame 20. -->
+      <audio id="sfx-snap" class="clip" src="assets/audio/sfx-snap.mp3" data-start="0.376" data-duration="0.197" data-volume="0.5" data-track-index="10"></audio>
+      <audio id="sfx-glitch" class="clip" src="assets/audio/sfx-glitch.mp3" data-start="0.581" data-duration="0.395" data-volume="0.12" data-track-index="11"></audio>
+      <audio id="sfx-click-on" class="clip" src="assets/audio/sfx-click.mp3" data-start="1.602" data-media-start="0.35" data-duration="0.25" data-volume="0.6" data-fade-out="0.05" data-track-index="10"></audio>
+      <audio id="sfx-whoosh-1" class="clip" src="assets/audio/sfx-whoosh.mp3" data-start="7.411" data-media-start="0.1" data-duration="0.4" data-volume="0.5" data-fade-out="0.067" data-track-index="11"></audio>
+      <audio id="sfx-whoosh-2" class="clip" src="assets/audio/sfx-whoosh.mp3" data-start="19.411" data-media-start="0.1" data-duration="0.4" data-volume="0.4" data-fade-out="0.067" data-track-index="11"></audio>
+
+      <!-- Licensed bed for the -bed master: Experiment G by tricksntraps, CC0 1.0, from frame 0 at
+           -4.4 dB (0.6; the source is about -11.5 LUFS), fade in over frames 0-10, fade out over
+           frames 615-659, for a mix near -18 LUFS. The SFX master is rendered
+           without this element (scripts/verify-video.mjs). -->
+      <audio id="bed" class="clip" src="assets/audio/bed-cyberpunk-experiment-g.mp3" data-start="0" data-duration="22" data-media-start="0" data-volume="0.6" data-fade-in="0.333" data-fade-out="1.5" data-track-index="12"></audio>
+    </div>
+    <script>
+      window.__timelines = window.__timelines || {};
+      window.__timelines["tiktok"] = gsap.timeline({ paused: true });
+    </script>
+  </body>
+</html>

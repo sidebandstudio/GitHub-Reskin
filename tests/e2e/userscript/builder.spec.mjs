@@ -16,7 +16,7 @@ import { deflateSync } from "node:zlib";
 import { readFile } from "node:fs/promises";
 import { STORAGE_KEYS } from "../../../packages/contracts/index.js";
 import { admitCss, encodeShare } from "../../../packages/format/index.js";
-import { COPY, CSS_NOTE, IMPORT_CSS_NOTE } from "../../../userscript/copy.js";
+import { COPY, CSS_NOTE, IMPORT_CSS_NOTE, NOTE_LINKS } from "../../../userscript/copy.js";
 import { CHOOM, CHOOM_CANVAS, HOST, PANEL, PROFILE_HTML, PROFILE_URL, expect, firefoxContentManager, menuNames, openPanel, painted, panelFrame, settingsOf, test, waitSettled } from "./helpers.mjs";
 
 const ROOT = new URL("../../../", import.meta.url);
@@ -414,11 +414,24 @@ test("exports a theme as a file and a share code and imports both back unchanged
   expect(await page.evaluate(() => window.__links.filter((link) => /\.reskin\.json$|^blob:/.test(link)))).toEqual([]);
 });
 
+// The not-isolated note's two links, each opening its page in a new tab.
+async function expectNoteLinks(frame) {
+  const links = frame.locator("[data-us=storage-note] a");
+  await expect(links).toHaveCount(NOTE_LINKS.length);
+  for (const [index, { text, href }] of NOTE_LINKS.entries()) {
+    await expect(links.nth(index)).toHaveText(text);
+    await expect(links.nth(index)).toHaveAttribute("href", href);
+    await expect(links.nth(index)).toHaveAttribute("target", "_blank");
+    await expect(links.nth(index)).toHaveAttribute("rel", "noopener noreferrer");
+  }
+}
+
 test("where the script cannot show it runs apart from the page, there is no builder, and the note says so", async ({ manager }) => {
   const gm = await manager({ kind: "sync", report: "page" });
   const page = await gm.open(`${PROFILE_URL}#reskin`);
   const frame = await panelFrame(page);
   await expect(frame.locator("[data-us=storage-note]")).toHaveText(COPY.menuOnly);
+  await expectNoteLinks(frame);
   await expect(frame.getByRole("button", { name: "Make a theme" })).toHaveCount(0);
   await expect(frame.getByRole("button", { name: "Backup & help" })).toHaveCount(0);
   await expect(frame.locator("[data-rb], [data-rk]")).toHaveCount(0);
@@ -431,6 +444,7 @@ test("where the script cannot show it runs apart from the page, there is no buil
   const tab = await bare.open(`${PROFILE_URL}#reskin`);
   const card = await panelFrame(tab);
   await expect(card.locator("[data-us=storage-note]")).toHaveText(COPY.noControls);
+  await expectNoteLinks(card);
   await expect(card.getByRole("button", { name: "Make a theme" })).toHaveCount(0);
 });
 

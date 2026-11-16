@@ -1,0 +1,60 @@
+{
+  "captured": "2026-11-10T18:59:59.123Z",
+  "browser": "Chromium 156.0.8078.4",
+  "extension": {
+    "name": "GitHub Reskin",
+    "version": "1.1.0",
+    "commit": "4f3d0eb1540d64e83ab93283b583d05299eabecb",
+    "sourceDirty": false,
+    "package": "npm run build:stores, dist/chrome unpacked"
+  },
+  "session": "fresh logged-out profile, en-US, light color scheme, 100% zoom",
+  "id": "A-DS-V",
+  "file": "A-DS-V.png",
+  "url": "https://github.com/whoisaldo",
+  "httpStatus": 200,
+  "theme": "anime.demon-slayer",
+  "themeSource": {
+    "file": "themes/anime/wisteria-emberline.reskin.json",
+    "sha256": "b5284af91959634bfaa8cd5f73cf72e8033d6f86b5254dfbdbb61185cf0c7453"
+  },
+  "appearance": "full",
+  "flavorText": true,
+  "viewport": {
+    "width": 390,
+    "height": 844,
+    "dpr": 3
+  },
+  "preset": "V",
+  "scrollRule": "T",
+  "scrollY": 0,
+  "anchor": null,
+  "pageHeight": null,
+  "state": {
+    "boot": "ready",
+    "styled": true,
+    "cssScope": "active",
+    "canvas": "rgb(13, 25, 25)"
+  },
+  "settings": {
+    "cssConsent": {},
+    "customThemes": [],
+    "enabled": true,
+    "migration": {
+      "notices": []
+    },
+    "onboardingCompleted": false,
+    "preferences": {
+      "appearance": "full",
+      "effects": true,
+      "extras": true,
+      "fonts": true,
+      "motion": true,
+      "text": true
+    },
+    "revision": 3,
+    "selectedThemeId": "anime.demon-slayer",
+    "settingsVersion": 2
+  },
+  "sha256": "57b9a5b6c6a55cee34c1269ba128dffa0471278110a9bf2b8d764a02de2c2573"
+}
