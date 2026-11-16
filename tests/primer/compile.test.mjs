@@ -430,6 +430,20 @@ test("the primary counter falls back to the primary fill when it would not read 
   assert.equal(warnings[0].code, "primer.readable-fallback");
 });
 
+test("an empty day is a solid square, outlined in the control border only when its fill is within 1.08:1 of the canvas", () => {
+  const seed = MODE_INDEX.modes.dark;
+  const EMPTY_DAY = "--contribution-default-borderColor-0";
+  // Editing Suite's empty day, 1.19:1 off its canvas, and GitHub's own dark one at 1.09:1.
+  const suite = resolvedFromSeed(seed, { "/tokens/canvas": "#0a0a0b", "/graph/0": "#1e1e1f" });
+  assert.equal(emittedColors(suite).get(EMPTY_DAY), "#1e1e1f");
+  assert.equal(emittedColors(resolvedFromSeed(seed)).get(EMPTY_DAY), seed.colors.graph[0]);
+  // A fill the eye can't tell from the canvas keeps the outline, and says so.
+  const faint = resolvedFromSeed(seed, { "/tokens/canvas": "#d8eadf", "/graph/0": "#e0eade" });
+  const warnings = [];
+  assert.equal(emittedColors(faint, undefined, warnings).get(EMPTY_DAY), colorAt(faint, "/tokens/controlBorder"));
+  assert.ok(warnings.some((w) => w.code === "primer.readable-fallback" && w.message.startsWith(`${EMPTY_DAY} uses /tokens/controlBorder`)));
+});
+
 test("the Primer Brand footer gets its own mapped variables, scoped by structure", () => {
   const [resolved, p] = themed("dark");
   const { css } = compileGitHub(resolved, p, PREFS);

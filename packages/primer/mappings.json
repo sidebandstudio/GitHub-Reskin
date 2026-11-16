@@ -333,7 +333,7 @@
     {"variable":"--contribution-winter-bgColor-2","role":"/graph/2","exempt":"graph ramp: covered by the engine's graph luminance, order and canvas constraints rather than the pair matrix"},
     {"variable":"--contribution-winter-bgColor-3","role":"/graph/3","exempt":"graph ramp: covered by the engine's graph luminance, order and canvas constraints rather than the pair matrix"},
     {"variable":"--contribution-winter-bgColor-4","role":"/graph/4","exempt":"graph ramp: covered by the engine's graph luminance, order and canvas constraints rather than the pair matrix"},
-    {"variable":"--contribution-default-borderColor-0","role":"/graph/0","exempt":"same color as its cell fill: an empty day is a solid square, as on GitHub and in 1.0"},
+    {"variable":"--contribution-default-borderColor-0","role":"/graph/0","exempt":"same color as its cell fill: an empty day is a solid square, as on GitHub and in 1.0, while the fill stands 1.08:1 off the canvas (GitHub's own are 1.09 to 1.14:1); a fill closer than that is outlined in the control border","readableOn":{"backgrounds":["/tokens/canvas"],"minimum":1.08,"otherwise":["/tokens/controlBorder"]}},
     {"variable":"--contribution-default-borderColor-1","role":"/graph/1","exempt":"same color as its cell fill, so the outline adds nothing to see"},
     {"variable":"--contribution-default-borderColor-2","role":"/graph/2","exempt":"same color as its cell fill, so the outline adds nothing to see"},
     {"variable":"--contribution-default-borderColor-3","role":"/graph/3","exempt":"same color as its cell fill, so the outline adds nothing to see"},
