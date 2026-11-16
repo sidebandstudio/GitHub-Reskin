@@ -2,9 +2,11 @@
 // packages/format/authoring.js (packages/ui/bundle.mjs), so this file loads the lifecycle the same
 // way and installs the sanitizer the way extension/content/index.mjs does. The tests run in order:
 // the sanitizer, once installed, stays.
+import { once } from "node:events";
 import { readFileSync } from "node:fs";
 import { registerHooks } from "node:module";
 import { test } from "node:test";
+import { Worker } from "node:worker_threads";
 import assert from "node:assert/strict";
 
 registerHooks({
@@ -14,12 +16,12 @@ registerHooks({
   },
 });
 
-const { STORAGE_KEYS } = await import("../../packages/contracts/index.js");
+const { LIMITS, STORAGE_KEYS } = await import("../../packages/contracts/index.js");
 const { cssSanitizerInstalled, installCssSanitizer } = await import("../../packages/format/css/admission.js");
 const { admitGradientCss, sanitizeCss, useCssParser } = await import("../../packages/format/css/sanitize.js");
 const { defaultSettings } = await import("../../packages/settings/index.js");
 const { startContent } = await import("../../extension/content/lifecycle/index.js");
-const { catalog, fakePage, memoryStorage, testRenderer } = await import("./helpers.mjs");
+const { catalog, deferred, fakePage, memoryStorage, testRenderer } = await import("./helpers.mjs");
 
 // Choom Circuit as a saved theme: Advanced CSS, and backgrounds whose only layers are gradients.
 const choom = JSON.parse(readFileSync(new URL("../../themes/anime/choom-circuit.reskin.json", import.meta.url), "utf8"));
@@ -43,6 +45,23 @@ function start(records, loadCssSanitizer) {
   const events = [];
   const content = startContent({ storage: memoryStorage(records), document: page.document, view: page.view, catalog, renderer: testRenderer({ clock: page.clock }), loadCssSanitizer, onEvent: (e) => events.push(e) });
   return { page, events, content };
+}
+
+// The background's boot record for `settings`, built in a worker, which loads the settings package
+// with its sanitizer as the background does. This thread keeps it uninstalled.
+async function backgroundBoot(settings) {
+  const code = `
+    const { parentPort, workerData } = require("node:worker_threads");
+    (async () => {
+      const { buildBootRecord } = await import(workerData.settings);
+      const { catalog, snapshot } = await import(workerData.helpers);
+      parentPort.postMessage(buildBootRecord(workerData.value, { catalog, snapshot }));
+    })();`;
+  const at = (path) => new URL(path, import.meta.url).href;
+  const worker = new Worker(code, { eval: true, workerData: { settings: at("../../packages/settings/index.js"), helpers: at("./helpers.mjs"), value: settings } });
+  const [record] = await once(worker, "message");
+  await worker.terminate();
+  return record;
 }
 
 const loads = [];
@@ -102,14 +121,45 @@ test("settings too malformed to read release GitHub, even with a parser to load"
   content.destroy();
 });
 
-test("the selected saved theme's CSS loads the sanitizer once, and the page reads its settings again with it", async () => {
-  const { page, events, content } = start(settingsWith({ selected: SAVED }), install);
+test("the selected saved theme's CSS loads the sanitizer once, the page reads its settings again with it, and decorates again", async () => {
+  // Both paints draw the boot snapshot of the whole theme, and the pass without the CSS, run before
+  // the parser arrives, spends the whole decoration budget.
+  const records = settingsWith({ selected: SAVED });
+  records[STORAGE_KEYS.boot] = await backgroundBoot(records[STORAGE_KEYS.settings]);
+  assert.ok(records[STORAGE_KEYS.boot]);
+  const parser = deferred();
+  const page = fakePage({ idleCallbacks: true });
+  const renderer = testRenderer({ clock: page.clock });
+  // As in the extension's renderer, the stylesheet and admission follow whether the CSS is drawn.
+  const drawn = (context) => typeof context?.source?.css === "string";
+  const { compile } = renderer;
+  renderer.compile = (resolved, plan, prefs, context) => {
+    const compiled = compile(resolved, plan, prefs);
+    return { ...compiled, fingerprint: `${compiled.fingerprint}:${drawn(context)}` };
+  };
+  const decorated = [];
+  renderer.decorate = (_document, _resolved, _prefs, context) => {
+    decorated.push(drawn(context));
+    page.clock.now += LIMITS.maxNavigationMs;
+    return { destroy() {} };
+  };
+  const events = [];
+  const content = startContent({ storage: memoryStorage(records), document: page.document, view: page.view, catalog, renderer, loadCssSanitizer: () => parser.promise.then(install), onEvent: (e) => events.push(e) });
   assert.equal(await content.ready, "ready");
+  page.document.readyState = "interactive";
+  page.fire("document", "DOMContentLoaded");
+  await page.idle();
+  await page.frame();
+  assert.deepEqual(decorated, [false], "decorated without the CSS while the parser loads");
+  parser.resolve();
   for (let i = 0; i < 20 && !cssSanitizerInstalled(); i++) await page.settle();
   await page.settle();
   assert.equal(cssSanitizerInstalled(), true);
   // Drawn twice: without the CSS while the parser loaded, then the whole theme.
-  assert.equal(events.filter((e) => e.type === "resolved").length, 2);
+  assert.deepEqual(events.filter((e) => e.type === "resolved").map((e) => e.from), ["snapshot", "snapshot"]);
+  await page.idle();
+  await page.frame();
+  assert.deepEqual(decorated, [false, true], "decorated again with the CSS");
   assert.ok(page.style());
   assert.deepEqual(loads, ["load"]);
   const again = start(settingsWith({ selected: SAVED }), install);
