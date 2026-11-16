@@ -27,6 +27,9 @@ test("a new install leaves GitHub native with no theme until the panel picks one
   const frame = await openPanel(page);
   await expect(frame.locator("[data-rs=summary-show]")).toHaveText("No theme");
   await expect(frame.locator("[data-rs=summary-name]")).toHaveText("GitHub's own look");
+  // A new install opens on the Classics, as 1.0's card did.
+  await expect(frame.getByRole("button", { name: /^Classics/ })).toHaveAttribute("aria-pressed", "true");
+  await frame.getByRole("button", { name: /^Anime/ }).click();
   await frame.locator(`[data-theme="${FRIEREN}"]`).click();
   await expect.poll(() => painted(page)).toMatchObject({ boot: "ready", canvas: FRIEREN_CANVAS });
   await expect(frame.locator("[data-rs=undo]")).toBeHidden();
@@ -190,6 +193,7 @@ test("a manager without durable storage gets a labeled session preview with expo
   const frame = await panelFrame(page);
   await expect(frame.locator("[data-us=session-label]")).toHaveText("Session preview");
   await expect(frame.locator("[data-us=storage-note]")).toHaveText("This userscript manager can't save themes here. You can preview and export a file. Advanced CSS in your own themes stays off in the userscript.");
+  await frame.getByRole("button", { name: /^Anime/ }).click();
   await frame.locator(`[data-theme="${FRIEREN}"]`).click();
   await expect.poll(() => painted(page)).toMatchObject({ boot: "ready", canvas: FRIEREN_CANVAS });
   const download = page.waitForEvent("download");

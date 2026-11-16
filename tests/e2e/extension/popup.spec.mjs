@@ -30,6 +30,10 @@ test.describe("a new install", () => {
     await expect(popup.locator("[data-rs=summary-note]")).toHaveText("Pick a theme to change GitHub and Gist.");
     await expect(popup.locator(".rs-card[aria-pressed=true]")).toHaveCount(0);
     expect((await storage(extension.worker))["reskin.settings"]).toMatchObject({ enabled: true, selectedThemeId: null });
+    // It opens on the Classics, Editing Suite first, as 1.0's card did.
+    await expect(popup.getByRole("button", { name: /^Classics/ })).toHaveAttribute("aria-pressed", "true");
+    await expect(popup.locator(".rs-card").first()).toHaveAccessibleName("Editing Suite Classic");
+    await popup.getByRole("button", { name: /^Anime/ }).click();
     await card(popup, "Cyberpunk: Edgerunners").click();
     await expect(popup.locator("[data-rs=status]")).toHaveText("Applied to GitHub.");
     expect((await waitPainted(github, (s) => s.canvas === CHOOM_CANVAS)).styled).toBe(true);
@@ -41,6 +45,7 @@ test.describe("a new install", () => {
     const popup = await openPage(extension, "popup");
     await expect(popup.locator("[data-rc=note]")).toHaveText("Pick a theme to edit its colors.");
     for (const name of ["Background", "Text", "Accent", "Contribution graph"]) await expect(popup.getByRole("textbox", { name: `${name} hex` })).toBeDisabled();
+    await popup.getByRole("button", { name: /^Anime/ }).click();
     await card(popup, "Cyberpunk: Edgerunners").click();
     await expect(popup.getByRole("textbox", { name: "Background hex" })).toHaveValue(CHOOM_CANVAS);
     await expect(popup.locator("[data-rc=note]")).toBeEmpty();
@@ -90,7 +95,7 @@ test("the color card saves the theme's colors as an edited copy, edits that copy
   await waitPainted(github, (s) => s.canvas === CHOOM_CANVAS);
 });
 
-test("Choom Circuit paints GitHub with its flavor, and the popup leads with the anime", async ({ extension }) => {
+test("Choom Circuit paints GitHub with its flavor, and the popup opens on its group", async ({ extension }) => {
   const github = await openGitHub(extension);
   const state = await waitPainted(github, (s) => s.owned.length > 0);
   expect(state).toMatchObject({ boot: "ready", styled: true, canvas: CHOOM_CANVAS });
@@ -278,19 +283,20 @@ test("a failed save keeps the committed theme visible and offers Retry", async (
 // The controls a popup visitor needs, wherever the popup puts them.
 const CONTROLS = ["[data-rs=enabled]", "[data-rs=summary-show]", "[data-rs=search]", "[data-rs=appearance]", "[data-rs=text]", "[data-rs=motion]", "[data-rs=undo]", "[data-rs-clear]", "[data-rs-open=settings]", ".rs-popup-footer a"];
 
-// Whether the page or the popup body scrolls, how many cards the gallery shows, and where each
+// Whether the page or the popup body scrolls, the gallery's rows and columns, and where each
 // shown control sits.
 const popupLayout = (popup) =>
   popup.evaluate((controls) => {
     const gallery = document.querySelector("[data-rs=gallery]");
     const shown = (el) => el && el.getClientRects().length > 0;
     const body = document.body;
+    const cards = [...document.querySelectorAll(".rs-card")].map((c) => c.getBoundingClientRect());
     return {
       scrolls: document.scrollingElement.scrollHeight > innerHeight || body.scrollHeight > body.clientHeight + 1,
       sideways: document.scrollingElement.scrollWidth > innerWidth || body.scrollWidth > body.clientWidth + 1,
-      galleryScrolls: shown(gallery) && gallery.scrollHeight > gallery.clientHeight,
-      rows: new Set([...document.querySelectorAll(".rs-card")].slice(0, 4).map((c) => Math.round(c.getBoundingClientRect().top))).size,
-      cardsVisible: shown(gallery) ? [...document.querySelectorAll(".rs-card")].filter((c) => c.getBoundingClientRect().bottom <= gallery.getBoundingClientRect().bottom + 1).length : 0,
+      galleryScrolls: shown(gallery) && gallery.scrollHeight > gallery.clientHeight + 1,
+      rows: new Set(cards.map((c) => Math.round(c.top))).size,
+      columns: new Set(cards.map((c) => Math.round(c.left))).size,
       height: innerHeight,
       width: innerWidth,
       shown: controls.filter((selector) => [...document.querySelectorAll(selector)].some(shown)),
@@ -312,47 +318,46 @@ async function expectReachable(popup, label, { scrolls } = {}) {
   return layout;
 }
 
-test("the popup fits its 360x600 window, and a wider one, in every state: one inner scroller, every control in view", async ({ extension }) => {
-  for (const viewport of [{ width: 360, height: 600 }, { width: 400, height: 600 }]) {
-    const label = JSON.stringify(viewport);
-    const popup = await extension.context.newPage();
-    await popup.emulateMedia({ reducedMotion: "reduce" });
-    await popup.setViewportSize(viewport);
-    await popup.goto(extension.url("popup"));
-    await expect(popup.locator("[data-rs=summary-show]")).not.toBeEmpty();
-    let layout = await expectReachable(popup, label, { scrolls: false });
-    expect(layout.galleryScrolls).toBe(true);
-    expect(layout.rows).toBe(2);
-    expect(layout.cardsVisible).toBeGreaterThanOrEqual(2);
+test("the popup is 1.0's 336px card in every state: three columns, the Classics in four rows with the colors in the first screen, no inner scroller, every control reachable", async ({ extension }) => {
+  const popup = await extension.context.newPage();
+  await popup.emulateMedia({ reducedMotion: "reduce" });
+  await popup.setViewportSize({ width: 336, height: 600 });
+  await popup.goto(extension.url("popup"));
+  await expect(popup.locator("[data-rs=summary-show]")).not.toBeEmpty();
+  await popup.getByRole("button", { name: /^Classics/ }).click();
+  await expect(popup.getByRole("textbox", { name: "Contribution graph hex" })).toBeInViewport({ ratio: 1 });
+  let layout = await expectReachable(popup, "classics");
+  expect(layout).toMatchObject({ galleryScrolls: false, columns: 3, rows: 4 });
 
-    // Calm, the reduced-motion note and Undo all at once.
-    await popup.getByRole("radio", { name: "Calm" }).check();
-    await card(popup, "Frieren").click();
-    await expect(popup.locator("[data-rs=undo]")).toBeVisible();
-    await expect(popup.locator("[data-rs=motion-note]")).toBeVisible();
-    layout = await expectReachable(popup, `${label} calm`, { scrolls: false });
-    expect(layout.cardsVisible, `${label} calm`).toBeGreaterThanOrEqual(2);
+  // Calm, the reduced-motion note and Undo all at once, on the Anime's five rows.
+  await popup.getByRole("button", { name: /^Anime/ }).click();
+  await popup.getByRole("radio", { name: "Calm" }).check();
+  await card(popup, "Frieren").click();
+  await expect(popup.locator("[data-rs=undo]")).toBeVisible();
+  await expect(popup.locator("[data-rs=motion-note]")).toBeVisible();
+  layout = await expectReachable(popup, "calm");
+  expect(layout).toMatchObject({ galleryScrolls: false, columns: 3, rows: 5 });
 
-    // An empty search takes the gallery's place.
-    await popup.getByRole("searchbox").fill("zzz");
-    await expect(popup.locator("[data-rs=empty]")).toBeVisible();
-    await expect(popup.locator("[data-rs=gallery]")).toBeHidden();
-    await expectReachable(popup, `${label} empty`, { scrolls: false });
-    await popup.getByRole("button", { name: "Clear search" }).click();
-    await popup.getByRole("radio", { name: "Full" }).check();
-    await popup.locator("[data-rs=undo]").click();
-    await expect(popup.locator("[data-rs=undo]")).toBeHidden();
-    await popup.close();
-  }
+  // An empty search takes the gallery's place.
+  await popup.getByRole("searchbox").fill("zzz");
+  await expect(popup.locator("[data-rs=empty]")).toBeVisible();
+  await expect(popup.locator("[data-rs=gallery]")).toBeHidden();
+  await expectReachable(popup, "empty");
+  await popup.getByRole("button", { name: "Clear search" }).click();
+  await popup.getByRole("radio", { name: "Full" }).check();
+  await popup.locator("[data-rs=undo]").click();
+  await expect(popup.locator("[data-rs=undo]")).toBeHidden();
 });
 
-test("a popup at real 200% browser zoom wraps and scrolls instead of clipping controls", async ({ extension }) => {
-  const popup = await openPage(extension, "popup");
+// A popup sizes its window to the page, up to the browser's 800x600, so at 200% zoom the 336px card
+// takes 672 of its 800 pixels and the browser scrolls it vertically.
+test("a popup at real 200% browser zoom keeps its width and scrolls instead of clipping controls", async ({ extension }) => {
+  const popup = await openPage(extension, "popup", { width: 800, height: 600 });
   await popup.evaluate(async () => {
     const tab = await chrome.tabs.getCurrent();
     await chrome.tabs.setZoom(tab.id, 2);
   });
-  await expect.poll(() => popup.evaluate(() => innerWidth)).toBe(200);
+  await expect.poll(() => popup.evaluate(() => innerWidth)).toBe(400);
   const layout = await expectReachable(popup, "200%", { scrolls: true });
   expect(layout.height).toBe(300);
   await popup.getByRole("switch", { name: "Motion" }).uncheck();

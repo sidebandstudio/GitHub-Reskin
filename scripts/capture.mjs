@@ -136,7 +136,7 @@ export async function captureRelease({ root = DEFAULT_ROOT } = {}) {
     await choose(control, page, canvasOf[CHOOM], CHOOM);
     const profile = await page.screenshot();
     const popup = await context.newPage();
-    await popup.setViewportSize({ width: 400, height: 600 });
+    await popup.setViewportSize({ width: 336, height: 600 });
     await popup.goto(`chrome-extension://${id}/pages/popup.html`);
     await popup.waitForSelector(".rs-card");
     await popup.waitForTimeout(800);
@@ -188,7 +188,7 @@ export async function captureRelease({ root = DEFAULT_ROOT } = {}) {
 
     await compose(
       plain,
-      `${base}<style>body{width:1280px;height:800px;position:relative}.page{position:absolute;inset:0;width:1280px}.popup{position:absolute;top:12px;right:16px;width:400px;height:600px;border-radius:10px;box-shadow:0 18px 48px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.08)}</style>
+      `${base}<style>body{width:1280px;height:800px;position:relative}.page{position:absolute;inset:0;width:1280px}.popup{position:absolute;top:12px;right:16px;width:336px;height:600px;border-radius:10px;box-shadow:0 18px 48px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.08)}</style>
       <img class="page" src="${dataUrl(profile, "image/png")}"><img class="popup" src="${dataUrl(picker, "image/png")}">`,
       SIZE,
       at("screenshot-3.png"),

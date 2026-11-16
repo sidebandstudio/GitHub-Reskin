@@ -58,7 +58,9 @@ export function mountOnboarding() {
     });
   }
 
+  // The full list is the anime.
   const picker = mountPage({
+    defaultGroup: "anime",
     onChange({ settings, selectedId }) {
       latest = settings;
       showPicked(selectedId);

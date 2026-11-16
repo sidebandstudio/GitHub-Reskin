@@ -42,7 +42,7 @@ import { mountBuilder } from "../packages/ui/builder.js";
 import { catalogFromData } from "../packages/ui/catalog.js";
 import { mountColors } from "../packages/ui/colors.js";
 import { COPY as PICKER_COPY } from "../packages/ui/model.js";
-import { mountPicker } from "../packages/ui/picker.js";
+import { SWATCH_CROP, mountPicker } from "../packages/ui/picker.js";
 import { backgroundRendering, createRenderer, standardCard } from "../packages/ui/renderer.js";
 import * as github from "../extension/content/github/index.js";
 import { TIME_LIMIT_MS } from "../extension/content/github/slots.js";
@@ -242,7 +242,7 @@ function writeNote(doc, node, note) {
 // The card when the script shares GitHub's JavaScript: the current theme and why the panel has no
 // controls, and Close. Nothing in it changes a setting; the theme it names is painted on the page
 // anyway.
-const CONTROLS = [".rs-top-switch", "[data-rs=undo]", "[data-rs=error]", "[data-rs=notices]", ".rs-browse", "[data-rs=gallery]", "[data-rs=empty]", ".rs-colors", ".rs-prefs", ".us-storage-row", ".us-pages"];
+const CONTROLS = [".rs-top-switch", "[data-rs=undo]", "[data-rs=error]", "[data-rs=notices]", ".rs-themes", ".rs-colors", ".rs-prefs", ".us-storage-row", ".us-pages"];
 function mountNote(doc, { host, kind, controls, note }) {
   const part = (name) => doc.querySelector(`[data-us="${name}"]`);
   for (const node of doc.querySelectorAll(CONTROLS.join(","))) node.remove();
@@ -327,7 +327,7 @@ function mountCard(doc, { host, catalog, kind, controls }) {
       };
     },
   };
-  const picker = mountPicker(doc, cardHost, { cards: CARDS, catalog, cardFor: standardCard, fontFace });
+  const picker = mountPicker(doc, cardHost, { cards: CARDS, catalog, cardFor: standardCard, fontFace, crop: SWATCH_CROP });
   const colors = mountColors(doc, cardHost, { catalog, cssOff: `Saved as your own copy. ${CSS_NOTE}` });
 
   const status = part("status");
