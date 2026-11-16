@@ -278,8 +278,9 @@ html {
   font-size: 12px;
   line-height: 1.35;
 }
+/* An empty live region stays rendered, so its first message is announced, and gives back its gap. */
 .rs-popup [data-rc="note"]:empty {
-  display: none;
+  margin-top: -8px;
 }
 
 /* Full or Calm beside its heading, then each switch as a row like the colors. */
@@ -301,8 +302,9 @@ html {
   min-height: 28px;
 }
 
-/* Undo and what just happened, above the footer while there is something to say. The note shows
-   only while Reskin is off or no theme is picked. */
+/* Undo and what just happened, above the footer; with nothing to say the line has no height. The
+   status stays rendered while empty, so its first message is announced. The note shows only while
+   Reskin is off or no theme is picked. */
 .rs-state {
   display: flex;
   align-items: baseline;
@@ -317,11 +319,7 @@ html {
   font-size: 12px;
 }
 :root[data-rs-enabled="true"]:not([data-rs-theme="none"]) .rs-popup .rs-summary-note,
-.rs-popup .rs-summary-note:empty,
-.rs-popup .rs-status:empty {
-  display: none;
-}
-.rs-state:not(:has(.rs-summary-note:not(:empty), .rs-status:not(:empty), [data-rs="undo"]:not([hidden]))) {
+.rs-popup .rs-summary-note:empty {
   display: none;
 }
 
