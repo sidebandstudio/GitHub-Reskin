@@ -7,4 +7,7 @@ import { backgroundRendering } from "../../packages/ui/renderer.js";
 
 const api = globalThis.browser?.runtime?.id ? globalThis.browser : globalThis.chrome;
 
-installBackground(api, { catalog: catalogFromData(CATALOG), ...backgroundRendering() });
+const catalog = catalogFromData(CATALOG);
+// The content script carries no catalog: every settings write also stores the selected bundled
+// theme's record for it.
+installBackground(api, { catalog, ...backgroundRendering(), selectedRecord: (settings) => catalog.record(settings.selectedThemeId) });

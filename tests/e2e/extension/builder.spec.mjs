@@ -24,7 +24,7 @@ import { DEFAULT_THEME_ID, STORAGE_KEYS } from "../../../packages/contracts/inde
 import { sourceHash } from "../../../packages/engine/index.js";
 import { admitCss, encodeShare, makeAiPrompt } from "../../../packages/format/index.js";
 import { SHARE_PAGE } from "../../../packages/ui/importer.js";
-import { CLIPBOARD_STAND_IN, expect, firefoxPages, PROFILE_URL, storage, test } from "./helpers.mjs";
+import { CLIPBOARD_STAND_IN, CONTENT_PACKAGE_ORIGIN, expect, firefoxPages, PROFILE_URL, serveContentPackage, storage, test } from "./helpers.mjs";
 
 const ROOT = new URL("../../../", import.meta.url);
 const ANSWER = readFileSync(new URL("tests/ui/fixtures/ai-answer.txt", ROOT), "utf8");
@@ -868,14 +868,15 @@ test.describe("Chromium builder", () => {
 });
 
 // The built Firefox content script on GitHub over the builder's saved records.
-async function firefoxGitHub(contentScript, records) {
+async function firefoxGitHub({ contentScript, packageDir }, records) {
   const browser = await firefox.launch({ headless: true });
   const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   await context.route("https://github.com/**", (route) => (route.request().resourceType() === "document" ? route.fulfill({ contentType: "text/html", body: REGISTRY_HTML }) : route.abort()));
+  await serveContentPackage(context, packageDir);
   const stand = `(() => {
     const records = ${JSON.stringify(records)};
     globalThis.browser = {
-      runtime: { id: "e2e", getURL: (path) => "moz-extension://e2e/" + path },
+      runtime: { id: "e2e", getURL: (path) => ${JSON.stringify(`${CONTENT_PACKAGE_ORIGIN}/`)} + path },
       storage: { local: { get: async () => structuredClone(records), set: async () => {}, remove: async () => {} }, onChanged: { addListener() {}, removeListener() {} } },
     };
   })();`;
@@ -899,7 +900,7 @@ test("Firefox builder: every scenario on the built add-on's pages, and its conte
     await shareCode(env);
     await advancedCss(env, {
       async onSavedOff(records) {
-        const github = await firefoxGitHub(harness.contentScript, records);
+        const github = await firefoxGitHub(harness, records);
         try {
           await expectCss(github.page, false, "firefox: saved without consent");
         } finally {
@@ -907,7 +908,7 @@ test("Firefox builder: every scenario on the built add-on's pages, and its conte
         }
       },
       async onConsented(records) {
-        const github = await firefoxGitHub(harness.contentScript, records);
+        const github = await firefoxGitHub(harness, records);
         try {
           await expectCss(github.page, true, "firefox: after consent");
         } finally {
@@ -926,7 +927,7 @@ test("Firefox builder: every scenario on the built add-on's pages, and its conte
     await oversizedUpload(env);
     await bundledExport(env, {
       async onSaved(records) {
-        const github = await firefoxGitHub(harness.contentScript, records);
+        const github = await firefoxGitHub(harness, records);
         try {
           await expectCss(github.page, false, "firefox: the saved copy of a bundled theme without consent");
         } finally {

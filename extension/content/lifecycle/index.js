@@ -13,7 +13,13 @@
 //                                                                   owned nodes, CSS admission
 //   modeAttributes?: string[]                                       root attributes to observe
 //   nativeRoute?(document) -> string | null                         why the route stays native
-import { LEGACY_PAGE_CACHE_KEY, LIMITS, LOCAL_THEME_ID_PREFIX, STORAGE_KEYS } from "../../../packages/contracts/index.js";
+//
+// The extension's catalog (packages/ui/catalog.js contentCatalog) holds only the bundled theme the
+// page shows: `admit` takes its record from storage, and `pending(id)` says it has not arrived, so
+// the page keeps its gate rather than painting natively while it waits. Only the selected saved
+// theme is validated here, since no other is drawn, and when its CSS needs the sanitizer the
+// caller's `loadCssSanitizer` installs it before the settings are read again.
+import { ISSUE_CODES, LEGACY_PAGE_CACHE_KEY, LIMITS, LOCAL_THEME_ID_PREFIX, STORAGE_KEYS } from "../../../packages/contracts/index.js";
 import { sourceHash } from "../../../packages/engine/index.js";
 import { releaseRasters } from "../../../packages/format/viewer.js";
 import {
@@ -40,12 +46,13 @@ const REMOVAL_WINDOW_MS = 1000;
  * @param {import("../../../packages/contracts/index.js").StorageAdapter} options.storage
  * @param {Document} options.document
  * @param {Window} options.view the window: timers, frames, media queries, observers, events
- * @param {object} options.catalog CatalogSource
+ * @param {object} options.catalog CatalogSource, optionally with admit(record) and pending(id)
  * @param {object} options.renderer see above
+ * @param {()=>Promise<void>} [options.loadCssSanitizer] installs the CSS sanitizer
  * @param {(event:object)=>void} [options.onEvent] diagnostics for tests: state changes and budgets
  * @returns {{destroy():void, ready:Promise<string>, status():object}}
  */
-export function startContent({ storage, document, view, catalog, renderer, onEvent = () => {} }) {
+export function startContent({ storage, document, view, catalog, renderer, loadCssSanitizer = null, onEvent = () => {} }) {
   const root = document.documentElement;
   const now = () => view.performance.now();
   const style = document.createElement("style");
@@ -157,6 +164,9 @@ export function startContent({ storage, document, view, catalog, renderer, onEve
     }
     if (!settings.enabled) return goNative("disabled");
     const source = selectedSource(settings, catalog);
+    // The selected bundled theme's record is still on its way: the page stays as it is (gated, or
+    // the theme it shows) until it arrives, and the watchdog still ends the gate.
+    if (!source && catalog.pending?.(settings.selectedThemeId)) return onEvent({ type: "pending", themeId: settings.selectedThemeId });
     if (!source) return goNative("missing-source");
     releaseSource(source);
     const page = renderer.readPage(document, view);
@@ -209,12 +219,25 @@ export function startContent({ storage, document, view, catalog, renderer, onEve
     }
   }
 
+  // The settings as the page uses them: only the selected saved theme and its consent, since no
+  // other saved theme is drawn here. Anything malformed is left for validation to refuse.
+  function pageSettings(value) {
+    if (!value || typeof value !== "object" || !Array.isArray(value.customThemes)) return value;
+    const id = value.selectedThemeId;
+    const page = { ...value, customThemes: value.customThemes.filter((theme) => theme?.id === id) };
+    const consent = value.cssConsent;
+    if (consent && typeof consent === "object" && !Array.isArray(consent)) page.cssConsent = Object.hasOwn(consent, id) ? { [id]: consent[id] } : {};
+    return page;
+  }
+
+  const needsSanitizer = (result) => !result.ok && result.issues?.some((issue) => issue.code === ISSUE_CODES.cssUnavailable);
+
   // Last read wins: a slow older read never overwrites a newer one.
   async function read() {
     const mine = ++generation;
     let raw;
     try {
-      raw = await storage.get([STORAGE_KEYS.settings, STORAGE_KEYS.boot]);
+      raw = await storage.get([STORAGE_KEYS.settings, STORAGE_KEYS.boot, STORAGE_KEYS.selected]);
     } catch {
       if (!destroyed && mine === generation) {
         state = null;
@@ -223,7 +246,18 @@ export function startContent({ storage, document, view, catalog, renderer, onEve
       return;
     }
     if (destroyed || mine !== generation) return onEvent({ type: "stale-read" });
-    const result = raw[STORAGE_KEYS.settings] === undefined ? { ok: false } : validateSettings(raw[STORAGE_KEYS.settings], catalog);
+    catalog.admit?.(raw[STORAGE_KEYS.selected]);
+    const stored = raw[STORAGE_KEYS.settings] === undefined ? undefined : pageSettings(raw[STORAGE_KEYS.settings]);
+    let result = stored === undefined ? { ok: false } : validateSettings(stored, catalog);
+    if (needsSanitizer(result) && loadCssSanitizer) {
+      try {
+        await loadCssSanitizer();
+      } catch (error) {
+        onEvent({ type: "error", error });
+      }
+      if (destroyed || mine !== generation) return onEvent({ type: "stale-read" });
+      result = validateSettings(stored, catalog);
+    }
     state = { settings: result.ok ? result.settings : null, boot: raw[STORAGE_KEYS.boot] ?? null };
     renderSafely();
   }
@@ -273,7 +307,7 @@ export function startContent({ storage, document, view, catalog, renderer, onEve
 
   // Storage routing: only this extension's records start a read.
   cleanups.push(storage.subscribe((changes) => {
-    if (changes[STORAGE_KEYS.settings] || changes[STORAGE_KEYS.boot]) schedule("read");
+    if (changes[STORAGE_KEYS.settings] || changes[STORAGE_KEYS.boot] || changes[STORAGE_KEYS.selected]) schedule("read");
   }));
 
   // GitHub's own mode attributes and media state change the plan, not the settings.

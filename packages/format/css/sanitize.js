@@ -6,7 +6,9 @@
 // text is parsed again and must reproduce itself and the same rule IR exactly. Anything outside
 // the policy rejects the whole input with located reasons; nothing is silently dropped except
 // author !important, which is removed with a note.
-import * as csstree from "css-tree/dist/csstree.esm";
+// css-tree comes from useCssParser, so this module carries no parser of its own: authoring.js
+// passes the bundled browser build, and the extension's content script passes the same build from
+// its separate parser chunk the first time a theme needs it.
 import { ISSUE_CODES, SANITIZER_VERSION } from "../../contracts/index.js";
 import { sha256 } from "../../engine/sha256.js";
 import { POLICY, POLICY_HASH, has } from "./policy.js";
@@ -21,9 +23,16 @@ const MATH = ["calc", "min", "max", "clamp"];
 // CSS-wide keywords hand the value back to the cascade: inherited ink or no backing at all.
 const CSS_WIDE = ["inherit", "initial", "unset", "revert", "revert-layer"];
 
+let csstree = null;
 let syntax;
 // The forked syntax is built on first use: the lexer data is large and the viewer never needs it.
 const css = () => (syntax ??= csstree.fork({ properties: { ...POLICY.grammars } }));
+
+/** Sets the css-tree 3.1.0 module (its namespace or the parser chunk's exports) the sanitizer uses. */
+export function useCssParser(parser) {
+  csstree = parser;
+  syntax = undefined;
+}
 
 const encoder = new TextEncoder();
 export const utf8Bytes = (text) => encoder.encode(text).length;

@@ -9,11 +9,12 @@ import { join } from "node:path";
 import { isDeepStrictEqual } from "node:util";
 import { chromium, firefox } from "@playwright/test";
 import { STORAGE_KEYS } from "../../../packages/contracts/index.js";
-import { createCatalogSource, defaultSettings } from "../../../packages/settings/index.js";
-import { readCatalogEntries } from "../../../packages/ui/bundle.mjs";
+import { defaultSettings } from "../../../packages/settings/index.js";
+import { catalogData, readCatalogEntries } from "../../../packages/ui/bundle.mjs";
+import { catalogFromData } from "../../../packages/ui/catalog.js";
 import { build, ROOT as BUILD_ROOT } from "../../../scripts/build.mjs";
 import { requireBrowser } from "../../helpers/browsers.mjs";
-import { CHOOM_CANVAS, PROFILE_HTML, PROFILE_URL, commit, expect, firefoxExtension, openGitHub, openPage, test, waitFor } from "./helpers.mjs";
+import { CHOOM_CANVAS, CONTENT_PACKAGE_ORIGIN, PROFILE_HTML, PROFILE_URL, commit, expect, firefoxExtension, openGitHub, openPage, serveContentPackage, test, waitFor } from "./helpers.mjs";
 
 const primer = ["light", "dark"].map((id) => readFileSync(new URL(`../../../vendor/primer/source/${id}.css`, import.meta.url), "utf8")).join("\n");
 const STYLE = `<style>${primer}</style>
@@ -202,11 +203,13 @@ test("Firefox: the built content script leaves sign-in and sign-up exactly as Gi
   try {
     const built = await build({ target: "firefox", outDir: out });
     const content = await readFile(join(built.dir, "content.js"), "utf8");
-    const catalog = createCatalogSource(await readCatalogEntries(BUILD_ROOT));
+    const catalog = catalogFromData(catalogData(await readCatalogEntries(BUILD_ROOT)));
     const defaults = defaultSettings(catalog);
     const settings = { ...defaults, onboardingCompleted: true, preferences: { ...defaults.preferences, appearance: "calm", extras: false } };
-    const storage = `globalThis.browser = { runtime: { id: "e2e", getURL: (path) => "moz-extension://e2e/" + path }, storage: { local: { get: async () => (${JSON.stringify({ [STORAGE_KEYS.settings]: settings })}), set: async () => {}, remove: async () => {} }, onChanged: { addListener() {}, removeListener() {} } } };`;
+    const records = { [STORAGE_KEYS.settings]: settings, [STORAGE_KEYS.selected]: catalog.record(settings.selectedThemeId) };
+    const storage = `globalThis.browser = { runtime: { id: "e2e", getURL: (path) => ${JSON.stringify(`${CONTENT_PACKAGE_ORIGIN}/`)} + path }, storage: { local: { get: async () => (${JSON.stringify(records)}), set: async () => {}, remove: async () => {} }, onChanged: { addListener() {}, removeListener() {} } } };`;
     const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+    await serveContentPackage(context, built.dir);
     await context.route("https://github.com/**", (route) => (route.request().resourceType() === "document" ? route.fulfill({ contentType: "text/html", body: PAGES.get(new URL(route.request().url()).pathname) ?? PROFILE_HTML }) : route.abort()));
     await context.addInitScript({ content: `${storage}\n${content}` });
     // The stand-in settings are Calm and themed: the profile takes them.

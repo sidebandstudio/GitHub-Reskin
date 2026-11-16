@@ -52,6 +52,7 @@ export declare const SHARE_CODE_PREFIX: "RS1.";
 export declare const STORAGE_KEYS: Readonly<{
   settings: "reskin.settings";
   boot: "reskin.boot";
+  selected: "reskin.selected";
   lastGood: "reskin.lastGood";
   draft: "reskin.draft";
   ui: "reskin.ui";

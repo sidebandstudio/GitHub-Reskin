@@ -410,6 +410,33 @@ test("an update that invalidates the boot record rewrites it without changing se
   assert.deepEqual(stored(storage), before);
 });
 
+test("given selectedRecord, every settings write stores the selected bundled theme's record beside them, and startup refreshes a stale one", async () => {
+  const record = (settings) => (catalog.has(settings.selectedThemeId) ? `record of ${settings.selectedThemeId}` : null);
+  const { storage, repository } = await ready({}, undefined, { selectedRecord: record });
+  assert.equal(storage.data.get(STORAGE_KEYS.selected), `record of ${DEFAULT_THEME_ID}`, "the install write");
+  await repository.commit({ type: "selectTheme", id: "nord" }, 0);
+  assert.equal(storage.data.get(STORAGE_KEYS.selected), "record of nord");
+  // In the same set as the settings it belongs to.
+  assert.deepEqual(storage.log.filter(([op]) => op === "set").at(-1)[1].filter((key) => [STORAGE_KEYS.settings, STORAGE_KEYS.selected].includes(key)).sort(), [STORAGE_KEYS.selected, STORAGE_KEYS.settings]);
+  // A saved theme is in the settings themselves.
+  await repository.commit({ type: "saveCustom", document: { ...nord, name: "Mine" }, basedOn: "nord", select: true }, 1);
+  assert.equal(storage.data.get(STORAGE_KEYS.selected), null);
+  await repository.commit({ type: "selectTheme", id: "dracula" }, 2);
+  // An update changed what the record holds: startup writes the new one and leaves the settings.
+  storage.data.set(STORAGE_KEYS.selected, "record of dracula, from an earlier version");
+  const before = structuredClone(stored(storage));
+  const restarted = createRepository(storage, context({ selectedRecord: record }));
+  assert.equal((await restarted.initialize()).state, "current");
+  assert.equal(storage.data.get(STORAGE_KEYS.selected), "record of dracula");
+  assert.deepEqual(stored(storage), before);
+});
+
+test("without selectedRecord, as in the userscript, no selected record is written", async () => {
+  const { storage, repository } = await ready();
+  await repository.commit({ type: "selectTheme", id: "nord" }, 0);
+  assert.equal(storage.data.has(STORAGE_KEYS.selected), false);
+});
+
 test("a snapshot callback failure writes no snapshot but still commits", async () => {
   const { storage, repository } = await ready({}, undefined, { snapshot: () => { throw new Error("renderer down"); } });
   const reply = await repository.commit({ type: "selectTheme", id: "nord" }, 0);

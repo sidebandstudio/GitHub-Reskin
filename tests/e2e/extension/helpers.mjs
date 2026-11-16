@@ -190,6 +190,23 @@ export { expect };
 export const FIREFOX_PAGES_ORIGIN = "https://reskin-pages.test";
 const MEDIA_TYPES = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png", ".webp": "image/webp", ".woff2": "font/woff2", ".json": "application/json" };
 
+// The built content script on a plain Gecko page imports its CSS parser chunk from here, as it would
+// from moz-extension:// (extension/content/index.mjs). Stand-in namespaces give it as runtime.getURL.
+export const CONTENT_PACKAGE_ORIGIN = "https://reskin-package.test";
+
+/** Serves a built package's files at CONTENT_PACKAGE_ORIGIN in `context`, as modules a page may import. */
+export async function serveContentPackage(context, dir) {
+  await context.route(`${CONTENT_PACKAGE_ORIGIN}/**`, async (route) => {
+    const path = decodeURIComponent(new URL(route.request().url()).pathname).replace(/^\/+/, "");
+    try {
+      const body = await readFile(join(dir, path));
+      await route.fulfill({ body, contentType: MEDIA_TYPES[path.slice(path.lastIndexOf("."))] ?? "application/octet-stream", headers: { "access-control-allow-origin": "*" } });
+    } catch {
+      await route.abort();
+    }
+  });
+}
+
 // A stand-in extension namespace for an add-on page in plain Gecko. storage.local lives in the test
 // process, so it survives closing the page; runtime.sendMessage reaches the built background.js,
 // which the same init script runs in the page, with the page as its sender. The sender carries a
@@ -227,7 +244,8 @@ const PAGE_STAND_IN = `(() => {
  * moz-extension pages, so the package's files are served at FIREFOX_PAGES_ORIGIN, and an init
  * script installs a stand-in browser namespace and runs the package's background.js in each page
  * before its pages.js. `records()` reads the stored records; `contentScript` is the built
- * content.js for a GitHub page over the same records.
+ * content.js for a GitHub page over the same records, and `packageDir` the built package it imports
+ * from (serveContentPackage).
  */
 export async function firefoxPages() {
   requireBrowser("firefox");
@@ -265,6 +283,7 @@ export async function firefoxPages() {
     url: (page) => `${FIREFOX_PAGES_ORIGIN}/pages/${page}.html`,
     records: async () => structuredClone(store),
     contentScript: await readFile(join(built.dir, "content.js"), "utf8"),
+    packageDir: built.dir,
     async close() {
       await browser.close();
       await rm(out, { recursive: true, force: true });

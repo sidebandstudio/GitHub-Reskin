@@ -7,11 +7,12 @@ import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { STORAGE_KEYS } from "../../../packages/contracts/index.js";
-import { createCatalogSource, createRepository, defaultSettings } from "../../../packages/settings/index.js";
-import { readCatalogEntries } from "../../../packages/ui/bundle.mjs";
+import { createRepository, defaultSettings } from "../../../packages/settings/index.js";
+import { catalogData, readCatalogEntries } from "../../../packages/ui/bundle.mjs";
+import { catalogFromData } from "../../../packages/ui/catalog.js";
 import { CSS_ADMISSION } from "../../../packages/ui/renderer.js";
 import { build, ROOT } from "../../../scripts/build.mjs";
-import { CHOOM, PROFILE_HTML, PROFILE_URL } from "../extension/helpers.mjs";
+import { CHOOM, CONTENT_PACKAGE_ORIGIN, PROFILE_HTML, PROFILE_URL, serveContentPackage } from "../extension/helpers.mjs";
 import { expect, test } from "../../helpers/e2e.mjs";
 import { FIXTURE, record, summary } from "./helpers.mjs";
 
@@ -20,24 +21,27 @@ const STAND_IN = `(() => {
   const records = {};
   const listeners = new Set();
   globalThis.browser = {
-    runtime: { id: "e2e", getURL: (path) => "moz-extension://e2e/" + path },
+    runtime: { id: "e2e", getURL: (path) => ${JSON.stringify(`${CONTENT_PACKAGE_ORIGIN}/`)} + path },
     storage: {
       local: { get: async () => structuredClone(records), set: async () => {}, remove: async () => {} },
       onChanged: { addListener: (l) => listeners.add(l), removeListener: (l) => listeners.delete(l) },
     },
   };
-  globalThis.__reskinWrite = (key, value) => {
-    const oldValue = records[key];
-    records[key] = value;
-    for (const listener of listeners) listener({ [key]: { oldValue, newValue: value } }, "local");
+  globalThis.__reskinWrite = (written) => {
+    const changes = {};
+    for (const [key, value] of Object.entries(written)) {
+      changes[key] = { oldValue: records[key], newValue: value };
+      records[key] = value;
+    }
+    for (const listener of listeners) listener(changes, "local");
   };
-  globalThis.__reskinWrite(${JSON.stringify(STORAGE_KEYS.settings)}, __SETTINGS__);
+  globalThis.__reskinWrite(__RECORDS__);
 })();`;
 
-// Writes the settings and resolves with the milliseconds until the computed canvas leaves `from`.
-const timeWrite = (page, settings, from) =>
+// Writes one commit's records and resolves with the milliseconds until the computed canvas leaves `from`.
+const timeWrite = (page, written, from) =>
   page.evaluate(
-    ([key, settings, from]) =>
+    ([written, from]) =>
       new Promise((resolve) => {
         const canvas = () => getComputedStyle(document.documentElement).getPropertyValue("--bgColor-default").trim();
         const observer = new MutationObserver(() => {
@@ -47,9 +51,9 @@ const timeWrite = (page, settings, from) =>
         });
         observer.observe(document, { subtree: true, childList: true, attributes: true, characterData: true });
         const started = performance.now();
-        globalThis.__reskinWrite(key, settings);
+        globalThis.__reskinWrite(written);
       }),
-    [STORAGE_KEYS.settings, settings, from],
+    [written, from],
   );
 
 test("a settings write reaches the page's style in Firefox, timed for the release budget", async ({ browser }, info) => {
@@ -58,8 +62,9 @@ test("a settings write reaches the page's style in Firefox, timed for the releas
   try {
     const built = await build({ target: "firefox", outDir: out });
     const content = await readFile(join(built.dir, "content.js"), "utf8");
-    const catalog = createCatalogSource(await readCatalogEntries(ROOT));
+    const catalog = catalogFromData(catalogData(await readCatalogEntries(ROOT)));
     const first = { ...defaultSettings(catalog), onboardingCompleted: true };
+    const records = (settings) => ({ [STORAGE_KEYS.settings]: settings, [STORAGE_KEYS.selected]: catalog.record(settings.selectedThemeId) });
     const data = new Map([[STORAGE_KEYS.settings, first]]);
     const memory = {
       get: async (keys) => Object.fromEntries(keys.filter((key) => data.has(key)).map((key) => [key, structuredClone(data.get(key))])),
@@ -67,24 +72,25 @@ test("a settings write reaches the page's style in Firefox, timed for the releas
       remove: async (keys) => keys.forEach((key) => data.delete(key)),
       subscribe: () => () => {},
     };
-    const repository = createRepository(memory, { catalog, css: CSS_ADMISSION });
+    const repository = createRepository(memory, { catalog, css: CSS_ADMISSION, selectedRecord: (settings) => catalog.record(settings.selectedThemeId) });
     // The settings each switch writes, as the background's commits would leave them.
     const writes = [];
     for (let i = 0; i < SWITCHES + 2; i++) {
       const reply = await repository.commit({ type: "selectTheme", id: i % 2 ? CHOOM : "dracula" }, data.get(STORAGE_KEYS.settings).revision, { document: "release-firefox" });
       expect(reply.ok).toBe(true);
-      writes.push(reply.settings);
+      writes.push(records(reply.settings));
     }
     const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
     await context.route("https://github.com/**", (route) => (route.request().resourceType() === "document" ? route.fulfill({ contentType: "text/html", body: PROFILE_HTML }) : route.abort()));
-    await context.addInitScript({ content: `${STAND_IN.replace("__SETTINGS__", JSON.stringify(first))}\n${content}` });
+    await serveContentPackage(context, built.dir);
+    await context.addInitScript({ content: `${STAND_IN.replace("__RECORDS__", JSON.stringify(records(first)))}\n${content}` });
     const page = await context.newPage();
     await page.goto(PROFILE_URL);
     await expect.poll(() => page.evaluate(() => document.documentElement.getAttribute("data-reskin-boot"))).toBe("ready");
     let canvas = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--bgColor-default").trim());
     const times = [];
-    for (const [i, settings] of writes.entries()) {
-      const result = await timeWrite(page, settings, canvas);
+    for (const [i, written] of writes.entries()) {
+      const result = await timeWrite(page, written, canvas);
       canvas = result.canvas;
       // The first two switches warm the content script's caches.
       if (i >= 2) times.push(result.ms);
