@@ -18,7 +18,9 @@ test("each graph constraint is detected on its own", () => {
   assert.match(graphProblems([good[0], good[1], good[1], good[3], good[4]], canvas, "up").join(), /distinct/);
   assert.match(graphProblems([good[0], good[2], good[1], good[3], good[4]], canvas, "up").join(), /not lighter/);
   assert.match(graphProblems(good, canvas, "down").join(), /not darker/);
-  assert.match(graphProblems(["#1b2129", "#2a2e33", "#4f8a5c", "#6fc07f", "#a6f0b0"], canvas, "up").join(), /below 3:1/);
+  // Only the busiest level must reach 3:1; a faint level 1 is fine, as on GitHub.
+  assert.deepEqual(graphProblems(["#1b2129", "#2a2e33", "#4f8a5c", "#6fc07f", "#a6f0b0"], canvas, "up"), []);
+  assert.deepEqual(graphProblems(["#1b2129", "#27302b", "#344134", "#41523f", "#4c5f4a"], canvas, "up"), ["level 4 is below 3:1 against the canvas"]);
   assert.match(graphProblems(["#1b2129", "#4f8a5c", "#529060", "#8cc898", "#b6f0c0"], canvas, "up").join(), /too close/);
 });
 
@@ -32,10 +34,8 @@ test("OKLab steps and contrast order hold on every resolved ramp", () => {
     const seed = theme.base === "dark" ? dark : light;
     const { graph, tokens } = resolveTheme(theme, themed(seed));
     assert.deepEqual(graphProblems(graph, tokens.canvas, theme.base === "dark" ? "up" : "down"), [], theme.colors.accent);
-    for (let i = 1; i < 5; i++) {
-      assert.ok(Math.abs(oklab(graph[i])[0] - oklab(graph[i - 1])[0]) >= 0.04);
-      assert.ok(contrast(graph[i], tokens.canvas) >= 3);
-    }
+    for (let i = 1; i < 5; i++) assert.ok(Math.abs(oklab(graph[i])[0] - oklab(graph[i - 1])[0]) >= 0.04);
+    assert.ok(contrast(graph[4], tokens.canvas) >= 3);
   }
 });
 
@@ -61,27 +61,27 @@ test("a valid supplied ramp is kept exactly; a collapsed one is regenerated in s
 
 test("the derived ramp starts from mix(canvas, text, 0.09) and the contribution seed", () => {
   assert.deepEqual(deriveRamp("#000000", "#ffffff", "#ffffff"), ["#171717", "#595959", "#8c8c8c", "#c7c7c7", "#ffffff"]);
-  // Level 1 at 35% reaches only 2.998:1 on black, so levels 1-4 are spread evenly from the first
-  // mix that reaches 3:1, keeping level 0 and the seed endpoint.
+  // Level 1 at 35% reaches only 2.998:1 on black, but only level 4 must reach 3:1, so the derived
+  // ramp stands with no graph repair.
   const resolved = resolveTheme(base("dark", { background: "#000000", text: "#ffffff", accent: "#ff0000", contribution: "#ffffff" }), themed(dark));
-  assert.equal(resolved.graph[0], "#171717");
-  assert.equal(resolved.graph[4], "#ffffff");
-  assert.ok(contrast(resolved.graph[1], "#000000") >= 3 && contrast(resolved.graph[1], "#000000") < 3.1);
-  assert.deepEqual(graphProblems(resolved.graph, "#000000", "up"), []);
-  assert.deepEqual(resolved.repairs.filter((r) => r.path.startsWith("/graph/")).map((r) => r.path), ["/graph/1", "/graph/2", "/graph/3"]);
+  assert.deepEqual(resolved.graph, ["#171717", "#595959", "#8c8c8c", "#c7c7c7", "#ffffff"]);
+  assert.deepEqual(resolved.repairs.filter((r) => r.path.startsWith("/graph/")), []);
+  // A seed too dim for level 4 is spread from the first mix that reaches 3:1, up to the seed moved
+  // toward white only as far as level 4 needs.
+  const dim = resolveTheme(base("dark", { background: "#000000", text: "#ffffff", accent: "#ff0000", contribution: "#303030" }), themed(dark));
+  assert.deepEqual(graphProblems(dim.graph, "#000000", "up"), []);
+  assert.ok(contrast(dim.graph[1], "#000000") >= 3);
 });
 
-test("a saturated seed keeps its hue instead of washing out to near white", () => {
-  // Editing Suite's amber reads on its near-black canvas, but the derived ramp's 35% step does
-  // not. Moving the seed toward white until that step read used to end the ramp at #fef6e9.
-  const chroma = (hex) => Math.hypot(...oklab(hex).slice(1));
+test("the dark Classics draw their graph as 1.x did, in the seed's own hue", () => {
+  // Editing Suite's amber used to be moved toward white until its 35% step read at 3:1, which
+  // ended the ramp at #fef6e9. 1.x mixed the canvas toward the seed at 35, 55, 78 and 100%.
   const suite = resolveTheme(json(`${TESTS}../themes/classics/editing-suite.reskin.json`), themed(dark));
-  assert.deepEqual(suite.graph, ["#1e1e1f", "#7a5722", "#a2722a", "#ca8e33", "#f2a93b"]);
-  for (const name of ["dracula", "catppuccin-mocha", "gruvbox", "tokyo-night", "rose-pine", "one-dark", "solarized-dark"]) {
+  assert.deepEqual(suite.graph, ["#1e1e1f", "#5b421c", "#8a6125", "#bf8630", "#f2a93b"]);
+  for (const name of ["dracula", "nord", "catppuccin-mocha", "gruvbox", "tokyo-night", "rose-pine", "one-dark", "solarized-dark"]) {
     const theme = json(`${TESTS}../themes/classics/${name}.reskin.json`);
     const { graph, tokens } = resolveTheme(theme, themed(dark));
-    assert.deepEqual(graphProblems(graph, tokens.canvas, "up"), [], name);
-    assert.ok(chroma(graph[4]) >= 0.9 * chroma(theme.colors.contribution ?? theme.colors.accent), name);
+    assert.deepEqual(graph, deriveRamp(tokens.canvas, tokens.text, (theme.colors.contribution ?? theme.colors.accent).toLowerCase()), name);
   }
 });
 
