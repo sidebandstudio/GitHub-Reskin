@@ -51,7 +51,7 @@ import { detectIsolation, ownFields } from "./isolation.js";
 import { createMenu } from "./menu.js";
 import { BUILDER_MODES, createPanel, PANEL_HASH } from "./panel.js";
 import { xrayRasterEnv } from "./raster.js";
-import { COPY } from "./copy.js";
+import { COPY, NOTE_LINKS } from "./copy.js";
 import { createGmStorage, lockBridge } from "./storage.js";
 
 // The marker that keeps a second copy of this script (two managers, or a reinjection) from
@@ -219,6 +219,24 @@ export function start(scope, { document, view, realm = null }) {
   return { ready, panel, storage, repository, kind, capabilities, isolation, menu, content: () => content };
 }
 
+// Writes `note` into `node`, with each of NOTE_LINKS' words as a link that opens in a new tab.
+function writeNote(doc, node, note) {
+  node.replaceChildren();
+  let rest = note;
+  for (const { text, href } of NOTE_LINKS) {
+    const at = rest.indexOf(text);
+    if (at < 0) continue;
+    const link = doc.createElement("a");
+    link.href = href;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.textContent = text;
+    node.append(rest.slice(0, at), link);
+    rest = rest.slice(at + text.length);
+  }
+  node.append(rest);
+}
+
 // The card when the script shares GitHub's JavaScript: the current theme and why the panel has no
 // controls, and Close. Nothing in it changes a setting; the theme it names is painted on the page
 // anyway.
@@ -228,7 +246,7 @@ function mountNote(doc, { host, kind, controls, note }) {
   for (const node of doc.querySelectorAll(CONTROLS.join(","))) node.remove();
   doc.documentElement.dataset.usStorage = kind;
   doc.documentElement.dataset.usControls = "menu";
-  part("storage-note").textContent = note;
+  writeNote(doc, part("storage-note"), note);
   const label = part("session-label");
   label.hidden = kind !== "session";
   label.textContent = COPY.sessionLabel;

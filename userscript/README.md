@@ -43,7 +43,10 @@ manual checks.
 
 The script asks to run isolated from page scripts (`@inject-into content` for Violentmonkey,
 `@sandbox DOM` for Tampermonkey; Greasemonkey, FireMonkey and Userscripts for Safari run scripts
-that way already) and checks at startup that it does (`isolation.js`). When it does, nothing in the
+that way already) and checks at startup that it does (`isolation.js`). Tampermonkey's MV3 build for
+Chrome reports `sandboxMode` `raw` whatever `@sandbox` asks for and runs the script in GitHub's own
+JavaScript, so there the card is the note, which links to the extension's install page and to
+Violentmonkey. When it does, nothing in the
 page can read or operate the picker: the frame sits in a closed shadow root, so it is not one of the
 page's `window.frames`, and `window.find`, caret and point lookups stop at its bare host; keys typed
 in it reach only the frame, and a page that patches DOM prototypes sees none of its nodes. The
@@ -89,8 +92,8 @@ from the extension:
   off, with a note that custom CSS needs the extension; there is no Enable control, an import that
   carries CSS comes in with it off, and the builder's host refuses any approval request.
 - No builder where `isolation.js` cannot show the script runs apart from the page: the card has no
-  Make a theme or Backup & help, no builder document is ever loaded, and the note says to use the
-  extension or a manager that keeps scripts apart.
+  Make a theme or Backup & help, no builder document is ever loaded, and the note links to the
+  extension's install page and to Violentmonkey.
 - Without durable storage the builder is part of the labeled session preview: what it saves lasts
   for the tab.
 - The preview's frames inherit GitHub's CSP, which refuses data: fonts, so the preview shows the
