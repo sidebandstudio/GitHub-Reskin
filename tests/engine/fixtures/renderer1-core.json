@@ -1,5 +1,5 @@
 {
-  "note": "SHA-256 of each renderer-1 core resolution (ColorSet, font, effects, flavor, render repairs, the 287 pair-matrix-1 audits and sourceHash) and each standard-seed source repair, captured from main 1b1aa40 before the Revision 4 expansion. tests/engine/expansion.test.mjs recomputes them; the expansion must leave every one unchanged. The old green Choom fixture is tests/fixtures/schema/valid/legacy-rich-v1.reskin.json. Engine 2 recaptured the cases whose contribution ramp changed, when the spaced ramp came before the strengthened one; everything else in them stayed the same.",
+  "note": "SHA-256 of each renderer-1 core resolution (ColorSet, font, effects, flavor, render repairs, the 287 pair-matrix-1 audits and sourceHash) and each standard-seed source repair, captured from main 1b1aa40 before the Revision 4 expansion. tests/engine/expansion.test.mjs recomputes them; the expansion must leave every one unchanged. The old green Choom fixture is tests/fixtures/schema/valid/legacy-rich-v1.reskin.json. Engine 2 recaptured the cases whose contribution ramp changed when the strengthened derived ramp was dropped and the spaced ramp became the first fallback; everything else in them stayed the same.",
   "cases": [
     {
       "file": "tests/fixtures/roundtrip/accessibility-output.reskin.json",
