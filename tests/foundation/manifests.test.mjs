@@ -42,8 +42,9 @@ test("the generated manifests name the reskin-2 runtime, its background per brow
     assert.equal(manifest.options_ui.page, "pages/settings.html");
     assert.deepEqual(manifest.web_accessible_resources.map((r) => r.matches), [config.extension.hostMatches, config.extension.hostMatches]);
     assert.ok(manifest.web_accessible_resources[0].resources.every((path) => /^assets\/fonts\/([a-z0-9-]+)\/\1(-[4-7]00)?\.woff2$/.test(path)));
-    // The parser chunk, at an address that changes each browser session where the browser offers one.
-    assert.deepEqual(manifest.web_accessible_resources[1], { resources: ["content/css-parser.js"], matches: config.extension.hostMatches, use_dynamic_url: true });
+    // The parser chunk at its fixed address. Chrome 130 and 131 refuse a dynamic one to the importing
+    // content script (crbug.com/363027634), inside the Chrome 120 minimum.
+    assert.deepEqual(manifest.web_accessible_resources[1], { resources: ["content/css-parser.js"], matches: config.extension.hostMatches });
     for (const path of manifestPaths(manifest)) assert.ok(entry.files.includes(path), path);
   }
   const { browser_specific_settings, background, ...chromeRest } = firefox;

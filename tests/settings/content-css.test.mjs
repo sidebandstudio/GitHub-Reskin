@@ -26,9 +26,12 @@ const choom = JSON.parse(readFileSync(new URL("../../themes/anime/choom-circuit.
 const SAVED = "local:00000000-0000-4000-8000-000000000001";
 const withCss = { ...choom, name: "Mine" };
 
-function settingsWith({ selected }) {
+// Advanced CSS, and backgrounds that are gradients only, without a color.
+const gradientsOnly = { ...withCss, backgrounds: Object.fromEntries(Object.entries(choom.backgrounds).map(([target, { layers }]) => [target, { layers }])) };
+
+function settingsWith({ selected, document = withCss }) {
   const settings = defaultSettings(catalog);
-  settings.customThemes = [{ id: SAVED, document: withCss }];
+  settings.customThemes = [{ id: SAVED, document }];
   settings.selectedThemeId = selected;
   return { [STORAGE_KEYS.settings]: settings };
 }
@@ -69,6 +72,33 @@ test("while the sanitizer loads, the page gets the saved theme without its CSS; 
   assert.equal(phase(page), "ready", "still themed");
   assert.ok(page.style());
   assert.equal(cssSanitizerInstalled(), false);
+  content.destroy();
+});
+
+test("a saved theme whose backgrounds are only gradients is painted without them while the parser loads, and stays so if it fails", { timeout: 5000 }, async () => {
+  for (const outcome of ["pending", "failed"]) {
+    let fail;
+    const { page, events, content } = start(settingsWith({ selected: SAVED, document: gradientsOnly }), () => new Promise((_resolve, reject) => (fail = reject)));
+    assert.equal(await content.ready, "ready", outcome);
+    assert.ok(events.some((e) => e.type === "without-css"), outcome);
+    if (outcome === "failed") {
+      fail(new Error("the parser chunk is missing"));
+      await page.settle();
+    }
+    await page.advance(200);
+    assert.equal(phase(page), "ready", `${outcome}: still themed past the watchdog`);
+    assert.ok(page.style(), outcome);
+    content.destroy();
+  }
+});
+
+test("settings too malformed to read release GitHub, even with a parser to load", { timeout: 5000 }, async () => {
+  const records = settingsWith({ selected: SAVED });
+  records[STORAGE_KEYS.settings] = { ...records[STORAGE_KEYS.settings], enabled: false, customThemes: { find: 42 } };
+  const { page, content } = start(records, install);
+  assert.equal(await content.ready, "native");
+  assert.equal(page.style(), null);
+  assert.deepEqual(loads, []);
   content.destroy();
 });
 

@@ -243,7 +243,8 @@ export function startContent({ storage, document, view, catalog, renderer, loadC
   // The selected saved theme's document, when it carries Advanced CSS or a gradient layer, which
   // need the sanitizer; otherwise null.
   function cssDocument(value) {
-    const document = value?.customThemes?.find?.((entry) => entry?.id === value.selectedThemeId)?.document;
+    if (!Array.isArray(value?.customThemes)) return null;
+    const document = value.customThemes.find((entry) => entry?.id === value.selectedThemeId)?.document;
     if (!document || typeof document !== "object") return null;
     const layers = Object.values(document.backgrounds ?? {}).flatMap((background) => (Array.isArray(background?.layers) ? background.layers : []));
     return "css" in document || layers.some((layer) => layer?.gradientCss) ? document : null;
@@ -263,6 +264,8 @@ export function startContent({ storage, document, view, catalog, renderer, loadC
         return [target, remaining.length ? { ...rest, layers: remaining } : rest];
       });
       document.backgrounds = Object.fromEntries(kept.filter(([, background]) => !background || typeof background !== "object" || Object.keys(background).length));
+      // A theme left with no background at all has none, rather than an empty one.
+      if (!Object.keys(document.backgrounds).length) delete document.backgrounds;
     }
     return { ...value, customThemes: value.customThemes.map((entry) => (entry === theme ? { ...theme, document } : entry)) };
   }
@@ -281,6 +284,21 @@ export function startContent({ storage, document, view, catalog, renderer, loadC
       return;
     }
     if (destroyed || mine !== generation) return onEvent({ type: "stale-read" });
+    try {
+      await apply(raw, mine);
+    } catch (error) {
+      // Records too malformed to read release GitHub, as unreadable settings do.
+      onEvent({ type: "error", error });
+      if (!destroyed && mine === generation) {
+        state = null;
+        renderSafely();
+      }
+    }
+  }
+
+  // One read's records: the selected theme's record, the page's settings and, when its CSS needs
+  // the sanitizer, the paint without it first.
+  async function apply(raw, mine) {
     catalog.admit?.(raw[STORAGE_KEYS.selected]);
     const stored = raw[STORAGE_KEYS.settings] === undefined ? undefined : pageSettings(raw[STORAGE_KEYS.settings]);
     const boot = raw[STORAGE_KEYS.boot] ?? null;
