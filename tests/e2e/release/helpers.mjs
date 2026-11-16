@@ -12,7 +12,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { gzipSync } from "node:zlib";
 import { readCatalogEntries } from "../../../packages/ui/bundle.mjs";
-import { PROFILE_HTML, PROFILE_URL } from "../extension/helpers.mjs";
+import { CONTENT_GET_URL, PROFILE_HTML, PROFILE_URL } from "../extension/helpers.mjs";
 import { adapterPaths } from "../../fixture-app/product/build.mjs";
 import { axeViolations, blocking } from "../../helpers/a11y.mjs";
 import { expect } from "../../helpers/e2e.mjs";
@@ -47,6 +47,50 @@ export async function saveTrace(info, name, events) {
 
 // The GitHub page the timings run on, C3's guarded profile fixture, for the report.
 export const FIXTURE = Object.freeze({ url: PROFILE_URL, file: "tests/primer/fixtures/profile.html", bytes: Buffer.byteLength(PROFILE_HTML), sha256: createHash("sha256").update(PROFILE_HTML).digest("hex") });
+
+/**
+ * A stand-in for extension storage, as an init script for a plain page that then runs the built
+ * content.js: `__reskinWrite(records)` stores records and delivers them in one change, as
+ * storage.onChanged does. Replace __RECORDS__ with the first records' JSON.
+ */
+export const STAND_IN = `(() => {
+  const records = {};
+  const listeners = new Set();
+  globalThis.browser = {
+    runtime: { id: "e2e", getURL: ${CONTENT_GET_URL} },
+    storage: {
+      local: { get: async () => structuredClone(records), set: async () => {}, remove: async () => {} },
+      onChanged: { addListener: (l) => listeners.add(l), removeListener: (l) => listeners.delete(l) },
+    },
+  };
+  globalThis.__reskinWrite = (written) => {
+    const changes = {};
+    for (const [key, value] of Object.entries(written)) {
+      changes[key] = { oldValue: records[key], newValue: value };
+      records[key] = value;
+    }
+    for (const listener of listeners) listener(changes, "local");
+  };
+  globalThis.__reskinWrite(__RECORDS__);
+})();`;
+
+/** Writes one commit's records and resolves with the milliseconds until the computed canvas leaves `from`. */
+export const timeWrite = (page, written, from) =>
+  page.evaluate(
+    ([written, from]) =>
+      new Promise((resolve) => {
+        const canvas = () => getComputedStyle(document.documentElement).getPropertyValue("--bgColor-default").trim();
+        const observer = new MutationObserver(() => {
+          if (canvas() === from) return;
+          observer.disconnect();
+          resolve({ ms: performance.now() - started, canvas: canvas() });
+        });
+        observer.observe(document, { subtree: true, childList: true, attributes: true, characterData: true });
+        const started = performance.now();
+        globalThis.__reskinWrite(written);
+      }),
+    [written, from],
+  );
 
 /** The bundled catalog's theme documents, anime first. */
 export const catalogThemes = async () => (await readCatalogEntries(ROOT)).map((entry) => entry.document);

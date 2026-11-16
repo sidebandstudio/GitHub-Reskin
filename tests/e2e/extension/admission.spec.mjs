@@ -23,7 +23,7 @@ import { catalogFromData } from "../../../packages/ui/catalog.js";
 import { CSS_ADMISSION } from "../../../packages/ui/renderer.js";
 import { build, ROOT as BUILD_ROOT } from "../../../scripts/build.mjs";
 import { requireBrowser } from "../../helpers/browsers.mjs";
-import { commit, CONTENT_PACKAGE_ORIGIN, expect, firefoxExtension, openFirefoxGitHub, openPage, serveContentPackage, test } from "./helpers.mjs";
+import { commit, CONTENT_GET_URL, expect, firefoxExtension, openFirefoxGitHub, openPage, serveContentPackage, test } from "./helpers.mjs";
 
 const ROOT = new URL("../../../", import.meta.url);
 // C3b's registry fixture without its bare island: an island without theme attributes is unsafe, so
@@ -268,7 +268,7 @@ const STAND_IN = `(() => {
   const records = {};
   const listeners = new Set();
   globalThis.browser = {
-    runtime: { id: "e2e", getURL: (path) => ${JSON.stringify(`${CONTENT_PACKAGE_ORIGIN}/`)} + path },
+    runtime: { id: "e2e", getURL: ${CONTENT_GET_URL} },
     storage: {
       local: { get: async () => structuredClone(records), set: async () => {}, remove: async () => {} },
       onChanged: { addListener: (l) => listeners.add(l), removeListener: (l) => listeners.delete(l) },
@@ -302,7 +302,7 @@ test("Firefox: the built content script never applies theme CSS in Calm, and a s
     );
     await serveContentPackage(context, built.dir);
     const pageRecords = (settings) => ({ [STORAGE_KEYS.settings]: settings, [STORAGE_KEYS.selected]: catalog.record(settings.selectedThemeId) });
-    await context.addInitScript({ content: `${STAND_IN.replace("__RECORDS__", JSON.stringify(pageRecords(settings)))}\n${content}` });
+    await context.addInitScript({ content: `${STAND_IN.replace("__RECORDS__", () => JSON.stringify(pageRecords(settings)))}\n${content}` });
     const page = await context.newPage();
     // The background's commit: the settings repository over in-memory storage, then the write the
     // content script sees.
