@@ -76,6 +76,7 @@ export function startContent({ storage, document, view, catalog, renderer, loadC
   let decorations = null;
   let revisionNow = null;
   let routeNow = null; // why the route stays native, as the latest render saw it
+  let withoutCssNow = false; // the page shows a saved theme without its CSS while the sanitizer loads
   // The optional-work budget: what decoration passes have spent since it opened, and whether
   // they reached the limit.
   let budgetSpent = false;
@@ -199,11 +200,18 @@ export function startContent({ storage, document, view, catalog, renderer, loadC
     onEvent({ type: "resolved", from: snapshot ? "snapshot" : "source" });
     const context = { plan, themeId: settings.selectedThemeId, source, consent: current.cssConsent };
     const compiled = renderer.compile(resolved, plan, prefs, context);
+    const withoutCss = Boolean(state.sourceHash);
+    const cssArrived = withoutCssNow && !withoutCss;
+    withoutCssNow = withoutCss;
     if (compiled.fingerprint !== fingerprint || !style.isConnected) {
       if (compiled.fingerprint !== fingerprint) style.textContent = compiled.css;
       fingerprint = compiled.fingerprint;
       if (!style.isConnected && !styleBroken) root.append(style);
-      if (resolvedNow !== resolved || prefsNow?.extras !== prefs.extras) decorateAfterDraw();
+      // The theme's CSS arriving after the paint without it changes what decoration admits, though
+      // both may draw one boot snapshot. Its pass gets a budget of its own, which the pass without
+      // the CSS may have spent.
+      if (cssArrived) openBudget();
+      if (resolvedNow !== resolved || prefsNow?.extras !== prefs.extras || cssArrived) decorateAfterDraw();
     }
     resolvedNow = resolved;
     prefsNow = prefs;
