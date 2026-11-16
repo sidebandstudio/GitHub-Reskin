@@ -1,4 +1,5 @@
-/* The stable GitHub Reskin shell: charcoal and coral. Theme colors appear only inside previews. */
+/* The stable GitHub Reskin shell: Editing Suite's near-black and amber, the colors of the 1.0 icon and
+   popup. Theme colors appear only inside previews. */
 
 @font-face {
   font-family: "Manrope";
@@ -9,18 +10,18 @@
 }
 
 :root {
-  --canvas: #0c0f14;
-  --surface: #151a22;
-  --raised: #1e2530;
-  --hover: #273140;
-  --text: #f5f3ee;
-  --text-2: #b0b8c5;
-  --caption: #929eaf;
-  --brand: #ff806c;
-  --on-brand: #190c08;
-  --brand-hover: #ffaa9b;
+  --canvas: #0a0a0b;
+  --surface: #151516;
+  --raised: #1c1c1d;
+  --hover: #252526;
+  --text: #ededea;
+  --text-2: #a4a4a3;
+  --caption: #929291;
+  --brand: #f2a93b;
+  --on-brand: #0a0a0b;
+  --brand-hover: #f6c376;
   --sep: rgb(255 255 255 / 0.08);
-  --control: #6b7586; /* 3:1 against canvas, surface and raised */
+  --control: #696969; /* 3:1 against canvas, surface and raised */
   --font-body: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-display: "Manrope", var(--font-body);
   --measure: 1120px;

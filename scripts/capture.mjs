@@ -184,7 +184,7 @@ export async function captureRelease({ root = DEFAULT_ROOT } = {}) {
     plain = await chromium.launch({ headless: true });
     const font = dataUrl(await readFile(join(root, BRAND, "fonts/Manrope-Variable.ttf")), "font/ttf");
     const icon = await readFile(join(root, BRAND, "icon.svg"), "utf8");
-    const base = `<style>@font-face{font-family:Manrope;src:url(${font}) format("truetype");font-weight:200 800}*{box-sizing:border-box;margin:0}body{background:#0c0f14;font-family:Manrope,sans-serif;color:#f5f3ee;overflow:hidden}</style>`;
+    const base = `<style>@font-face{font-family:Manrope;src:url(${font}) format("truetype");font-weight:200 800}*{box-sizing:border-box;margin:0}body{background:#0a0a0b;font-family:Manrope,sans-serif;color:#ededea;overflow:hidden}</style>`;
 
     await compose(
       plain,
@@ -197,7 +197,7 @@ export async function captureRelease({ root = DEFAULT_ROOT } = {}) {
 
     await compose(
       plain,
-      `${base}<style>body{width:1280px;height:800px;position:relative}.half{position:absolute;top:0;width:640px;height:800px;overflow:hidden}.half img{width:1280px;height:800px}.calm img{margin-left:-640px}.calm{left:640px;border-left:2px solid #ff806c}.tag{position:absolute;bottom:18px;padding:4px 12px;border-radius:999px;background:#151a22;border:1px solid #ff806c;font-weight:650;font-size:15px}</style>
+      `${base}<style>body{width:1280px;height:800px;position:relative}.half{position:absolute;top:0;width:640px;height:800px;overflow:hidden}.half img{width:1280px;height:800px}.calm img{margin-left:-640px}.calm{left:640px;border-left:2px solid #f2a93b}.tag{position:absolute;bottom:18px;padding:4px 12px;border-radius:999px;background:#151516;border:1px solid #f2a93b;font-weight:650;font-size:15px}</style>
       <div class="half"><img src="${dataUrl(full, "image/png")}"></div><div class="half calm"><img src="${dataUrl(calm, "image/png")}"></div>
       <span class="tag" style="left:16px">Full</span><span class="tag" style="left:658px">Calm</span>`,
       SIZE,
@@ -212,7 +212,7 @@ export async function captureRelease({ root = DEFAULT_ROOT } = {}) {
       .text{position:absolute;left:${72 * scale}px;top:50%;transform:translateY(-50%);width:${width - (210 + 560 + 72 + 32) * scale}px}
       .icon{width:${84 * scale}px;height:${84 * scale}px;display:block;margin-bottom:${28 * scale}px}
       h1{font-weight:650;font-size:${58 * scale}px;letter-spacing:-0.03em;line-height:1.05}
-      p{color:#b0b8c5;font-size:${22 * scale}px;line-height:1.35;margin-top:${18 * scale}px}
+      p{color:#a4a4a3;font-size:${22 * scale}px;line-height:1.35;margin-top:${18 * scale}px}
       .studio{font-size:${15 * scale}px;margin-top:${30 * scale}px}
       .shot{position:absolute;width:${560 * scale}px;border-radius:${10 * scale}px;box-shadow:0 ${16 * scale}px ${44 * scale}px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.07)}
     </style>
@@ -230,7 +230,7 @@ export async function captureRelease({ root = DEFAULT_ROOT } = {}) {
       body{width:440px;height:280px;display:flex;align-items:center;justify-content:center;gap:28px}
       .icon{width:112px;height:112px}
       h1{font-weight:650;font-size:44px;letter-spacing:-0.02em;line-height:1.08}
-      h1 span{display:block;color:#ff806c}
+      h1 span{display:block;color:#f2a93b}
     </style>
     <div class="icon">${icon.replace("<svg", '<svg width="100%" height="100%"')}</div><h1>GitHub<span>Reskin</span></h1>`, { width: 440, height: 280 }, at("tile-440x280.png"));
     note("tile-440x280.png", { shows: "the small promo tile: the icon and the name" });
