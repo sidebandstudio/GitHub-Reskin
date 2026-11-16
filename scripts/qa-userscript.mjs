@@ -1,8 +1,8 @@
 // npm run qa:userscript [-- --firefox <firefox executable>]: DONE.md's check of the release
 // userscript in real managers, not the test stand-in. It installs artifacts/github-reskin-<version>.user.js
-// into Violentmonkey and Tampermonkey through each manager's own install page, in Chromium and in an
-// actual Firefox release (--firefox, RESKIN_FIREFOX or the usual install path), and on public GitHub,
-// logged out and read-only, checks that:
+// through each manager's own install page into Violentmonkey in Chromium, and into Violentmonkey and
+// Tampermonkey in an actual Firefox release (--firefox, RESKIN_FIREFOX or the usual install path), and
+// on public GitHub, logged out and read-only, checks that:
 //   the script runs and themes the page with the default theme
 //   the panel opens from an address ending in #reskin, with its controls, which it has only where
 //     the manager keeps the script apart from GitHub's own JavaScript, and a theme picked there applies
@@ -11,10 +11,11 @@
 //   the pick survives a reload
 //   a theme file imports and saves in Make a theme, applies, and survives a reload
 //   switched off in the manager's dashboard, the script leaves GitHub native over several loads
+// Tampermonkey in Chrome isn't checked: its MV3 build runs every script in GitHub's own JavaScript
+// whatever @sandbox asks for, so the panel there is the note, and the extension is the Chrome route.
 // Violentmonkey is pinned to its 2.50.0 release builds and Tampermonkey for Firefox to 5.5.0 from
-// AMO, each checked against its SHA-256. Tampermonkey for Chrome comes from the Chrome Web Store,
-// which serves only its current version, so its version and hash are recorded instead. Downloads
-// are kept in artifacts/qa-cache/managers/. Safari's Userscripts manager is a check for a person.
+// AMO, each checked against its SHA-256. Downloads are kept in artifacts/qa-cache/managers/.
+// Safari's Userscripts manager is a check for a person.
 // Writes artifacts/reports/userscript/report.json and screenshots, and any failure exits 1.
 import { randomUUID } from "node:crypto";
 import { execFileSync } from "node:child_process";
@@ -39,8 +40,7 @@ const CHOOM = "anime.cyberpunk-edgerunners";
 const FRIEREN = "anime.frieren";
 const VIOLENTMONKEY = "https://github.com/violentmonkey/violentmonkey/releases/download/v2.50.0";
 
-// In a manager's page: clicks the first enabled button whose words start with Install. Firefox's
-// managers take this click; in Chrome, Tampermonkey's install page wants a trusted one.
+// In a Firefox manager's page: clicks the first enabled button whose words start with Install.
 function clickInstall() {
   return new Promise((resolve) => {
     const end = Date.now() + 15000;
@@ -92,16 +92,6 @@ function tampermonkeyDisable() {
 /** Each manager and engine: where it comes from, its install page, and its dashboard switch. */
 export const MANAGERS = Object.freeze([
   { name: "Violentmonkey", engine: "chromium", file: "Violentmonkey-mv3-v2.50.0.zip", url: `${VIOLENTMONKEY}/Violentmonkey-mv3-v2.50.0.zip`, sha256: "72f1de5a2edc4bc3cd3b3ca06c2b3631cdde4f06f8ed9e8b2b565bf77258b36c", install: "/confirm/", dashboard: "options/index.html#scripts", disable: violentmonkeyDisable },
-  {
-    name: "Tampermonkey",
-    engine: "chromium",
-    file: "tampermonkey-chrome.crx",
-    url: "https://clients2.google.com/service/update2/crx?response=redirect&prodversion=156.0&acceptformat=crx3&x=id%3Ddhdgffkkebhmkfjojejmpbldmpobfkfo%26uc",
-    sha256: null,
-    install: "/ask.html",
-    dashboard: "options.html#nav=dashboard",
-    disable: tampermonkeyDisable,
-  },
   { name: "Violentmonkey", engine: "firefox", file: "Violentmonkey-webext-v2.50.0.zip", url: `${VIOLENTMONKEY}/Violentmonkey-webext-v2.50.0.zip`, sha256: "ef9c61a6ef9c975d4823c26b493d2017464f240bba39c476da1cd7795382d8b1", install: "/confirm/", dashboard: "options/index.html#scripts", background: "_generated_background_page", disable: violentmonkeyDisable },
   {
     name: "Tampermonkey",
@@ -116,26 +106,20 @@ export const MANAGERS = Object.freeze([
   },
 ]);
 
-/** A Chrome Web Store CRX3's ZIP: the bytes after its "Cr24" header. */
-export function crxZip(bytes) {
-  if (bytes.subarray(0, 4).toString() !== "Cr24") return bytes;
-  return bytes.subarray(12 + bytes.readUInt32LE(8));
-}
-
 /** The manager's package from the cache or its source, checked, unpacked: {dir, sha256, version, id}. */
 async function fetchManager(root, manager) {
   const file = join(root, CACHE, manager.file);
   let bytes = await readFile(file).catch(() => null);
-  if (!bytes || (manager.sha256 && sha256(bytes) !== manager.sha256)) {
+  if (!bytes || sha256(bytes) !== manager.sha256) {
     const response = await fetch(manager.url, { redirect: "follow", signal: AbortSignal.timeout(120000) });
     if (!response.ok) throw new Error(`${manager.name} for ${manager.engine}: ${manager.url} answered ${response.status}`);
     bytes = Buffer.from(await response.arrayBuffer());
-    if (manager.sha256 && sha256(bytes) !== manager.sha256) throw new Error(`${manager.file} does not have its pinned SHA-256`);
+    if (sha256(bytes) !== manager.sha256) throw new Error(`${manager.file} does not have its pinned SHA-256`);
     await mkdir(dirname(file), { recursive: true });
     await writeFile(file, bytes);
   }
   const dir = await mkdtemp(join(tmpdir(), "reskin-qa-manager-"));
-  for (const [path, data] of Object.entries(unzipSync(crxZip(bytes)))) {
+  for (const [path, data] of Object.entries(unzipSync(bytes))) {
     if (path.endsWith("/")) continue;
     await mkdir(dirname(join(dir, path)), { recursive: true });
     await writeFile(join(dir, path), data);
@@ -306,7 +290,7 @@ export async function qaUserscript({ args = [], root = DEFAULT_ROOT } = {}) {
       let starting = null;
       try {
         unpacked = await fetchManager(root, manager);
-        report.managers.push({ name: manager.name, engine: manager.engine, version: unpacked.version, sha256: unpacked.sha256, pinned: Boolean(manager.sha256), source: manager.url });
+        report.managers.push({ name: manager.name, engine: manager.engine, version: unpacked.version, sha256: unpacked.sha256, source: manager.url });
         starting = manager.engine === "chromium" ? chromiumManager(manager, unpacked, (check, pass, detail) => record(where, check, pass, detail)) : firefoxManager(manager, unpacked, firefoxPath);
         env = await deadline(starting, 120000, `Starting ${where}`);
         record(where, "installs through the manager's own install page", await env.install(scriptUrl));

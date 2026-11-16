@@ -9,7 +9,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import vm from "node:vm";
 import { build, builderDocument, cardDocument, DEFINE, fixtureAssets, GRANTS, INJECT, MAX_BYTES, metadata, updateUrl } from "../../userscript/build.mjs";
-import { CSS_NOTE, IMPORT_CSS_NOTE } from "../../userscript/copy.js";
+import { COPY, CSS_NOTE, IMPORT_CSS_NOTE, NOTE_LINKS } from "../../userscript/copy.js";
 import { REVIEWED_PREVIEW_READ } from "../../userscript/verify.mjs";
 import { metadataEntries, scriptProblems } from "../../userscript/verify.mjs";
 
@@ -140,4 +140,16 @@ test("the preview's fixture images are embedded as data, and its one reviewed re
   const config = JSON.parse(await readFile(new URL("../../release.config.json", import.meta.url), "utf8"));
   const twice = script.replace(REVIEWED_PREVIEW_READ, `${REVIEWED_PREVIEW_READ};${REVIEWED_PREVIEW_READ}`);
   assert.ok((await scriptProblems(twice, { config, root })).some((problem) => /more than once|fetch/.test(problem)));
+});
+
+test("the not-isolated notes link the site's install page and Violentmonkey, in the words they say", () => {
+  assert.deepEqual(NOTE_LINKS.map((link) => link.href), [`${config.site.origin}${config.site.base}/install/`, "https://violentmonkey.github.io/"]);
+  for (const note of [COPY.menuOnly, COPY.noControls]) {
+    let at = -1;
+    for (const { text } of NOTE_LINKS) {
+      const next = note.indexOf(text);
+      assert.ok(next > at, `${JSON.stringify(text)} follows the previous link in: ${note}`);
+      at = next;
+    }
+  }
 });

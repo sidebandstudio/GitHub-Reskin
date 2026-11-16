@@ -101,16 +101,15 @@ add-on's own pages, which BiDi does not reach. The report and screenshots go to
 `artifacts/reports/firefox/`, and it prints how to repeat the run by hand.
 
 `qa:userscript [-- --firefox <path>]` runs `scripts/qa-userscript.mjs`: the packaged userscript in
-real Violentmonkey and Tampermonkey, in Chromium and an actual Firefox release, installed through
-each manager's own install page. On public GitHub, logged out, it checks the default theme, the
+real Violentmonkey in Chromium, and in real Violentmonkey and Tampermonkey in an actual Firefox
+release, installed through each manager's own install page. Tampermonkey in Chrome isn't checked:
+its MV3 build runs every script in GitHub's page, so the panel there is only the note. On public GitHub, logged out, it checks the default theme, the
 panel from `#reskin` with its controls, a pick, typing and Escape in the panel, the pick after a
 reload, importing and saving a theme file in Make a theme, and disabling the script in the
 manager's dashboard. The panel has its controls only where the manager keeps the script apart from
 GitHub's own JavaScript, so a manager that runs it in the page fails that check with the panel's
-note. Violentmonkey and Tampermonkey for Firefox are pinned by SHA-256; Tampermonkey for Chrome
-comes from the Chrome Web Store, which serves only its current version, so its version and hash are
-recorded. Downloads are kept in `artifacts/qa-cache/managers/`; the report and screenshots go to
-`artifacts/reports/userscript/`.
+note. Each manager is pinned by SHA-256. Downloads are kept in `artifacts/qa-cache/managers/`; the
+report and screenshots go to `artifacts/reports/userscript/`.
 
 `capture:release` runs `scripts/capture.mjs`, which makes DONE.md's store and promo images from
 the release candidate. It checks the Chrome package in `artifacts/` against `SHA256SUMS` and
