@@ -28,8 +28,8 @@ test("Firefox keeps the studio Gecko ID, minimum 140, no data collection and no 
   assert.deepEqual(manifestProblems(firefox, "firefox", config), []);
 });
 
-// The runtime entry: C4's background per browser, boot.css before the content script, the pages
-// and fonts readable only by the two GitHub origins.
+// The runtime entry: C4's background per browser, boot.css before the content script, the pages,
+// and the fonts and the content script's CSS parser chunk readable only by the two GitHub origins.
 test("the generated manifests name the reskin-2 runtime, its background per browser and its pages", async () => {
   assert.equal(config.extension.entry, "reskin-2");
   const chrome = await extensionManifest("chrome", config);
@@ -40,8 +40,11 @@ test("the generated manifests name the reskin-2 runtime, its background per brow
     assert.deepEqual(manifest.content_scripts, [{ matches: config.extension.hostMatches, run_at: "document_start", css: ["content/lifecycle/boot.css"], js: ["content.js"] }]);
     assert.equal(manifest.action.default_popup, "pages/popup.html");
     assert.equal(manifest.options_ui.page, "pages/settings.html");
-    assert.deepEqual(manifest.web_accessible_resources.map((r) => r.matches), [config.extension.hostMatches]);
+    assert.deepEqual(manifest.web_accessible_resources.map((r) => r.matches), [config.extension.hostMatches, config.extension.hostMatches]);
     assert.ok(manifest.web_accessible_resources[0].resources.every((path) => /^assets\/fonts\/([a-z0-9-]+)\/\1(-[4-7]00)?\.woff2$/.test(path)));
+    // The parser chunk at its fixed address. Chrome 130 and 131 refuse a dynamic one to the importing
+    // content script (crbug.com/363027634), inside the Chrome 120 minimum.
+    assert.deepEqual(manifest.web_accessible_resources[1], { resources: ["content/css-parser.js"], matches: config.extension.hostMatches });
     for (const path of manifestPaths(manifest)) assert.ok(entry.files.includes(path), path);
   }
   const { browser_specific_settings, background, ...chromeRest } = firefox;
@@ -109,8 +112,19 @@ test("the bundles embedding Primer-derived mode data ship with the upstream Prim
   assert.match(noticeProblems(wrong).join("\n"), /covers gone\.js, which the entry lacks/);
 });
 
-test("lint:firefox accepts one reviewed warning, and only for this exact desktop-only manifest", async () => {
-  assert.deepEqual(Object.keys(ACCEPTED_FIREFOX_WARNINGS), ["KEY_FIREFOX_ANDROID_UNSUPPORTED_BY_MIN_VERSION"]);
+test("lint:firefox accepts the content script's one import of its packaged parser chunk, and nothing like it elsewhere", async () => {
+  const { applies, reason } = ACCEPTED_FIREFOX_WARNINGS.UNSAFE_VAR_ASSIGNMENT;
+  assert.match(reason, /css-parser\.js/);
+  const firefox = await extensionManifest("firefox", config);
+  const warning = { code: "UNSAFE_VAR_ASSIGNMENT", message: "Unsafe call to import for argument 0", file: "content.js" };
+  assert.equal(applies(firefox, warning), true);
+  assert.equal(applies(firefox, { ...warning, file: "pages/pages.js" }), false);
+  assert.equal(applies(firefox, { ...warning, message: "Unsafe assignment to innerHTML" }), false);
+  assert.equal(applies({ ...firefox, web_accessible_resources: firefox.web_accessible_resources.slice(0, 1) }, warning), false);
+});
+
+test("lint:firefox accepts one reviewed manifest warning, and only for this exact desktop-only manifest", async () => {
+  assert.deepEqual(Object.keys(ACCEPTED_FIREFOX_WARNINGS), ["UNSAFE_VAR_ASSIGNMENT", "KEY_FIREFOX_ANDROID_UNSUPPORTED_BY_MIN_VERSION"]);
   const { applies, reason } = ACCEPTED_FIREFOX_WARNINGS.KEY_FIREFOX_ANDROID_UNSUPPORTED_BY_MIN_VERSION;
   assert.match(reason, /desktop-only/);
   const firefox = await extensionManifest("firefox", config);

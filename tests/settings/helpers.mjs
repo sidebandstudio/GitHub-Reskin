@@ -211,7 +211,7 @@ class FakeDocument extends EventTarget {
   }
 }
 
-export function fakePage({ colorMode = "dark", darkTheme = "dark", lightTheme = "light", media = {} } = {}) {
+export function fakePage({ colorMode = "dark", darkTheme = "dark", lightTheme = "light", media = {}, idleCallbacks = false } = {}) {
   const document = new FakeDocument();
   const root = document.documentElement;
   root.attributes.set("data-color-mode", colorMode);
@@ -223,6 +223,8 @@ export function fakePage({ colorMode = "dark", darkTheme = "dark", lightTheme = 
   const timers = new Map();
   let frameId = 0;
   const frames = new Map();
+  let idleId = 0;
+  const idles = new Map();
   const pageStorage = [];
   const mediaLists = new Map();
 
@@ -279,6 +281,14 @@ export function fakePage({ colorMode = "dark", darkTheme = "dark", lightTheme = 
       return id;
     },
     cancelAnimationFrame: (id) => frames.delete(id),
+    ...(idleCallbacks && {
+      requestIdleCallback: (fn, options) => {
+        const id = ++idleId;
+        idles.set(id, { fn, timeout: options?.timeout ?? null });
+        return id;
+      },
+      cancelIdleCallback: (id) => idles.delete(id),
+    }),
     matchMedia: (query) => {
       if (!mediaLists.has(query)) mediaLists.set(query, new FakeMediaList(query));
       return mediaLists.get(query);
@@ -306,6 +316,14 @@ export function fakePage({ colorMode = "dark", darkTheme = "dark", lightTheme = 
     pageStorage,
     timers,
     frames,
+    idles,
+    /** Runs every queued idle callback, as the browser does once a frame is drawn. */
+    async idle() {
+      const callbacks = [...idles.values()];
+      idles.clear();
+      callbacks.forEach(({ fn }) => fn({ didTimeout: false, timeRemaining: () => 10 }));
+      await settle();
+    },
     /** Moves virtual time forward, running due timers in order. */
     async advance(ms) {
       const end = clock.now + ms;

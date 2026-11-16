@@ -178,26 +178,15 @@ const sum = (files) => files.reduce((n, [, bytes]) => n + bytes, 0);
 const sizeOf = async (path) => (await stat(path).catch(() => null))?.size ?? null;
 
 // ARCHITECTURE.md's content engine/bootstrap: content.js as the build bundles it, with the frozen
-// mode data left out and everything else it carries, the catalog included. css-tree's chunk alone
-// is minified, as THEME-EXPANSION.md measured it. Both gzip at level 9.
+// mode data left out and everything else it carries: the catalog's index and the sanitizer. css-tree
+// is the parser chunk content.js imports when a saved theme needs it, measured as it ships, as
+// THEME-EXPANSION.md budgets it. Both gzip at level 9.
 const NO_MODE_DATA = { name: "no-mode-data", setup: (build) => build.onLoad({ filter: /[\\/]vendor[\\/]primer[\\/]modes\.json$/ }, () => ({ contents: "export default {};", loader: "js" })) };
 
 async function measureEngine(root) {
-  const { build } = await import("esbuild");
   const { bundleFile } = await import("../../packages/ui/bundle.mjs");
   const size = (bytes) => ({ raw: bytes.length, gzip: gzipSync(bytes, { level: 9 }).length });
-  const parser = await build({
-    stdin: { contents: 'export { parse, walk, generate, lexer, fork, tokenize, ident, clone, List, toPlainObject } from "css-tree/dist/csstree.esm";', resolveDir: root, loader: "js" },
-    absWorkingDir: root,
-    bundle: true,
-    format: "esm",
-    platform: "neutral",
-    target: ["chrome120", "firefox140"],
-    minify: true,
-    write: false,
-    logLevel: "silent",
-  });
-  return { engine: size(await bundleFile(root, "content.js", { plugins: [NO_MODE_DATA] })), parser: size(parser.outputFiles[0].contents) };
+  return { engine: size(await bundleFile(root, "content.js", { plugins: [NO_MODE_DATA] })), parser: size(await bundleFile(root, "content/css-parser.js")) };
 }
 
 // The browser-measured gates, as the release surface records them in release-timings.json:

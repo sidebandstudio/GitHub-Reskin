@@ -13,9 +13,18 @@
 //                                                                   owned nodes, CSS admission
 //   modeAttributes?: string[]                                       root attributes to observe
 //   nativeRoute?(document) -> string | null                         why the route stays native
-import { LEGACY_PAGE_CACHE_KEY, LIMITS, LOCAL_THEME_ID_PREFIX, STORAGE_KEYS } from "../../../packages/contracts/index.js";
+//
+// The extension's catalog (packages/ui/catalog.js contentCatalog) holds only the bundled theme the
+// page shows: `admit` takes its record from storage, and `pending(id)` says it has not arrived, so
+// the page keeps its gate rather than painting natively while it waits. Only the selected saved
+// theme is validated here, since no other is drawn, and when its CSS needs the sanitizer the
+// caller's `loadCssSanitizer` installs it before the settings are read again. Meanwhile the page
+// gets that theme without its Advanced CSS, from the boot snapshot when it matches the whole theme
+// (the background checked its gradients) and otherwise without gradient layers too, so a slow load
+// of the parser never leaves GitHub unthemed once the gate ends.
+import { ISSUE_CODES, LEGACY_PAGE_CACHE_KEY, LIMITS, LOCAL_THEME_ID_PREFIX, STORAGE_KEYS } from "../../../packages/contracts/index.js";
 import { sourceHash } from "../../../packages/engine/index.js";
-import { releaseRasters } from "../../../packages/format/viewer.js";
+import { cssSanitizerInstalled, releaseRasters } from "../../../packages/format/viewer.js";
 import {
   BOOT_ATTRIBUTE,
   effectivePreferences,
@@ -34,18 +43,21 @@ const NAVIGATION_VISIT = ["turbo:visit", "pjax:start"];
 const NAVIGATION_END = ["turbo:load", "turbo:render", "pjax:end"];
 const NAVIGATION_START = ["turbo:before-render", "turbo:before-cache", "pjax:start"];
 const REMOVAL_WINDOW_MS = 1000;
+// How long a decoration pass waits for the browser to draw the frame before it (decorateAfterDraw).
+const DECORATE_AFTER_MS = 100;
 
 /**
  * @param {object} options
  * @param {import("../../../packages/contracts/index.js").StorageAdapter} options.storage
  * @param {Document} options.document
  * @param {Window} options.view the window: timers, frames, media queries, observers, events
- * @param {object} options.catalog CatalogSource
+ * @param {object} options.catalog CatalogSource, optionally with admit(record) and pending(id)
  * @param {object} options.renderer see above
+ * @param {()=>Promise<void>} [options.loadCssSanitizer] installs the CSS sanitizer
  * @param {(event:object)=>void} [options.onEvent] diagnostics for tests: state changes and budgets
  * @returns {{destroy():void, ready:Promise<string>, status():object}}
  */
-export function startContent({ storage, document, view, catalog, renderer, onEvent = () => {} }) {
+export function startContent({ storage, document, view, catalog, renderer, loadCssSanitizer = null, onEvent = () => {} }) {
   const root = document.documentElement;
   const now = () => view.performance.now();
   const style = document.createElement("style");
@@ -69,6 +81,7 @@ export function startContent({ storage, document, view, catalog, renderer, onEve
   let budgetSpent = false;
   let navigationSpent = 0;
   let frame = 0;
+  let idle = 0;
   const pending = new Set();
   const removals = [];
   let styleBroken = false;
@@ -157,6 +170,9 @@ export function startContent({ storage, document, view, catalog, renderer, onEve
     }
     if (!settings.enabled) return goNative("disabled");
     const source = selectedSource(settings, catalog);
+    // The selected bundled theme's record is still on its way: the page stays as it is (gated, or
+    // the theme it shows) until it arrives, and the watchdog still ends the gate.
+    if (!source && catalog.pending?.(settings.selectedThemeId)) return onEvent({ type: "pending", themeId: settings.selectedThemeId });
     if (!source) return goNative("missing-source");
     releaseSource(source);
     const page = renderer.readPage(document, view);
@@ -167,7 +183,9 @@ export function startContent({ storage, document, view, catalog, renderer, onEve
     const current = {
       settingsRevision: settings.revision,
       catalogHash: catalog.hash,
-      selectedSourceHash: settings.selectedThemeId.startsWith(LOCAL_THEME_ID_PREFIX) ? sourceHash(source) : catalog.sourceHash(settings.selectedThemeId),
+      // Drawn without its CSS while the sanitizer loads, a saved theme still matches the snapshot
+      // of the whole theme it came from.
+      selectedSourceHash: state.sourceHash ?? (settings.selectedThemeId.startsWith(LOCAL_THEME_ID_PREFIX) ? sourceHash(source) : catalog.sourceHash(settings.selectedThemeId)),
       effectivePreferences: prefs,
       cssConsent: selectedConsent(settings),
       policy,
@@ -185,7 +203,7 @@ export function startContent({ storage, document, view, catalog, renderer, onEve
       if (compiled.fingerprint !== fingerprint) style.textContent = compiled.css;
       fingerprint = compiled.fingerprint;
       if (!style.isConnected && !styleBroken) root.append(style);
-      if (resolvedNow !== resolved || prefsNow?.extras !== prefs.extras) schedule("decorate");
+      if (resolvedNow !== resolved || prefsNow?.extras !== prefs.extras) decorateAfterDraw();
     }
     resolvedNow = resolved;
     prefsNow = prefs;
@@ -209,12 +227,55 @@ export function startContent({ storage, document, view, catalog, renderer, onEve
     }
   }
 
+  // The settings as the page uses them: only the selected saved theme and its consent, since no
+  // other saved theme is drawn here. Anything malformed is left for validation to refuse.
+  function pageSettings(value) {
+    if (!value || typeof value !== "object" || !Array.isArray(value.customThemes)) return value;
+    const id = value.selectedThemeId;
+    const page = { ...value, customThemes: value.customThemes.filter((theme) => theme?.id === id) };
+    const consent = value.cssConsent;
+    if (consent && typeof consent === "object" && !Array.isArray(consent)) page.cssConsent = Object.hasOwn(consent, id) ? { [id]: consent[id] } : {};
+    return page;
+  }
+
+  const needsSanitizer = (result) => !result.ok && result.issues?.some((issue) => issue.code === ISSUE_CODES.cssUnavailable);
+
+  // The selected saved theme's document, when it carries Advanced CSS or a gradient layer, which
+  // need the sanitizer; otherwise null.
+  function cssDocument(value) {
+    if (!Array.isArray(value?.customThemes)) return null;
+    const document = value.customThemes.find((entry) => entry?.id === value.selectedThemeId)?.document;
+    if (!document || typeof document !== "object") return null;
+    const layers = Object.values(document.backgrounds ?? {}).flatMap((background) => (Array.isArray(background?.layers) ? background.layers : []));
+    return "css" in document || layers.some((layer) => layer?.gradientCss) ? document : null;
+  }
+
+  // The page settings with the selected saved theme's Advanced CSS and gradient layers left out:
+  // what can be drawn before the sanitizer arrives.
+  function withoutCss(value) {
+    const theme = value.customThemes.find((entry) => entry?.id === value.selectedThemeId);
+    const { css: _css, ...document } = theme.document;
+    if (document.backgrounds && typeof document.backgrounds === "object") {
+      // A background left with no layer keeps its color; one left with nothing goes.
+      const kept = Object.entries(document.backgrounds).map(([target, background]) => {
+        if (!Array.isArray(background?.layers)) return [target, background];
+        const { layers, ...rest } = background;
+        const remaining = layers.filter((layer) => !layer?.gradientCss);
+        return [target, remaining.length ? { ...rest, layers: remaining } : rest];
+      });
+      document.backgrounds = Object.fromEntries(kept.filter(([, background]) => !background || typeof background !== "object" || Object.keys(background).length));
+      // A theme left with no background at all has none, rather than an empty one.
+      if (!Object.keys(document.backgrounds).length) delete document.backgrounds;
+    }
+    return { ...value, customThemes: value.customThemes.map((entry) => (entry === theme ? { ...theme, document } : entry)) };
+  }
+
   // Last read wins: a slow older read never overwrites a newer one.
   async function read() {
     const mine = ++generation;
     let raw;
     try {
-      raw = await storage.get([STORAGE_KEYS.settings, STORAGE_KEYS.boot]);
+      raw = await storage.get([STORAGE_KEYS.settings, STORAGE_KEYS.boot, STORAGE_KEYS.selected]);
     } catch {
       if (!destroyed && mine === generation) {
         state = null;
@@ -223,8 +284,53 @@ export function startContent({ storage, document, view, catalog, renderer, onEve
       return;
     }
     if (destroyed || mine !== generation) return onEvent({ type: "stale-read" });
-    const result = raw[STORAGE_KEYS.settings] === undefined ? { ok: false } : validateSettings(raw[STORAGE_KEYS.settings], catalog);
-    state = { settings: result.ok ? result.settings : null, boot: raw[STORAGE_KEYS.boot] ?? null };
+    try {
+      await apply(raw, mine);
+    } catch (error) {
+      // Records too malformed to read release GitHub, as unreadable settings do.
+      onEvent({ type: "error", error });
+      if (!destroyed && mine === generation) {
+        state = null;
+        renderSafely();
+      }
+    }
+  }
+
+  // One read's records: the selected theme's record, the page's settings and, when its CSS needs
+  // the sanitizer, the paint without it first.
+  async function apply(raw, mine) {
+    catalog.admit?.(raw[STORAGE_KEYS.selected]);
+    const stored = raw[STORAGE_KEYS.settings] === undefined ? undefined : pageSettings(raw[STORAGE_KEYS.settings]);
+    const boot = raw[STORAGE_KEYS.boot] ?? null;
+    const document = loadCssSanitizer && !cssSanitizerInstalled() ? cssDocument(stored) : null;
+    if (document) {
+      const loading = loadCssSanitizer();
+      const early = validateSettings(withoutCss(stored), catalog);
+      let whole = null;
+      try {
+        whole = sourceHash(document);
+      } catch {
+        // A document this malformed fails validation below.
+      }
+      if (early.ok && whole) {
+        state = { settings: early.settings, boot, sourceHash: whole };
+        onEvent({ type: "without-css" });
+        renderSafely();
+      }
+      try {
+        await loading;
+      } catch (error) {
+        onEvent({ type: "error", error });
+        if (destroyed || mine !== generation) return onEvent({ type: "stale-read" });
+        // Without the sanitizer the page keeps the theme without its CSS, and a later read tries again.
+        if (early.ok && whole) return;
+      }
+      if (destroyed || mine !== generation) return onEvent({ type: "stale-read" });
+    }
+    let result = stored === undefined ? { ok: false } : validateSettings(stored, catalog);
+    // A sanitizer the theme's CSS still lacks, such as one a failed load never installed.
+    if (needsSanitizer(result)) onEvent({ type: "css-unavailable" });
+    state = { settings: result.ok ? result.settings : null, boot };
     renderSafely();
   }
 
@@ -257,6 +363,20 @@ export function startContent({ storage, document, view, catalog, renderer, onEve
     if (!frame) frame = view.requestAnimationFrame(flush);
   }
 
+  // Decoration waits until the browser has drawn what came before it. A new stylesheet, or a page
+  // that has just finished parsing, makes GitHub restyle and lay out the whole page, and a pass in
+  // that same frame would add its own work to that frame, or force the layout itself. An idle
+  // callback runs once that frame is drawn, or at its timeout on a busy page, and the pass gets the
+  // frame after. Without idle callbacks the pass takes the next frame.
+  function decorateAfterDraw() {
+    if (destroyed) return;
+    if (typeof view.requestIdleCallback !== "function") return schedule("decorate");
+    idle ||= view.requestIdleCallback(() => {
+      idle = 0;
+      schedule("decorate");
+    }, { timeout: DECORATE_AFTER_MS });
+  }
+
   function flush() {
     frame = 0;
     const kinds = new Set(pending);
@@ -273,7 +393,7 @@ export function startContent({ storage, document, view, catalog, renderer, onEve
 
   // Storage routing: only this extension's records start a read.
   cleanups.push(storage.subscribe((changes) => {
-    if (changes[STORAGE_KEYS.settings] || changes[STORAGE_KEYS.boot]) schedule("read");
+    if (changes[STORAGE_KEYS.settings] || changes[STORAGE_KEYS.boot] || changes[STORAGE_KEYS.selected]) schedule("read");
   }));
 
   // GitHub's own mode attributes and media state change the plan, not the settings.
@@ -309,7 +429,7 @@ export function startContent({ storage, document, view, catalog, renderer, onEve
   // new page paints.
   const navigated = () => {
     if ((renderer.nativeRoute?.(document) ?? null) !== routeNow) schedule("recompute");
-    schedule("decorate");
+    decorateAfterDraw();
   };
   for (const type of NAVIGATION_VISIT) listen(document, type, openBudget);
   for (const type of NAVIGATION_END) listen(document, type, navigated);
@@ -323,6 +443,12 @@ export function startContent({ storage, document, view, catalog, renderer, onEve
   listen(view, "pagehide", () => {
     if (frame) view.cancelAnimationFrame(frame);
     frame = 0;
+    // A pass still waiting for its idle callback is queued work too.
+    if (idle) {
+      view.cancelIdleCallback(idle);
+      idle = 0;
+      pending.add("decorate");
+    }
   });
   listen(view, "pageshow", (event) => {
     if (event.persisted) {
@@ -347,6 +473,8 @@ export function startContent({ storage, document, view, catalog, renderer, onEve
       if (legacyTimer !== null) view.clearTimeout(legacyTimer);
       if (frame) view.cancelAnimationFrame(frame);
       frame = 0;
+      if (idle) view.cancelIdleCallback(idle);
+      idle = 0;
       pending.clear();
       for (const cleanup of cleanups.splice(0)) cleanup();
       dropDecorations();

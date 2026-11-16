@@ -63,6 +63,7 @@ export const SHARE_CODE_PREFIX = "RS1.";
 export const STORAGE_KEYS = freeze({
   settings: "reskin.settings",
   boot: "reskin.boot",
+  selected: "reskin.selected",
   lastGood: "reskin.lastGood",
   draft: "reskin.draft",
   ui: "reskin.ui",
@@ -349,7 +350,7 @@ export const BUDGETS = freeze({
   // The content engine and bootstrap including the CSS sanitizer, without mode data or fonts.
   contentEngineGzipBytes: 163840,
   contentEngineRawBytes: 524288,
-  // css-tree 3.1.0's parse/walk/generate/lexer, measured as an isolated chunk.
+  // css-tree 3.1.0, as the parser chunk the content script imports when a saved theme needs it.
   cssParserGzipBytes: 61440,
   cssParserRawBytes: 225280,
   modeDataRawBytes: 819200,

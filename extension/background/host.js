@@ -26,9 +26,11 @@ const refuse = (code, path, message) => ({ ok: false, code, issues: [{ code: ISS
  * @param {(theme:object)=>{theme:object, repairs:readonly object[]}} [options.repair] engine source repair
  * @param {()=>string} [options.newId] UUID source, crypto.randomUUID by default
  * @param {object} [options.css] CssAdmission, [options.images] ImageAdmission (packages/settings/admission.js)
+ * @param {(settings:object)=>string|null} [options.selectedRecord] the content script's record of the
+ *   selected bundled theme, written with every settings change (packages/settings/repository.js)
  */
-export function createBackground({ api, storage = createExtensionStorage(api), catalog, snapshot, repair, newId = () => crypto.randomUUID(), css, images }) {
-  const context = { catalog, snapshot, repair, newId, ...(css && { css }), ...(images && { images }) };
+export function createBackground({ api, storage = createExtensionStorage(api), catalog, snapshot, repair, newId = () => crypto.randomUUID(), css, images, selectedRecord }) {
+  const context = { catalog, snapshot, repair, newId, ...(css && { css }), ...(images && { images }), ...(selectedRecord && { selectedRecord }) };
   const repository = createRepository(storage, context);
   const extensionOrigin = new URL(api.runtime.getURL("")).origin;
 

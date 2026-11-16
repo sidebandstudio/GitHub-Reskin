@@ -6,6 +6,8 @@ import { rasterInfo } from "../../packages/format/index.js";
 import { createCatalogSource, createRepository } from "../../packages/settings/index.js";
 import { authenticationRoute } from "../../extension/content/github/routes.js";
 import { startContent } from "../../extension/content/lifecycle/index.js";
+import { catalogData, catalogIndex } from "../../packages/ui/bundle.mjs";
+import { catalogFromData, catalogRecord, contentCatalog } from "../../packages/ui/catalog.js";
 import { catalog, CHOOM, CLASSICS, context, deferred, fakePage, memoryStorage, testRenderer } from "./helpers.mjs";
 
 async function stored(initial = {}) {
@@ -15,12 +17,23 @@ async function stored(initial = {}) {
   return { storage, repository };
 }
 
-function start(storage, pageOptions, rendererOptions) {
+function start(storage, pageOptions, rendererOptions, pageCatalog = catalog) {
   const page = fakePage(pageOptions);
   const renderer = testRenderer({ clock: page.clock, ...rendererOptions });
   const events = [];
-  const content = startContent({ storage, document: page.document, view: page.view, catalog, renderer, onEvent: (e) => events.push(e) });
+  const content = startContent({ storage, document: page.document, view: page.view, catalog: pageCatalog, renderer, onEvent: (e) => events.push(e) });
   return { page, renderer, events, content };
+}
+
+// The extension's split: the background's catalog writes the selected bundled theme's record
+// beside the settings, and the page has only the build's index.
+const DATA = catalogData([{ id: DEFAULT_THEME_ID, group: "anime", document: CHOOM }, ...CLASSICS.map((theme) => ({ ...theme, group: "classics" }))]);
+async function split(initial = {}) {
+  const background = catalogFromData(structuredClone(DATA));
+  const storage = memoryStorage(initial);
+  const repository = createRepository(storage, context({ catalog: background, selectedRecord: (settings) => background.record(settings.selectedThemeId) }));
+  await repository.initialize();
+  return { storage, repository, record: (id) => background.record(id), pageCatalog: () => contentCatalog(catalogIndex(DATA)) };
 }
 const phase = (page) => page.root.getAttribute("data-reskin-boot");
 
@@ -143,7 +156,7 @@ test("storage changes coalesce into one read per frame and the last read wins", 
   const { storage, repository } = await stored();
   const { page, content } = start(storage);
   await content.ready;
-  const reads = () => storage.log.filter(([op, keys]) => op === "get" && keys.join() === [STORAGE_KEYS.settings, STORAGE_KEYS.boot].join()).length;
+  const reads = () => storage.log.filter(([op, keys]) => op === "get" && keys.join() === [STORAGE_KEYS.settings, STORAGE_KEYS.boot, STORAGE_KEYS.selected].join()).length;
   const before = reads();
   await repository.commit({ type: "selectTheme", id: "nord" }, 0);
   await repository.commit({ type: "selectTheme", id: "catppuccin-latte" }, 1);
@@ -524,9 +537,104 @@ test("destroy disconnects everything and leaves the gate closed for good", async
   assert.deepEqual(renderer.calls, calls);
 });
 
+test("with only the catalog's index, a page paints the bundled theme stored beside the settings and follows a switch", async () => {
+  const { storage, repository, pageCatalog } = await split();
+  const { page, content } = start(storage, undefined, undefined, pageCatalog());
+  assert.equal(await content.ready, "ready");
+  assert.match(page.style().textContent, /--reskin-canvas/);
+  await repository.commit({ type: "selectTheme", id: "catppuccin-latte" }, 0);
+  await page.settle();
+  await page.frame();
+  assert.match(page.style().textContent, /--reskin-canvas:#eff1f5/);
+  content.destroy();
+});
+
+test("a bundled theme whose record has not arrived keeps the gate to the watchdog, and paints when it lands", async () => {
+  const { storage, record, pageCatalog } = await split();
+  storage.data.delete(STORAGE_KEYS.selected);
+  const { page, events, content } = start(storage, undefined, undefined, pageCatalog());
+  await page.advance(LIMITS.startupGateMs - 1);
+  assert.equal(phase(page), null, "no native paint while the theme is on its way");
+  assert.ok(events.some((e) => e.type === "pending" && e.themeId === DEFAULT_THEME_ID));
+  await page.advance(1);
+  assert.equal(phase(page), "timeout");
+  assert.equal(page.style(), null);
+  await storage.set({ [STORAGE_KEYS.selected]: record(DEFAULT_THEME_ID) });
+  await page.settle();
+  await page.frame();
+  assert.equal(phase(page), "ready");
+  assert.match(page.style().textContent, /--reskin-canvas/);
+  content.destroy();
+});
+
+test("a stored record whose text is not the build's is never drawn", async () => {
+  const { storage, pageCatalog } = await split();
+  const forged = JSON.parse(catalogRecord(DATA, DEFAULT_THEME_ID));
+  forged.document.colors.background = "#ff0000";
+  storage.data.set(STORAGE_KEYS.selected, JSON.stringify(forged));
+  const { page, content } = start(storage, undefined, undefined, pageCatalog());
+  await page.advance(LIMITS.startupGateMs);
+  assert.equal(phase(page), "timeout");
+  await page.frame();
+  assert.equal(page.style(), null);
+  content.destroy();
+});
+
+test("only the selected saved theme is checked here, so a damaged one that is not selected leaves the page themed", async () => {
+  const { storage } = await stored();
+  const settings = storage.data.get(STORAGE_KEYS.settings);
+  settings.customThemes.push({ id: "local:00000000-0000-4000-8000-0000000000aa", document: { name: "Damaged" } });
+  settings.cssConsent["local:00000000-0000-4000-8000-0000000000bb"] = { hash: "no", sanitizerVersion: 0 };
+  storage.data.set(STORAGE_KEYS.settings, settings);
+  const { page, content } = start(storage);
+  assert.equal(await content.ready, "ready");
+  assert.ok(page.style());
+  content.destroy();
+});
+
+test("decoration waits for the frame that draws a new stylesheet or a parsed page, then takes the next frame", async () => {
+  const { storage, repository } = await stored();
+  const { page, renderer, content } = start(storage, { idleCallbacks: true });
+  await content.ready;
+  page.document.readyState = "interactive";
+  page.fire("document", "DOMContentLoaded");
+  await page.frame();
+  assert.equal(renderer.calls.decorate, 0, "nothing in the frame GitHub lays out the parsed page");
+  assert.equal(page.idles.size, 1);
+  assert.deepEqual([...page.idles.values()].map((entry) => entry.timeout), [100]);
+  await page.idle();
+  assert.equal(renderer.calls.decorate, 0, "the idle callback only asks for a frame");
+  await page.frame();
+  assert.equal(renderer.calls.decorate, 1);
+  // A theme change: the new stylesheet's frame first, the pass after it.
+  await repository.commit({ type: "selectTheme", id: "nord" }, 0);
+  await page.settle();
+  await page.frame();
+  await page.settle();
+  assert.equal(renderer.calls.decorate, 1);
+  await page.idle();
+  await page.frame();
+  assert.equal(renderer.calls.decorate, 2);
+  // Leaving the page cancels a waiting pass and keeps it queued; destroy cancels it for good.
+  await repository.commit({ type: "selectTheme", id: "dracula" }, 1);
+  await page.settle();
+  await page.frame();
+  await page.settle();
+  assert.equal(page.idles.size, 1);
+  page.fire("view", "pagehide");
+  assert.equal(page.idles.size, 0);
+  page.fire("view", "pageshow", { persisted: false });
+  await page.frame();
+  assert.equal(renderer.calls.decorate, 3);
+  page.fire("document", "turbo:load");
+  assert.equal(page.idles.size, 1);
+  content.destroy();
+  assert.equal(page.idles.size, 0);
+});
+
 test("startup does not wait for the background: it reads extension storage directly", async () => {
   const { storage } = await stored();
   const { content } = start(storage);
   await content.ready;
-  assert.deepEqual(storage.log.at(-1), ["get", [STORAGE_KEYS.settings, STORAGE_KEYS.boot]]);
+  assert.deepEqual(storage.log.at(-1), ["get", [STORAGE_KEYS.settings, STORAGE_KEYS.boot, STORAGE_KEYS.selected]]);
 });

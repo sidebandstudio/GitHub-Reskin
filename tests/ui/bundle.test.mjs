@@ -1,6 +1,7 @@
 // The extension entry's builder: exactly the generated files, the same bytes twice, C2b's CSS
 // sanitizer in every runtime bundle (saved themes can carry Advanced CSS, and the background, the
-// content script and every page validate them) and no legacy runtime file in the package.
+// content script and every page validate them), css-tree and the catalog only where the page
+// does not compile them, and no legacy runtime file in the package.
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -8,12 +9,14 @@ import test from "node:test";
 import { runInNewContext } from "node:vm";
 import { strFromU8, unzlibSync } from "fflate";
 import { BUDGETS } from "../../packages/contracts/index.js";
-import { BUNDLES, build, packedModesModule } from "../../packages/ui/bundle.mjs";
+import { BUNDLES, build, catalogData, catalogIndex, packedModesModule, readCatalogEntries } from "../../packages/ui/bundle.mjs";
+import { catalogFromData, catalogRecord, contentCatalog } from "../../packages/ui/catalog.js";
 import { ROOT, extensionFiles, loadEntry, loadReleaseConfig, sha256 } from "../../scripts/build.mjs";
 
 const config = await loadReleaseConfig();
 const entry = await loadEntry(config);
 const first = await build({ root: ROOT, entry });
+const entries = await readCatalogEntries(ROOT);
 
 test("the builder generates exactly the entry's generated files, deterministically", async () => {
   assert.deepEqual(Object.keys(first).sort(), [...entry.generated].sort());
@@ -24,8 +27,8 @@ test("the builder generates exactly the entry's generated files, deterministical
   for (const path of entry.generated.filter((p) => !p.endsWith(".js"))) assert.ok(first[path].equals(await readFile(join(ROOT, path))), path);
 });
 
-test("runtime bundles install the css-tree sanitizer and carry the bundled catalog and proofs", () => {
-  for (const path of Object.keys(BUNDLES)) {
+test("the background and pages install the css-tree sanitizer and carry the bundled catalog and proofs", () => {
+  for (const path of ["background.js", "pages/pages.js"]) {
     const text = first[path].toString("utf8");
     // css-tree itself: its lexer error class survives minification, its file paths do not.
     assert.match(text, /SyntaxMatchError/, path);
@@ -33,9 +36,56 @@ test("runtime bundles install the css-tree sanitizer and carry the bundled catal
     assert.match(text, /anime\.cyberpunk-edgerunners/, path);
     assert.match(text, /cssProofs/, path);
   }
-  assert.match(first["content.js"].toString(), /reskin-style/);
   assert.match(first["pages/pages.js"].toString(), /mountPicker|rs-card/);
   assert.match(first["pages/pages.js"].toString(), /mountBuilder/);
+});
+
+test("the content script carries the catalog's index and the sanitizer without css-tree, which its parser chunk holds", () => {
+  const content = first["content.js"].toString("utf8");
+  const parser = first["content/css-parser.js"].toString("utf8");
+  const choom = entries.find((e) => e.id === "anime.cyberpunk-edgerunners").document;
+  assert.match(content, /reskin-style/);
+  assert.doesNotMatch(content, /SyntaxMatchError/, "no css-tree in the content script");
+  // Every bundled theme's ID and record hash, and no theme's document or CSS.
+  const index = catalogIndex(catalogData(entries));
+  for (const id of index.ids) assert.ok(content.includes(index.records[id]), id);
+  assert.ok(!content.includes(choom.css.slice(0, 60)), "no bundled theme CSS");
+  assert.ok(!content.includes(JSON.stringify(choom.name)), "no bundled theme document");
+  // The sanitizer is there, waiting for the parser chunk it imports by its packaged path.
+  assert.match(content, /css-tree@3\.1\.0/);
+  assert.match(content, /content\/css-parser\.js/);
+  assert.match(parser, /SyntaxMatchError/);
+  assert.match(parser, /export\s*\{/);
+  assert.doesNotMatch(parser, /anime\.cyberpunk-edgerunners/);
+});
+
+test("the content script's records are the background's, so its index admits exactly what the background stores", () => {
+  const data = catalogData(entries);
+  const index = catalogIndex(data);
+  const full = catalogFromData(structuredClone(data));
+  const page = contentCatalog(index);
+  for (const id of index.ids) {
+    assert.equal(page.document(id), null, id);
+    assert.equal(page.pending(id), true, id);
+    page.admit(full.record(id));
+    assert.deepEqual(page.document(id), data.documents[id], id);
+    assert.equal(page.pending(id), false, id);
+    assert.equal(page.sourceHash(id), data.hashes[id], id);
+  }
+  assert.equal(full.record("local:00000000-0000-4000-8000-000000000001"), null);
+});
+
+test("the content script's catalog ignores a record whose text is not the build's", () => {
+  const data = catalogData(entries);
+  const page = contentCatalog(catalogIndex(data));
+  const id = "anime.cyberpunk-edgerunners";
+  const record = JSON.parse(catalogRecord(data, id));
+  record.document.css = ".AppHeader{display:none}";
+  for (const text of [JSON.stringify(record), `${catalogRecord(data, id)} `, "{}", "not json", null, undefined, 7]) {
+    page.admit(text);
+    assert.equal(page.document(id), null, String(text).slice(0, 40));
+  }
+  assert.equal(page.pending(id), true);
 });
 
 test("the packaged extension holds the new runtime and none of the 1.1.0 files", async () => {

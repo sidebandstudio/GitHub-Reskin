@@ -23,9 +23,19 @@ import { ROUTES, SURFACES, SURFACE_COMMANDS, optionValues, withoutOptions } from
 import { serve } from "./serve.mjs";
 import { remoteResourceProblems } from "./verify-artifacts.mjs";
 
-// The web-ext warnings lint:firefox accepts, each only for the manifest it was reviewed against.
-// Any other warning, and any error, fails.
+// The web-ext warnings lint:firefox accepts, each only for the manifest and warning it was reviewed
+// against. Any other warning, and any error, fails.
 export const ACCEPTED_FIREFOX_WARNINGS = {
+  UNSAFE_VAR_ASSIGNMENT: {
+    // extension/content/index.mjs imports the packaged CSS parser chunk from
+    // runtime.getURL("content/css-parser.js"). The linter flags any import() whose argument is not
+    // a string literal, and a literal path would resolve against GitHub's page in Firefox.
+    reason: "content.js imports its own packaged content/css-parser.js through runtime.getURL, the only import() in the package",
+    applies: (manifest, warning) =>
+      warning?.file === "content.js" &&
+      warning.message === "Unsafe call to import for argument 0" &&
+      manifest.web_accessible_resources?.some((resource) => JSON.stringify(resource.resources) === JSON.stringify(["content/css-parser.js"])),
+  },
   KEY_FIREFOX_ANDROID_UNSUPPORTED_BY_MIN_VERSION: {
     // The linter applies the desktop minimum, 140, to Android, where data_collection_permissions
     // arrived in 142. gecko_android stays out until a real device passes, and the minimum stays.
@@ -172,7 +182,7 @@ async function lintFirefox({ outDir }) {
   });
   const report = JSON.parse(result.stdout.slice(result.stdout.indexOf("{")));
   const show = (m) => `${m.code}: ${m.message}${m.file ? ` (${m.file})` : ""}`;
-  const accepted = (w) => ACCEPTED_FIREFOX_WARNINGS[w.code]?.applies(manifest);
+  const accepted = (w) => ACCEPTED_FIREFOX_WARNINGS[w.code]?.applies(manifest, w);
   const unexpected = report.warnings.filter((w) => !accepted(w));
   for (const w of report.warnings.filter(accepted)) console.log(`accepted warning ${w.code}: ${ACCEPTED_FIREFOX_WARNINGS[w.code].reason}`);
   for (const n of report.notices) console.log(`notice ${show(n)}`);
