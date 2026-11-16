@@ -22,8 +22,9 @@
 //                packages in artifacts/. It needs the network and is not part of check:release.
 //   qa-firefox   qa:firefox: scripts/qa-firefox.mjs, the Firefox package in an actual Firefox
 //                release. It needs that Firefox and the network, and is not part of check:release.
-//   qa-userscript qa:userscript: scripts/qa-userscript.mjs, the userscript in real Violentmonkey and
-//                Tampermonkey, in Chromium and an actual Firefox release. It needs the network.
+//   qa-userscript qa:userscript: scripts/qa-userscript.mjs, the userscript in real Violentmonkey in
+//                Chromium, and in Violentmonkey and Tampermonkey in an actual Firefox release. It
+//                needs the network.
 //   capture-release capture:release: scripts/capture.mjs, the store and promo images, made from the
 //                Chrome package in artifacts/ on public GitHub. It needs the network.
 // qa-published-install is not written yet and fails with exit 2.
