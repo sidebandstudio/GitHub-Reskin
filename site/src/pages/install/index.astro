@@ -1,6 +1,6 @@
 ---
 import Prose from "../../layouts/Prose.astro";
-import { BROWSERS, SUPPORT, href } from "../../lib/site.mjs";
+import { BROWSERS, SUPPORT, USERSCRIPT, href } from "../../lib/site.mjs";
 ---
 <Prose title="Install · GitHub Reskin" heading="Install GitHub Reskin" description="Install GitHub Reskin in Chrome or Firefox on desktop, or try a developer build from source." path="install/" lede="GitHub Reskin runs in Chrome and Firefox on desktop. It is free.">
   {BROWSERS.map((b) => (
@@ -23,7 +23,14 @@ import { BROWSERS, SUPPORT, href } from "../../lib/site.mjs";
   </ol>
 
   <h2 id="userscript">Safari and the userscript</h2>
-  <p>Safari can run GitHub Reskin as a userscript in a userscript manager. This route is for advanced users and is still being tested; instructions arrive with the release. The userscript keeps its own settings, separate from the extension.</p>
+  <p>Safari runs GitHub Reskin as a userscript, built from the same code as the extension, in a userscript manager on a Mac, iPhone or iPad. The userscript keeps its own settings, separate from the extension's.</p>
+  <ol>
+    <li>Install <a href="https://github.com/quoid/userscripts">Userscripts</a> or <a href="https://www.tampermonkey.net">Tampermonkey</a> from the App Store. Safari asks you to turn it on in its settings and allow it on github.com.</li>
+    <li>Open <a href={href(`downloads/${USERSCRIPT}`)}>{USERSCRIPT}</a> and install it from your manager's prompt. In Userscripts, the prompt is under its toolbar button.</li>
+    <li>Reload any GitHub or Gist tabs you already had open.</li>
+    <li>To pick a theme, open <code>https://github.com/#reskin</code>. In Tampermonkey you can also choose Open GitHub Reskin from its menu.</li>
+  </ol>
+  <p>The same userscript runs in Firefox with Violentmonkey or Tampermonkey, and in Chrome with Violentmonkey. In Chrome and Firefox the extension is the better choice.</p>
 
   <h2 id="phones">Phones</h2>
   <p>Browser extensions for GitHub Reskin run on desktop. On a phone you can preview every theme on <a href={href()}>the home page</a> and keep its link for your computer. Firefox for Android is not supported yet.</p>
