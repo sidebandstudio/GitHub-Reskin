@@ -53,7 +53,7 @@ The site build captures each theme's preview in Chromium the first time and cach
 
 ### Tests
 
-`npm test` runs the unit tests. Browser tests run per surface with `npm run test:e2e -- --surface=<name>` and `npm run check:a11y -- --surface=<name>`. The surfaces are `platform`, `fixture`, `extension`, `userscript` and `site`. Install the browsers first with `npx --no-install playwright install chromium firefox`. The site surface also needs `webkit`. `scripts/README.md` lists every check.
+`npm test` runs the unit tests. Browser tests run per surface with `npm run test:e2e -- --surface=<name>` and `npm run check:a11y -- --surface=<name>`. The surfaces are `platform`, `fixture`, `extension`, `userscript`, `site` and `release`. Install the browsers first with `npx --no-install playwright install chromium firefox`. The site surface also needs `webkit`. `scripts/README.md` lists every check.
 
 Run one browser suite at a time. Timing tests can fail on a busy machine, so compare a failure against `main` before trusting it.
 

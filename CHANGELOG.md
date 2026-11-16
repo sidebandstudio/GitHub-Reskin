@@ -8,7 +8,7 @@ A rebuild of the extension for a public release in the Chrome Web Store and on F
 - Built-in themes restyle the page background, header, panels, corners, buttons, fonts, code highlighting, diffs, selection, scrollbars, labels, the avatar frame and the contribution graph.
 - Full and Calm appearances. Calm keeps a theme's colors and fonts and drops its background images and gradients, profile banner, glow and other effects, and added text.
 - Flavor text appears only in a few safe places, such as a profile tag, the 404 caption and a footer sign-off. GitHub's own buttons, menus and navigation keep their words, where 1.1.0's Cyberpunk slang renamed some of them.
-- GitHub's dimmed, colorblind and tritanopia modes get their own color mapping instead of being replaced by the standard palette. High contrast modes and forced colors stay native.
+- GitHub's colorblind and tritanopia modes get their own color mapping instead of being replaced by the standard palette. Dimmed is themed as a dark mode. High contrast modes and forced colors stay native.
 - A theme builder on the settings page. It starts with three colors and opens up backgrounds and images, shapes and type, code colors, the graph and advanced CSS. It imports and exports `.reskin.json` files, theme JSON and `RS1.` share codes, and Copy AI prompt writes a prompt for a chatbot.
 - The userscript has the same builder when its manager runs it apart from GitHub's own scripts. Advanced CSS stays off in the userscript, and a theme imported there keeps its CSS switched off. When the manager runs it inside GitHub's page, only the manager's menu changes settings, until the page reloads.
 - The userscript installs from the site and updates from there.
