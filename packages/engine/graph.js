@@ -55,9 +55,11 @@ function spacedRamp(canvas, text, seed) {
 }
 
 /**
- * A valid ramp for this canvas, trying in a fixed order: the supplied ramp, the derived ramp,
- * the derived ramp with its seed moved toward the direction's extreme in 1/255 steps, an evenly
- * spaced ramp along the same path, then the documented seed ramp. `method` names the step used.
+ * A valid ramp for this canvas, trying in a fixed order: the supplied ramp, the derived ramp, an
+ * evenly spaced ramp along the same path with its seed moved toward the direction's extreme in
+ * 1/255 steps only as far as it needs, then the documented seed ramp. `method` names the step used.
+ * The spaced ramp keeps a seed that already reads on the canvas as level 4. Moving the derived
+ * ramp's seed instead until its 0.35 step reads would wash a saturated seed out to near white.
  * @returns {{levels:string[], method:string, problems:string[]}}
  */
 export function resolveRamp({ supplied, canvas, text, seed, base, fallback }) {
@@ -67,10 +69,6 @@ export function resolveRamp({ supplied, canvas, text, seed, base, fallback }) {
   const derived = deriveRamp(canvas, text, seed);
   if (ok(derived)) return { levels: derived, method: "derived", problems: [] };
   const extreme = direction === "up" ? WHITE : BLACK;
-  for (let k = 1; k <= 255; k++) {
-    const levels = deriveRamp(canvas, text, mix(seed, extreme, k / 255));
-    if (ok(levels)) return { levels, method: "derived-strengthened", problems: [] };
-  }
   for (let k = 0; k <= 255; k++) {
     const levels = spacedRamp(canvas, text, mix(seed, extreme, k / 255));
     if (ok(levels)) return { levels, method: "spaced", problems: [] };

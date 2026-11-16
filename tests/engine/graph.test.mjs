@@ -71,6 +71,20 @@ test("the derived ramp starts from mix(canvas, text, 0.09) and the contribution 
   assert.deepEqual(resolved.repairs.filter((r) => r.path.startsWith("/graph/")).map((r) => r.path), ["/graph/1", "/graph/2", "/graph/3"]);
 });
 
+test("a saturated seed keeps its hue instead of washing out to near white", () => {
+  // Editing Suite's amber reads on its near-black canvas, but the derived ramp's 35% step does
+  // not. Moving the seed toward white until that step read used to end the ramp at #fef6e9.
+  const chroma = (hex) => Math.hypot(...oklab(hex).slice(1));
+  const suite = resolveTheme(json(`${TESTS}../themes/classics/editing-suite.reskin.json`), themed(dark));
+  assert.deepEqual(suite.graph, ["#1e1e1f", "#7a5722", "#a2722a", "#ca8e33", "#f2a93b"]);
+  for (const name of ["dracula", "catppuccin-mocha", "gruvbox", "tokyo-night", "rose-pine", "one-dark", "solarized-dark"]) {
+    const theme = json(`${TESTS}../themes/classics/${name}.reskin.json`);
+    const { graph, tokens } = resolveTheme(theme, themed(dark));
+    assert.deepEqual(graphProblems(graph, tokens.canvas, "up"), [], name);
+    assert.ok(chroma(graph[4]) >= 0.9 * chroma(theme.colors.contribution ?? theme.colors.accent), name);
+  }
+});
+
 test("the ramp direction comes from the explicit base alone", () => {
   assert.equal(rampDirection("dark"), "up");
   assert.equal(rampDirection("light"), "down");
