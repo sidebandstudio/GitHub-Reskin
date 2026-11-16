@@ -58,7 +58,8 @@ test("the color card saves the theme's colors as an edited copy, edits that copy
 
   await hex("Background").fill("#101820");
   await hex("Background").press("Enter");
-  await expect(popup.locator("[data-rc=note]")).toHaveText("Saved.");
+  // Choom's reviewed CSS stays off in a copy until it is approved, and the card says so.
+  await expect(popup.locator("[data-rc=note]")).toHaveText("Saved as your own copy. Its advanced CSS stays off until you turn it on in Settings, under Make a theme.");
   // The copy keeps the show it credits; its own name is the edited one.
   await expect(popup.locator("[data-rs=summary-show]")).toHaveText("Cyberpunk: Edgerunners");
   await expect(popup.locator("[data-rs=summary-name]")).toHaveText("Choom Circuit (edited)");
@@ -72,7 +73,10 @@ test("the color card saves the theme's colors as an edited copy, edits that copy
   await hex("Accent").fill("ff5577");
   await hex("Accent").press("Enter");
   await expect.poll(async () => (await saved()).customThemes[0]?.document.colors.accent).toBe("#ff5577");
+  await expect(popup.locator("[data-rc=note]")).toHaveText("Saved.");
   expect((await saved()).customThemes).toHaveLength(1);
+  // The theme's own link color followed the accent.
+  expect((await saved()).customThemes[0].document.overrides?.link).toBeUndefined();
   await hex("Text").fill("#zzz");
   await hex("Text").press("Enter");
   await expect(hex("Text")).toHaveAttribute("aria-invalid", "true");

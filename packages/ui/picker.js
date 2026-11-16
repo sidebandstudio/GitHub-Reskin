@@ -69,10 +69,10 @@ export function mountPicker(doc, host, { cards, catalog, cardFor = null, onChang
     if (parts.error) parts.error.hidden = true;
   }
 
-  // Saved local themes become cards when the list changes.
+  // Saved local themes become cards when the list or a saved theme changes.
   function refreshCustomCards() {
     const custom = state.settings?.customThemes ?? [];
-    const key = custom.map((theme) => theme.id).join(",");
+    const key = JSON.stringify(custom.map((theme) => [theme.id, theme.document]));
     if (key === customKey || !cardFor) return;
     customKey = key;
     customCards = custom.flatMap((theme) => {

@@ -53,7 +53,7 @@ import { detectIsolation, ownFields } from "./isolation.js";
 import { createMenu } from "./menu.js";
 import { BUILDER_MODES, createPanel, PANEL_HASH } from "./panel.js";
 import { xrayRasterEnv } from "./raster.js";
-import { COPY, NOTE_LINKS } from "./copy.js";
+import { COPY, CSS_NOTE, NOTE_LINKS } from "./copy.js";
 import { createGmStorage, lockBridge } from "./storage.js";
 
 // The marker that keeps a second copy of this script (two managers, or a reinjection) from
@@ -308,8 +308,27 @@ function mountCard(doc, { host, catalog, kind, controls }) {
     fonts.load(id);
     return "";
   };
-  const picker = mountPicker(doc, host, { cards: CARDS, catalog, cardFor: standardCard, fontFace });
-  const colors = mountColors(doc, host, { catalog });
+  // The GM host tells subscribers only about other tabs' writes, so the picker and the color card
+  // each hear the other's commits here.
+  const local = new Set();
+  const cardHost = {
+    ...host,
+    async commit(...args) {
+      const reply = await host.commit(...args);
+      if (reply?.ok) for (const listener of local) listener();
+      return reply;
+    },
+    subscribe(listener) {
+      local.add(listener);
+      const stop = host.subscribe(listener);
+      return () => {
+        local.delete(listener);
+        stop();
+      };
+    },
+  };
+  const picker = mountPicker(doc, cardHost, { cards: CARDS, catalog, cardFor: standardCard, fontFace });
+  const colors = mountColors(doc, cardHost, { catalog, cssOff: `Saved as your own copy. ${CSS_NOTE}` });
 
   const status = part("status");
   listen(part("export"), "click", async () => {
