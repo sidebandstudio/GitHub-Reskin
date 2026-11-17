@@ -245,7 +245,7 @@ export const boot: BootRecord = {
   settingsRevision: 0,
   rendererVersion: 1,
   engineVersion: 3,
-  pairMatrixVersion: 2,
+  pairMatrixVersion: 3,
   expansionVersion: 1,
   sanitizerVersion: 1,
   catalogHash: "0".repeat(64),

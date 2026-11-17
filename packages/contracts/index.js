@@ -20,8 +20,10 @@ export const SETTINGS_VERSION = 2;
 export const RENDERER_VERSION = 1;
 export const ENGINE_VERSION = 3;
 // PairMatrix.version of packages/engine/pairs.json, recorded in the boot record. Version 2 keeps
-// every version 1 record first and unchanged, then adds the Revision 4 appearance pairs.
-export const PAIR_MATRIX_VERSION = 2;
+// every version 1 record first, then adds the Revision 4 appearance pairs. Version 3 lets a theme's
+// own border be its control outline, as 1.0 drew it: controlBorder needs 1.2:1, not 3:1, on the
+// surfaces an outline is drawn on; every other record is unchanged.
+export const PAIR_MATRIX_VERSION = 3;
 // The Revision 4 expansion of the resolved appearance record and the advanced CSS sanitizer
 // policy. Both enter the boot record and compiler fingerprints; a snapshot without them is stale.
 export const EXPANSION_VERSION = 1;

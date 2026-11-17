@@ -9,12 +9,12 @@
     {
       "file": "themes/classics/editing-suite.reskin.json",
       "seed": "fixture.standard-dark",
-      "sha256": "db602cb71f24888067638244037570a9361b0cea135645edacafa54433c305e4"
+      "sha256": "4c19ca12c23a7e1ac79b3f9b66ce7e65b11c4a9862dbe63c530085e074677dd7"
     },
     {
       "file": "themes/classics/editing-suite.reskin.json",
       "seed": "fixture.colorblind-dark",
-      "sha256": "3488114c21e2ed68ea7736414c9152486d93a0203ad39c14212eb44a349b9ca6"
+      "sha256": "778b7bc439f748bcf0e9eb83802207e8a5e81e4cffd08a3e6442cb0decafdd7f"
     },
     {
       "file": "themes/classics/dracula.reskin.json",
@@ -24,12 +24,12 @@
     {
       "file": "themes/classics/dracula.reskin.json",
       "seed": "fixture.standard-dark",
-      "sha256": "b1e4867b86117ae07268db2f7a3cc08c61eaf25c01e394f24bdb8386042ffda3"
+      "sha256": "2f5289979baa4cc7e6603085f5bb3f0bc5276ff384d9a2790b562fc6884b83ae"
     },
     {
       "file": "themes/classics/dracula.reskin.json",
       "seed": "fixture.colorblind-dark",
-      "sha256": "f30f096c4112a55956b7d06a6e8fabe514644c3517ce8f014121ef470fd983cd"
+      "sha256": "d769443ea7cff57ab676bdc5d75ab5aee8e5f9590fda06cf7c0744691cd18df6"
     },
     {
       "file": "themes/classics/nord.reskin.json",
@@ -39,12 +39,12 @@
     {
       "file": "themes/classics/nord.reskin.json",
       "seed": "fixture.standard-dark",
-      "sha256": "27708a59614a85ec33fab13260d43218f66aec4ce0322f5926d578dd8d256491"
+      "sha256": "1c1193a2b453f5423e4a1eeebeff173b3632de929cb1141b6e403e0d8d69aa05"
     },
     {
       "file": "themes/classics/nord.reskin.json",
       "seed": "fixture.colorblind-dark",
-      "sha256": "2fdf8bd790a91821b6d3cf4aa1cd375e3ea96cc206212d4e922c2d03bf641b0f"
+      "sha256": "5b5355ea8a014e16e8f0481398b9fd786baf6bc01c534f63b0cc217eaaa614ce"
     },
     {
       "file": "themes/classics/catppuccin-mocha.reskin.json",
@@ -54,12 +54,12 @@
     {
       "file": "themes/classics/catppuccin-mocha.reskin.json",
       "seed": "fixture.standard-dark",
-      "sha256": "64862f4b91b4bb84480ec1f3dba9d8d159aac3e776ba92d8e04df76bd712ff67"
+      "sha256": "dadd3aa8c2230dc055cee172ce3e0e78184c14d59804abfc12cecd55bc5f68ee"
     },
     {
       "file": "themes/classics/catppuccin-mocha.reskin.json",
       "seed": "fixture.colorblind-dark",
-      "sha256": "fbe7d60eec8a42d3640f40ac44887622e6c57ec26d414a0f24be18c84bc55abd"
+      "sha256": "4f05f95659746e9946e3117b96573a9955db6a1b3524b9be78d0134a771140c6"
     },
     {
       "file": "themes/classics/gruvbox.reskin.json",
@@ -69,12 +69,12 @@
     {
       "file": "themes/classics/gruvbox.reskin.json",
       "seed": "fixture.standard-dark",
-      "sha256": "73270ce18be4c6ba6e76211e960be31ab4f3684a126e3b6a44077ec2d50bfbbd"
+      "sha256": "45226b1d0e58b7f61af987419c53c77d29547adfd1caba032e35efd9b3e23777"
     },
     {
       "file": "themes/classics/gruvbox.reskin.json",
       "seed": "fixture.colorblind-dark",
-      "sha256": "5ab7e390870c713b428436fdc9d1c1b03d1a7ab1f809276c0620417ca685f332"
+      "sha256": "aa803ce0684113a9e12430ae865b3aee34c04d377b31de99a779fc8d86246a9e"
     },
     {
       "file": "themes/classics/tokyo-night.reskin.json",
@@ -84,12 +84,12 @@
     {
       "file": "themes/classics/tokyo-night.reskin.json",
       "seed": "fixture.standard-dark",
-      "sha256": "16aa1101ecc9de0df1bf5dfe9b0db43e597ea2ed155c4d7115fcf00a26f33716"
+      "sha256": "e66aeebd729f8d9553e64fc6223e1a83cbbd1a9bf65324613291ba369f969af0"
     },
     {
       "file": "themes/classics/tokyo-night.reskin.json",
       "seed": "fixture.colorblind-dark",
-      "sha256": "0a093050117fdc660fa25dad15d8b1ea433b093fc7434381e86c2a0c3aadc9d8"
+      "sha256": "642cde2ae024a0a29aa14c442e2f52153df0cd6c272dbc65253fb691e562413b"
     },
     {
       "file": "themes/classics/rose-pine.reskin.json",
@@ -99,12 +99,12 @@
     {
       "file": "themes/classics/rose-pine.reskin.json",
       "seed": "fixture.standard-dark",
-      "sha256": "dc2544ed831de4fb7bd9af34a2ca4b7d901bba1fc986d66f0d6a679b822b212b"
+      "sha256": "d150abf1d7535f4e61c99f1e3d07e4364af64ecb139dc7e952193b0e77b45403"
     },
     {
       "file": "themes/classics/rose-pine.reskin.json",
       "seed": "fixture.colorblind-dark",
-      "sha256": "e24d1a2c065808b524c07d45d408e58a2670a072305a7e96d5388be584caf9ad"
+      "sha256": "0753b971fa3588084a08816b729511e419368ee5fa8eee159261802f162c2486"
     },
     {
       "file": "themes/classics/one-dark.reskin.json",
@@ -114,12 +114,12 @@
     {
       "file": "themes/classics/one-dark.reskin.json",
       "seed": "fixture.standard-dark",
-      "sha256": "5287ce06cc317c1c17fd7198c475bc3fdf763631b4901b3f4679839f0d2e77a1"
+      "sha256": "d7f6a111b289a48afeb3144007d052fa5f01c0907d379f607f4642444a75e678"
     },
     {
       "file": "themes/classics/one-dark.reskin.json",
       "seed": "fixture.colorblind-dark",
-      "sha256": "b7c7b4c0edb6038c9ab3fcce0740c1403428048df2cc52bd6805ba80093b3264"
+      "sha256": "1d1be3b689f934aaf0651f64bb35e0b69ffb3ec7156b3298e0921185c66c7724"
     },
     {
       "file": "themes/classics/solarized-dark.reskin.json",
@@ -129,12 +129,12 @@
     {
       "file": "themes/classics/solarized-dark.reskin.json",
       "seed": "fixture.standard-dark",
-      "sha256": "6b7fa9264cadb29641edad17bef151e3456bc257ae8e8478904da00b114572cc"
+      "sha256": "d5e30d245ae4f7f591436d84ed0f195ef9e98c2c21e82fb8ddfd08072cc2b20f"
     },
     {
       "file": "themes/classics/solarized-dark.reskin.json",
       "seed": "fixture.colorblind-dark",
-      "sha256": "9cee6eb7c7f69e16abb05539004a19df4d53f700e9fa75769cf103733984e0b1"
+      "sha256": "10581ac056948eafbc277caa5fc186ab1ae8fe695f9de79c4421c643fe66bdbc"
     },
     {
       "file": "themes/classics/catppuccin-latte.reskin.json",
@@ -144,12 +144,12 @@
     {
       "file": "themes/classics/catppuccin-latte.reskin.json",
       "seed": "fixture.standard-light",
-      "sha256": "820ad609e23aee789256c7a22a909b0730d70912cfe5ea9392ab1aff2db4c5aa"
+      "sha256": "abc2f10f219b93cd42d0606ceb6e4c9559e76b30dabd4e31f95141ed009d5296"
     },
     {
       "file": "themes/classics/catppuccin-latte.reskin.json",
       "seed": "fixture.tritanopia-light",
-      "sha256": "5283a5d6574865e8cf12968ccc5ccc700a65434c3b72a7d0faa03f925387b035"
+      "sha256": "801f8da42de8a8a7c1b94400a3d432db175377e37fe5cd91c66ae8585380d046"
     },
     {
       "file": "themes/classics/rose-pine-dawn.reskin.json",
@@ -159,12 +159,12 @@
     {
       "file": "themes/classics/rose-pine-dawn.reskin.json",
       "seed": "fixture.standard-light",
-      "sha256": "9797e15e594274c3c302a9f700a67a330cf2bdd93d36bcc41e82255204dc4bf0"
+      "sha256": "ac1e1cf8f38e7059ba158ca3b47f8c0bdd7456111ba723df39ef0a45885f588e"
     },
     {
       "file": "themes/classics/rose-pine-dawn.reskin.json",
       "seed": "fixture.tritanopia-light",
-      "sha256": "c08d3abb13435d70c90feb0bce855f40db66dd46d0c45f098ccd0d4c5191b5eb"
+      "sha256": "d1ba1561febe8c9c09532c816cd9ea0533a51125480fc8f37946cc4ccc56a4f7"
     },
     {
       "file": "themes/classics/solarized-light.reskin.json",
@@ -174,12 +174,12 @@
     {
       "file": "themes/classics/solarized-light.reskin.json",
       "seed": "fixture.standard-light",
-      "sha256": "e6160bf627a7834f058c71c0de714158c62e2ebc1871f4cb9e863c9e0cb2c14e"
+      "sha256": "c44ec344fe48b9c65240c19a99a0edee3b3b87718f4b0a0cac18be4c54f1a147"
     },
     {
       "file": "themes/classics/solarized-light.reskin.json",
       "seed": "fixture.tritanopia-light",
-      "sha256": "7e5866320b2ddb68ebe274f414b88465d3d959278cc77ac07319fb4c8a46d689"
+      "sha256": "719873f4bf75ed6ff685387d46abcdc0a0fda22145ee3ac07ac7550f68f396ad"
     },
     {
       "file": "tests/fixtures/roundtrip/accessibility-output.reskin.json",
@@ -189,12 +189,12 @@
     {
       "file": "tests/fixtures/roundtrip/accessibility-output.reskin.json",
       "seed": "fixture.standard-dark",
-      "sha256": "ab66c65c71556083bea1723415a34924f375f62187bbb096c39edd9fb54a8449"
+      "sha256": "cfe7bca547624f49273c005f375ea671891e5caba4186cefc01cc7ac8c9f4a6c"
     },
     {
       "file": "tests/fixtures/roundtrip/accessibility-output.reskin.json",
       "seed": "fixture.colorblind-dark",
-      "sha256": "25e1093258cdb30a590520b08e4f7666ec5b60e8d6320cac8b7eaadaf8b7bc57"
+      "sha256": "0f66ab133977a9be0d03f50ddc6d2326eb90381db7904aeea05706e9aa6ab71f"
     },
     {
       "file": "tests/fixtures/roundtrip/primary-states.reskin.json",
@@ -204,12 +204,12 @@
     {
       "file": "tests/fixtures/roundtrip/primary-states.reskin.json",
       "seed": "fixture.standard-dark",
-      "sha256": "87b97e7ec8e98a2f7995f68d4ea66c369d0d8cd24d9db23c81ecfbd0c9524c27"
+      "sha256": "40417c5e1d6c276d4eb9feca1816f61e4bfc08f8b3b02e0acde9c8b8885c09cf"
     },
     {
       "file": "tests/fixtures/roundtrip/primary-states.reskin.json",
       "seed": "fixture.colorblind-dark",
-      "sha256": "9710859ad43b7427d987c0cd35ded52413cf28f77d2afbe25c4c70a985a8d55c"
+      "sha256": "3f7077461369185798ff7657a99c28b27e72bc22490848ebf14966195bd23cb1"
     },
     {
       "file": "tests/fixtures/roundtrip/syntax-diff.reskin.json",
@@ -219,12 +219,12 @@
     {
       "file": "tests/fixtures/roundtrip/syntax-diff.reskin.json",
       "seed": "fixture.standard-light",
-      "sha256": "5bce8e134e3ca7ce34cd639057ecb3a5891268f693788eb50c163fbb545611b9"
+      "sha256": "f7a9a831f5151e07ad8f5aa0f86099548ba4225804493c9871131657dd8d679a"
     },
     {
       "file": "tests/fixtures/roundtrip/syntax-diff.reskin.json",
       "seed": "fixture.tritanopia-light",
-      "sha256": "2da49904370f6c44641fd9ebe792643750e1df21bd993832ffd916fb2cdd6331"
+      "sha256": "cd07b05d736debaed0e33ba7f81bb73e1421f6ddb3f5cc662427db6ac89ced66"
     },
     {
       "file": "tests/fixtures/schema/repair/graph-collapses.reskin.json",
@@ -234,12 +234,12 @@
     {
       "file": "tests/fixtures/schema/repair/graph-collapses.reskin.json",
       "seed": "fixture.standard-light",
-      "sha256": "62981c903b9bf64bbb18ca23a0e0c6d065ee543a8873f75b7d0a8b1c8d8332f4"
+      "sha256": "4133ef76e71a46417f19bce8ac9bfb05a9298f7083d18a728385c699e0423dd1"
     },
     {
       "file": "tests/fixtures/schema/repair/graph-collapses.reskin.json",
       "seed": "fixture.tritanopia-light",
-      "sha256": "e05a05f4fbdc0736485a54e5394a182beee9a013f73ae90f384527ffb6099768"
+      "sha256": "10ae057d379db9b634633ec59443f35430fbc99db0e710983429ab61c0946cae"
     },
     {
       "file": "tests/fixtures/schema/repair/text-equals-background.reskin.json",
@@ -249,12 +249,12 @@
     {
       "file": "tests/fixtures/schema/repair/text-equals-background.reskin.json",
       "seed": "fixture.standard-light",
-      "sha256": "aed137c5ef25dc781fa655defcd2a676d6063e8e88109b55e5c924474eba82f2"
+      "sha256": "00b58edfe0a1a48079a10892b6637db44af609220b502ba07dba90b724959a15"
     },
     {
       "file": "tests/fixtures/schema/repair/text-equals-background.reskin.json",
       "seed": "fixture.tritanopia-light",
-      "sha256": "8c6e7d3eff4da86684c1f034b41a62e833bbc919e8b1f979007321c6558c0fab"
+      "sha256": "04a95fd379e1c57ce8ba653e0609b23e367ef7cbe49d7479adbd663baab7eeb9"
     },
     {
       "file": "tests/fixtures/schema/valid/advanced-css.reskin.json",
@@ -264,12 +264,12 @@
     {
       "file": "tests/fixtures/schema/valid/advanced-css.reskin.json",
       "seed": "fixture.standard-light",
-      "sha256": "2c5aaca1e41a22569d01d5ad715b0d41a0cb08b562b4eee88adc1a5e04b254d0"
+      "sha256": "9a85eed06a735643bf28bd82c6afe5bfc895b002289d255ad0dbd84db75a2168"
     },
     {
       "file": "tests/fixtures/schema/valid/advanced-css.reskin.json",
       "seed": "fixture.tritanopia-light",
-      "sha256": "fd714508d12f7d111412a7655ea47fbcd1959ea2ad6fc3c355a6def11bc7f8fd"
+      "sha256": "d71d10f4365192b1581c923c799c857fd8facc9f353fab961a72d5c3d7b88f58"
     },
     {
       "file": "tests/fixtures/schema/valid/ai-rich.reskin.json",
@@ -279,12 +279,12 @@
     {
       "file": "tests/fixtures/schema/valid/ai-rich.reskin.json",
       "seed": "fixture.standard-dark",
-      "sha256": "d2c5f98877fa6a3414bc7705d1a57bde48dac32be5f8a422533fce6ec178ab6e"
+      "sha256": "bffbc13d3690320658ad79850bd6d0c0a18d39706719f3e6da41621c578a55d2"
     },
     {
       "file": "tests/fixtures/schema/valid/ai-rich.reskin.json",
       "seed": "fixture.colorblind-dark",
-      "sha256": "0e70cc9810d70424e3487c7bac46c657f8daa2f0ab4fc4896dbb20864167fd22"
+      "sha256": "86c023ed835092ea9193f3a03c2682acb35b79e74db7fa9ffb94f0db0274aeac"
     },
     {
       "file": "tests/fixtures/schema/valid/art-additions.reskin.json",
@@ -294,12 +294,12 @@
     {
       "file": "tests/fixtures/schema/valid/art-additions.reskin.json",
       "seed": "fixture.standard-light",
-      "sha256": "858cbf43785da1e2e27f3249c9be0088082d405511db43aab16e31566dd1fd45"
+      "sha256": "5e048b820e2bc013092ae2ae6bcad960dbddee1e527b5fe13c49db242428af20"
     },
     {
       "file": "tests/fixtures/schema/valid/art-additions.reskin.json",
       "seed": "fixture.tritanopia-light",
-      "sha256": "61d571b801540382e15a9251048072f4abb0f07a4cce1935ff05113422fe22bb"
+      "sha256": "ec59f11cbd74ccce814865c961553c5b5118649b27d83ff181d6ab90d88ab9f9"
     },
     {
       "file": "tests/fixtures/schema/valid/choom-circuit.reskin.json",
@@ -309,12 +309,12 @@
     {
       "file": "tests/fixtures/schema/valid/choom-circuit.reskin.json",
       "seed": "fixture.standard-dark",
-      "sha256": "89bf0846a798f6fbe5885e3314d1cd1aaa88e266238a162d301efc366376eaed"
+      "sha256": "59cd59367d676d605224153cae39f84e58fe2e7550e288fff0fcff4f0d3eb5b1"
     },
     {
       "file": "tests/fixtures/schema/valid/choom-circuit.reskin.json",
       "seed": "fixture.colorblind-dark",
-      "sha256": "f23c64df7b437d3d0156780f29bb33333c252fe74eb0fa01a7cb3196fa9d3439"
+      "sha256": "275d0a76fd2f23a6e68e6a6ea1d80ddc1ec46cda262cdf473169562ee0edc8d5"
     },
     {
       "file": "tests/fixtures/schema/valid/effect-defaults.reskin.json",
@@ -324,12 +324,12 @@
     {
       "file": "tests/fixtures/schema/valid/effect-defaults.reskin.json",
       "seed": "fixture.standard-light",
-      "sha256": "ebf22bc1abacdff45d84370468fdeef806c98cf562ec86adc837b7245cb3f151"
+      "sha256": "f1a4f0684183364b4d185dce524144de1529d92c8a1ad5795aee996f89558316"
     },
     {
       "file": "tests/fixtures/schema/valid/effect-defaults.reskin.json",
       "seed": "fixture.tritanopia-light",
-      "sha256": "9b5a81a533c2955ecd97c3bceeafd8ffb10342dc7dc73ed35a763a74ec5515c5"
+      "sha256": "fc486d57e42a3e2d26c997868822bff4632734c72509af3f44b4e58a26e55f77"
     },
     {
       "file": "tests/fixtures/schema/valid/embedded-images.reskin.json",
@@ -339,27 +339,27 @@
     {
       "file": "tests/fixtures/schema/valid/embedded-images.reskin.json",
       "seed": "fixture.standard-light",
-      "sha256": "85ee7f9724c462ac78569cd001c5bf695e27819ca284b461f655cf0d5003858c"
+      "sha256": "c968891cd42f84364015e10e2bf7d04b8d98f3486e7712edf176ceb366fc2827"
     },
     {
       "file": "tests/fixtures/schema/valid/embedded-images.reskin.json",
       "seed": "fixture.tritanopia-light",
-      "sha256": "ee4383fb356b6fdfdc1a3e4cbde80d22d60da0e91593f12eac885e0abb581573"
+      "sha256": "ad3439d3cc297d07c4d2d9f4f4385a734f66ef1067bf8033f4f2e67eff22e204"
     },
     {
       "file": "tests/fixtures/schema/valid/legacy-rich-v1.reskin.json",
       "seed": "repair",
-      "sha256": "4c2a055c113b3c44c4f2d3de738de61d58b6a436940504289cb035f3939f771d"
+      "sha256": "9e59f534a5b5b5b32452ada4976b25dc757efd4954d6113c5a3b5172e1584864"
     },
     {
       "file": "tests/fixtures/schema/valid/legacy-rich-v1.reskin.json",
       "seed": "fixture.standard-dark",
-      "sha256": "3757b229947e295f91a2a4a3e1e4cd3b82e49459f0bd5f4e82940683c86df6e8"
+      "sha256": "fce8bc1f1ddb794887ada66779b1eaf7f5ecc7c6a96cf9be113d4f1f7e887c1a"
     },
     {
       "file": "tests/fixtures/schema/valid/legacy-rich-v1.reskin.json",
       "seed": "fixture.colorblind-dark",
-      "sha256": "aadadf43173784a3f4a03994c26ef4349059b61a769ee913462b8df7dd45264c"
+      "sha256": "a9fef513af4f2cb75c2a4ab5732fc556f98f3def08e7c524b0942da0e576cd06"
     },
     {
       "file": "tests/fixtures/schema/valid/minimal-light.reskin.json",
@@ -369,12 +369,12 @@
     {
       "file": "tests/fixtures/schema/valid/minimal-light.reskin.json",
       "seed": "fixture.standard-light",
-      "sha256": "2a24f0eed80c4ebe46b160e88caf117fa9ee882babe5116f0eb6f47ec475f080"
+      "sha256": "44709c326bfa70c4a5507335f040120d9d4a4947152f4075e303831ee62d0a3a"
     },
     {
       "file": "tests/fixtures/schema/valid/minimal-light.reskin.json",
       "seed": "fixture.tritanopia-light",
-      "sha256": "b6e0d4205c980220fd70f0d63125f798ad997ab0389c082f39888a8175b5dbda"
+      "sha256": "8adc183c760407c85c0d56ec25659e02c7ebd8c534bf0df9f7583cfb8d0ac0fd"
     },
     {
       "file": "tests/fixtures/choom/choom-circuit-faithful.reskin.json",
@@ -384,12 +384,12 @@
     {
       "file": "tests/fixtures/choom/choom-circuit-faithful.reskin.json",
       "seed": "fixture.standard-dark",
-      "sha256": "dcb4d1c87cf3556506887648d3d8b348a85fc79fbab0792f22095e374aaa9de7"
+      "sha256": "f90809390e08b5fabdc09d5d7b1bdf8c640aeff1e0d684fd8c6dc7d4a86ae238"
     },
     {
       "file": "tests/fixtures/choom/choom-circuit-faithful.reskin.json",
       "seed": "fixture.colorblind-dark",
-      "sha256": "8fdb2afc06ce9cec55b38682378b83c65f01ab11dfc11123b33cf86a1cf639f3"
+      "sha256": "b13da3e1a25c26951fab4817de09aea014ac793398e7c8d744e11c5da57ce4c3"
     }
   ]
 }

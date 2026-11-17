@@ -262,7 +262,8 @@ export function deriveColors(theme, seed) {
   init("primaryHoverBackground", mix(rest, away, 0.08));
   init("primaryPressedBackground", mix(rest, away, 0.16));
   for (const key of ["primaryHoverText", "primaryPressedText", "primaryIcon"]) init(key, restInk);
-  init("primaryBorder", tok("controlBorder"));
+  // A primary button's ring is its own fill, as in 1.0.
+  init("primaryBorder", tok("primaryBackground"));
   init("primaryCounterBackground", mix(rest, restInk, 0.16));
   init("primaryCounterText", bestInk(tok("primaryCounterBackground"), base));
   for (const id of ["primaryHoverText", "primaryPressedText", "primaryIcon", "primaryCounterText", "primaryBorder"]) repairId(colors, id);
