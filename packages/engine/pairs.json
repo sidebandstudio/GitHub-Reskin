@@ -750,6 +750,8 @@
         "/tokens/surface",
         "/tokens/inset",
         "/tokens/raised",
+        "/tokens/hover",
+        "/tokens/active",
         "/tokens/inputBackground"
       ],
       "minimum": 1.2,

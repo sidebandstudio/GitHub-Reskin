@@ -30,7 +30,7 @@ test("a themed resolution has exactly the frozen keys, every color and a passing
   assert.equal(resolved.seedHash, darkSeed.sourceHash);
   assert.equal(resolved.sourceHash, sha256(new TextEncoder().encode(canonicalize(rich))));
   assert.equal(resolved.pairAudit.length, AUDITS);
-  assert.equal(AUDITS, 385);
+  assert.equal(AUDITS, 387);
   assert.deepEqual([resolved.expansionVersion, resolved.sanitizerVersion], [1, 1]);
   assert.ok(resolved.pairAudit.every((r) => r.passed && r.ratio >= r.minimum));
   assert.deepEqual(auditPairs(resolved), resolved.pairAudit);
@@ -48,8 +48,11 @@ test("source colors start the derivation as the spec's initial-value table says"
   assert.equal(t.counterBackground, t.active);
   assert.equal(t.primaryHoverText, t.primaryText);
   assert.equal(t.primaryBorder, t.primaryBackground);
-  // The control outline is the theme's own border while it stands 1.2:1 off the page.
-  assert.equal(t.controlBorder, t.border);
+  // The control outline starts from the theme's own border, lifted only as far as 1.2:1 on every
+  // surface it is drawn on; a border that already stands that far off is the outline itself.
+  for (const bg of ["canvas", "surface", "inset", "raised", "hover", "active", "inputBackground"]) assert.ok(contrast(t.controlBorder, t[bg]) >= 1.2, bg);
+  const kept = resolveTheme({ ...minimal, overrides: { ...minimal.overrides, border: "#767676" } }, themed(lightSeed)).tokens;
+  assert.equal(kept.controlBorder, "#767676");
   // Repairs only touch failing pairs; supplied passing values survive.
   const choom = resolveTheme(rich, themed(darkSeed)).tokens;
   for (const key of ["surface", "inset", "mutedText", "link", "primaryBackground", "primaryText"]) assert.equal(choom[key], rich.overrides[key], key);

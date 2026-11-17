@@ -204,7 +204,7 @@ export interface PairRecord {
   /** The record applies only when the source supplies this override; otherwise it is not audited. */
   supplied?: `/overrides/${OverrideColorKey}`;
 }
-/** Version 3 keeps every version 1 record first, unchanged but for controlBorder's 1.2:1 outline, and adds the appearance and supplied-only pairs. */
+/** Version 3 keeps every version 1 record first, unchanged but for controlBorder's 1.2:1 minimum, and adds the appearance and supplied-only pairs. */
 export interface PairMatrix {
   version: 3;
   records: readonly PairRecord[];

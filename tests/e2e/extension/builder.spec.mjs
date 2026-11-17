@@ -181,8 +181,9 @@ async function aiPromptAndAnswer(env) {
   await dialog.getByRole("textbox", { name: "Chatbot answer" }).fill(ANSWER);
   await dialog.getByRole("button", { name: "Preview theme" }).click();
   await expect(dialog.getByText("We found your theme inside the answer.")).toBeVisible();
-  // Its graph levels are kept as written; its code and link colors are made readable.
-  await expect(dialog.getByText("We adjusted 5 colors so links and text are easier to read.")).toBeVisible();
+  // Its graph levels are kept as written; its code, link and outline colors are made readable, and
+  // the disabled and label borders that start from its outline reach their own 3:1.
+  await expect(dialog.getByText("We adjusted 7 colors so links and text are easier to read.")).toBeVisible();
   await expect(dialog.locator('[data-rb="import-show"]')).toHaveText("Neon Drizzle");
   await dialog.getByText("See changes").click();
   await expect(dialog.getByRole("rowheader", { name: /Code syntax keyword/ })).toBeVisible();

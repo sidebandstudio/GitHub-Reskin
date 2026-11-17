@@ -51,15 +51,15 @@ test("malformed seeds are rejected with specific problems", () => {
 test("pair matrix version 3 keeps the frozen version 1 records first, unchanged but for the control outline, then adds the appearance and supplied-only pairs", () => {
   const v1 = json(`${TESTS}fixtures/contracts/pairs.json`);
   assert.equal(PAIR_MATRIX.version, 3);
-  // A theme's own border is its control outline, as 1.0 drew it: 1.2:1 on the surfaces an outline
-  // is drawn on, where version 1 asked 3:1 on those and on hover and active fills too.
-  const outline = (record) => record.id === "controlBorder" ? { ...record, backgrounds: record.backgrounds.filter((b) => !["/tokens/hover", "/tokens/active"].includes(b)), minimum: 1.2 } : record;
+  // A theme's own border is its control outline, as 1.0 drew it: 1.2:1 on every surface it is drawn
+  // on, where version 1 asked 3:1.
+  const outline = (record) => record.id === "controlBorder" ? { ...record, minimum: 1.2 } : record;
   assert.deepEqual(PAIR_MATRIX.records.slice(0, v1.records.length), v1.records.map(outline));
   assert.deepEqual(pairMatrixProblems(PAIR_MATRIX), []);
   assert.equal(v1.records.length, 67);
   assert.equal(v1.records.reduce((n, r) => n + r.backgrounds.length, 0), 287);
   assert.equal(PAIR_MATRIX.records.length, 93);
-  assert.equal(PAIR_MATRIX.records.reduce((n, r) => n + r.backgrounds.length, 0), 386);
+  assert.equal(PAIR_MATRIX.records.reduce((n, r) => n + r.backgrounds.length, 0), 388);
   // Every added record names an appearance color or applies only to a supplied override, so none
   // moves a version 1 color of a source without that override.
   for (const record of PAIR_MATRIX.records.slice(v1.records.length)) assert.ok(record.supplied || record.foreground.startsWith("/appearance/") || record.backgrounds.every((b) => b.startsWith("/appearance/")), record.id);

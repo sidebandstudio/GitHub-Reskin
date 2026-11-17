@@ -59,6 +59,8 @@ The popup switches between two appearances. Full, the default, draws each theme'
 
 Separate switches turn off the extra text or the motion. If your system asks for reduced motion, nothing moves. Forced colors and GitHub's high contrast modes keep GitHub's native colors.
 
+Buttons and text fields take each theme's own outline color, which can be as faint as GitHub's own outlines. If you need clearer edges around fields and checkboxes, use one of GitHub's high contrast modes or your system's forced colors.
+
 ## Make your own theme
 
 Settings, in the popup, opens the theme builder. It starts with three colors: background, text and accent. More options cover backgrounds and images, shapes and type, code colors, the graph and advanced CSS. The builder imports a theme from a `.reskin.json` file, pasted JSON or a share code that starts with `RS1.`, and exports the same three ways.
