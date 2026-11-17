@@ -1,7 +1,7 @@
 // The compiled stylesheets of every Classic and C2 fixture theme, as sha256 per mode and Full or
 // Calm, read from a checkout's own modules, with the Primer stylesheet's declarations of the two
-// variables C2c added, and C6's protected-UI rules, left out, and the empty day's outline put back
-// to main's. Not a test file itself. The
+// variables C2c added and C6's Brand guard left out, and the empty day's outline put back to
+// main's. Recorded again where later changes are documented in the test. Not a test file itself. The
 // accent emphasis tests compare this checkout with the hashes recorded on main before
 // overrides.accentEmphasis existed:
 //   node tests/primer/compile-baseline.mjs <checkout>   prints that checkout's hashes as JSON
@@ -18,16 +18,10 @@ const sha256 = (text) => createHash("sha256").update(text).digest("hex");
 // GitHub's elements and sets each in the theme CSS scope, so it gains their declarations, and
 // only those, wherever it writes the others.
 const ADDED = /--reskin-accent-emphasis(?:-text)?:[^;}]*(?:;|(?=\}))/g;
-// C6's protected-UI changes: a Brand subject that holds protected UI takes no Brand mapping, and
-// protected UI takes back its island's own values, or the seed mode's where its island's text
-// does not read at 4.5:1 on the theme's canvas, with the seed's default text for its muted text
-// where the seed's does not read either. The restoring rules are left out on both sides; the
-// compiler and browser tests check them.
+// C6's protected-UI change: a Brand subject that holds protected UI takes no Brand mapping.
 const BRAND_HOLDS_PROTECTED = /:not\(:has\(form,a\[href\^="\/login"\][^{]*?\[data-reskin-protected\]\)\)/g;
-const PROTECTED_RESTORE = /^@container style\(--reskin-on: 1\) and style\(--reskin-mode: [a-z_]+\)\{[^\n]*\n/gm;
-const SEED_MUTED = /;--fgColor-muted:#[0-9a-f]{6}\}/g;
-/** The stylesheet without the declarations of the two added variables and C6's protected-UI rules. */
-export const withoutAdded = (css) => css.replace(ADDED, "").replace(BRAND_HOLDS_PROTECTED, "").replace(PROTECTED_RESTORE, "").replace(SEED_MUTED, "}");
+/** The stylesheet without the declarations of the two added variables and C6's Brand guard. */
+export const withoutAdded = (css) => css.replace(ADDED, "").replace(BRAND_HOLDS_PROTECTED, "");
 // An empty day's outline now takes the cell's own fill, so the day is a solid square as on GitHub
 // and in 1.0, where main gave it the control border. The comparison puts main's value back.
 const EMPTY_DAY = "--contribution-default-borderColor-0";

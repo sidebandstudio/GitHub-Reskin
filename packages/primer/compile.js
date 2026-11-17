@@ -21,9 +21,10 @@ const PREFERENCE_KEYS = ["enabled", "extras", "text", "motion", "fonts", "effect
 const GRAPH_TARGET = '.js-highlight-blob,.Progress-item:is(main #js-contribution-activity .Progress[role="img"] > *):not(.markdown-body *)';
 // Protected UI, as the registry lists it and as admission marks it, keeps GitHub's own components
 // with everything inside it: no structured rule or themed island applies in it, and it clears the
-// Reskin switches its descendants' rules read. Its colors are the theme's, inherited from its
-// nearest island, as 1.0 colored all of GitHub; status fills stay the seed's, so a warning or a
-// danger control keeps its meaning.
+// Reskin switches its descendants' rules read. Its neutral colors are the theme's, inherited from
+// its nearest island, as 1.0 colored all of GitHub. Its status colors are GitHub's own for the
+// seed's mode, so a theme that sets them cannot make a warning, a danger control or a verified
+// badge read as another state.
 const PROTECTED_UI = `${PROTECTED},[${CSS_MARKERS.protected}]`;
 const UNPROTECTED = `:not(${PROTECTED_UI},:is(${PROTECTED_UI}) *)`;
 // GitHub's mode files do not reset Brand variables, and no captured baseline restores them, so a
@@ -79,6 +80,11 @@ function alternatives(list) {
 }
 // Every alternative of `target` with `suffix`, as one list: each keeps its own leading key.
 const each = (target, suffix) => alternatives(target).map((t) => `${t}${suffix}`).join(",");
+// Protected UI that is not an island itself; an island keeps GitHub's own declarations for its
+// mode. Each alternative keeps its own key.
+const FRAGMENT = each(PROTECTED_UI, `:not(${ATTRIBUTED})`);
+// The status colors protected UI keeps: every variable mapped from a semantic role.
+const STATUS = MAPPINGS.emit.filter((m) => m.role.startsWith("/semantics/"));
 
 const checkedDeclarations = new WeakMap();
 // islandScope builds the same long selectors for every compile of a plan, so they are kept.
@@ -250,6 +256,10 @@ export function compileGitHub(resolved, modePlan, prefs, index = MODE_INDEX, opt
   ].join(";");
   const brandDeclarations = [...brand].map(([name, value]) => `${name}:${value} !important`).join(";");
   const brandPageDeclarations = [...brandPage].map(([name, value]) => `${name}:${value} !important`).join(";");
+  // GitHub's own status colors for the seed's mode. Only themed islands set these variables, so on
+  // protected UI that is no island they need no !important, and GitHub's own rules that set one
+  // there still win. The preview fixture holds no protected UI.
+  const status = preview ? "" : [...emittedColors(seed.colors, STATUS)].map(([name, value]) => `${name}:${value}`).join(";");
 
   const covered = coveredModes(index, seed.id);
   const known = Object.keys(index.modes);
@@ -321,6 +331,11 @@ export function compileGitHub(resolved, modePlan, prefs, index = MODE_INDEX, opt
       `:is(${geckoRules.map(([target]) => target).join(",")})${UNPROTECTED}${scope.nearest}{`,
       ...geckoRules.map(rule("&")),
       "}",
+      // Protected UI whose nearest island is themed, found by selector through six islands, and
+      // neither protected nor inside protected UI, takes GitHub's own status colors. Past six
+      // islands no island holding protected UI is themed. Gecko tests every element against the
+      // rule, and the protected list fails at once for nearly all of them.
+      ...(status ? [`:is(${PROTECTED_UI})${scope.shallow}:not(:is(${PROTECTED_UI}) ${ATTRIBUTED} *,${ATTRIBUTED}:is(${PROTECTED_UI}) *){${status}}`] : []),
       "}",
       ...(wanted("selection")
         ? [
@@ -346,6 +361,9 @@ export function compileGitHub(resolved, modePlan, prefs, index = MODE_INDEX, opt
     "@media (prefers-color-scheme: dark){",
     branch("dark"),
     "}",
+    // Protected UI inside a themed island takes GitHub's own status colors, which everything in it
+    // inherits. The style query reads the parent's, the nearest island's.
+    ...(status ? [`@container style(${ON}: 1){${FRAGMENT}{${status}}}`] : []),
     // Last, protected UI clears the Reskin switches for itself and everything in it, as a native
     // island does, so no style-queried rule or Reskin variable reaches inside.
     `${PROTECTED_UI}{${CLEARED}}`,

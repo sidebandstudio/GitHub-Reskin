@@ -218,9 +218,12 @@ test("structured component rules never reach protected UI or anything inside it,
     resolved.appearance = { ...resolved.appearance, shape: { corners: { style: "bevel", radius: 12 }, borders: { width: 4, style: "solid", color: "#123456" }, shadows: { style: "glow", color: "#fcee0a", opacity: 0.6, blur: 24, offset: 0 }, buttons: { style: "bevel", radius: 8 }, avatar: null } };
     const { css } = compileGitHub(resolved, p, prefs);
     const all = rules(css);
+    // Protected UI's own status colors: under the style query, and through the selector fallback.
+    const items = PROTECTED_UI.split(/,(?=[a-z.[])/);
+    const status = (r) => r.selectors.every((s) => s.startsWith(`:is(${PROTECTED_UI}):not(`) || items.some((i) => s.startsWith(`${i}:not(`)));
     // Every rule that styles a GitHub element rather than an island: components, graph, labels
     // and scroll containers, in every engine path.
-    const styled = all.filter((r) => r.declarations.length && !r.selectors.some((s) => s.startsWith(":where(") || s.includes("[data-color-mode]:not([data-light-theme],[data-dark-theme])") || s.startsWith("header.HeaderMktg") || s.startsWith(":root") || s.startsWith("::selection") || s.startsWith(":is([data-color-mode=")) && r.selectors.join(",") !== PROTECTED_UI);
+    const styled = all.filter((r) => r.declarations.length && !status(r) && !r.selectors.some((s) => s.startsWith(":where(") || s.includes("[data-color-mode]:not([data-light-theme],[data-dark-theme])") || s.startsWith("header.HeaderMktg") || s.startsWith(":root") || s.startsWith("::selection") || s.startsWith(":is([data-color-mode=")) && r.selectors.join(",") !== PROTECTED_UI);
     assert.ok(styled.length > 12, prefs.appearance);
     // Every path refuses protected UI and everything inside it, under the style query too.
     for (const r of styled) for (const s of r.selectors) assert.ok(s.includes(UNPROTECTED), `${prefs.appearance} ${r.media.join(" ")} ${s.slice(0, 80)}`);
@@ -232,15 +235,28 @@ test("structured component rules never reach protected UI or anything inside it,
   }
 });
 
-test("protected UI takes the theme's colors from its nearest island, as 1.0 colored all of GitHub: no rule gives it GitHub's own values back", () => {
+test("protected UI takes the theme's neutral colors from its nearest island, as 1.0 colored all of GitHub, and GitHub's own status colors for the seed's mode", () => {
+  const items = PROTECTED_UI.split(/,(?=[a-z.[])/);
   for (const seedMode of ["dark", "light"]) {
     const [resolved, p] = themed(seedMode);
+    // A theme that paints danger text green.
+    resolved.semantics = { ...resolved.semantics, danger: { ...resolved.semantics.danger, text: "#3fb950" } };
     const all = rules(compileGitHub(resolved, p, PREFS).css);
     assert.ok(all.every((r) => !r.media.some((m) => m.includes("--reskin-mode")) && r.declarations.every((d) => d.name !== "--reskin-mode")), seedMode);
-    // The one rule whose subject is protected UI itself clears the Reskin switches and nothing else.
-    const own = all.filter((r) => r.selectors.some((s) => PROTECTED_UI.split(/,(?=[a-z.[])/).includes(s) || s.startsWith(`:is(${PROTECTED_UI})`)));
-    assert.equal(own.length, 1, seedMode);
-    assert.deepEqual(own[0].declarations.map((d) => d.name), ["--reskin-on", ...Object.keys(CSS_VARIABLES)]);
+    const own = all.filter((r) => r.selectors.some((s) => items.some((i) => s === i || s.startsWith(`${i}:not(`)) || s.startsWith(`:is(${PROTECTED_UI})`)));
+    // One rule clears the Reskin switches and nothing else.
+    const guard = own.filter((r) => r.declarations[0]?.name === "--reskin-on");
+    assert.equal(guard.length, 1, seedMode);
+    assert.deepEqual(guard[0].declarations.map((d) => d.name), ["--reskin-on", ...Object.keys(CSS_VARIABLES)]);
+    // The others, under the style query and in each branch's Gecko selector fallback, set only the
+    // status variables, at the seed's own values, without !important.
+    const status = own.filter((r) => r !== guard[0]);
+    assert.equal(status.length, 3, seedMode);
+    assert.equal(status.filter((r) => r.media.includes("style(--reskin-on: 1)")).length, 1, seedMode);
+    const native = emittedColors(MODE_INDEX.modes[seedMode].colors, mappings.emit.filter((m) => m.role.startsWith("/semantics/")));
+    assert.ok(native.size >= 30);
+    assert.notEqual(native.get("--fgColor-danger"), "#3fb950");
+    for (const r of status) assert.deepEqual(r.declarations.map((d) => [d.name, d.value, d.important]), [...native].map(([name, value]) => [name, value, false]), seedMode);
   }
 });
 

@@ -67,7 +67,7 @@ test("the override drives GitHub's emphasis fill and its ink in Full and Calm on
     assert.notEqual(plain.tokens.accentEmphasis, TEAL);
     assert.ok(!declared(compileGitHub(plain, plan, PREFS).css, "--bgColor-accent-emphasis").includes(TEAL), mode.id);
     // Only the emphasis variables follow the override: the rest of the stylesheet is the same.
-    const strip = (css) => withoutAdded(css).replace(/--(?:bgColor-accent-emphasis|fgColor-onEmphasis|diffBlob-hunkNum-bgColor-hover|control-checked-(?:bg|border)Color-(?:rest|hover|active)):#[0-9a-f]{6}/g, "");
+    const strip = (css) => withoutAdded(css).replace(/--(?:bgColor-accent-emphasis|fgColor-onEmphasis|diffBlob-hunkNum-bgColor-hover|button-outline-bgColor-active|control-checked-(?:bg|border)Color-(?:rest|hover|active)):#[0-9a-f]{6}/g, "");
     assert.equal(strip(compileGitHub(resolved, plan, PREFS).css), strip(compileGitHub(plain, plan, PREFS).css), mode.id);
   }
 });
