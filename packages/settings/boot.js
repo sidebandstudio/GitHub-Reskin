@@ -100,7 +100,9 @@ export function snapshotProblems(resolved) {
   if (!isPlainObject(resolved)) return ["not an object"];
   if (NATIVE_POLICIES.includes(resolved.policy)) return nativeProblems(resolved);
   if (resolved.policy !== "themed") return ["unknown policy"];
-  if (!sameKeys(resolved, THEMED_KEYS)) return ["themed keys are not exactly the renderer 1 keys"];
+  // A theme that sets its own status colors also carries the seed's, for protected UI.
+  const status = Object.hasOwn(resolved, "statusSemantics");
+  if (!sameKeys(resolved, status ? [...THEMED_KEYS, "statusSemantics"] : THEMED_KEYS)) return ["themed keys are not exactly the renderer 1 keys"];
   const problems = [...expandedProblems(resolved)];
   if (!isPlainObject(resolved.appearance)) problems.push("appearance is not an object");
   const group = (name, value, keys, check) => {
@@ -108,7 +110,9 @@ export function snapshotProblems(resolved) {
     else for (const key of keys) if (!check(value[key])) problems.push(`${name}.${key} is invalid`);
   };
   group("tokens", resolved.tokens, TOKEN_KEYS, isHex);
-  group("semantics", resolved.semantics, SEMANTIC_ROLES, (record) => sameKeys(record, SEMANTIC_FIELDS) && SEMANTIC_FIELDS.every((f) => isHex(record[f])));
+  const semantic = (record) => sameKeys(record, SEMANTIC_FIELDS) && SEMANTIC_FIELDS.every((f) => isHex(record[f]));
+  group("semantics", resolved.semantics, SEMANTIC_ROLES, semantic);
+  if (status) group("statusSemantics", resolved.statusSemantics, SEMANTIC_ROLES, semantic);
   group("syntax", resolved.syntax, SYNTAX_ROLES, isHex);
   group("ansi", resolved.ansi, ANSI_ROLES, isHex);
   if (!isRamp(resolved.graph)) problems.push("graph is not five colors");
@@ -130,6 +134,8 @@ export function snapshotProblems(resolved) {
   }
   if (!audit.every((pair) => pair.passed)) problems.push("a pair fails its contrast minimum");
   if (!equal(audit, resolved.pairAudit)) problems.push("pairAudit differs from the recomputed audit");
+  // Protected UI's status colors pass the same pairs on the same surfaces.
+  if (status && !auditPairs({ ...resolved, semantics: resolved.statusSemantics }).every((pair) => pair.passed)) problems.push("a protected status color fails its contrast minimum");
   if (graphProblems(resolved.graph, resolved.tokens.canvas, rampDirection(resolved.base), { first: true }).length) problems.push("graph ramp fails its constraints");
   return problems;
 }

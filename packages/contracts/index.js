@@ -18,7 +18,7 @@ const freeze = (value) => {
 export const THEME_FORMAT_VERSION = 1;
 export const SETTINGS_VERSION = 2;
 export const RENDERER_VERSION = 1;
-export const ENGINE_VERSION = 2;
+export const ENGINE_VERSION = 3;
 // PairMatrix.version of packages/engine/pairs.json, recorded in the boot record. Version 2 keeps
 // every version 1 record first and unchanged, then adds the Revision 4 appearance pairs.
 export const PAIR_MATRIX_VERSION = 2;
