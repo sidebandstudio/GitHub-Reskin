@@ -155,6 +155,21 @@ test("accessibility families suppress supplied status inks, render-only, with th
   assert.deepEqual(resolveTheme(syntax, themed(tritanopiaSeed)).syntax, resolveTheme(syntax, themed(lightSeed)).syntax);
 });
 
+test("a theme that sets its own status colors also gets the seed's, repaired for it, for protected UI", () => {
+  const theme = json(`${TESTS}fixtures/roundtrip/accessibility-output.reskin.json`);
+  const resolved = resolveTheme(theme, themed(darkSeed));
+  const { success, danger, warning, done, ...overrides } = theme.overrides;
+  const { overrides: _, ...rest } = theme;
+  const plain = resolveTheme(Object.keys(overrides).length ? { ...rest, overrides } : rest, themed(darkSeed));
+  assert.deepEqual(resolved.statusSemantics, plain.semantics);
+  for (const role of ["success", "danger", "warning", "done"]) assert.notEqual(resolved.statusSemantics[role].text, theme.overrides[role], role);
+  // Repaired the same way: each reads at 4.5:1 on the canvas the page reads it on.
+  for (const role of ["success", "danger", "warning", "done"]) assert.ok(contrast(resolved.statusSemantics[role].text, resolved.tokens.canvas) >= 4.5, role);
+  // A theme without its own status colors carries none, nor does a native resolution.
+  assert.equal(Object.hasOwn(plain, "statusSemantics"), false);
+  assert.equal(Object.hasOwn(resolveTheme(theme, { ...themed(darkSeed), policy: "native-unknown" }), "statusSemantics"), false);
+});
+
 test("adversarial mid-gray, straddling and contradictory themes still pass every pair", () => {
   // The four themes whose base contradicts their colors resolve after the caller switches it.
   const contradictory = [0, 4, 5, 6];

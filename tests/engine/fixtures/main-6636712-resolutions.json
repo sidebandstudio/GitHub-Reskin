@@ -189,12 +189,12 @@
     {
       "file": "tests/fixtures/roundtrip/accessibility-output.reskin.json",
       "seed": "fixture.standard-dark",
-      "sha256": "a2113eae93172e63552d2fbe3d28026f8413882bde480ce1b764aebece855c7b"
+      "sha256": "ab66c65c71556083bea1723415a34924f375f62187bbb096c39edd9fb54a8449"
     },
     {
       "file": "tests/fixtures/roundtrip/accessibility-output.reskin.json",
       "seed": "fixture.colorblind-dark",
-      "sha256": "1fb680ea184ab4c1344127e83fb99d27a40139b74e938718b37fbd3015cd525b"
+      "sha256": "25e1093258cdb30a590520b08e4f7666ec5b60e8d6320cac8b7eaadaf8b7bc57"
     },
     {
       "file": "tests/fixtures/roundtrip/primary-states.reskin.json",

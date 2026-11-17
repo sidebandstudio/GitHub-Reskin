@@ -1,6 +1,7 @@
 // Converts frozen GitHub mode stylesheets into the renderer 1 ModeIndex: one ModeSeed per mode,
-// the unique counterpart for each themable mode and requested base, and the native baseline
-// declarations each family seed needs. Pure: the caller supplies file text and SHA-256 hashes.
+// the unique counterpart for each themable mode and requested base, the native baseline
+// declarations each family seed needs, and its status aliases. Pure: the caller supplies file text
+// and SHA-256 hashes.
 import { parseStylesheet } from "./css.js";
 import { githubModeSelectors } from "./selectors.js";
 
@@ -176,6 +177,26 @@ export function convertModes({ files, policy, mappings, hash, allowUnreviewed = 
   for (const seedMode of [...new Set(counterparts.map((c) => c.seedMode))].sort()) {
     nativeCss[seedMode] = varying.map((n) => `${n}:${declared[seedMode].get(n)}`).join(";");
   }
+  // Status aliases: for each family seed, every variable that reads a status variable through
+  // var(), directly or through another alias, with the seed mode's own expression. Protected UI
+  // declares them again, so they resolve against its own status colors, not its island's.
+  const status = new Set(mappings.emit.filter((m) => m.role.startsWith("/semantics/")).map((m) => m.variable));
+  const statusAliasCss = {};
+  for (const seedMode of Object.keys(nativeCss)) {
+    const own = declared[seedMode];
+    const aliases = new Set();
+    for (let grew = true; grew; ) {
+      grew = false;
+      for (const [n, value] of own) {
+        if (emitted.has(n) || aliases.has(n)) continue;
+        if ([...String(value).matchAll(/var\((--[\w-]+)/g)].some(([, ref]) => status.has(ref) || aliases.has(ref))) {
+          aliases.add(n);
+          grew = true;
+        }
+      }
+    }
+    statusAliasCss[seedMode] = [...aliases].sort().map((n) => `${n}:${own.get(n)}`).join(";");
+  }
 
   // Variables that follow an emitted one through var() in every themable mode need no baseline.
   const follows = (n) => themable.every((id) => {
@@ -196,5 +217,5 @@ export function convertModes({ files, policy, mappings, hash, allowUnreviewed = 
     follows: names.filter((n) => !emitted.has(n) && !varying.includes(n) && follows(n)).sort(),
     constant: names.filter((n) => !emitted.has(n) && !varying.includes(n) && !follows(n)).sort(),
   };
-  return { index: { contractVersion: 1, modes, counterparts, nativeCss }, discovered, inventory };
+  return { index: { contractVersion: 1, modes, counterparts, nativeCss, statusAliasCss }, discovered, inventory };
 }

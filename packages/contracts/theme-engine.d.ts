@@ -388,6 +388,8 @@ export interface ResolvedAppearance {
 }
 export type ThemedResolved = DeepReadonly<
   ColorSet & {
+    /** Present when the theme sets its own status colors: the seed's, repaired for this theme, which protected UI keeps. */
+    statusSemantics?: Record<SemanticRole, SemanticColors>;
     rendererVersion: 1;
     expansionVersion: 1;
     sanitizerVersion: 1;

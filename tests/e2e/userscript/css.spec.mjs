@@ -51,6 +51,9 @@ test("a saved theme's approved CSS stays off in the userscript, and a bundled th
 
   // The same CSS as the bundled Choom Circuit's own applies.
   await page.evaluate(() => window.__gmLog.menu[0].fn());
-  await page.frameLocator("[data-reskin-userscript-panel] iframe").locator(`[data-theme="${DEFAULT_THEME_ID}"]`).click();
+  // The card opens on My themes, where the selected copy is.
+  const frame = page.frameLocator("[data-reskin-userscript-panel] iframe");
+  await frame.getByRole("button", { name: /^Anime/ }).click();
+  await frame.locator(`[data-theme="${DEFAULT_THEME_ID}"]`).click();
   await expect.poll(() => scope(page)).toBe("active");
 });

@@ -21,10 +21,10 @@ const PREFERENCE_KEYS = ["enabled", "extras", "text", "motion", "fonts", "effect
 const GRAPH_TARGET = '.js-highlight-blob,.Progress-item:is(main #js-contribution-activity .Progress[role="img"] > *):not(.markdown-body *)';
 // Protected UI, as the registry lists it and as admission marks it, keeps GitHub's own components
 // with everything inside it: no structured rule or themed island applies in it, and it clears the
-// Reskin switches its descendants' rules read. Its neutral colors are the theme's, inherited from
-// its nearest island, as 1.0 colored all of GitHub. Its status colors are GitHub's own for the
-// seed's mode, so a theme that sets them cannot make a warning, a danger control or a verified
-// badge read as another state.
+// Reskin switches its descendants' rules read. Its colors are the theme's, inherited from its
+// nearest island, as 1.0 colored all of GitHub, except the status colors of a theme that sets its
+// own: those are the seed's, repaired for the theme, so a warning, a danger control or a verified
+// badge cannot read as another state.
 const PROTECTED_UI = `${PROTECTED},[${CSS_MARKERS.protected}]`;
 const UNPROTECTED = `:not(${PROTECTED_UI},:is(${PROTECTED_UI}) *)`;
 // GitHub's mode files do not reset Brand variables, and no captured baseline restores them, so a
@@ -156,7 +156,7 @@ function digest(text) {
   return a.toString(16).padStart(8, "0") + b.toString(16).padStart(8, "0");
 }
 
-// A declaration list of the ModeIndex, `nativeCss` or `restoreCss`, checked once, with each
+// A declaration list of the ModeIndex, `nativeCss` or `statusAliasCss`, checked once, with each
 // declaration's name and value.
 function indexDeclarations(index, field, mode) {
   let cache = checkedDeclarations.get(index);
@@ -256,10 +256,12 @@ export function compileGitHub(resolved, modePlan, prefs, index = MODE_INDEX, opt
   ].join(";");
   const brandDeclarations = [...brand].map(([name, value]) => `${name}:${value} !important`).join(";");
   const brandPageDeclarations = [...brandPage].map(([name, value]) => `${name}:${value} !important`).join(";");
-  // GitHub's own status colors for the seed's mode. Only themed islands set these variables, so on
-  // protected UI that is no island they need no !important, and GitHub's own rules that set one
-  // there still win. The preview fixture holds no protected UI.
-  const status = preview ? "" : [...emittedColors(seed.colors, STATUS)].map(([name, value]) => `${name}:${value}`).join(";");
+  // A theme that sets its own status colors leaves protected UI the seed's, repaired for the theme
+  // as the page's would be, with GitHub's aliases of them declared again so they read those. Only
+  // themed islands set these variables, so on protected UI that is no island they need no
+  // !important, and GitHub's own rules that set one there still win. The preview fixture holds no
+  // protected UI.
+  const status = preview || !resolved.statusSemantics ? "" : [...[...emittedColors({ ...resolved, semantics: resolved.statusSemantics }, STATUS)].map(([name, value]) => `${name}:${value}`), ...indexDeclarations(index, "statusAliasCss", seed.id)].join(";");
 
   const covered = coveredModes(index, seed.id);
   const known = Object.keys(index.modes);

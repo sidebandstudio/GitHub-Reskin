@@ -477,8 +477,9 @@ for (const [name, engine] of [["Chromium", chromium], ["Firefox", firefox]]) {
       // Firefox also runs the selector fallback Gecko uses before Firefox 151.
       for (const fallback of name === "Firefox" ? [false, true] : [false]) {
         test(`protected fragments and forms take the theme's neutral colors, GitHub's status colors and GitHub's components in ${appearance === "full" ? "Full" : "Calm"}${fallback ? " through the selector fallback" : ""}`, async () => {
-          // The theme also paints danger text green, which a warning or a danger control must not show.
-          const resolved = resolvedFromSeed(MODE_INDEX.modes.dark, { "/tokens/canvas": "#101a2b", "/tokens/text": "#fafbe0", "/tokens/border": "#ff00aa", "/semantics/danger/text": "#3fb950" });
+          // The theme also paints danger text green, which a warning or a danger control must not
+          // show; the engine resolves the seed's status colors beside it.
+          const resolved = { ...resolvedFromSeed(MODE_INDEX.modes.dark, { "/tokens/canvas": "#101a2b", "/tokens/text": "#fafbe0", "/tokens/border": "#ff00aa", "/semantics/danger/text": "#3fb950" }), statusSemantics: MODE_INDEX.modes.dark.colors.semantics };
           resolved.appearance = { ...resolved.appearance, shape: { corners: { style: "sharp", radius: 0 }, borders: { width: 4, style: "solid", color: "#123456" }, shadows: { style: "neon", color: "#fcee0a", opacity: 0.7, blur: 24, offset: 0 }, buttons: { style: "bevel", radius: 8 }, avatar: null } };
           const primer = compileGitHub(resolved, { seedMode: "dark", policy: "themed" }, { ...PREFS, appearance });
           const RED = MODE_INDEX.modes.dark.colors.semantics.danger.text;
@@ -488,7 +489,7 @@ for (const [name, engine] of [["Chromium", chromium], ["Firefox", firefox]]) {
           const snapshot = () =>
             page.evaluate((ids) => Object.fromEntries(ids.map((id) => {
               const cs = getComputedStyle(document.getElementById(id));
-              return [id, [cs.color, cs.backgroundColor, cs.borderTopColor, cs.borderTopWidth, cs.borderTopLeftRadius, cs.boxShadow, cs.colorScheme, cs.getPropertyValue("--bgColor-default"), cs.getPropertyValue("--fgColor-default"), cs.getPropertyValue("--reskin-on"), cs.getPropertyValue("--fgColor-danger")]];
+              return [id, [cs.color, cs.backgroundColor, cs.borderTopColor, cs.borderTopWidth, cs.borderTopLeftRadius, cs.boxShadow, cs.colorScheme, cs.getPropertyValue("--bgColor-default"), cs.getPropertyValue("--fgColor-default"), cs.getPropertyValue("--reskin-on"), cs.getPropertyValue("--fgColor-danger"), cs.getPropertyValue("--control-danger-fgColor-rest").trim()]];
             })), ids);
           const native = await snapshot();
           await page.evaluate((css) => document.head.append(Object.assign(document.createElement("style"), { textContent: css })), css);
@@ -498,6 +499,8 @@ for (const [name, engine] of [["Chromium", chromium], ["Firefox", firefox]]) {
           assert.notDeepEqual(themed["free-box"], native["free-box"]);
           assert.notDeepEqual(themed["later-btn"], native["later-btn"]);
           assert.equal(themed["free-box"][10], "#3fb950");
+          // GitHub's form validation color is an alias of the danger text, and follows it.
+          assert.equal(themed["free-box"][11], "#3fb950");
           // Warnings and forms in a themed island, the light and dimmed ones included, take the
           // theme's neutral colors and GitHub's own status colors for the seed's mode; their
           // borders, corners, shadows and cleared switch stay GitHub's.
@@ -509,6 +512,7 @@ for (const [name, engine] of [["Chromium", chromium], ["Firefox", firefox]]) {
               else {
                 assert.deepEqual(got.slice(7, 9), ["#101a2b", "#fafbe0"], `${appearance} ${id}-${part} takes the theme's colors`);
                 assert.equal(got[10], RED, `${appearance} ${id}-${part} keeps GitHub's danger text`);
+                assert.equal(got[11], RED, `${appearance} ${id}-${part} keeps GitHub's form validation color`);
                 assert.deepEqual([got[3], got[4], got[5], got[9]], [own[3], own[4], own[5], own[9]], `${appearance} ${id}-${part} keeps GitHub's components`);
               }
             }
@@ -520,7 +524,7 @@ for (const [name, engine] of [["Chromium", chromium], ["Firefox", firefox]]) {
             document.getElementById("later").className = "flash flash-warn";
             requestAnimationFrame(() => resolve(["later-box", "later-btn"].map((id) => {
               const cs = getComputedStyle(document.getElementById(id));
-              return [cs.color, cs.backgroundColor, cs.borderTopColor, cs.borderTopWidth, cs.borderTopLeftRadius, cs.boxShadow, cs.colorScheme, cs.getPropertyValue("--bgColor-default"), cs.getPropertyValue("--fgColor-default"), cs.getPropertyValue("--reskin-on"), cs.getPropertyValue("--fgColor-danger")];
+              return [cs.color, cs.backgroundColor, cs.borderTopColor, cs.borderTopWidth, cs.borderTopLeftRadius, cs.boxShadow, cs.colorScheme, cs.getPropertyValue("--bgColor-default"), cs.getPropertyValue("--fgColor-default"), cs.getPropertyValue("--reskin-on"), cs.getPropertyValue("--fgColor-danger"), cs.getPropertyValue("--control-danger-fgColor-rest").trim()];
             })));
           }));
           assert.deepEqual(late, [native["later-box"], native["later-btn"]]);

@@ -235,28 +235,30 @@ test("structured component rules never reach protected UI or anything inside it,
   }
 });
 
-test("protected UI takes the theme's neutral colors from its nearest island, as 1.0 colored all of GitHub, and GitHub's own status colors for the seed's mode", () => {
+test("protected UI takes the theme's colors from its nearest island, as 1.0 colored all of GitHub, and a theme that sets its own status colors leaves it the seed's", () => {
   const items = PROTECTED_UI.split(/,(?=[a-z.[])/);
+  const ownRules = (css) => rules(css).filter((r) => r.selectors.some((s) => items.some((i) => s === i || s.startsWith(`${i}:not(`)) || s.startsWith(`:is(${PROTECTED_UI})`)));
   for (const seedMode of ["dark", "light"]) {
     const [resolved, p] = themed(seedMode);
-    // A theme that paints danger text green.
-    resolved.semantics = { ...resolved.semantics, danger: { ...resolved.semantics.danger, text: "#3fb950" } };
-    const all = rules(compileGitHub(resolved, p, PREFS).css);
-    assert.ok(all.every((r) => !r.media.some((m) => m.includes("--reskin-mode")) && r.declarations.every((d) => d.name !== "--reskin-mode")), seedMode);
-    const own = all.filter((r) => r.selectors.some((s) => items.some((i) => s === i || s.startsWith(`${i}:not(`)) || s.startsWith(`:is(${PROTECTED_UI})`)));
-    // One rule clears the Reskin switches and nothing else.
-    const guard = own.filter((r) => r.declarations[0]?.name === "--reskin-on");
-    assert.equal(guard.length, 1, seedMode);
-    assert.deepEqual(guard[0].declarations.map((d) => d.name), ["--reskin-on", ...Object.keys(CSS_VARIABLES)]);
-    // The others, under the style query and in each branch's Gecko selector fallback, set only the
-    // status variables, at the seed's own values, without !important.
-    const status = own.filter((r) => r !== guard[0]);
+    // Without status colors of its own, protected UI only clears the Reskin switches.
+    const plain = ownRules(compileGitHub(resolved, p, PREFS).css);
+    assert.equal(plain.length, 1, seedMode);
+    assert.deepEqual(plain[0].declarations.map((d) => d.name), ["--reskin-on", ...Object.keys(CSS_VARIABLES)]);
+    assert.ok(rules(compileGitHub(resolved, p, PREFS).css).every((r) => !r.media.some((m) => m.includes("--reskin-mode")) && r.declarations.every((d) => d.name !== "--reskin-mode")), seedMode);
+    // A theme that paints danger text green, with the seed's repaired status colors beside it.
+    const own = { ...resolved, semantics: { ...resolved.semantics, danger: { ...resolved.semantics.danger, text: "#3fb950" } }, statusSemantics: resolved.semantics };
+    const all = ownRules(compileGitHub(own, p, PREFS).css);
+    const status = all.filter((r) => r.declarations[0]?.name !== "--reskin-on");
+    // Under the style query and in each branch's Gecko selector fallback: the seed's status
+    // variables, then GitHub's aliases of them for the seed's mode, without !important.
     assert.equal(status.length, 3, seedMode);
     assert.equal(status.filter((r) => r.media.includes("style(--reskin-on: 1)")).length, 1, seedMode);
-    const native = emittedColors(MODE_INDEX.modes[seedMode].colors, mappings.emit.filter((m) => m.role.startsWith("/semantics/")));
-    assert.ok(native.size >= 30);
-    assert.notEqual(native.get("--fgColor-danger"), "#3fb950");
-    for (const r of status) assert.deepEqual(r.declarations.map((d) => [d.name, d.value, d.important]), [...native].map(([name, value]) => [name, value, false]), seedMode);
+    const values = emittedColors(resolved, mappings.emit.filter((m) => m.role.startsWith("/semantics/")));
+    assert.ok(values.size >= 30);
+    assert.equal(values.get("--fgColor-danger"), resolved.semantics.danger.text);
+    const aliases = MODE_INDEX.statusAliasCss[seedMode].split(";").map((d) => [d.slice(0, d.indexOf(":")), d.slice(d.indexOf(":") + 1)]);
+    assert.ok(aliases.some(([name, value]) => name === "--control-danger-fgColor-rest" && value === "var(--fgColor-danger)"), seedMode);
+    for (const r of status) assert.deepEqual(r.declarations.map((d) => [d.name, d.value, d.important]), [...[...values].map(([name, value]) => [name, value]), ...aliases].map(([name, value]) => [name, value, false]), seedMode);
   }
 });
 
