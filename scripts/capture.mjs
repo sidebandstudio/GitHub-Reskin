@@ -33,7 +33,7 @@ const FRIEREN = "anime.frieren";
 const PROFILES = { whoisaldo: "https://github.com/whoisaldo", Alitleis123: "https://github.com/Alitleis123", torvalds: "https://github.com/torvalds" };
 // Store copy for the five screenshots.
 export const CAPTIONS = Object.freeze([
-  "Cyberpunk: Edgerunners. Choom Circuit carries forward the original yellow and cyan Cyberpunk look.",
+  "Cyberpunk: Edgerunners. Choom Circuit brings neon yellow controls, a cyan contribution graph and a faint grid.",
   "Frieren: Beyond Journey's End. Longroad Petals changes the background, panels, type, avatar frame and contribution graph.",
   "Themes inspired by 13 anime, plus 12 Classics. Show titles lead the picker.",
   "Cyberpunk: Edgerunners. Calm removes decoration and advanced CSS. Header, button, code and graph colors stay.",
@@ -197,7 +197,7 @@ export async function captureRelease({ root = DEFAULT_ROOT } = {}) {
 
     await compose(
       plain,
-      `${base}<style>body{width:1280px;height:800px;position:relative}.half{position:absolute;top:0;width:640px;height:800px;overflow:hidden}.half img{width:1280px;height:800px}.calm img{margin-left:-640px}.calm{left:640px;border-left:2px solid #f2a93b}.tag{position:absolute;bottom:18px;padding:4px 12px;border-radius:999px;background:#151516;border:1px solid #f2a93b;font-weight:650;font-size:15px}</style>
+      `${base}<style>body{width:1280px;height:800px;position:relative}.half{position:absolute;top:0;width:640px;height:800px;overflow:hidden}.half img{width:1280px;height:800px}.calm img{margin-left:-640px}.calm{left:640px;border-left:2px solid #ededea}.tag{position:absolute;bottom:18px;padding:4px 12px;border-radius:999px;background:#151516;border:1px solid #ededea;font-weight:650;font-size:15px}</style>
       <div class="half"><img src="${dataUrl(full, "image/png")}"></div><div class="half calm"><img src="${dataUrl(calm, "image/png")}"></div>
       <span class="tag" style="left:16px">Full</span><span class="tag" style="left:658px">Calm</span>`,
       SIZE,
@@ -230,7 +230,7 @@ export async function captureRelease({ root = DEFAULT_ROOT } = {}) {
       body{width:440px;height:280px;display:flex;align-items:center;justify-content:center;gap:28px}
       .icon{width:112px;height:112px}
       h1{font-weight:650;font-size:44px;letter-spacing:-0.02em;line-height:1.08}
-      h1 span{display:block;color:#f2a93b}
+      h1 span{display:block}
     </style>
     <div class="icon">${icon.replace("<svg", '<svg width="100%" height="100%"')}</div><h1>GitHub<span>Reskin</span></h1>`, { width: 440, height: 280 }, at("tile-440x280.png"));
     note("tile-440x280.png", { shows: "the small promo tile: the icon and the name" });
