@@ -10,7 +10,7 @@ html {
 }
 .rs-popup {
   --line: #333333;
-  --strong: #9d6d26;
+  --strong: var(--brand);
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -58,7 +58,7 @@ html {
   background: var(--strong);
 }
 .rs-popup .rs-switch input:checked::after {
-  background: #fff;
+  background: var(--on-brand);
   transform: translateX(14px);
 }
 .rs-popup .rs-link-button {
@@ -67,10 +67,12 @@ html {
   color: var(--brand);
   font-size: 12px;
   font-weight: 400;
-  text-decoration: none;
+  text-decoration: underline;
+  text-decoration-color: var(--caption);
+  text-underline-offset: 3px;
 }
 .rs-popup .rs-link-button:hover {
-  text-decoration: underline;
+  text-decoration-color: currentColor;
 }
 .rs-popup .rs-link-button:disabled {
   color: var(--caption);
@@ -351,10 +353,12 @@ html {
   align-items: center;
   min-height: 24px;
   color: var(--brand);
-  text-decoration: none;
+  text-decoration: underline;
+  text-decoration-color: var(--caption);
+  text-underline-offset: 3px;
 }
 .rs-popup-footer a:hover {
-  text-decoration: underline;
+  text-decoration-color: currentColor;
 }
 
 /* Narrow frames (the userscript's card on a phone): two cards a row. */
