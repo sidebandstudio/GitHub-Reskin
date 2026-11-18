@@ -39,7 +39,7 @@ export const CAPTIONS = Object.freeze([
   "Frieren: Beyond Journey's End. Longroad Petals changes the background, panels, type, avatar frame and contribution graph.",
   "Themes inspired by 13 anime, plus 12 Classics. Show titles lead the picker.",
   "Cyberpunk: Edgerunners. Calm removes decoration and advanced CSS. Header, button, code and graph colors stay.",
-  "Import an AI-made theme. Preview backgrounds, fonts and code colors locally. Review optional CSS before enabling it.",
+  "Import an AI-made theme. Preview it on a profile, see any readability fixes, and review optional CSS before turning it on.",
 ]);
 export const ICON_SIZES = Object.freeze([16, 32, 48, 64, 128, 512]);
 
