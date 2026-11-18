@@ -1,12 +1,13 @@
 // npm run capture:release: DONE.md's store and promo images, made from the release candidate.
 // It unpacks the Chrome package from artifacts/, checked against SHA256SUMS and build-info.json as
 // qa:live checks it, installs it in a fresh logged-out Chromium profile and captures, at 1280x800:
-//   1. whoisaldo in Choom Circuit, Full
-//   2. whoisaldo in Frieren's Longroad Petals, Full
-//   3. the popup, shown over Alitleis123
+//   1. torvalds in Choom Circuit, Full, with the contribution graph in view
+//   2. torvalds in Frieren's Longroad Petals, Full, the same
+//   3. the popup, shown over the torvalds/linux repository in Dandadan's Occult Orbit
 //   4. torvalds in Choom Circuit, Full beside Calm, at the same scroll
 //   5. an AI-made theme answer in Make a theme's import dialog, with its Advanced CSS note
-// plus a close-up of whoisaldo's contribution graph. The 1400x560 marquee and the 1200x630 site
+// plus a close-up of torvalds's contribution graph. A profile without a personal README keeps the
+// themes, not someone's portfolio, in front. The 1400x560 marquee and the 1200x630 site
 // image are composed from those captures with the brand's icon and Manrope type, and the 440x280
 // tile from the icon and the name; the icons are the brand masters in assets/brand. GitHub is
 // visited logged out and only read.
@@ -30,7 +31,8 @@ export const AI_ANSWER = "assets/store/ai-answer.md";
 const SIZE = { width: 1280, height: 800 };
 const CHOOM = "anime.cyberpunk-edgerunners";
 const FRIEREN = "anime.frieren";
-const PROFILES = { whoisaldo: "https://github.com/whoisaldo", Alitleis123: "https://github.com/Alitleis123", torvalds: "https://github.com/torvalds" };
+const OCCULT = "anime.dandadan";
+const PROFILES = { torvalds: "https://github.com/torvalds", linux: "https://github.com/torvalds/linux" };
 // Store copy for the five screenshots.
 export const CAPTIONS = Object.freeze([
   "Cyberpunk: Edgerunners. Choom Circuit brings neon yellow controls, a cyan contribution graph and a faint grid.",
@@ -113,27 +115,27 @@ export async function captureRelease({ root = DEFAULT_ROOT } = {}) {
     const page = await context.newPage();
     await page.setViewportSize(SIZE);
 
-    // 1, 2 and the graph: whoisaldo in Choom Circuit and Longroad Petals.
-    await open(page, PROFILES.whoisaldo);
+    // 1, 2 and the graph: torvalds in Choom Circuit and Longroad Petals.
+    await open(page, PROFILES.torvalds);
     await choose(control, page, canvasOf[CHOOM], CHOOM);
     await page.screenshot({ path: at("screenshot-1.png") });
-    note("screenshot-1.png", { shows: "whoisaldo in Choom Circuit, Full", url: PROFILES.whoisaldo, theme: CHOOM, appearance: "full", caption: CAPTIONS[0] });
+    note("screenshot-1.png", { shows: "torvalds in Choom Circuit, Full, with the contribution graph", url: PROFILES.torvalds, theme: CHOOM, appearance: "full", caption: CAPTIONS[0] });
     const graph = page.locator(".js-yearly-contributions").first();
     await graph.waitFor({ state: "visible", timeout: 15000 });
     await graph.scrollIntoViewIfNeeded();
     await page.waitForTimeout(500);
     await graph.screenshot({ path: at("graph-choom.png") });
-    note("graph-choom.png", { shows: "whoisaldo's contribution graph in Choom Circuit", url: PROFILES.whoisaldo, theme: CHOOM, appearance: "full" });
+    note("graph-choom.png", { shows: "torvalds's contribution graph in Choom Circuit", url: PROFILES.torvalds, theme: CHOOM, appearance: "full" });
     await page.evaluate(() => scrollTo(0, 0));
     await choose(control, page, canvasOf[FRIEREN], FRIEREN);
     await page.screenshot({ path: at("screenshot-2.png") });
-    note("screenshot-2.png", { shows: "whoisaldo in Longroad Petals, Full", url: PROFILES.whoisaldo, theme: FRIEREN, appearance: "full", caption: CAPTIONS[1] });
-    await choose(control, page, canvasOf["anime.dandadan"], "anime.dandadan");
+    note("screenshot-2.png", { shows: "torvalds in Longroad Petals, Full, with the contribution graph", url: PROFILES.torvalds, theme: FRIEREN, appearance: "full", caption: CAPTIONS[1] });
+    await choose(control, page, canvasOf[OCCULT], OCCULT);
     const occult = await page.screenshot();
 
-    // 3: the popup over Alitleis123, as the toolbar button opens it.
-    await open(page, PROFILES.Alitleis123);
-    await choose(control, page, canvasOf[CHOOM], CHOOM);
+    // 3: the popup over the linux repository, as the toolbar button opens it.
+    await open(page, PROFILES.linux);
+    await choose(control, page, canvasOf[OCCULT], OCCULT);
     const profile = await page.screenshot();
     const popup = await context.newPage();
     await popup.setViewportSize({ width: 336, height: 600 });
@@ -193,7 +195,7 @@ export async function captureRelease({ root = DEFAULT_ROOT } = {}) {
       SIZE,
       at("screenshot-3.png"),
     );
-    note("screenshot-3.png", { shows: "the popup over Alitleis123 in Choom Circuit", url: PROFILES.Alitleis123, theme: CHOOM, appearance: "full", caption: CAPTIONS[2] });
+    note("screenshot-3.png", { shows: "the popup over torvalds/linux in Occult Orbit", url: PROFILES.linux, theme: OCCULT, appearance: "full", caption: CAPTIONS[2] });
 
     await compose(
       plain,
@@ -221,7 +223,7 @@ export async function captureRelease({ root = DEFAULT_ROOT } = {}) {
     <img class="shot" src="${shots[1]}" style="right:${110 * scale}px;top:${height / 2 - 170 * scale}px">
     <img class="shot" src="${shots[2]}" style="right:${24 * scale}px;top:${height / 2 - 95 * scale}px">`;
     await compose(plain, promo(1400, 560, 1), { width: 1400, height: 560 }, at("marquee-1400x560.png"));
-    note("marquee-1400x560.png", { shows: "the name, the line and Occult Orbit, Longroad Petals and Choom Circuit on whoisaldo" });
+    note("marquee-1400x560.png", { shows: "the name, the line and Occult Orbit, Longroad Petals and Choom Circuit on torvalds" });
     await compose(plain, promo(1200, 630, 0.92), { width: 1200, height: 630 }, at("og-1200x630.png"));
     note("og-1200x630.png", { shows: "the site's sharing image: the name, the line and three themes" });
 
