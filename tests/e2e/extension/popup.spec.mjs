@@ -30,10 +30,9 @@ test.describe("a new install", () => {
     await expect(popup.locator("[data-rs=summary-note]")).toHaveText("Pick a theme to change GitHub and Gist.");
     await expect(popup.locator(".rs-card[aria-pressed=true]")).toHaveCount(0);
     expect((await storage(extension.worker))["reskin.settings"]).toMatchObject({ enabled: true, selectedThemeId: null });
-    // It opens on the Classics, Editing Suite first, as 1.0's card did.
-    await expect(popup.getByRole("button", { name: /^Classics/ })).toHaveAttribute("aria-pressed", "true");
-    await expect(popup.locator(".rs-card").first()).toHaveAccessibleName("Editing Suite Classic");
-    await popup.getByRole("button", { name: /^Anime/ }).click();
+    // It opens on the anime, Cyberpunk: Edgerunners first, as the site and the welcome tab do.
+    await expect(popup.getByRole("button", { name: /^Anime/ })).toHaveAttribute("aria-pressed", "true");
+    await expect(popup.locator(".rs-card").first()).toHaveAccessibleName("Cyberpunk: Edgerunners Choom Circuit");
     await card(popup, "Cyberpunk: Edgerunners").click();
     await expect(popup.locator("[data-rs=status]")).toHaveText("Applied to GitHub.");
     expect((await waitPainted(github, (s) => s.canvas === CHOOM_CANVAS)).styled).toBe(true);
@@ -45,7 +44,6 @@ test.describe("a new install", () => {
     const popup = await openPage(extension, "popup");
     await expect(popup.locator("[data-rc=note]")).toHaveText("Pick a theme to edit its colors.");
     for (const name of ["Background", "Text", "Accent", "Contribution graph"]) await expect(popup.getByRole("textbox", { name: `${name} hex` })).toBeDisabled();
-    await popup.getByRole("button", { name: /^Anime/ }).click();
     await card(popup, "Cyberpunk: Edgerunners").click();
     await expect(popup.getByRole("textbox", { name: "Background hex" })).toHaveValue(CHOOM_CANVAS);
     await expect(popup.locator("[data-rc=note]")).toBeEmpty();

@@ -4,8 +4,8 @@ import { MIGRATION_NOTICE_TEXT } from "../settings/constants.js";
 import { searchCards } from "./catalog.js";
 
 export const GROUPS = Object.freeze([
-  { id: "classics", label: "Classics" },
   { id: "anime", label: "Anime" },
+  { id: "classics", label: "Classics" },
   { id: "mine", label: "My themes" },
 ]);
 

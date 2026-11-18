@@ -32,7 +32,7 @@ const MINI_HEADING = "Pinned";
  *   is selected
  * @returns {{ready:Promise<void>, destroy():void, state():object}}
  */
-export function mountPicker(doc, host, { cards, catalog, cardFor = null, onChange = () => {}, fontFace = null, crop = GRAPH_CROP, defaultGroup = "classics" }) {
+export function mountPicker(doc, host, { cards, catalog, cardFor = null, onChange = () => {}, fontFace = null, crop = GRAPH_CROP, defaultGroup = "anime" }) {
   const part = (name) => doc.querySelector(`[data-rs="${name}"]`);
   const parts = Object.fromEntries(
     ["enabled", "summary-show", "summary-name", "summary-note", "notices", "groups", "search", "count", "gallery", "empty", "status", "error", "undo", "retry", "motion-note", "calm-note", "quick", "appearance", ...PREFERENCE_SWITCHES].map((name) => [name, part(name)]),
