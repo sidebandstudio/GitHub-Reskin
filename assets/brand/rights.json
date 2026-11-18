@@ -1,10 +1,10 @@
 {
   "product": "GitHub Reskin",
   "studio": "Sideband Studio",
-  "date": "2026-11-16",
+  "date": "2026-11-18",
   "originalArtwork": {
-    "author": "Ali Tleis, for GitHub Reskin 1.0, October 31, 2026",
-    "method": "The 16, 32, 48 and 128 px PNGs are GitHub Reskin 1.0's own icons. icon.svg redraws their grid by hand, and the 64 and 512 px PNGs are rendered from it. No generated or stock bitmap art.",
+    "author": "Sideband Studio for GitHub Reskin, November 18, 2026, from Ali Tleis's 1.0 grid of October 31, 2026",
+    "method": "sources/icon.mjs draws the grid as SVG rectangles, writes icon.svg and renders each PNG from it in Chromium with its squares snapped to whole pixels. No generated or stock bitmap art.",
     "files": [
       "icon.svg",
       "icon-16.png",
@@ -36,12 +36,12 @@
     "redistribution": "Unmodified, with its copyright notice and license."
   },
   "sha256": {
-    "icon.svg": "421fc0cf743f0918e2f4905bf9f7cae5e0a15341ebdbfc690e4d3fce98c42ccd",
-    "icon-16.png": "daf9bae9e22aaff4c676bf0239f922d81d79c543a554075860c3731fb2d1c7d0",
-    "icon-32.png": "8522fccddf7e1000b03b479bcf265c59369e2e976d466fddf21b604c96146f6c",
-    "icon-48.png": "6762f3293fa0791a143b3e77a63a67c863c2625d01ec83ea66032296db8a15ed",
-    "icon-64.png": "2195a6c2c6d5aa865ece2d1369530cd6649949276f9505037bd7a9e59affc7f8",
-    "icon-128.png": "fd7f229c71eef82da8314631d74dca91aeefa341e736f552e766d756949fd01c",
-    "icon-512.png": "02e6e8f29dc91686b7f5a2416f8c87168dc3ce130237f25d8b3ab197f3eead02"
+    "icon.svg": "e3bcd23ef7a1b3d744c1435c5ca5a78b7f78b730b397a9fa73c2a0068a17e6d9",
+    "icon-16.png": "cd74f01ca73706308020b6bcdd639e5e1d4af3fb4ac92ba5efdd757041369155",
+    "icon-32.png": "022397cdb83e4e3b459e247d6a2bbf24731f85c17ff85c5a754b507d36683b48",
+    "icon-48.png": "8cbac5822af3de998fbf3fc4795a73d888e7324033fcbf4feefcfd9eea4ca27b",
+    "icon-64.png": "de37802d5077ba6a80425c0b1699a5a400c7884a1241c385a8db0b68bcea2681",
+    "icon-128.png": "229daf305c56f8f1ed2d84617f1563cbfb81f6ecfca4166f4c5f5d913ab5ca54",
+    "icon-512.png": "f598674937f3df3c5501561f6579b2f90406b59184e4834fc9743956d46e8078"
   }
 }
