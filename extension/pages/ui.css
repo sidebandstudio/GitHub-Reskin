@@ -217,6 +217,10 @@ input {
   outline: 2px solid var(--focus);
   outline-offset: -4px;
 }
+/* The ring sits inside the label, so on the checked segment's ivory it takes the dark. */
+.rs-segments label:has(input:checked:focus-visible) {
+  outline-color: var(--on-brand);
+}
 
 /* Group tabs and search */
 .rs-groups {
