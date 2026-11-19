@@ -262,7 +262,8 @@ export function deriveColors(theme, seed) {
   init("primaryHoverBackground", mix(rest, away, 0.08));
   init("primaryPressedBackground", mix(rest, away, 0.16));
   for (const key of ["primaryHoverText", "primaryPressedText", "primaryIcon"]) init(key, restInk);
-  init("primaryBorder", tok("controlBorder"));
+  // A primary button's ring is its own fill, as in 1.0.
+  init("primaryBorder", tok("primaryBackground"));
   init("primaryCounterBackground", mix(rest, restInk, 0.16));
   init("primaryCounterText", bestInk(tok("primaryCounterBackground"), base));
   for (const id of ["primaryHoverText", "primaryPressedText", "primaryIcon", "primaryCounterText", "primaryBorder"]) repairId(colors, id);
@@ -528,6 +529,16 @@ export function resolveTheme(theme, context) {
   assertBasePolarity(theme);
   const { colors, applied } = deriveColors(theme, seed);
   const set = colorSet(colors);
+  // The status colors protected UI keeps when the theme sets its own: the seed's, repaired for this
+  // theme as the page's are, so a warning or a danger control cannot read as another state.
+  const ownStatus = OVERRIDABLE_SEMANTICS.filter((role) => theme.overrides?.[role] !== undefined);
+  let statusSemantics = null;
+  if (ownStatus.length) {
+    const plain = structuredClone(theme);
+    for (const role of ownStatus) delete plain.overrides[role];
+    if (!Object.keys(plain.overrides).length) delete plain.overrides;
+    statusSemantics = colorSet(deriveColors(plain, seed).colors).semantics;
+  }
   const paired = appearanceColors(colors);
   const appearance = { colors: paired, ...resolveAppearance(theme, set.tokens) };
   // The legacy single font mirrors the effective heading font when it has a bundled file.
@@ -535,6 +546,7 @@ export function resolveTheme(theme, context) {
   const font = heading.source === "bundled" && FONTS.some((f) => f.id === heading.id) ? heading.id : "system";
   return deepFreeze({
     ...set,
+    ...(statusSemantics ? { statusSemantics } : {}),
     rendererVersion: 1,
     expansionVersion: EXPANSION_VERSION,
     sanitizerVersion: SANITIZER_VERSION,

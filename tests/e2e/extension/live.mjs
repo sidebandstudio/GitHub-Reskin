@@ -6,13 +6,15 @@
 // the popup and first-run page, and capture.json with the URL, viewport and settings of each.
 //   node tests/e2e/extension/live.mjs --firefox <unpacked firefox dir> --out <dir>
 // Installs the Firefox build as a temporary add-on through Firefox's remote debugging protocol
-// (web-ext's client) in Playwright's Firefox and captures the pages with the defaults (Choom
-// Circuit, Full). Playwright cannot open moz-extension pages, so the popup is Chromium-only.
+// (web-ext's client) in Playwright's Firefox, picks --theme (Choom Circuit unless given) over the
+// same protocol, since a new install has no theme, and captures the pages in Full. Playwright cannot open moz-extension
+// pages, so the popup is Chromium-only.
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { chromium, firefox } from "@playwright/test";
+import { attachAddon, connect, pickTheme } from "../../../scripts/firefox-addon.mjs";
 
 export const LIVE_PAGES = Object.freeze([
   { name: "profile", url: "https://github.com/whoisaldo" },
@@ -81,7 +83,7 @@ const paintedState = (page) =>
     admitted: Object.entries([...document.querySelectorAll("[data-reskin-css-kind]")].reduce((n, el) => ({ ...n, [el.getAttribute("data-reskin-css-kind")]: (n[el.getAttribute("data-reskin-css-kind")] ?? 0) + 1 }), {})).map(([k, v]) => `${k}:${v}`).join(" "),
   }));
 
-async function captureFirefox(dir, out) {
+async function captureFirefox(dir, out, theme) {
   const { connectWithMaxRetries } = await import(new URL("../../../node_modules/web-ext/lib/firefox/remote.js", import.meta.url).href);
   const port = 6000 + Math.floor(Math.random() * 1000);
   const profile = await mkdtemp(join(tmpdir(), "reskin-live-firefox-"));
@@ -95,6 +97,12 @@ async function captureFirefox(dir, out) {
     const remote = await connectWithMaxRetries({ port, maxRetries: 50, retryInterval: 200 });
     await remote.installTemporaryAddon(dir);
     await new Promise((done) => setTimeout(done, 2000));
+    const client = await connect(port);
+    try {
+      await pickTheme(await attachAddon(client, "github-reskin@sideband.studio"), theme);
+    } finally {
+      client.close();
+    }
     for (const viewport of VIEWPORTS) {
       const page = await context.newPage();
       await page.setViewportSize(viewport);
@@ -124,7 +132,7 @@ async function main() {
   const { values } = parseArgs({ options: { extension: { type: "string" }, firefox: { type: "string" }, out: { type: "string" }, theme: { type: "string", default: "anime.cyberpunk-edgerunners" } } });
   const out = resolve(values.out);
   await mkdir(out, { recursive: true });
-  if (values.firefox) return captureFirefox(resolve(values.firefox), out);
+  if (values.firefox) return captureFirefox(resolve(values.firefox), out, values.theme);
   const browser = await launchUnpacked(resolve(values.extension));
   const records = [];
   try {

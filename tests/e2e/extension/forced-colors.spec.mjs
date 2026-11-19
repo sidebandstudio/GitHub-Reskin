@@ -1,15 +1,9 @@
 // Forced colors on the installed extension, in Chromium and in Firefox: the theme's own CSS scope
 // marker, the stylesheet and the owned decoration are present only while forced colors are off,
 // and follow the mode as it changes on an open page. Firefox installs the Firefox build as a
-// temporary add-on through its remote debugging protocol (web-ext's client), since Playwright
+// temporary add-on through its remote debugging protocol (firefoxExtension), since Playwright
 // cannot load a Firefox extension itself.
-import { mkdtemp, rm } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { firefox } from "@playwright/test";
-import { build } from "../../../scripts/build.mjs";
-import { requireBrowser } from "../../helpers/browsers.mjs";
-import { CHOOM_CANVAS, PROFILE_HTML, PROFILE_URL, expect, openGitHub, test, waitFor } from "./helpers.mjs";
+import { CHOOM_CANVAS, PROFILE_URL, expect, firefoxExtension, openFirefoxGitHub, openGitHub, test, waitFor } from "./helpers.mjs";
 
 // What forced colors may leave: GitHub's own page with no theme CSS, marker or owned node.
 const state = (page) =>
@@ -53,42 +47,11 @@ test("Chromium: forced colors take the theme CSS, its scope marker and decoratio
 
 test("Firefox: the installed add-on follows forced colors the same way", async () => {
   test.setTimeout(90000);
-  requireBrowser("firefox");
-  const { connectWithMaxRetries } = await import(new URL("../../../node_modules/web-ext/lib/firefox/remote.js", import.meta.url).href);
-  const out = await mkdtemp(join(tmpdir(), "reskin-e2e-firefox-package-"));
-  const profile = await mkdtemp(join(tmpdir(), "reskin-e2e-firefox-"));
-  const port = 6000 + Math.floor(Math.random() * 1000);
-  const built = await build({ target: "firefox", outDir: out });
-  const context = await firefox.launchPersistentContext(profile, {
-    headless: true,
-    args: ["-start-debugger-server", String(port)],
-    firefoxUserPrefs: { "devtools.debugger.remote-enabled": true, "devtools.chrome.enabled": true, "devtools.debugger.prompt-connection": false },
-  });
+  const installed = await firefoxExtension();
   try {
-    await context.route("https://github.com/**", (route) =>
-      route.request().resourceType() === "document" ? route.fulfill({ contentType: "text/html", body: PROFILE_HTML }) : route.abort(),
-    );
-    const remote = await connectWithMaxRetries({ port, maxRetries: 50, retryInterval: 200 });
-    try {
-      await remote.installTemporaryAddon(built.dir);
-    } finally {
-      remote.disconnect();
-    }
-    // The install opens the welcome tab; a page opened before it settles can land in a window
-    // Playwright's Firefox cannot address.
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    const page = await context.newPage();
-    await page.setViewportSize({ width: 1280, height: 900 });
-    // The add-on's first storage write may land after the first load; a reload reads it.
-    await expect.poll(async () => {
-      await page.goto(PROFILE_URL);
-      await page.waitForTimeout(500);
-      return (await state(page)).boot;
-    }, { timeout: 20000 }).toBe("ready");
+    const page = await openFirefoxGitHub(installed.context, PROFILE_URL);
     await expectForcedColorsGate(page, "firefox");
   } finally {
-    await context.close();
-    await rm(profile, { recursive: true, force: true });
-    await rm(out, { recursive: true, force: true });
+    await installed.close();
   }
 });

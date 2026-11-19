@@ -103,7 +103,7 @@ add-on's own pages, which BiDi does not reach. The report and screenshots go to
 `qa:userscript [-- --firefox <path>]` runs `scripts/qa-userscript.mjs`: the packaged userscript in
 real Violentmonkey in Chromium, and in real Violentmonkey and Tampermonkey in an actual Firefox
 release, installed through each manager's own install page. Tampermonkey in Chrome isn't checked:
-its MV3 build runs every script in GitHub's page, so the panel there is only the note. On public GitHub, logged out, it checks the default theme, the
+its MV3 build runs every script in GitHub's page, so the panel there is only the note. On public GitHub, logged out, it checks that a new install stays native, the
 panel from `#reskin` with its controls, a pick, typing and Escape in the panel, the pick after a
 reload, importing and saving a theme file in Make a theme, and disabling the script in the
 manager's dashboard. The panel has its controls only where the manager keeps the script apart from
@@ -114,9 +114,10 @@ report and screenshots go to `artifacts/reports/userscript/`.
 `capture:release` runs `scripts/capture.mjs`, which makes DONE.md's store and promo images from
 the release candidate. It checks the Chrome package in `artifacts/` against `SHA256SUMS` and
 `build-info.json` as `qa:live` does, installs it in a fresh logged-out Chromium and captures five
-1280x800 screenshots: whoisaldo in Choom Circuit and in Longroad Petals, the popup over
-Alitleis123, torvalds in Full beside Calm, and the AI answer in `assets/store/ai-answer.md` in Make
-a theme's import preview. It also saves a close-up of whoisaldo's contribution graph. The 1400x560
+1280x800 screenshots: torvalds in Choom Circuit and in Longroad Petals, the popup over the
+torvalds/linux repository, torvalds in Full beside Calm, and the AI answer in
+`assets/store/ai-answer.md` in Make a theme's import preview. It also saves a close-up of
+torvalds's contribution graph. The 1400x560
 marquee, the 1200x630 site image and the 440x280 tile are composed from those captures with the
 icon and Manrope in `assets/brand/`, and the icon PNGs are copied from there. Everything goes to
 `artifacts/release/store/`, with `capture.json` recording what each file shows, its source page,

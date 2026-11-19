@@ -261,8 +261,8 @@ export const HOST_SUBJECTS = freeze([
  * billing, verification, merge and warning UI on otherwise reviewed routes. Every form is one: a
  * form's action is the account's own, no action list can tell which are safe, and no form
  * structure has been reviewed. Admission refuses any subject inside or around one; structured
- * component rules and themed islands skip it and everything in it, and it keeps its nearest
- * island's native colors. Not a universal detector: admission rests on the positive signatures
+ * component rules and themed islands skip it and everything in it. It takes its nearest island's
+ * neutral colors and GitHub's own status colors. Not a universal detector: admission rests on the positive signatures
  * above, and routes outside ROUTE_CLASSES get no native admission at all.
  */
 export const PROTECTED = [

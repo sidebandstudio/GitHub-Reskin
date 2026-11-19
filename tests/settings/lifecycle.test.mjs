@@ -8,9 +8,9 @@ import { authenticationRoute } from "../../extension/content/github/routes.js";
 import { startContent } from "../../extension/content/lifecycle/index.js";
 import { catalogData, catalogIndex } from "../../packages/ui/bundle.mjs";
 import { catalogFromData, catalogRecord, contentCatalog } from "../../packages/ui/catalog.js";
-import { catalog, CHOOM, CLASSICS, context, deferred, fakePage, memoryStorage, testRenderer } from "./helpers.mjs";
+import { catalog, CHOOM, CLASSICS, context, deferred, fakePage, memoryStorage, picked, testRenderer } from "./helpers.mjs";
 
-async function stored(initial = {}) {
+async function stored(initial = picked()) {
   const storage = memoryStorage(initial);
   const repository = createRepository(storage, context());
   await repository.initialize();
@@ -28,7 +28,7 @@ function start(storage, pageOptions, rendererOptions, pageCatalog = catalog) {
 // The extension's split: the background's catalog writes the selected bundled theme's record
 // beside the settings, and the page has only the build's index.
 const DATA = catalogData([{ id: DEFAULT_THEME_ID, group: "anime", document: CHOOM }, ...CLASSICS.map((theme) => ({ ...theme, group: "classics" }))]);
-async function split(initial = {}) {
+async function split(initial = picked()) {
   const background = catalogFromData(structuredClone(DATA));
   const storage = memoryStorage(initial);
   const repository = createRepository(storage, context({ catalog: background, selectedRecord: (settings) => background.record(settings.selectedThemeId) }));
@@ -36,6 +36,19 @@ async function split(initial = {}) {
   return { storage, repository, record: (id) => background.record(id), pageCatalog: () => contentCatalog(catalogIndex(DATA)) };
 }
 const phase = (page) => page.root.getAttribute("data-reskin-boot");
+
+test("a new install has no theme, so GitHub stays native until one is picked", async () => {
+  const { storage, repository } = await stored({});
+  const { page, events, content } = start(storage);
+  assert.equal(await content.ready, "native");
+  assert.equal(page.style(), null);
+  assert.deepEqual(events.filter((e) => e.type === "native").map((e) => e.reason), ["no-theme"]);
+  await repository.commit({ type: "selectTheme", id: "nord" }, 0);
+  await page.frame();
+  assert.ok(page.style());
+  assert.equal(phase(page), "ready");
+  content.destroy();
+});
 
 test("a healthy boot paints from the snapshot and ends the gate in the same turn", async () => {
   const { storage } = await stored();
@@ -480,7 +493,7 @@ test("rasters r1 finding 3: a theme that is replaced, no longer drawn or destroy
   const data = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
   const pictured = { ...CHOOM, backgrounds: { page: { color: "#0a0a17", layers: [{ image: { data, width: 1, height: 1 } }] } } };
   const withImage = createCatalogSource([{ id: DEFAULT_THEME_ID, document: pictured }, ...CLASSICS]);
-  const storage = memoryStorage();
+  const storage = memoryStorage(picked());
   const repository = createRepository(storage, context({ catalog: withImage }));
   await repository.initialize();
   const page = fakePage();

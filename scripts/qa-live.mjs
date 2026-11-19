@@ -12,7 +12,8 @@
 // errors and requests from the extension fail it. Then Chromium switches through every catalog
 // theme on the first profile, the repository and the diff: each must be the theme selected, with
 // its own canvas, readable, and the thirteen anime themes must differ. Firefox gets the add-on as
-// a temporary install and keeps its default theme, because Playwright cannot open its pages.
+// a temporary install and keeps Choom Circuit, picked over Firefox's debugging protocol, because
+// Playwright cannot open its pages. A new install has no theme, so both engines pick Choom first.
 //
 // Writes artifacts/reports/live/report.json, the screenshots and contact sheets. A GitHub outage
 // or rate limit and a GitHub markup change are counted apart from product failures, and any
@@ -27,6 +28,7 @@ import { unzipSync } from "fflate";
 import { INTERACTIVE } from "../extension/content/github/selectors.js";
 import { catalogCards, readCatalogEntries } from "../packages/ui/bundle.mjs";
 import { sha256, treeHash } from "./build.mjs";
+import { attachAddon, connect, pickTheme } from "./firefox-addon.mjs";
 import { artifactName } from "./package.mjs";
 
 const DEFAULT_ROOT = fileURLToPath(new URL("..", import.meta.url));
@@ -46,6 +48,7 @@ export const CLASSIC_THEMES = 12;
 // The pages the theme sweep visits, by target name, and the appearances on each.
 const SWEEP = { "profile-1": ["full", "calm"], repo: ["full"], diff: ["full"] };
 const CHOOM = "anime.cyberpunk-edgerunners";
+const ADDON_ID = "github-reskin@sideband.studio";
 const NAVIGATION_LIMIT = 150;
 const SETUP_TIMEOUT = 60000;
 const CONTRAST = 4.5;
@@ -458,6 +461,9 @@ export async function chromiumWithExtension(dir, viewport) {
     const welcome = await context.waitForEvent("page", { predicate: (p) => p.url().includes("/pages/onboarding.html"), timeout: 10000 }).catch(() => null);
     const control = welcome ?? (await context.newPage());
     if (!welcome) await control.goto(`chrome-extension://${id}/pages/onboarding.html`);
+    // A new install has no theme; the checks start in Choom Circuit, picked as a person would.
+    const picked = await commit(control, { type: "selectTheme", id: CHOOM });
+    if (!picked?.ok) throw new Error(`Picking Choom Circuit failed: ${JSON.stringify(picked)}`);
     return { context, id, control, seen, close };
   } catch (error) {
     await close();
@@ -502,7 +508,20 @@ async function firefoxWithAddon(dir, viewport) {
     remote?.disconnect();
   }
   await new Promise((done) => setTimeout(done, 2000));
-  // The first-run tab is the add-on's page, which Playwright cannot drive; it is left alone.
+  // The first-run tab is the add-on's page, which Playwright cannot drive; it is left alone, and
+  // the add-on's popup picks Choom Circuit through Firefox's debugging protocol instead.
+  const client = await connect(port).catch(async (error) => {
+    await close();
+    throw error;
+  });
+  try {
+    await pickTheme(await attachAddon(client, ADDON_ID), CHOOM);
+  } catch (error) {
+    await close();
+    throw error;
+  } finally {
+    client.close();
+  }
   return { context, close };
 }
 
@@ -546,7 +565,7 @@ export async function qaLive({ args = [], root = DEFAULT_ROOT, api = githubApi }
     sweep: [],
     notes: [
       "Chromium is Playwright's build, because branded Chrome no longer loads unpacked extensions from the command line. Firefox is Playwright's build with the add-on installed as a temporary add-on.",
-      "Firefox keeps the default theme and Full, because Playwright cannot open the add-on's pages to change settings. Its console does not report content script errors, so Firefox has no extension error check; npm run qa:firefox drives the add-on's pages in an actual Firefox.",
+      "Firefox keeps Choom Circuit and Full, picked through Firefox's debugging protocol, because Playwright cannot open the add-on's pages to change settings. Its console does not report content script errors, so Firefox has no extension error check; npm run qa:firefox drives the add-on's pages in an actual Firefox.",
       "Contrast is measured on rendered text in the first 2000 text nodes of each page, compositing each ancestor's background and opacity. Text with a background image under it is counted in overImage and not measured.",
       "The service worker reports its uncaught errors from listeners added once it runs, so an error in the moment a worker starts is not seen.",
     ],

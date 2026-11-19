@@ -1,21 +1,22 @@
-/* GitHub Reskin extension pages: the charcoal and coral shell from UX.md. A theme changes GitHub
-   and the previews, never this shell. Native controls, visible focus, 44px targets. */
+/* GitHub Reskin extension pages: a neutral near-black and ivory, so the icon and the themes bring
+   the color. The surfaces mix the canvas toward the text as 1.0 did (5, 8 and 12%). A theme
+   changes GitHub and the previews, never this shell. Native controls, visible focus, 44px targets. */
 :root {
   color-scheme: dark;
-  --canvas: #0c0f14;
-  --surface: #151a22;
-  --raised: #1e2530;
-  --hover: #273140;
-  --text: #f5f3ee;
-  --secondary: #b0b8c5;
-  --caption: #929eaf;
-  --brand: #ff806c;
-  --on-brand: #190c08;
-  --brand-hover: #ffaa9b;
+  --canvas: #0a0a0b;
+  --surface: #151516;
+  --raised: #1c1c1d;
+  --hover: #252526;
+  --text: #ededea;
+  --secondary: #a4a4a3;
+  --caption: #929291;
+  --brand: #ededea;
+  --on-brand: #0a0a0b;
+  --brand-hover: #ffffff;
   --separator: rgb(255 255 255 / 8%);
-  --control-border: #6f7b8d;
+  --control-border: #696969;
   --error: #ff9b8f;
-  --focus: #ffaa9b;
+  --focus: #ffffff;
   --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
@@ -215,6 +216,10 @@ input {
 .rs-segments label:has(input:focus-visible) {
   outline: 2px solid var(--focus);
   outline-offset: -4px;
+}
+/* The ring sits inside the label, so on the checked segment's ivory it takes the dark. */
+.rs-segments label:has(input:checked:focus-visible) {
+  outline-color: var(--on-brand);
 }
 
 /* Group tabs and search */

@@ -18,10 +18,12 @@ const freeze = (value) => {
 export const THEME_FORMAT_VERSION = 1;
 export const SETTINGS_VERSION = 2;
 export const RENDERER_VERSION = 1;
-export const ENGINE_VERSION = 1;
+export const ENGINE_VERSION = 3;
 // PairMatrix.version of packages/engine/pairs.json, recorded in the boot record. Version 2 keeps
-// every version 1 record first and unchanged, then adds the Revision 4 appearance pairs.
-export const PAIR_MATRIX_VERSION = 2;
+// every version 1 record first, then adds the Revision 4 appearance pairs. Version 3 lets a theme's
+// own border be its control outline, as 1.0 drew it: controlBorder needs 1.2:1, not 3:1, on every
+// surface it is drawn on; every other record is unchanged.
+export const PAIR_MATRIX_VERSION = 3;
 // The Revision 4 expansion of the resolved appearance record and the advanced CSS sanitizer
 // policy. Both enter the boot record and compiler fingerprints; a snapshot without them is stale.
 export const EXPANSION_VERSION = 1;
@@ -34,7 +36,8 @@ export const CSS_REGISTRY_VERSION = 1;
 // conversion, the added font files, CSS conveniences and the full editing controls arrive in 2.
 export const EXPANSION_INCREMENT = 1;
 
-// The first-run theme, Choom Circuit. Always chosen by ID, never by catalog order.
+// Choom Circuit, which carries forward 1.x's default Cyberpunk: 1.x settings that name no theme
+// migrate to it. A new install selects no theme. Always chosen by ID, never by catalog order.
 export const DEFAULT_THEME_ID = "anime.cyberpunk-edgerunners";
 
 // The twelve 1.x palettes keep these exact IDs in Classics. 1.x's "cyberpunk" is an alias.

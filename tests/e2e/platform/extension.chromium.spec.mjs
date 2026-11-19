@@ -3,16 +3,17 @@
 import { existsSync } from "node:fs";
 import { launchTestExtension } from "../../helpers/browsers.mjs";
 import { expect, test } from "../../helpers/e2e.mjs";
-import { DEFAULT_CANVAS, expectThemedByDefault } from "../../helpers/platform.mjs";
+import { CHOOM_CANVAS, expectThemed, pickChoom } from "../../helpers/platform.mjs";
 
 test("the unpacked test extension themes the platform app and cleans up after itself", async ({ platformApp }) => {
   const browser = await launchTestExtension();
   let closed = false;
   try {
     expect(existsSync(browser.dir)).toBe(true);
+    await pickChoom(browser.context);
     const page = await browser.context.newPage();
     await page.goto(platformApp.url);
-    expect(await expectThemedByDefault(page)).toBe(DEFAULT_CANVAS);
+    expect(await expectThemed(page)).toBe(CHOOM_CANVAS);
     await browser.close();
     closed = true;
     expect(existsSync(browser.dir)).toBe(false);

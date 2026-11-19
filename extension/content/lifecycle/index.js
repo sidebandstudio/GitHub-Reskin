@@ -170,6 +170,7 @@ export function startContent({ storage, document, view, catalog, renderer, loadC
       revisionNow = settings.revision;
     }
     if (!settings.enabled) return goNative("disabled");
+    if (settings.selectedThemeId === null) return goNative("no-theme");
     const source = selectedSource(settings, catalog);
     // The selected bundled theme's record is still on its way: the page stays as it is (gated, or
     // the theme it shows) until it arrives, and the watchdog still ends the gate.

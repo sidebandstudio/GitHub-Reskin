@@ -45,7 +45,7 @@ What differs by manager:
 
 Thirteen anime themes lead the picker. Each has an original name and credits its show in plain text: Choom Circuit for Cyberpunk: Edgerunners, Violet Synchrony for Neon Genesis Evangelion, Occult Orbit for Dandadan, Gatewake Protocol for Solo Leveling, Wisteria Emberline for Demon Slayer, Sunward Voyage for One Piece, Fifth Leaf Forge for Black Clover, Cursed Aperture for Jujutsu Kaisen, Peanut Dossier for Spy x Family, Wallward Scout for Attack on Titan, Longroad Petals for Frieren, Ripcord Bureau for Chainsaw Man and Shinigami Margins for Death Note. No logos, character art, screenshots or dialogue from any show are included.
 
-Choom Circuit is the default. It carries forward the Cyberpunk theme from earlier versions.
+A new install starts with no theme, so GitHub keeps its own look until you pick one. Choom Circuit carries forward the Cyberpunk theme from earlier versions.
 
 The twelve classics are Editing Suite, Dracula, Nord, Catppuccin Mocha, Gruvbox, Tokyo Night, Rosé Pine, One Dark and Solarized Dark, plus the light Catppuccin Latte, Rosé Pine Dawn and Solarized Light.
 
@@ -58,6 +58,8 @@ Settings from version 1.1.0 carry over the first time the new version runs.
 The popup switches between two appearances. Full, the default, draws each theme's backgrounds, effects and fonts, and adds a little flavor text in a few safe places, such as a tag on profiles, a caption on the 404 page and a footer sign-off. Calm keeps the colors and drops the rest. GitHub's own buttons, menus and navigation keep their words in both, and anything people wrote stays as they wrote it.
 
 Separate switches turn off the extra text or the motion. If your system asks for reduced motion, nothing moves. Forced colors and GitHub's high contrast modes keep GitHub's native colors.
+
+Buttons and text fields take each theme's own outline color, which can be as faint as GitHub's own outlines. If you need clearer edges around fields and checkboxes, use one of GitHub's high contrast modes or your system's forced colors.
 
 ## Make your own theme
 

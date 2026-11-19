@@ -40,7 +40,9 @@ import { createRepository, selectedSource } from "../packages/settings/index.js"
 import { mountBackup } from "../packages/ui/backup.js";
 import { mountBuilder } from "../packages/ui/builder.js";
 import { catalogFromData } from "../packages/ui/catalog.js";
-import { mountPicker } from "../packages/ui/picker.js";
+import { mountColors } from "../packages/ui/colors.js";
+import { COPY as PICKER_COPY } from "../packages/ui/model.js";
+import { SWATCH_CROP, mountPicker } from "../packages/ui/picker.js";
 import { backgroundRendering, createRenderer, standardCard } from "../packages/ui/renderer.js";
 import * as github from "../extension/content/github/index.js";
 import { TIME_LIMIT_MS } from "../extension/content/github/slots.js";
@@ -51,7 +53,7 @@ import { detectIsolation, ownFields } from "./isolation.js";
 import { createMenu } from "./menu.js";
 import { BUILDER_MODES, createPanel, PANEL_HASH } from "./panel.js";
 import { xrayRasterEnv } from "./raster.js";
-import { COPY, NOTE_LINKS } from "./copy.js";
+import { COPY, CSS_NOTE, NOTE_LINKS } from "./copy.js";
 import { createGmStorage, lockBridge } from "./storage.js";
 
 // The marker that keeps a second copy of this script (two managers, or a reinjection) from
@@ -240,7 +242,7 @@ function writeNote(doc, node, note) {
 // The card when the script shares GitHub's JavaScript: the current theme and why the panel has no
 // controls, and Close. Nothing in it changes a setting; the theme it names is painted on the page
 // anyway.
-const CONTROLS = [".rs-top-switch", "[data-rs=undo]", "[data-rs=error]", "[data-rs=notices]", ".rs-browse", "[data-rs=gallery]", "[data-rs=empty]", ".rs-prefs", ".us-storage-row", ".us-pages"];
+const CONTROLS = [".rs-top-switch", "[data-rs=undo]", "[data-rs=error]", "[data-rs=notices]", ".rs-themes", ".rs-colors", ".rs-prefs", ".us-storage-row", ".us-pages"];
 function mountNote(doc, { host, kind, controls, note }) {
   const part = (name) => doc.querySelector(`[data-us="${name}"]`);
   for (const node of doc.querySelectorAll(CONTROLS.join(","))) node.remove();
@@ -263,8 +265,8 @@ function mountNote(doc, { host, kind, controls, note }) {
     } catch {
       // An unreadable saved theme: no name to show.
     }
-    doc.querySelector("[data-rs=summary-show]").textContent = card?.show ?? card?.name ?? "";
-    doc.querySelector("[data-rs=summary-name]").textContent = card?.show ? card.name : "";
+    doc.querySelector("[data-rs=summary-show]").textContent = card?.show ?? card?.name ?? (id === null ? PICKER_COPY.noTheme : "");
+    doc.querySelector("[data-rs=summary-name]").textContent = card?.show ? card.name : id === null ? PICKER_COPY.noThemeName : "";
     doc.querySelector("[data-rs=summary-note]").textContent = read.settings.enabled ? "" : "GitHub Reskin is off.";
   };
   void show();
@@ -306,14 +308,34 @@ function mountCard(doc, { host, catalog, kind, controls }) {
     fonts.load(id);
     return "";
   };
-  const picker = mountPicker(doc, host, { cards: CARDS, catalog, cardFor: standardCard, fontFace });
+  // The GM host tells subscribers only about other tabs' writes, so the picker and the color card
+  // each hear the other's commits here.
+  const local = new Set();
+  const cardHost = {
+    ...host,
+    async commit(...args) {
+      const reply = await host.commit(...args);
+      if (reply?.ok) for (const listener of local) listener();
+      return reply;
+    },
+    subscribe(listener) {
+      local.add(listener);
+      const stop = host.subscribe(listener);
+      return () => {
+        local.delete(listener);
+        stop();
+      };
+    },
+  };
+  const picker = mountPicker(doc, cardHost, { cards: CARDS, catalog, cardFor: standardCard, fontFace, crop: SWATCH_CROP });
+  const colors = mountColors(doc, cardHost, { catalog, cssOff: `Saved as your own copy. ${CSS_NOTE}` });
 
   const status = part("status");
   listen(part("export"), "click", async () => {
     const read = await host.read();
     const source = read.settings ? selectedSource(read.settings, catalog) : null;
     const result = source ? await host.downloadFile(exportTheme(source), doc) : { ok: false };
-    status.textContent = result.ok ? COPY.exported : COPY.exportFailed;
+    status.textContent = result.ok ? COPY.exported : read.settings?.selectedThemeId === null ? COPY.exportNone : COPY.exportFailed;
   });
   listen(part("close"), "click", () => controls.close());
   listen(part("make"), "click", () => controls.show("make"));
@@ -324,6 +346,7 @@ function mountCard(doc, { host, catalog, kind, controls }) {
     destroy() {
       for (const cleanup of cleanups.splice(0)) cleanup();
       picker.destroy();
+      colors?.destroy();
     },
   };
 }

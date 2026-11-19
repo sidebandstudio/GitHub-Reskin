@@ -469,24 +469,27 @@ for (const [name, engine] of [["Chromium", chromium], ["Firefox", firefox]]) {
         await context.close();
       });
 
-      // Every protected fragment and everything in it keeps GitHub's own computed colors for its
-      // nearest island's mode, and no island inside or on it reopens structured styling, also in
-      // the first frame after an ordinary wrapper becomes a warning. GitHub's light text does not
-      // read on the theme's dark canvas, so a warning inside the plan's light island takes GitHub's
-      // own colors of the seed's mode, dark, as the root has. Firefox also runs the selector
-      // fallback Gecko uses before Firefox 151, which does the same for the dimmed island.
+      // Every protected fragment and everything in it keeps GitHub's own components and status
+      // colors and takes the theme's neutral colors from its nearest themed island, as 1.0 colored
+      // all of GitHub. An island on or
+      // inside protected UI, or one too deep for a selector to name, stays GitHub's own entirely, as
+      // does an ordinary wrapper's island in the first frame after the wrapper becomes a warning.
+      // Firefox also runs the selector fallback Gecko uses before Firefox 151.
       for (const fallback of name === "Firefox" ? [false, true] : [false]) {
-        test(`protected fragments and forms keep their nearest island's native colors and components in ${appearance === "full" ? "Full" : "Calm"}${fallback ? " through the selector fallback" : ""}`, async () => {
-          const resolved = resolvedFromSeed(MODE_INDEX.modes.dark, { "/tokens/canvas": "#101a2b", "/tokens/text": "#fafbe0", "/tokens/border": "#ff00aa" });
+        test(`protected fragments and forms take the theme's neutral colors, GitHub's status colors and GitHub's components in ${appearance === "full" ? "Full" : "Calm"}${fallback ? " through the selector fallback" : ""}`, async () => {
+          // The theme also paints danger text green, which a warning or a danger control must not
+          // show; the engine resolves the seed's status colors beside it.
+          const resolved = { ...resolvedFromSeed(MODE_INDEX.modes.dark, { "/tokens/canvas": "#101a2b", "/tokens/text": "#fafbe0", "/tokens/border": "#ff00aa", "/semantics/danger/text": "#3fb950" }), statusSemantics: MODE_INDEX.modes.dark.colors.semantics };
           resolved.appearance = { ...resolved.appearance, shape: { corners: { style: "sharp", radius: 0 }, borders: { width: 4, style: "solid", color: "#123456" }, shadows: { style: "neon", color: "#fcee0a", opacity: 0.7, blur: 24, offset: 0 }, buttons: { style: "bevel", radius: 8 }, avatar: null } };
           const primer = compileGitHub(resolved, { seedMode: "dark", policy: "themed" }, { ...PREFS, appearance });
+          const RED = MODE_INDEX.modes.dark.colors.semantics.danger.text;
           const css = fallback ? stripStyleQueries(primer.css) : primer.css;
           const { page, context } = await open(FRAGMENTS, "https://github.com/octo-sample/protected", { colorScheme: "dark" });
           const ids = [...FRAGMENT_IDS, "later", "free"].flatMap((id) => [`${id}-box`, `${id}-btn`]);
           const snapshot = () =>
             page.evaluate((ids) => Object.fromEntries(ids.map((id) => {
               const cs = getComputedStyle(document.getElementById(id));
-              return [id, [cs.color, cs.backgroundColor, cs.borderTopColor, cs.borderTopWidth, cs.borderTopLeftRadius, cs.boxShadow, cs.colorScheme, cs.getPropertyValue("--bgColor-default"), cs.getPropertyValue("--fgColor-default"), cs.getPropertyValue("--reskin-on")]];
+              return [id, [cs.color, cs.backgroundColor, cs.borderTopColor, cs.borderTopWidth, cs.borderTopLeftRadius, cs.boxShadow, cs.colorScheme, cs.getPropertyValue("--bgColor-default"), cs.getPropertyValue("--fgColor-default"), cs.getPropertyValue("--reskin-on"), cs.getPropertyValue("--fgColor-danger"), cs.getPropertyValue("--control-danger-fgColor-rest").trim()]];
             })), ids);
           const native = await snapshot();
           await page.evaluate((css) => document.head.append(Object.assign(document.createElement("style"), { textContent: css })), css);
@@ -495,19 +498,33 @@ for (const [name, engine] of [["Chromium", chromium], ["Firefox", firefox]]) {
           assert.equal(themed["free-box"][1], "rgb(16, 26, 43)");
           assert.notDeepEqual(themed["free-box"], native["free-box"]);
           assert.notDeepEqual(themed["later-btn"], native["later-btn"]);
+          assert.equal(themed["free-box"][10], "#3fb950");
+          // GitHub's form validation color is an alias of the danger text, and follows it.
+          assert.equal(themed["free-box"][11], "#3fb950");
+          // Warnings and forms in a themed island, the light and dimmed ones included, take the
+          // theme's neutral colors and GitHub's own status colors for the seed's mode; their
+          // borders, corners, shadows and cleared switch stay GitHub's.
+          const THEMED = ["plain", "query", "permission", "light", "dimmed"];
           for (const id of FRAGMENT_IDS) {
-            const own = id === "light" || (fallback && id === "dimmed") ? "plain" : id;
-            for (const part of ["box", "btn"]) assert.deepEqual(themed[`${id}-${part}`], native[`${own}-${part}`], `${appearance} ${id}-${part} keeps GitHub's own colors and components`);
+            for (const part of ["box", "btn"]) {
+              const [got, own] = [themed[`${id}-${part}`], native[`${id}-${part}`]];
+              if (!THEMED.includes(id)) assert.deepEqual(got, own, `${appearance} ${id}-${part} is in an island GitHub keeps`);
+              else {
+                assert.deepEqual(got.slice(7, 9), ["#101a2b", "#fafbe0"], `${appearance} ${id}-${part} takes the theme's colors`);
+                assert.equal(got[10], RED, `${appearance} ${id}-${part} keeps GitHub's danger text`);
+                assert.equal(got[11], RED, `${appearance} ${id}-${part} keeps GitHub's form validation color`);
+                assert.deepEqual([got[3], got[4], got[5], got[9]], [own[3], own[4], own[5], own[9]], `${appearance} ${id}-${part} keeps GitHub's components`);
+              }
+            }
           }
-          // The light and dimmed warnings take their own island's values, not the dark root's.
-          assert.notEqual(native["light-box"][1], native["plain-box"][1]);
-          assert.notEqual(native["dimmed-box"][1], native["plain-box"][1]);
+          assert.equal(themed["plain-box"][1], "rgb(16, 26, 43)");
+          assert.equal(themed["query-box"][1], "rgb(16, 26, 43)");
           // A wrapper that becomes a warning is native, island and all, in the next frame.
           const late = await page.evaluate(() => new Promise((resolve) => {
             document.getElementById("later").className = "flash flash-warn";
             requestAnimationFrame(() => resolve(["later-box", "later-btn"].map((id) => {
               const cs = getComputedStyle(document.getElementById(id));
-              return [cs.color, cs.backgroundColor, cs.borderTopColor, cs.borderTopWidth, cs.borderTopLeftRadius, cs.boxShadow, cs.colorScheme, cs.getPropertyValue("--bgColor-default"), cs.getPropertyValue("--fgColor-default"), cs.getPropertyValue("--reskin-on")];
+              return [cs.color, cs.backgroundColor, cs.borderTopColor, cs.borderTopWidth, cs.borderTopLeftRadius, cs.boxShadow, cs.colorScheme, cs.getPropertyValue("--bgColor-default"), cs.getPropertyValue("--fgColor-default"), cs.getPropertyValue("--reskin-on"), cs.getPropertyValue("--fgColor-danger"), cs.getPropertyValue("--control-danger-fgColor-rest").trim()];
             })));
           }));
           assert.deepEqual(late, [native["later-box"], native["later-btn"]]);

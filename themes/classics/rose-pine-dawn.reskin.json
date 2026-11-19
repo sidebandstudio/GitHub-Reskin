@@ -8,10 +8,15 @@
     "text": "#575279"
   },
   "description": "Dawn palette from the Rosé Pine theme project, MIT license.",
+  "details": {
+    "headerText": "#6d6888"
+  },
   "name": "Rosé Pine Dawn",
   "overrides": {
     "border": "#dfdad9",
     "mutedText": "#615e76",
+    "primaryBackground": "#826e98",
+    "primaryText": "#ffffff",
     "surface": "#fffaf3"
   },
   "schemaVersion": 1,

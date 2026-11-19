@@ -198,14 +198,15 @@ export interface PairRecord {
   id: string;
   foreground: PairPath;
   backgrounds: readonly [PairPath, ...PairPath[]];
-  minimum: 3 | 4.5;
+  /** 1.2 only for controlBorder, a theme's own outline kept visible. */
+  minimum: 1.2 | 3 | 4.5;
   purpose: "text" | "boundary" | "focus";
   /** The record applies only when the source supplies this override; otherwise it is not audited. */
   supplied?: `/overrides/${OverrideColorKey}`;
 }
-/** Version 2 keeps every version 1 record, first and unchanged, and adds the appearance and supplied-only pairs. */
+/** Version 3 keeps every version 1 record first, unchanged but for controlBorder's 1.2:1 minimum, and adds the appearance and supplied-only pairs. */
 export interface PairMatrix {
-  version: 2;
+  version: 3;
   records: readonly PairRecord[];
 }
 export interface PairResult {
@@ -213,7 +214,7 @@ export interface PairResult {
   foreground: PairPath;
   background: PairPath;
   ratio: number;
-  minimum: 3 | 4.5;
+  minimum: 1.2 | 3 | 4.5;
   passed: boolean;
 }
 export type OverrideColorKey =
@@ -388,6 +389,8 @@ export interface ResolvedAppearance {
 }
 export type ThemedResolved = DeepReadonly<
   ColorSet & {
+    /** Present when the theme sets its own status colors: the seed's, repaired for this theme, which protected UI keeps. */
+    statusSemantics?: Record<SemanticRole, SemanticColors>;
     rendererVersion: 1;
     expansionVersion: 1;
     sanitizerVersion: 1;

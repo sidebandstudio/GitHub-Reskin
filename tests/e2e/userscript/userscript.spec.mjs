@@ -8,7 +8,7 @@ test("paints GitHub from manager storage at document start and leaves sign-in na
   const gm = await manager({ kind: "sync" });
   const page = await gm.open();
   await expect.poll(() => painted(page)).toEqual({ boot: "ready", styled: true, canvas: CHOOM_CANVAS });
-  // First run writes the defaults through the manager, never the page.
+  // Startup writes through the manager, never the page.
   expect(await settingsOf(gm, page)).toMatchObject({ settingsVersion: 2, enabled: true, selectedThemeId: CHOOM, preferences: { appearance: "full" } });
   const pageStorage = await page.evaluate((shim) => ({ local: Object.keys(localStorage).filter((key) => key !== shim), session: Object.keys(sessionStorage) }), "__reskin_test_gm__");
   expect(pageStorage).toEqual({ local: [], session: [] });
@@ -17,6 +17,21 @@ test("paints GitHub from manager storage at document start and leaves sign-in na
   await waitSettled(page);
   expect(await painted(page)).toMatchObject({ boot: "native", styled: false });
   expect(await page.evaluate(() => document.querySelectorAll("[data-reskin-owned], [data-reskin-css]").length)).toBe(0);
+});
+
+test("a new install leaves GitHub native with no theme until the panel picks one", async ({ manager }) => {
+  const gm = await manager({ kind: "sync", seed: null });
+  const page = await gm.open();
+  expect(await painted(page)).toMatchObject({ boot: "native", styled: false });
+  expect(await settingsOf(gm, page)).toMatchObject({ enabled: true, selectedThemeId: null });
+  const frame = await openPanel(page);
+  await expect(frame.locator("[data-rs=summary-show]")).toHaveText("No theme");
+  await expect(frame.locator("[data-rs=summary-name]")).toHaveText("GitHub's own look");
+  // A new install opens on the anime.
+  await expect(frame.getByRole("button", { name: /^Anime/ })).toHaveAttribute("aria-pressed", "true");
+  await frame.locator(`[data-theme="${FRIEREN}"]`).click();
+  await expect.poll(() => painted(page)).toMatchObject({ boot: "ready", canvas: FRIEREN_CANVAS });
+  await expect(frame.locator("[data-rs=undo]")).toBeHidden();
 });
 
 test("migrates the 1.1.0 userscript's saved theme, off switch and colors, and a disabled tab reloads native", async ({ manager }) => {
@@ -172,7 +187,7 @@ test("another tab's choice reaches this tab through change events, or when it is
 });
 
 test("a manager without durable storage gets a labeled session preview with export, and nothing is kept", async ({ manager }) => {
-  const gm = await manager({ kind: "none" });
+  const gm = await manager({ kind: "none", seed: null });
   const page = await gm.open(`${PROFILE_URL}#reskin`);
   const frame = await panelFrame(page);
   await expect(frame.locator("[data-us=session-label]")).toHaveText("Session preview");
@@ -183,9 +198,10 @@ test("a manager without durable storage gets a labeled session preview with expo
   await frame.getByRole("button", { name: "Export theme file" }).click();
   expect((await download).suggestedFilename()).toMatch(/\.reskin\.json$/);
   await expect(frame.locator("[data-us=status]")).toHaveText("Theme file saved to your downloads.");
+  // Nothing was kept, so the reload is a new install again: no theme.
   await page.goto(PROFILE_URL);
   await waitSettled(page);
-  await expect.poll(() => painted(page)).toMatchObject({ boot: "ready", canvas: CHOOM_CANVAS });
+  await expect.poll(() => painted(page)).toMatchObject({ boot: "native", styled: false });
   expect(await page.evaluate(() => ({ local: Object.keys(localStorage), session: Object.keys(sessionStorage) }))).toEqual({ local: [], session: [] });
 
   // A manager with storage says where its themes are saved, with no session label.

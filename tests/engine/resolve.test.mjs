@@ -47,7 +47,12 @@ test("source colors start the derivation as the spec's initial-value table says"
   assert.equal(t.tooltipBackground, t.raised);
   assert.equal(t.counterBackground, t.active);
   assert.equal(t.primaryHoverText, t.primaryText);
-  assert.equal(t.primaryBorder, t.controlBorder);
+  assert.equal(t.primaryBorder, t.primaryBackground);
+  // The control outline starts from the theme's own border, lifted only as far as 1.2:1 on every
+  // surface it is drawn on; a border that already stands that far off is the outline itself.
+  for (const bg of ["canvas", "surface", "inset", "raised", "hover", "active", "inputBackground"]) assert.ok(contrast(t.controlBorder, t[bg]) >= 1.2, bg);
+  const kept = resolveTheme({ ...minimal, overrides: { ...minimal.overrides, border: "#767676" } }, themed(lightSeed)).tokens;
+  assert.equal(kept.controlBorder, "#767676");
   // Repairs only touch failing pairs; supplied passing values survive.
   const choom = resolveTheme(rich, themed(darkSeed)).tokens;
   for (const key of ["surface", "inset", "mutedText", "link", "primaryBackground", "primaryText"]) assert.equal(choom[key], rich.overrides[key], key);
@@ -153,6 +158,21 @@ test("accessibility families suppress supplied status inks, render-only, with th
   // Syntax overrides are not accessibility colors and are kept.
   const syntax = json(`${TESTS}fixtures/roundtrip/syntax-diff.reskin.json`);
   assert.deepEqual(resolveTheme(syntax, themed(tritanopiaSeed)).syntax, resolveTheme(syntax, themed(lightSeed)).syntax);
+});
+
+test("a theme that sets its own status colors also gets the seed's, repaired for it, for protected UI", () => {
+  const theme = json(`${TESTS}fixtures/roundtrip/accessibility-output.reskin.json`);
+  const resolved = resolveTheme(theme, themed(darkSeed));
+  const { success, danger, warning, done, ...overrides } = theme.overrides;
+  const { overrides: _, ...rest } = theme;
+  const plain = resolveTheme(Object.keys(overrides).length ? { ...rest, overrides } : rest, themed(darkSeed));
+  assert.deepEqual(resolved.statusSemantics, plain.semantics);
+  for (const role of ["success", "danger", "warning", "done"]) assert.notEqual(resolved.statusSemantics[role].text, theme.overrides[role], role);
+  // Repaired the same way: each reads at 4.5:1 on the canvas the page reads it on.
+  for (const role of ["success", "danger", "warning", "done"]) assert.ok(contrast(resolved.statusSemantics[role].text, resolved.tokens.canvas) >= 4.5, role);
+  // A theme without its own status colors carries none, nor does a native resolution.
+  assert.equal(Object.hasOwn(plain, "statusSemantics"), false);
+  assert.equal(Object.hasOwn(resolveTheme(theme, { ...themed(darkSeed), policy: "native-unknown" }), "statusSemantics"), false);
 });
 
 test("adversarial mid-gray, straddling and contradictory themes still pass every pair", () => {

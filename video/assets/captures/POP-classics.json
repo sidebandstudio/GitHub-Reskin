@@ -1,10 +1,10 @@
 {
-  "captured": "2026-11-10T03:11:54.487Z",
+  "captured": "2026-11-19T04:13:31.759Z",
   "browser": "Chromium 156.0.8078.4",
   "extension": {
     "name": "GitHub Reskin",
-    "version": "1.1.0",
-    "commit": "3365cdc6bf6ad0cd182b807725681cd9f731e571",
+    "version": "2.0.0",
+    "commit": "b3653435ce29e5d48d68d3e320d028565cee3270",
     "sourceDirty": false,
     "package": "npm run build:stores, dist/chrome unpacked"
   },
@@ -12,11 +12,11 @@
   "id": "POP-classics",
   "file": "POP-classics.png",
   "url": "chrome-extension://<id>/pages/popup.html",
-  "extensionId": "fambbdgfmacpmfojcfogfmhahgafpapg",
+  "extensionId": "flfngmpljfdkppjongjoklnhgpkijhad",
   "theme": "editing-suite",
   "themeSource": {
     "file": "themes/classics/editing-suite.reskin.json",
-    "sha256": "3ee3b3e4700d513503c5f15db383a566aed51c43d95bbf39d37c4a21fc485c5a"
+    "sha256": "8b9516a7cfb0cc817d915670950c57c960cfeeca3f4496699b4feb86cbab5c8a"
   },
   "appearance": "full",
   "viewport": {
@@ -32,27 +32,27 @@
     "choom": null,
     "editingSuite": {
       "x": 14,
-      "y": 239,
-      "width": 182,
-      "height": 106
+      "y": 121,
+      "width": 99,
+      "height": 64
     },
     "classics": {
-      "x": 120,
-      "y": 132,
-      "width": 118,
-      "height": 44
+      "x": 60,
+      "y": 81,
+      "width": 41,
+      "height": 32
     },
     "calm": {
-      "x": 317,
-      "y": 424,
-      "width": 68,
-      "height": 44
+      "x": 269,
+      "y": 588,
+      "width": 52,
+      "height": 28
     },
     "enabled": {
-      "x": 316,
-      "y": 12,
-      "width": 70,
-      "height": 44
+      "x": 288,
+      "y": 14,
+      "width": 34,
+      "height": 32
     }
   },
   "settings": {
@@ -71,9 +71,9 @@
       "motion": true,
       "text": true
     },
-    "revision": 5,
+    "revision": 2,
     "selectedThemeId": "editing-suite",
     "settingsVersion": 2
   },
-  "sha256": "ae76bc7602a04448f2a9fb494091b891a8814e2bea42b7d943a475cdf3033724"
+  "sha256": "6647aa698b51b710f7ec86d13a74ab816e50e26231d2226841cafde5326cfeef"
 }

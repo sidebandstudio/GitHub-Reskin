@@ -31,6 +31,8 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { DEFAULT_THEME_ID } from "../../../packages/contracts/index.js";
+import { defaultSettings } from "../../../packages/settings/index.js";
 import { catalogCards, readCatalogEntries } from "../../../packages/ui/bundle.mjs";
 import { build } from "../../../scripts/build.mjs";
 import { expect, test as base } from "../../helpers/e2e.mjs";
@@ -50,6 +52,9 @@ export const HOST = "[data-reskin-userscript-panel]";
 export const PANEL = `${HOST} iframe`;
 // The manager value that holds the extension's records (userscript/storage.js).
 export const STATE_KEY = "reskin.state";
+// The manager's values with Choom Circuit picked, where a test starts unless it gives its own
+// seed. A new install has no theme; `seed: null` starts from one.
+export const PICKED = { [STATE_KEY]: { format: 1, stamp: "seed:1", lineage: [], records: { "reskin.settings": { ...defaultSettings(), selectedThemeId: DEFAULT_THEME_ID } } } };
 
 // github.com/login, reduced: the sign-in form under the sessions route.
 export const LOGIN_HTML = `<!doctype html><html lang="en" data-color-mode="auto" data-light-theme="light" data-dark-theme="dark"><head><title>Sign in to GitHub · GitHub</title>
@@ -191,12 +196,13 @@ export const test = base.extend({
     { scope: "worker" },
   ],
   // open({kind, seed, pages, hooks, backing, report, world, headers, before}) -> {context, open(url), requests, store(page)}
+  //   seed is the manager's values, PICKED unless given; null is a new install.
   //   world "isolated" (Chromium) runs the shim and the userscript in an isolated world, as
   //   Tampermonkey's DOM sandbox and Violentmonkey's content mode do. `before` is a page script
   //   run first in the main world.
   manager: async ({ browser, userscript }, use) => {
     const contexts = [];
-    await use(async ({ kind = "sync", seed = null, pages = {}, inject = true, hooks = true, backing = "local", report = "content", world = "main", headers = {}, before = null } = {}) => {
+    await use(async ({ kind = "sync", seed = PICKED, pages = {}, inject = true, hooks = true, backing = "local", report = "content", world = "main", headers = {}, before = null } = {}) => {
       const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, acceptDownloads: true });
       contexts.push(context);
       const requests = [];
@@ -278,9 +284,9 @@ export { expect };
  * temporary add-on installed through Firefox's remote debugging protocol. Its grants are the shim's,
  * with no report of where it runs, so only the browser can show the isolation, and no test hooks
  * unless `hooks`: then, inside the content script only, the panel's root is open for the locators.
- * Values live in the routed origin's localStorage, as in `manager`.
+ * Values live in the routed origin's localStorage, as in `manager`, starting from `seed`.
  */
-export async function firefoxContentManager(userscript, { kind = "sync", pages = {}, hooks = false } = {}) {
+export async function firefoxContentManager(userscript, { kind = "sync", pages = {}, hooks = false, seed = PICKED } = {}) {
   const { firefox } = await import("@playwright/test");
   const { connectWithMaxRetries } = await import(new URL("../../../node_modules/web-ext/lib/firefox/remote.js", import.meta.url).href);
   const addon = await mkdtemp(join(tmpdir(), "reskin-e2e-manager-addon-"));
@@ -294,7 +300,9 @@ export async function firefoxContentManager(userscript, { kind = "sync", pages =
     content_scripts: [{ matches: ["https://github.com/*"], js: ["manager.js"], run_at: "document_start" }],
   };
   await writeFile(join(addon, "manifest.json"), JSON.stringify(manifest));
-  await writeFile(join(addon, "manager.js"), injection(kind, userscript, { hooks, report: null }));
+  // The seed is written before the script runs, in the same content script.
+  const prelude = seed ? `localStorage.getItem(${JSON.stringify(SHIM_KEY)}) || localStorage.setItem(${JSON.stringify(SHIM_KEY)}, ${JSON.stringify(JSON.stringify(seed))});\n` : "";
+  await writeFile(join(addon, "manager.js"), prelude + injection(kind, userscript, { hooks, report: null }));
   const context = await firefox.launchPersistentContext(profile, {
     headless: true,
     viewport: { width: 1280, height: 900 },

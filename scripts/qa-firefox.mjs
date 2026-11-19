@@ -12,7 +12,6 @@
 // the screenshots, and prints how to repeat the run by hand. Without a Firefox it fails.
 import { existsSync } from "node:fs";
 import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
-import net from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -21,12 +20,12 @@ import { execFileSync } from "node:child_process";
 import { firefox } from "@playwright/test";
 import { FONT_BY_ID } from "../packages/appearance/registry.js";
 import { catalogCards, readCatalogEntries } from "../packages/ui/bundle.mjs";
-import { deadline, provenance, unpack } from "./qa-live.mjs";
+import { attachAddon, connect, until, wait } from "./firefox-addon.mjs";
+import { provenance, unpack } from "./qa-live.mjs";
 
 const DEFAULT_ROOT = fileURLToPath(new URL("..", import.meta.url));
 export const OUT = "artifacts/reports/firefox";
 const GITHUB = "https://github.com/sidebandstudio/GitHub-Reskin";
-const CHOOM = "anime.cyberpunk-edgerunners";
 const FRIEREN = "anime.frieren";
 // A three-color theme file, as someone would import one.
 export const IMPORTED = Object.freeze({ schemaVersion: 1, name: "Firefox Check", base: "dark", colors: { background: "#14212b", text: "#e8f1f7", accent: "#ff806c" } });
@@ -67,107 +66,6 @@ export function procedure({ firefoxPath, zip }) {
 }
 
 /**
- * A Firefox remote debugging client: request(packet) resolves with the reply from packet.to, or
- * rejects after `ms`, and on(listener) sees every packet, including events. When the connection
- * closes, pending requests reject and listeners see {type: "connection-closed"}. A run stops on a
- * timeout, since a late reply would answer the next request to that actor.
- */
-export function remoteClient(port, { host = "127.0.0.1", ms = 30000 } = {}) {
-  return new Promise((resolve, reject) => {
-    const socket = net.createConnection({ port, host });
-    const waiting = new Map();
-    const listeners = new Set();
-    let buffer = Buffer.alloc(0);
-    let greeted = false;
-    const greeting = setTimeout(() => {
-      socket.destroy();
-      reject(new Error(`Firefox's debugging server did not greet within ${ms / 1000} s`));
-    }, ms);
-    const client = {
-      request(packet) {
-        return new Promise((done, fail) => {
-          const entry = { done, fail };
-          entry.timer = setTimeout(() => {
-            const queue = waiting.get(packet.to) ?? [];
-            queue.splice(queue.indexOf(entry), 1);
-            fail(new Error(`Firefox did not answer ${packet.type} within ${ms / 1000} s`));
-          }, ms);
-          waiting.set(packet.to, [...(waiting.get(packet.to) ?? []), entry]);
-          const body = Buffer.from(JSON.stringify(packet));
-          socket.write(Buffer.concat([Buffer.from(`${body.length}:`), body]));
-        });
-      },
-      on(listener) {
-        listeners.add(listener);
-        return () => listeners.delete(listener);
-      },
-      close: () => socket.destroy(),
-    };
-    socket.on("data", (chunk) => {
-      buffer = Buffer.concat([buffer, chunk]);
-      for (;;) {
-        const colon = buffer.indexOf(":");
-        if (colon < 0) return;
-        const length = Number(buffer.subarray(0, colon).toString());
-        if (buffer.length < colon + 1 + length) return;
-        const packet = JSON.parse(buffer.subarray(colon + 1, colon + 1 + length).toString());
-        buffer = buffer.subarray(colon + 1 + length);
-        if (!greeted) {
-          greeted = true;
-          clearTimeout(greeting);
-          resolve(client);
-          continue;
-        }
-        for (const listener of listeners) listener(packet);
-        // Events carry a type; a reply has none, or carries an error.
-        const queue = waiting.get(packet.from);
-        if (queue?.length && (!packet.type || packet.error)) {
-          const { done, fail, timer } = queue.shift();
-          clearTimeout(timer);
-          if (packet.error) fail(new Error(`${packet.error}: ${packet.message}`));
-          else done(packet);
-        }
-      }
-    });
-    socket.on("error", (error) => {
-      clearTimeout(greeting);
-      reject(error);
-    });
-    socket.on("close", () => {
-      for (const queue of waiting.values())
-        for (const { fail, timer } of queue) {
-          clearTimeout(timer);
-          fail(new Error("Firefox closed the debugging connection"));
-        }
-      waiting.clear();
-      for (const listener of listeners) listener({ type: "connection-closed" });
-    });
-  });
-}
-
-async function connect(port) {
-  const end = Date.now() + 30000;
-  for (;;) {
-    try {
-      return await remoteClient(port, { ms: 10000 });
-    } catch (error) {
-      if (Date.now() > end) throw new Error(`Firefox's debugging server never answered on port ${port}: ${error.message}`);
-      await new Promise((done) => setTimeout(done, 200));
-    }
-  }
-}
-
-const wait = (ms) => new Promise((done) => setTimeout(done, ms));
-
-/** Polls `check` until it returns a truthy value or `ms` pass, and returns the last value. */
-async function until(check, ms = 15000) {
-  const end = Date.now() + ms;
-  let value;
-  while (!(value = await check()) && Date.now() < end) await wait(250);
-  return value;
-}
-
-/**
  * Firefox with the add-on installed as a temporary add-on, after `beforeInstall(context)` has used
  * the same browser without it: {context, addon, close}. `addon` reaches
  * the add-on's frames: evaluate(match, fn, ...args) runs fn in the newest frame whose URL contains
@@ -203,56 +101,12 @@ export async function launch({ executablePath, profile, dir, uuid, id, downloads
     await beforeInstall(context);
     const root = await client.request({ to: "root", type: "getRoot" });
     await client.request({ to: root.addonsActor, type: "installTemporaryAddon", addonPath: dir });
-    const addon = await until(async () => (await client.request({ to: "root", type: "listAddons" })).addons.find((entry) => entry.id === id));
-    const watcher = await client.request({ to: addon.actor, type: "getWatcher" });
-    const frames = [];
-    const problems = [];
-    client.on((packet) => {
-      if (packet.type === "target-available-form") frames.push(packet.target);
-      const gone = packet.type === "target-destroyed-form" ? frames.findIndex((form) => form.actor === packet.target.actor) : -1;
-      if (gone >= 0) frames.splice(gone, 1);
-      if (packet.type === "resources-available-array")
-        for (const [kind, resources] of packet.array ?? [])
-          for (const { pageError } of kind === "error-message" ? resources : [])
-            if (pageError && (!pageError.warning || /CSP/i.test(pageError.category ?? ""))) problems.push(`${pageError.category ?? ""} ${pageError.errorMessage} (${pageError.sourceName ?? ""})`.trim());
-    });
-    await client.request({ to: watcher.actor, type: "watchTargets", targetType: "frame" });
-    await client.request({ to: watcher.actor, type: "watchResources", resourceTypes: ["error-message"] });
-    const frame = (match) => until(async () => frames.findLast((form) => form.url?.includes(match)));
-    const evaluate = async (match, fn, ...args) => {
-      const form = await frame(match);
-      if (!form) throw new Error(`no add-on frame at ${match}`);
-      let off = () => {};
-      // The value arrives as its own event, which a closed connection or page never sends.
-      const result = new Promise((resolve, reject) => {
-        off = client.on((packet) => {
-          if (packet.type === "evaluationResult" && packet.from === form.consoleActor) resolve(packet);
-          else if (packet.type === "connection-closed") reject(new Error("Firefox closed the debugging connection"));
-          else if (packet.type === "target-destroyed-form" && packet.target?.actor === form.actor) reject(new Error(`${match} closed during an evaluation`));
-        });
-      });
-      // Handled now, so a disconnect while the request is pending leaves no unhandled rejection.
-      result.catch(() => {});
-      try {
-        await client.request({ to: form.consoleActor, type: "evaluateJSAsync", text: `(async () => JSON.stringify(await (${fn})(...${JSON.stringify(args)})))()`, mapped: { await: true } });
-        const packet = await deadline(result, 30000, `Evaluating in ${match}`);
-        if (packet.exceptionMessage) throw new Error(`${match}: ${packet.exceptionMessage}`);
-        return typeof packet.result === "string" ? JSON.parse(packet.result) : undefined;
-      } finally {
-        off();
-      }
-    };
-    const screenshot = async (match, path) => {
-      const form = await frame(match);
-      const { value } = await client.request({ to: root.screenshotActor, type: "capture", args: { browsingContextID: form.browsingContextID, rect: { left: 0, top: 0, width: 1280, height: 800 }, dpr: 1, snapshotScale: 1, fileScale: 1 } });
-      if (!value?.data) throw new Error(`no screenshot of ${match}: ${JSON.stringify(value?.messages)}`);
-      await writeFile(path, Buffer.from(value.data.split(",")[1], "base64"));
-    };
+    const addon = await attachAddon(client, id);
     const close = async () => {
       client.close();
       await context.close();
     };
-    return { context, addon: { evaluate, screenshot, frame, problems }, close };
+    return { context, addon, close };
   } catch (error) {
     client?.close();
     await context.close();
@@ -393,13 +247,13 @@ export async function qaFirefox({ args = [], root = DEFAULT_ROOT } = {}) {
     console.log(`qa:firefox: Firefox ${report.firefox.version} at ${executablePath}, ${zip} as a temporary add-on.\n${procedure({ firefoxPath: executablePath, zip })}`);
     record("install", "installed as a temporary add-on", true);
 
-    // First run: one welcome tab, Choom Circuit selected.
+    // First run: one welcome tab, no theme selected.
     await session.addon.frame("pages/onboarding.html");
     await wait(2000);
     const welcomeTabs = session.context.pages().filter((page) => page.url().includes("/pages/onboarding.html")).length;
     const first = await settings();
     await session.addon.screenshot("pages/onboarding.html", join(root, shot("1-welcome")));
-    record("first run", "one welcome tab, Choom Circuit selected", welcomeTabs === 1 && first?.selectedThemeId === CHOOM && first.enabled && !first.onboardingCompleted, { welcomeTabs, selected: first?.selectedThemeId }, shot("1-welcome"));
+    record("first run", "one welcome tab, no theme selected", welcomeTabs === 1 && first?.selectedThemeId === null && first.enabled && !first.onboardingCompleted, { welcomeTabs, selected: first?.selectedThemeId }, shot("1-welcome"));
 
     const chose = await session.addon.evaluate("pages/onboarding.html", clickButton, "Frieren");
     const status = await session.addon.evaluate("pages/onboarding.html", textOf, "[data-rs=status]", "Applied");

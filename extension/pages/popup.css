@@ -1,185 +1,369 @@
-/* Popup: 400px where the browser allows and as narrow as the viewport, 600px tall. The title, the
-   on/off switch and the selected theme stay in place; only the gallery scrolls, and it gives up
-   space before any control does. When the controls alone do not fit, the popup itself scrolls;
-   a viewport too short for the fixed layout (browser zoom, large text) gets one page scroller
-   instead. Either way every control stays reachable. */
+/* Popup: 1.0's card. 336px wide, 14px in, 14px between sections: the title and switch, the theme
+   cards with two weeks of each theme's graph, the four colors, and a footer with the theme's name
+   and the links. 2.0's controls sit in 1.0's style: the groups and search above the cards, Full or
+   Calm and the two switches as rows under the colors, Undo and the status above the footer. The
+   width is fixed, as 1.0's was: a popup that takes its width from the viewport can shrink to a
+   sliver while the browser measures it. The height is the content's, and the browser scrolls the
+   popup past its 600px. */
 html {
-  width: 400px;
-  max-width: 100vw;
+  width: 336px;
 }
 .rs-popup {
+  --line: #333333;
+  --strong: var(--brand);
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  width: 100%;
-  height: 600px;
-  padding: 12px 14px 0;
-  overflow-x: hidden;
-  overflow-y: auto;
+  gap: 14px;
+  padding: 14px;
+  font-size: 13px;
+  line-height: 1.4;
 }
 .rs-popup > * {
   flex: none;
 }
+
+/* Title row: 1.0's small mark, name and switch. */
 .rs-popup .rs-top {
-  flex-wrap: wrap;
-  row-gap: 0;
-}
-.rs-top-switch {
-  margin-left: auto;
-}
-.rs-summary {
-  display: flex;
-  align-items: flex-start;
-  flex-wrap: wrap;
-  gap: 0 10px;
-}
-.rs-summary-text {
-  flex: 1 1 180px;
-  min-width: 0;
-}
-.rs-summary p {
-  margin: 0;
-}
-.rs-summary-show {
-  font-size: 17px;
-  font-weight: 700;
-  line-height: 1.25;
-}
-.rs-summary-name {
-  color: var(--secondary);
-  font-size: 14px;
-}
-/* The note says where the theme applies only while Reskin is off; on, the status takes its line. */
-:root[data-rs-enabled="true"] .rs-popup .rs-summary-note {
-  display: none;
-}
-.rs-popup .rs-status {
-  min-height: 1.45em;
-  font-size: 13px;
-}
-.rs-popup [data-rs="undo"] {
-  margin-left: auto;
-}
-.rs-browse {
-  display: flex;
-  flex-direction: column;
   gap: 8px;
 }
-.rs-popup .rs-gallery {
-  flex: 1 1 auto;
-  min-height: 56px;
-  overflow-y: auto;
-  padding: 3px;
-  margin: 0 -3px;
-  overscroll-behavior: contain;
+.rs-popup .rs-mark {
+  width: 20px;
+  height: 20px;
 }
+.rs-popup .rs-title {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+.rs-popup .rs-switch {
+  min-height: 32px;
+}
+.rs-popup .rs-switch input {
+  width: 34px;
+  height: 20px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--line);
+}
+.rs-popup .rs-switch input::after {
+  top: 3px;
+  left: 3px;
+  width: 14px;
+  height: 14px;
+  background: var(--text);
+  transition: transform 150ms;
+}
+.rs-popup .rs-switch input:checked {
+  background: var(--strong);
+}
+.rs-popup .rs-switch input:checked::after {
+  background: var(--on-brand);
+  transform: translateX(14px);
+}
+.rs-popup .rs-link-button {
+  min-height: 24px;
+  padding: 0;
+  color: var(--brand);
+  font-size: 12px;
+  font-weight: 400;
+  text-decoration: underline;
+  text-decoration-color: var(--caption);
+  text-underline-offset: 3px;
+}
+.rs-popup .rs-link-button:hover {
+  text-decoration-color: currentColor;
+}
+.rs-popup .rs-link-button:disabled {
+  color: var(--caption);
+  text-decoration: none;
+  cursor: default;
+}
+
+/* 1.0's section headings. */
+.rs-popup .rs-heading {
+  margin: 0;
+  padding: 0;
+  color: var(--secondary);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.rs-heading-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.rs-themes,
+.rs-colors,
 .rs-prefs {
   display: flex;
   flex-direction: column;
-  gap: 0;
-  padding-top: 4px;
-  border-top: 1px solid var(--separator);
+  gap: 8px;
 }
-.rs-popup .rs-segmented {
-  flex-wrap: wrap;
-}
-.rs-children {
+
+/* The groups as tabs beside a small search field. The counts and the result count stay in the
+   accessible names and the live region. */
+.rs-browse {
   display: flex;
-  flex-wrap: wrap;
-  column-gap: 24px;
+  align-items: center;
+  gap: 12px;
+  margin-top: -2px;
+}
+.rs-popup .rs-groups {
+  flex: none;
+  flex-wrap: nowrap;
+  gap: 12px;
+}
+.rs-popup .rs-group {
+  gap: 0;
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  font-size: 12px;
+}
+.rs-popup .rs-group[aria-pressed="true"] {
+  color: var(--text);
+  font-weight: 600;
+  box-shadow: inset 0 -2px 0 var(--brand);
+}
+.rs-popup .rs-group-count {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.rs-popup .rs-search {
+  flex: 1;
+  min-height: 32px;
+  padding: 0 8px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+/* Theme cards: 1.0's three columns, each two weeks of the theme's graph on its canvas and its
+   name. The selected card takes the accent edge; its check is for screen readers. */
+.rs-popup .rs-cards {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+.rs-popup .rs-card {
+  gap: 5px;
+  min-height: 0;
+  padding: 5px;
+  border-color: var(--line);
+  border-radius: 9px;
+  background: var(--surface);
+}
+.rs-popup .rs-card:hover {
+  border-color: var(--secondary);
+  background: var(--surface);
+}
+.rs-popup .rs-card[aria-pressed="true"] {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 1px var(--brand);
+}
+.rs-popup .rs-card:focus-visible {
+  outline-offset: 1px;
+}
+.rs-popup .rs-card-check,
+.rs-popup .rs-card-secondary {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.rs-popup .rs-mini {
+  height: auto;
+  padding: 6px;
+  border: 0;
+  border-radius: 5px;
+}
+.rs-popup .rs-mini-wall,
+.rs-popup .rs-mini-head,
+.rs-popup .rs-mini-words {
+  display: none;
+}
+.rs-popup .rs-mini-body {
+  display: block;
+  padding: 0;
+}
+.rs-popup .rs-mini-graph {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-auto-rows: auto;
+  gap: 2px;
+  margin: 0;
+}
+.rs-popup .rs-mini-cell {
+  aspect-ratio: 1;
+  border-radius: 1.5px;
+}
+.rs-popup .rs-card-text {
+  padding: 0;
+}
+.rs-popup .rs-card-primary {
+  overflow: hidden;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.4;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.rs-popup .rs-empty {
+  padding: 4px 0;
+  font-size: 12px;
+}
+
+/* 1.0's color rows: the name, its swatch picker and its hex field. */
+.rs-color-grid {
+  display: grid;
+  gap: 6px;
+}
+.rs-color {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 84px;
+  align-items: center;
+  gap: 8px;
+}
+.rs-color label {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.rs-color input[type="color"] {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--control-border);
+  border-radius: 6px;
+  background: none;
+  cursor: pointer;
+}
+.rs-color input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 2px;
+}
+.rs-color input[type="color"]::-webkit-color-swatch {
+  border: none;
+  border-radius: 4px;
+}
+.rs-color input[type="color"]::-moz-color-swatch {
+  border: none;
+  border-radius: 4px;
+}
+.rs-hex {
+  width: 100%;
+  min-width: 0;
+  min-height: 28px;
+  padding: 0 6px;
+  border: 1px solid var(--control-border);
+  border-radius: 6px;
+  background: var(--surface);
+  font: 12px var(--mono);
+}
+.rs-hex[aria-invalid="true"] {
+  border-color: var(--error);
+}
+.rs-color input:disabled {
+  cursor: default;
+  opacity: 0.5;
 }
 .rs-popup .rs-note {
   font-size: 12px;
-  line-height: 1.4;
+  line-height: 1.35;
 }
-.rs-popup .rs-cards {
-  gap: 8px;
+/* An empty live region stays rendered, so its first message is announced, and gives back its gap. */
+.rs-popup [data-rc="note"]:empty {
+  margin-top: -8px;
 }
-.rs-popup .rs-card {
-  padding: 5px 5px 6px;
+
+/* Full or Calm beside its heading, then each switch as a row like the colors. */
+.rs-popup .rs-segmented {
+  align-items: center;
 }
-.rs-popup .rs-mini {
-  height: 54px;
+.rs-popup .rs-segments {
+  border-radius: 6px;
 }
-.rs-popup .rs-mini-head {
-  height: 7px;
-}
-.rs-popup .rs-mini-body {
-  padding: 4px 6px;
-}
-.rs-popup .rs-card-text {
-  padding-top: 4px;
-}
-.rs-popup .rs-card-primary {
-  font-size: 13px;
-}
-.rs-popup .rs-card-secondary {
+.rs-popup .rs-segments label {
+  min-height: 28px;
+  padding: 0 12px;
   font-size: 12px;
 }
-.rs-popup .rs-card-check {
-  top: 8px;
-  right: 8px;
+.rs-popup .rs-pref {
+  display: flex;
+  flex-direction: row-reverse;
+  justify-content: space-between;
+  min-height: 28px;
 }
+
+/* Undo and what just happened, above the footer; with nothing to say the line has no height. The
+   status stays rendered while empty, so its first message is announced. The note shows only while
+   Reskin is off or no theme is picked. */
+.rs-state {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0 10px;
+  margin: -6px 0;
+}
+.rs-state p {
+  margin: 0;
+}
+.rs-popup .rs-status {
+  font-size: 12px;
+}
+:root[data-rs-enabled="true"]:not([data-rs-theme="none"]) .rs-popup .rs-summary-note,
+.rs-popup .rs-summary-note:empty {
+  display: none;
+}
+
+/* 1.0's footer: the theme's name, and the links. */
 .rs-popup-footer {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   justify-content: space-between;
-  border-top: 1px solid var(--separator);
+  gap: 0 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  color: var(--secondary);
+  font-size: 12px;
+}
+.rs-footer-name {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.rs-footer-links {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0 12px;
 }
 .rs-popup-footer a {
   display: inline-flex;
   align-items: center;
-  min-height: 44px;
+  min-height: 24px;
+  color: var(--brand);
+  text-decoration: underline;
+  text-decoration-color: var(--caption);
+  text-underline-offset: 3px;
 }
-.rs-empty {
-  flex: 1 1 auto;
-  min-height: 0;
-}
-
-/* Too short for the fixed layout: everything flows in one page scroller and the gallery keeps a
-   bounded height of its own. */
-@media (max-height: 559px) {
-  .rs-popup {
-    height: auto;
-    overflow: visible;
-    padding-bottom: 4px;
-  }
-  .rs-popup .rs-gallery {
-    flex: none;
-    max-height: 240px;
-  }
+.rs-popup-footer a:hover {
+  text-decoration-color: currentColor;
 }
 
-/* Narrow popups: the three groups keep to one row, Undo stays beside the theme it undoes, and
-   miniatures drop the heading addition to stay short. */
-@media (max-width: 359px) {
-  .rs-popup .rs-groups {
-    gap: 4px;
-  }
-  .rs-popup .rs-group {
-    gap: 4px;
-    padding: 0 6px;
-    font-size: 13px;
-  }
-  .rs-popup .rs-group-count {
-    min-width: 16px;
-    padding: 0 4px;
-  }
-  .rs-popup .rs-undo-rest {
-    display: none;
-  }
-  .rs-popup .rs-mini {
-    height: 48px;
-  }
-  .rs-popup .rs-mini-flourish {
-    display: none;
-  }
-}
-
-/* Very narrow (zoomed) popups: one card per row. */
-@media (max-width: 299px) {
+/* Narrow frames (the userscript's card on a phone): two cards a row. */
+@media (max-width: 319px) {
   .rs-popup .rs-cards {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

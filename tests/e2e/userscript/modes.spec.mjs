@@ -6,7 +6,7 @@
 // patches Document.prototype.createElement and so holds the panel's frame, finds nothing that saves
 // and changes no setting. The script there never touches the manager's storage, so a page script
 // that patches built-ins can't capture it, and the manager's menu changes settings until the page
-// reloads. Also the
+// reloads; with nothing kept, each load there starts as a new install, with no theme. Also the
 // top layer: a page overlay drawn over the panel, with a false label, closes it, and a click
 // through it to a real control is dropped.
 import { CHOOM, CHOOM_CANVAS, FRIEREN_CANVAS, HOST, PANEL, PROFILE_HTML, PROFILE_URL, chooseMenu, expect, firefoxContentManager, menuNames, openPanel, painted, settingsOf, test, waitSettled } from "./helpers.mjs";
@@ -26,7 +26,8 @@ test("in the page's own context a page script that holds the panel's frame finds
   await page.goto(PROFILE_URL);
   const handle = await page.evaluateHandle(pageWorld(userscript));
   const stored = () => handle.evaluate((m) => m.records());
-  await expect.poll(() => painted(page)).toMatchObject({ boot: "ready", canvas: CHOOM_CANVAS });
+  // Nothing is kept here, so the page starts as a new install: no theme.
+  await expect.poll(() => painted(page)).toMatchObject({ boot: "native", styled: false });
   expect(await stored()).toEqual({});
   // After the script captured attachShadow, as a later GitHub script could.
   await page.evaluate(() => {
@@ -55,14 +56,15 @@ test("in the page's own context a page script that holds the panel's frame finds
   expect(attack.controls.filter((name) => !["summary-show", "summary-name", "summary-note", "status"].includes(name))).toEqual([]);
   expect(attack.note).toBe(MENU_ONLY);
   expect(await stored()).toEqual({});
-  expect(await painted(page)).toMatchObject({ boot: "ready", canvas: CHOOM_CANVAS });
+  expect(await painted(page)).toMatchObject({ boot: "native", styled: false });
 
   // A person's choice in the manager's menu changes the page, and still nothing is stored.
+  await handle.evaluate((m) => m.menu.find((entry) => entry.name.startsWith("Frieren")).fn());
+  await expect.poll(() => painted(page)).toMatchObject({ boot: "ready", canvas: FRIEREN_CANVAS });
   const toggle = () => handle.evaluate((m) => m.menu.find((entry) => entry.name === "Turn GitHub Reskin on or off").fn());
   await toggle();
   await expect.poll(() => painted(page)).toMatchObject({ boot: "native", styled: false });
   await toggle();
-  await handle.evaluate((m) => m.menu.find((entry) => entry.name.startsWith("Frieren")).fn());
   await expect.poll(() => painted(page)).toMatchObject({ boot: "ready", canvas: FRIEREN_CANVAS });
   expect(await stored()).toEqual({});
 });
@@ -80,7 +82,7 @@ test("in the page's own context a page script that patched Function.prototype.bi
     };
   });
   const handle = await page.evaluateHandle(pageWorld(userscript));
-  await expect.poll(() => painted(page)).toMatchObject({ boot: "ready", canvas: CHOOM_CANVAS });
+  await expect.poll(() => painted(page)).toMatchObject({ boot: "native", styled: false });
   await expect.poll(() => handle.evaluate((m) => m.menu.length)).toBeGreaterThan(0);
   // Nothing bound to an object that carries the manager's storage functions.
   expect(await page.evaluate(() => window.__bound.filter((target) => target && typeof target.getValue === "function").length)).toBe(0);
@@ -113,9 +115,11 @@ for (const [name, [plant, locals]] of Object.entries(FORGERIES)) {
       };
     });
     const handle = await page.evaluateHandle(pageWorld(userscript, locals));
-    await expect.poll(() => painted(page)).toMatchObject({ boot: "ready", canvas: CHOOM_CANVAS });
+    await expect.poll(() => painted(page)).toMatchObject({ boot: "native", styled: false });
     // The page-context menu: the script took none of it as isolation.
     await expect.poll(() => handle.evaluate((m) => m.menu.map((entry) => entry.name).slice(0, 2))).toEqual(["Open GitHub Reskin", "Turn GitHub Reskin on or off"]);
+    await handle.evaluate((m) => m.menu.find((entry) => entry.name.startsWith("Frieren")).fn());
+    await expect.poll(() => painted(page)).toMatchObject({ boot: "ready", canvas: FRIEREN_CANVAS });
     await handle.evaluate((m) => m.menu[1].fn());
     await expect.poll(() => painted(page)).toMatchObject({ boot: "native", styled: false });
     expect(await handle.evaluate((m) => m.records())).toEqual({});
@@ -158,13 +162,15 @@ test("a manager that runs the script through a proxy window keeps its report of 
 });
 
 test("a manager that injects into the page: every setting from its menu until a reload, labels that follow the settings, nothing stored and a panel without controls", async ({ manager }) => {
-  const gm = await manager({ kind: "sync", report: "page" });
+  // The script never reads this manager's storage, so it holds nothing to start from.
+  const gm = await manager({ kind: "sync", report: "page", seed: null });
   const page = await gm.open();
   await expect.poll(() => menuNames(page)).toContain("Turn GitHub Reskin off");
   const names = await menuNames(page);
   expect(names.slice(0, 5)).toEqual(["Open GitHub Reskin", "Turn GitHub Reskin off", "Use Calm appearance", "Turn extra theme text off", "Turn motion off"]);
-  // One entry per theme, the anime title first, the current one marked.
-  expect(names.filter((name) => name.startsWith("✓ "))).toEqual(["✓ Cyberpunk: Edgerunners · Choom Circuit"]);
+  // One entry per theme, the anime title first, the current one marked: none yet, since nothing is
+  // kept here and each load starts as a new install.
+  expect(names.filter((name) => name.startsWith("✓ "))).toEqual([]);
   expect(names.some((name) => /^Frieren: Beyond Journey's End · /.test(name))).toBe(true);
 
   await chooseMenu(page, "Turn GitHub Reskin off");
@@ -198,8 +204,8 @@ test("a manager that injects into the page: every setting from its menu until a 
   await page.goto(`${PROFILE_URL}#reskin`);
   await waitSettled(page);
   await expect(frame.locator("[data-us=storage-note]")).toHaveText(MENU_ONLY);
-  // Nothing was saved, so the new page starts from the default theme.
-  await expect(frame.locator("[data-rs=summary-show]")).toHaveText(/^Cyberpunk: Edgerunners/);
+  // Nothing was saved, so the new page starts with no theme.
+  await expect(frame.locator("[data-rs=summary-show]")).toHaveText("No theme");
   expect(await gm.records(page)).toEqual({});
 });
 

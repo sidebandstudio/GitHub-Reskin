@@ -36,8 +36,8 @@ import type { EffectId, ThemeBackground, ThemeContributions, ThemeRaster, ThemeS
 export declare const THEME_FORMAT_VERSION: 1;
 export declare const SETTINGS_VERSION: 2;
 export declare const RENDERER_VERSION: 1;
-export declare const ENGINE_VERSION: 1;
-export declare const PAIR_MATRIX_VERSION: 2;
+export declare const ENGINE_VERSION: 3;
+export declare const PAIR_MATRIX_VERSION: 3;
 export declare const EXPANSION_VERSION: 1;
 export declare const SANITIZER_VERSION: 1;
 export declare const CSS_REGISTRY_VERSION: 1;
@@ -478,7 +478,8 @@ export interface SettingsV2 {
   settingsVersion: 2;
   revision: number;
   enabled: boolean;
-  selectedThemeId: ThemeId;
+  /** Null until the person picks a theme: GitHub keeps its own look. */
+  selectedThemeId: ThemeId | null;
   preferences: Preferences;
   customThemes: CustomTheme[];
   /** Advanced CSS acceptance per imported local theme. Never part of exported theme data. */
@@ -518,8 +519,8 @@ export interface SettingsV2 {
 export interface BootRecord {
   settingsRevision: number;
   rendererVersion: 1;
-  engineVersion: 1;
-  pairMatrixVersion: 2;
+  engineVersion: 3;
+  pairMatrixVersion: 3;
   expansionVersion: 1;
   sanitizerVersion: 1;
   catalogHash: string;

@@ -84,7 +84,9 @@ export function pairMatrixProblems(matrix) {
     if (!PAIR_PATHS.includes(record.foreground)) problems.push(`${at} foreground ${record.foreground} is not a ColorPath or appearance color`);
     if (!Array.isArray(record.backgrounds) || !record.backgrounds.length) problems.push(`${at} needs at least one background`);
     else for (const bg of record.backgrounds) if (!PAIR_PATHS.includes(bg)) problems.push(`${at} background ${bg} is not a ColorPath or appearance color`);
-    if (record.minimum !== 3 && record.minimum !== 4.5) problems.push(`${at} minimum must be 3 or 4.5`);
+    // 1.2 is the control outline's alone: a theme's own border, kept visible.
+    const minimums = record.id === "controlBorder" ? [1.2] : [3, 4.5];
+    if (!minimums.includes(record.minimum)) problems.push(`${at} minimum must be ${minimums.join(" or ")}`);
     if (!["text", "boundary", "focus"].includes(record.purpose)) problems.push(`${at} purpose must be text, boundary or focus`);
     if (record.supplied !== undefined && !(typeof record.supplied === "string" && OVERRIDE_COLOR_ROLES.some((key) => record.supplied === `/overrides/${key}`))) problems.push(`${at} supplied must name an override color`);
   }

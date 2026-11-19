@@ -8,7 +8,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { isDeepStrictEqual } from "node:util";
 import { chromium, firefox } from "@playwright/test";
-import { STORAGE_KEYS } from "../../../packages/contracts/index.js";
+import { DEFAULT_THEME_ID, STORAGE_KEYS } from "../../../packages/contracts/index.js";
 import { defaultSettings } from "../../../packages/settings/index.js";
 import { catalogData, readCatalogEntries } from "../../../packages/ui/bundle.mjs";
 import { catalogFromData } from "../../../packages/ui/catalog.js";
@@ -205,7 +205,7 @@ test("Firefox: the built content script leaves sign-in and sign-up exactly as Gi
     const content = await readFile(join(built.dir, "content.js"), "utf8");
     const catalog = catalogFromData(catalogData(await readCatalogEntries(BUILD_ROOT)));
     const defaults = defaultSettings(catalog);
-    const settings = { ...defaults, onboardingCompleted: true, preferences: { ...defaults.preferences, appearance: "calm", extras: false } };
+    const settings = { ...defaults, selectedThemeId: DEFAULT_THEME_ID, onboardingCompleted: true, preferences: { ...defaults.preferences, appearance: "calm", extras: false } };
     const records = { [STORAGE_KEYS.settings]: settings, [STORAGE_KEYS.selected]: catalog.record(settings.selectedThemeId) };
     const storage = `globalThis.browser = { runtime: { id: "e2e", getURL: ${CONTENT_GET_URL} }, storage: { local: { get: async () => (${JSON.stringify(records)}), set: async () => {}, remove: async () => {} }, onChanged: { addListener() {}, removeListener() {} } } };`;
     const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });

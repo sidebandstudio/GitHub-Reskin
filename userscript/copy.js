@@ -11,6 +11,7 @@ export const COPY = Object.freeze({
   sessionLabel: "Session preview",
   exported: "Theme file saved to your downloads.",
   exportFailed: "The theme file could not be saved. Try again.",
+  exportNone: "Pick a theme first, then export it.",
 });
 
 // The words in menuOnly and noControls that link, in the order they appear. The install page shows

@@ -3,7 +3,8 @@
 // selected year link, the skip links and the page-load bar on github.com/whoisaldo), which the
 // mapping emits from tokens.accentEmphasis and tokens.emphasisText, in Full and Calm. Native
 // islands stay native, and a theme without the override compiles as main 127233c did. The
-// art-additions fixture's hashes were recorded again when its body font, Barlow, gained files.
+// art-additions fixture's hashes were recorded again when its body font, Barlow, gained files, and
+// those of every theme whose contribution ramp engine 2 keeps closer to its seed when it changed.
 import assert from "node:assert/strict";
 import test from "node:test";
 import { contrast, repairTheme, resolveTheme } from "../../packages/engine/index.js";
@@ -66,7 +67,7 @@ test("the override drives GitHub's emphasis fill and its ink in Full and Calm on
     assert.notEqual(plain.tokens.accentEmphasis, TEAL);
     assert.ok(!declared(compileGitHub(plain, plan, PREFS).css, "--bgColor-accent-emphasis").includes(TEAL), mode.id);
     // Only the emphasis variables follow the override: the rest of the stylesheet is the same.
-    const strip = (css) => withoutAdded(css).replace(/--(?:bgColor-accent-emphasis|fgColor-onEmphasis|diffBlob-hunkNum-bgColor-hover|control-checked-(?:bg|border)Color-(?:rest|hover|active)):#[0-9a-f]{6}/g, "");
+    const strip = (css) => withoutAdded(css).replace(/--(?:bgColor-accent-emphasis|fgColor-onEmphasis|diffBlob-hunkNum-bgColor-hover|button-outline-bgColor-active|control-checked-(?:bg|border)Color-(?:rest|hover|active)):#[0-9a-f]{6}/g, "");
     assert.equal(strip(compileGitHub(resolved, plan, PREFS).css), strip(compileGitHub(plain, plan, PREFS).css), mode.id);
   }
 });

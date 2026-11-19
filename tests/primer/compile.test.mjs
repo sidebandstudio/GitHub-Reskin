@@ -218,12 +218,12 @@ test("structured component rules never reach protected UI or anything inside it,
     resolved.appearance = { ...resolved.appearance, shape: { corners: { style: "bevel", radius: 12 }, borders: { width: 4, style: "solid", color: "#123456" }, shadows: { style: "glow", color: "#fcee0a", opacity: 0.6, blur: 24, offset: 0 }, buttons: { style: "bevel", radius: 8 }, avatar: null } };
     const { css } = compileGitHub(resolved, p, prefs);
     const all = rules(css);
-    // Protected UI's own native values: under a style query on the nearest island's mode, and
-    // through the selector fallback.
-    const restoring = (r) => r.media.some((m) => m.includes("style(--reskin-mode:")) || r.selectors[0].startsWith(`:is(${PROTECTED_UI}):not(`);
+    // Protected UI's own status colors: under the style query, and through the selector fallback.
+    const items = PROTECTED_UI.split(/,(?=[a-z.[])/);
+    const status = (r) => r.selectors.every((s) => s.startsWith(`:is(${PROTECTED_UI}):not(`) || items.some((i) => s.startsWith(`${i}:not(`)));
     // Every rule that styles a GitHub element rather than an island: components, graph, labels
     // and scroll containers, in every engine path.
-    const styled = all.filter((r) => r.declarations.length && !restoring(r) && !r.selectors.some((s) => s.startsWith(":where(") || s.includes("[data-color-mode]:not([data-light-theme],[data-dark-theme])") || s.startsWith("header.HeaderMktg") || s.startsWith(":root") || s.startsWith("::selection") || s.startsWith(":is([data-color-mode=")) && r.selectors.join(",") !== PROTECTED_UI);
+    const styled = all.filter((r) => r.declarations.length && !status(r) && !r.selectors.some((s) => s.startsWith(":where(") || s.includes("[data-color-mode]:not([data-light-theme],[data-dark-theme])") || s.startsWith("header.HeaderMktg") || s.startsWith(":root") || s.startsWith("::selection") || s.startsWith(":is([data-color-mode=")) && r.selectors.join(",") !== PROTECTED_UI);
     assert.ok(styled.length > 12, prefs.appearance);
     // Every path refuses protected UI and everything inside it, under the style query too.
     for (const r of styled) for (const s of r.selectors) assert.ok(s.includes(UNPROTECTED), `${prefs.appearance} ${r.media.join(" ")} ${s.slice(0, 80)}`);
@@ -235,83 +235,41 @@ test("structured component rules never reach protected UI or anything inside it,
   }
 });
 
-test("protected UI takes back its nearest island's own native values for each covered mode under the style query, or the seed mode's where they do not read on the theme's canvas, and the seed mode's through the selector fallback", () => {
-  const [resolved, p] = themed("dark");
-  const all = rules(compileGitHub(resolved, p, PREFS).css);
-  const covered = coveredModes(MODE_INDEX, "dark");
-  const ATTRIBUTED = "[data-color-mode]:is([data-light-theme],[data-dark-theme])";
-  const own = (mode) => new Map(MODE_INDEX.restoreCss[mode].split(";").map((d) => [d.slice(0, d.indexOf(":")), d.slice(d.indexOf(":") + 1)]));
-  // The last declaration of each name wins.
-  const check = (r, mode, overrides = {}) => {
-    const values = new Map([...own(mode), ...Object.entries(overrides)]);
-    const base = MODE_INDEX.modes[mode].base;
-    const got = Object.fromEntries(r.declarations.map((d) => [d.name, d.value]));
-    for (const d of r.declarations) assert.equal(d.important, false, `${mode} ${d.name}`);
-    for (const [name, value] of Object.entries(got)) {
-      if (name === "color-scheme") assert.equal(value, base);
-      else if (name.startsWith("--lightningcss-")) assert.equal(value.trim(), (name === `--lightningcss-${base}`) ? "initial" : "");
-      else assert.equal(value, values.get(name), `${mode} ${name} is GitHub's own`);
-    }
-    return got;
-  };
-  // Engines with style queries: once, after both branches, on protected UI that is no island.
-  const queried = (css) => rules(css).filter((r) => r.media.some((m) => m.includes("style(--reskin-mode:")));
-  const expectRestored = (css, modes, overrides) => {
-    const restored = queried(css);
-    assert.deepEqual(restored.map((r) => r.media), covered.map((mode) => ["not all and (forced-colors: active)", `style(--reskin-on: 1) and style(--reskin-mode: ${mode})`]));
-    for (const [i, r] of restored.entries()) {
-      assert.deepEqual(r.selectors, PROTECTED_UI.split(/,(?=[a-z.[])/).map((s) => `${s}:not(${ATTRIBUTED})`));
-      // No canvas is painted behind protected UI: a block's background extends under the floats
-      // beside it, where it would sit under themed text.
-      assert.ok(r.declarations.every((d) => d.name !== "background-color" && d.name !== "color"), covered[i]);
-      check(r, modes[i], overrides);
-    }
-    return restored;
-  };
-  // GitHub's light text does not read on a dark canvas, so protected UI in a light island under a
-  // dark theme takes back dark's values, the seed's; the dark islands keep their own.
-  const restored = expectRestored(compileGitHub(resolved, p, PREFS).css, covered.map((mode) => (mode === "light" ? "dark" : mode)));
-  assert.deepEqual(restored[covered.indexOf("light")].declarations, restored[covered.indexOf("dark")].declarations);
-  // On a lighter dark canvas, like Nord's, where dark's muted text reads at 4.29:1, every island
-  // takes back dark's values with dark's default text for its muted text.
-  const nord = resolvedFromSeed(MODE_INDEX.modes.dark, { "/tokens/canvas": "#2e3440" });
-  assert.ok(contrast(own("dark").get("--fgColor-muted"), "#2e3440") < 4.5);
-  assert.ok(contrast(own("dark").get("--fgColor-default"), "#2e3440") >= 4.5);
-  expectRestored(compileGitHub(nord, p, PREFS).css, covered.map(() => "dark"), { "--fgColor-muted": own("dark").get("--fgColor-default") });
-  for (const branch of ["light", "dark"]) {
-    const scope = scopeOf("dark", branch);
-    const media = branch === "light" ? "not all and (prefers-color-scheme: dark)" : "(prefers-color-scheme: dark)";
-    // Each covered island names its mode for protected UI inside it.
-    for (const mode of covered) {
-      const tag = all.filter((r) => r.media[1] === media && r.selectors[0] === scope.mode(mode));
-      assert.deepEqual(tag.map((r) => r.declarations.map((d) => [d.name, d.value])), [[["--reskin-mode", mode]]]);
-    }
-    // Gecko before Firefox 151 finds a themed nearest island by selector through six islands, one
-    // neither protected nor inside protected UI, and takes back GitHub's own values for the seed's
-    // mode.
-    const fallback = all.filter((r) => r.media[1] === media && r.selectors[0].startsWith(`:is(${PROTECTED_UI}):not(`));
-    assert.equal(fallback.length, 1);
-    assert.deepEqual(fallback[0].media.slice(2), ["selector(:-moz-focusring) and (not (position-anchor: normal))"]);
-    assert.deepEqual(fallback[0].selectors, [`:is(${PROTECTED_UI})${scope.shallow}:not(:is(${PROTECTED_UI}) ${ATTRIBUTED} *,${ATTRIBUTED}:is(${PROTECTED_UI}) *)`]);
-    assert.ok(scope.nearest.startsWith(scope.shallow.slice(0, -1)));
-    check(fallback[0], "dark");
+test("protected UI takes the theme's colors from its nearest island, as 1.0 colored all of GitHub, and a theme that sets its own status colors leaves it the seed's", () => {
+  const items = PROTECTED_UI.split(/,(?=[a-z.[])/);
+  const ownRules = (css) => rules(css).filter((r) => r.selectors.some((s) => items.some((i) => s === i || s.startsWith(`${i}:not(`)) || s.startsWith(`:is(${PROTECTED_UI})`)));
+  for (const seedMode of ["dark", "light"]) {
+    const [resolved, p] = themed(seedMode);
+    // Without status colors of its own, protected UI only clears the Reskin switches.
+    const plain = ownRules(compileGitHub(resolved, p, PREFS).css);
+    assert.equal(plain.length, 1, seedMode);
+    assert.deepEqual(plain[0].declarations.map((d) => d.name), ["--reskin-on", ...Object.keys(CSS_VARIABLES)]);
+    assert.ok(rules(compileGitHub(resolved, p, PREFS).css).every((r) => !r.media.some((m) => m.includes("--reskin-mode")) && r.declarations.every((d) => d.name !== "--reskin-mode")), seedMode);
+    // A theme that paints danger text green, with the seed's repaired status colors beside it.
+    const own = { ...resolved, semantics: { ...resolved.semantics, danger: { ...resolved.semantics.danger, text: "#3fb950" } }, statusSemantics: resolved.semantics };
+    const all = ownRules(compileGitHub(own, p, PREFS).css);
+    const status = all.filter((r) => r.declarations[0]?.name !== "--reskin-on");
+    // Under the style query and in each branch's Gecko selector fallback: the seed's status
+    // variables, then GitHub's aliases of them for the seed's mode, without !important.
+    assert.equal(status.length, 3, seedMode);
+    assert.equal(status.filter((r) => r.media.includes("style(--reskin-on: 1)")).length, 1, seedMode);
+    const values = emittedColors(resolved, mappings.emit.filter((m) => m.role.startsWith("/semantics/")));
+    assert.ok(values.size >= 30);
+    assert.equal(values.get("--fgColor-danger"), resolved.semantics.danger.text);
+    const aliases = MODE_INDEX.statusAliasCss[seedMode].split(";").map((d) => [d.slice(0, d.indexOf(":")), d.slice(d.indexOf(":") + 1)]);
+    assert.ok(aliases.some(([name, value]) => name === "--control-danger-fgColor-rest" && value === "var(--fgColor-danger)"), seedMode);
+    for (const r of status) assert.deepEqual(r.declarations.map((d) => [d.name, d.value, d.important]), [...[...values].map(([name, value]) => [name, value]), ...aliases].map(([name, value]) => [name, value, false]), seedMode);
   }
 });
 
-test("every catalog theme's protected UI reads at 4.5:1 on its canvas in every covered island, with no canvas behind it", () => {
+test("every catalog theme's text and muted text, which protected UI takes too, read at 4.5:1 on its canvas on every covered seed", () => {
   for (const entry of readJson("themes/catalog.json")) {
     const theme = readJson(entry.file);
     for (const seed of Object.values(MODE_INDEX.modes).filter((m) => m.base === theme.base && !m.highContrast && coveredModes(MODE_INDEX, m.id).length)) {
       const resolved = resolveTheme(theme, { seed, policy: "themed", reducedMotion: false, forcedColors: false });
       const canvas = colorAt(resolved, "/tokens/canvas");
-      const baseline = new Map(MODE_INDEX.nativeCss[seed.id].split(";").map((d) => [d.slice(0, d.indexOf(":")), d.slice(d.indexOf(":") + 1)]));
-      const restored = rules(compileGitHub(resolved, { seedMode: seed.id, policy: "themed" }, PREFS).css).filter((r) => r.media.some((m) => m.includes("style(--reskin-mode:")));
-      assert.equal(restored.length, coveredModes(MODE_INDEX, seed.id).length);
-      for (const r of restored) {
-        const got = new Map([...baseline, ...r.declarations.map((d) => [d.name, d.value])]);
-        assert.ok(!got.has("background-color"), `${entry.slug} ${r.media[1]}`);
-        for (const name of ["--fgColor-default", "--fgColor-muted"]) assert.ok(contrast(got.get(name), canvas) >= 4.5, `${entry.slug} on ${seed.id}, ${r.media[1]}: ${name} ${got.get(name)} on ${canvas}`);
-      }
+      const emitted = emittedColors(resolved);
+      for (const name of ["--fgColor-default", "--fgColor-muted"]) assert.ok(contrast(emitted.get(name), canvas) >= 4.5, `${entry.slug} on ${seed.id}: ${name} ${emitted.get(name)} on ${canvas}`);
     }
   }
 });
@@ -395,11 +353,6 @@ test("the compiler interpolates only validated colors, never metadata, flavor or
   assert.throws(() => compileGitHub(upper, p, PREFS), /lowercase #rrggbb/);
   const badIndex = { ...MODE_INDEX, nativeCss: { ...MODE_INDEX.nativeCss, dark: "--x:red}body{display:none" } };
   assert.throws(() => compileGitHub(resolved, p, PREFS, badIndex), /unsafe declaration/);
-  const badRestore = { ...MODE_INDEX, restoreCss: { ...MODE_INDEX.restoreCss, dark_dimmed: "--bgColor-default:red}body{display:none" } };
-  assert.throws(() => compileGitHub(resolved, p, PREFS, badRestore), /restoreCss\.dark_dimmed has an unsafe declaration/);
-  // Without a covered mode's restoring baseline, nothing compiles that would leave protected UI themed.
-  const { light, ...partial } = MODE_INDEX.restoreCss;
-  assert.throws(() => compileGitHub(resolved, p, PREFS, { ...MODE_INDEX, restoreCss: partial }), /restoreCss has no light baseline/);
 });
 
 test("a resolution from another seed or base cannot be compiled under a plan", () => {
@@ -428,6 +381,20 @@ test("the primary counter falls back to the primary fill when it would not read 
   const { css, warnings } = compileGitHub(resolved, { seedMode: "dark", policy: "themed" }, PREFS);
   assert.match(css, /--buttonCounter-primary-bgColor-rest:#1f6feb !important/);
   assert.equal(warnings[0].code, "primer.readable-fallback");
+});
+
+test("an empty day is a solid square, outlined in the control border only when its fill is within 1.08:1 of the canvas", () => {
+  const seed = MODE_INDEX.modes.dark;
+  const EMPTY_DAY = "--contribution-default-borderColor-0";
+  // Editing Suite's empty day, 1.19:1 off its canvas, and GitHub's own dark one at 1.09:1.
+  const suite = resolvedFromSeed(seed, { "/tokens/canvas": "#0a0a0b", "/graph/0": "#1e1e1f" });
+  assert.equal(emittedColors(suite).get(EMPTY_DAY), "#1e1e1f");
+  assert.equal(emittedColors(resolvedFromSeed(seed)).get(EMPTY_DAY), seed.colors.graph[0]);
+  // A fill the eye can't tell from the canvas keeps the outline, and says so.
+  const faint = resolvedFromSeed(seed, { "/tokens/canvas": "#d8eadf", "/graph/0": "#e0eade" });
+  const warnings = [];
+  assert.equal(emittedColors(faint, undefined, warnings).get(EMPTY_DAY), colorAt(faint, "/tokens/controlBorder"));
+  assert.ok(warnings.some((w) => w.code === "primer.readable-fallback" && w.message.startsWith(`${EMPTY_DAY} uses /tokens/controlBorder`)));
 });
 
 test("the Primer Brand footer gets its own mapped variables, scoped by structure", () => {

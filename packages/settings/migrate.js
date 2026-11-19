@@ -3,6 +3,7 @@
 import { LEGACY_EDITED_COLORS_THEME_ID, LEGACY_STORAGE_KEYS, LEGACY_THEME_ALIASES, LOCAL_THEME_ID_PREFIX } from "../contracts/index.js";
 import { validateTheme } from "../format/index.js";
 import { basePolarityIssue } from "../engine/index.js";
+import { fallbackThemeId } from "./catalog.js";
 import { NOTICES, STORAGE_LIMITS } from "./constants.js";
 import { defaultSettings, isPlainObject } from "./model.js";
 
@@ -38,7 +39,8 @@ export function migrateLegacy(raw, { catalog, newId, repair } = {}) {
 
   // The selected source. 1.0 saved edited colors without a theme; they belong to Editing Suite.
   let sourceId;
-  if (theme === undefined || theme === null) sourceId = custom != null ? LEGACY_EDITED_COLORS_THEME_ID : settings.selectedThemeId;
+  // 1.x showed Cyberpunk when it had no theme saved, so those settings keep Choom Circuit.
+  if (theme === undefined || theme === null) sourceId = custom != null ? LEGACY_EDITED_COLORS_THEME_ID : fallbackThemeId(catalog);
   else if (typeof theme === "string" && Object.hasOwn(LEGACY_THEME_ALIASES, theme) && catalog.has(LEGACY_THEME_ALIASES[theme])) {
     sourceId = LEGACY_THEME_ALIASES[theme];
     notices.push(NOTICES.cyberpunkAlias, NOTICES.controlSwapsRemoved);
@@ -75,11 +77,16 @@ export function migrateLegacy(raw, { catalog, newId, repair } = {}) {
 }
 
 // Clones the source and applies the four 1.x colors. 1.1.0 dropped a theme's extra surface, border
-// and muted colors once you edited it, so its overrides and graph levels go too; fonts, effects and
-// flavor stay, as they did. A base the colors contradict is switched, as an import would offer.
+// and muted colors once you edited it, so its overrides, graph levels and header text go too;
+// fonts, effects and flavor stay, as they did. A base the colors contradict is switched, as an
+// import would offer.
 function localTheme(source, custom, repair) {
   if (!source) return null;
   const { overrides, contributions, ...rest } = structuredClone(source);
+  if (rest.details?.headerText) {
+    delete rest.details.headerText;
+    if (!Object.keys(rest.details).length) delete rest.details;
+  }
   const name = source.name.length + EDITED.length > NAME_LIMIT ? source.name.slice(0, NAME_LIMIT - EDITED.length).trimEnd() : source.name;
   let document = {
     ...rest,

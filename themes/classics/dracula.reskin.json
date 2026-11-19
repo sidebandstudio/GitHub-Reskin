@@ -8,10 +8,15 @@
     "text": "#f8f8f2"
   },
   "description": "Palette from the Dracula theme project, MIT license.",
+  "details": {
+    "headerText": "#8894b8"
+  },
   "name": "Dracula",
   "overrides": {
     "border": "#44475a",
     "mutedText": "#b3bad3",
+    "primaryBackground": "#8467ae",
+    "primaryText": "#ffffff",
     "surface": "#21222c"
   },
   "schemaVersion": 1,

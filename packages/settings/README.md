@@ -15,8 +15,8 @@ page-storage call removes 1.1.0's `github-reskin-css` key, without reading it, a
 
 | Key | Contents |
 | --- | --- |
-| `reskin.settings` | `SettingsV2`: `settingsVersion: 2`, `revision`, `enabled`, `selectedThemeId`, `preferences {appearance, extras, text, motion, fonts, effects}`, `cssConsent {[localId]: {hash, sanitizerVersion}}`, `customThemes`, `onboardingCompleted`, `migration {from?, notices}` |
-| `reskin.boot` | `BootRecord`, or `null` when disabled or no snapshot could be made. Written in the same `storage.set` as settings. |
+| `reskin.settings` | `SettingsV2`: `settingsVersion: 2`, `revision`, `enabled`, `selectedThemeId` (null until a theme is picked), `preferences {appearance, extras, text, motion, fonts, effects}`, `cssConsent {[localId]: {hash, sanitizerVersion}}`, `customThemes`, `onboardingCompleted`, `migration {from?, notices}` |
+| `reskin.boot` | `BootRecord`, or `null` when disabled, with no theme, or when no snapshot could be made. Written in the same `storage.set` as settings. |
 | `reskin.selected` | The selected bundled theme for the content script, as the JSON text of its document and CSS proofs (packages/ui/catalog.js `catalogRecord`), or `null` for a saved theme. Written in the same `storage.set` as settings by a repository given `selectedRecord`, as the extension's background is; the content script uses it only when its text hashes to the build's record for that theme. |
 | `reskin.lastGood` | `{themeId, sourceHash, revision}` of the previous selection, for Undo. Cleared, with an `undo-cleared` notice, when its local theme is deleted, including when that theme was the selection being replaced. |
 | `reskin.draft` | One editor draft, up to 1.25 MiB. It carries no CSS approval. |
@@ -92,7 +92,7 @@ reloads and validates.
 
 | 1.1.0 storage | SettingsV2 |
 | --- | --- |
-| Nothing | Defaults: on, Choom Circuit, Full. First run opens once, on a genuine install only. |
+| Nothing | Defaults: on, no theme, Full, so GitHub keeps its own look until a pick. First run opens once, on a genuine install only. |
 | `enabled:false` | Stays off, with the other choices kept. No tab. |
 | A legacy palette ID | That exact ID. |
 | `theme:'cyberpunk'` | `anime.cyberpunk-edgerunners`, with the `cyberpunk-alias` and `control-swaps-removed` notices. |

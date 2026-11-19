@@ -4,7 +4,7 @@
 
 A rebuild of the extension for a public release in the Chrome Web Store and on Firefox Add-ons.
 
-- 13 anime themes, each with an original name that credits its show in plain text, next to the 12 classic editor themes. Choom Circuit carries forward the Cyberpunk theme and is the default.
+- 13 anime themes, each with an original name that credits its show in plain text, next to the 12 classic editor themes. Choom Circuit carries forward the Cyberpunk theme. A new install starts with no theme, so GitHub keeps its own look until you pick one.
 - Built-in themes restyle the page background, header, panels, corners, buttons, fonts, code highlighting, diffs, selection, scrollbars, labels, the avatar frame and the contribution graph.
 - Full and Calm appearances. Calm keeps a theme's colors and fonts and drops its background images and gradients, profile banner, glow and other effects, and added text.
 - Flavor text appears only in a few safe places, such as a profile tag, the 404 caption and a footer sign-off. GitHub's own buttons, menus and navigation keep their words, where 1.1.0's Cyberpunk slang renamed some of them.

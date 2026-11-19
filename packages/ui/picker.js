@@ -12,6 +12,8 @@ import { COPY, GROUPS, cardLabels, countText, emptySearchText, failureText, noti
 const PREFERENCE_SWITCHES = ["text", "motion", "fonts", "effects"];
 // A tiny contribution crop: levels per cell, 3 rows of 9 weeks.
 const GRAPH_CROP = [0, 1, 0, 2, 1, 0, 3, 1, 0, 2, 0, 1, 3, 4, 2, 1, 0, 1, 0, 2, 4, 3, 1, 2, 0, 1, 2];
+// 1.0's popup swatch: two rows of 7 days.
+export const SWATCH_CROP = Object.freeze([0, 1, 3, 2, 4, 1, 0, 2, 4, 3, 1, 0, 3, 4]);
 // The native heading every miniature shows, in the theme's heading face.
 const MINI_HEADING = "Pinned";
 
@@ -25,9 +27,12 @@ const MINI_HEADING = "Pinned";
  * @param {(state:object)=>void} [options.onChange] called after each render with the settings
  * @param {(fontId:string)=>string} [options.fontFace] @font-face CSS for a bundled heading face, so
  *   miniatures show it; without it they use the face's fallback stack
+ * @param {readonly number[]} [options.crop] the graph levels each miniature shows, cell by cell
+ * @param {string} [options.defaultGroup] the group shown when none was shown before and no theme
+ *   is selected
  * @returns {{ready:Promise<void>, destroy():void, state():object}}
  */
-export function mountPicker(doc, host, { cards, catalog, cardFor = null, onChange = () => {}, fontFace = null }) {
+export function mountPicker(doc, host, { cards, catalog, cardFor = null, onChange = () => {}, fontFace = null, crop = GRAPH_CROP, defaultGroup = "anime" }) {
   const part = (name) => doc.querySelector(`[data-rs="${name}"]`);
   const parts = Object.fromEntries(
     ["enabled", "summary-show", "summary-name", "summary-note", "notices", "groups", "search", "count", "gallery", "empty", "status", "error", "undo", "retry", "motion-note", "calm-note", "quick", "appearance", ...PREFERENCE_SWITCHES].map((name) => [name, part(name)]),
@@ -69,10 +74,10 @@ export function mountPicker(doc, host, { cards, catalog, cardFor = null, onChang
     if (parts.error) parts.error.hidden = true;
   }
 
-  // Saved local themes become cards when the list changes.
+  // Saved local themes become cards when the list or a saved theme changes.
   function refreshCustomCards() {
     const custom = state.settings?.customThemes ?? [];
-    const key = custom.map((theme) => theme.id).join(",");
+    const key = JSON.stringify(custom.map((theme) => [theme.id, theme.document]));
     if (key === customKey || !cardFor) return;
     customKey = key;
     customCards = custom.flatMap((theme) => {
@@ -95,8 +100,9 @@ export function mountPicker(doc, host, { cards, catalog, cardFor = null, onChang
       return;
     }
     state = { settings: result.settings, lastGood: result.lastGood, ui: result.ui };
-    group ??= result.ui.group ?? "anime";
     refreshCustomCards();
+    // The group last shown, else the selected theme's, else the page's own.
+    group ??= result.ui.group ?? cardById(result.settings.selectedThemeId)?.group ?? defaultGroup;
     render();
   }
 
@@ -226,7 +232,7 @@ export function mountPicker(doc, host, { cards, catalog, cardFor = null, onChang
     words.append(title);
     if (m.flourish && flags.text) words.append(el("span", "rs-mini-flourish", m.flourish));
     const graph = el("span", "rs-mini-graph");
-    for (const level of GRAPH_CROP) {
+    for (const level of crop) {
       const cell = el("span", "rs-mini-cell");
       cell.style.backgroundColor = m.graph[level];
       graph.append(cell);
@@ -302,11 +308,12 @@ export function mountPicker(doc, host, { cards, catalog, cardFor = null, onChang
     if (!settings) return;
     const selectedId = pendingTheme ?? settings.selectedThemeId;
     const selected = cardById(selectedId);
-    const labels = selected ? cardLabels(selected) : { primary: "", secondary: "" };
+    const labels = selected ? cardLabels(selected) : selectedId === null ? { primary: COPY.noTheme, secondary: COPY.noThemeName } : { primary: "", secondary: "" };
     if (parts["summary-show"]) parts["summary-show"].textContent = labels.primary;
     if (parts["summary-name"]) parts["summary-name"].textContent = labels.secondary;
-    if (parts["summary-note"]) parts["summary-note"].textContent = settings.enabled ? COPY.where : COPY.off;
+    if (parts["summary-note"]) parts["summary-note"].textContent = !settings.enabled ? COPY.off : selectedId === null ? COPY.pick : COPY.where;
     doc.documentElement.dataset.rsEnabled = String(settings.enabled);
+    doc.documentElement.dataset.rsTheme = selectedId === null ? "none" : "picked";
     if (parts.enabled) parts.enabled.checked = settings.enabled;
     const prefs = settings.preferences;
     for (const input of parts.appearance?.querySelectorAll("input[type=radio]") ?? []) input.checked = input.value === prefs.appearance;

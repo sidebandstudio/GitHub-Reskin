@@ -106,7 +106,8 @@ async function save(frame) {
 }
 
 test("makes a theme from three colors, saves and applies it, then Save changes and Save a copy", async ({ manager }) => {
-  const gm = await manager({ kind: "sync" });
+  // A new install, as this check has always started from.
+  const gm = await manager({ kind: "sync", seed: null });
   const page = await gm.open();
   const frame = await openBuilder(page);
   await expect(frame.locator('[data-us="storage-note"]')).toHaveText(COPY.durable);
@@ -162,10 +163,12 @@ test("imports a chatbot's answer wrapped in prose, previews it and saves it", as
   await dialog.getByRole("textbox", { name: "Chatbot answer" }).fill(ANSWER);
   await dialog.getByRole("button", { name: "Preview theme" }).click();
   await expect(dialog.getByText("We found your theme inside the answer.")).toBeVisible();
-  await expect(dialog.getByText("We spaced the graph colors so activity levels stay visible.")).toBeVisible();
+  // Its graph levels are kept as written; its code, link and outline colors are made readable, and
+  // the disabled and label borders that start from its outline reach their own 3:1.
+  await expect(dialog.getByText("We adjusted 7 colors so links and text are easier to read.")).toBeVisible();
   await expect(dialog.locator('[data-rb="import-show"]')).toHaveText("Neon Drizzle");
   await dialog.getByText("See changes").click();
-  await expect(dialog.getByRole("rowheader", { name: /Graph levels/ })).toBeVisible();
+  await expect(dialog.getByRole("rowheader", { name: /Code syntax keyword/ })).toBeVisible();
   await expect(dialog.locator('[data-rb="import-frame"] iframe').first()).toBeAttached();
   // Escape closes the dialog and leaves the panel open.
   await page.keyboard.press("Escape");
@@ -481,7 +484,7 @@ test("two tabs editing one saved theme: the later save is held for Keep editing 
 });
 
 test("without durable storage the builder is a labeled session preview: it saves for this tab only", async ({ manager }) => {
-  const gm = await manager({ kind: "none" });
+  const gm = await manager({ kind: "none", seed: null });
   const page = await gm.open(`${PROFILE_URL}#reskin`);
   const card = await panelFrame(page);
   await card.getByRole("button", { name: "Make a theme" }).click();
@@ -494,9 +497,10 @@ test("without durable storage the builder is a labeled session preview: it saves
   await save(frame);
   await expect(statusOf(frame)).toHaveText("Saved Tab Only and applied it to GitHub.");
   await expect.poll(async () => (await painted(page)).canvas).toBe("#102030");
+  // Nothing was kept, so the reload is a new install again: no theme.
   await page.reload();
   await waitSettled(page);
-  await expect.poll(async () => (await painted(page)).canvas).toBe(CHOOM_CANVAS);
+  await expect.poll(() => painted(page)).toMatchObject({ boot: "native", styled: false });
   expect(await page.evaluate(() => ({ local: Object.keys(localStorage), session: Object.keys(sessionStorage) }))).toEqual({ local: [], session: [] });
 });
 

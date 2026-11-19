@@ -181,10 +181,12 @@ async function aiPromptAndAnswer(env) {
   await dialog.getByRole("textbox", { name: "Chatbot answer" }).fill(ANSWER);
   await dialog.getByRole("button", { name: "Preview theme" }).click();
   await expect(dialog.getByText("We found your theme inside the answer.")).toBeVisible();
-  await expect(dialog.getByText("We spaced the graph colors so activity levels stay visible.")).toBeVisible();
+  // Its graph levels are kept as written; its code, link and outline colors are made readable, and
+  // the disabled and label borders that start from its outline reach their own 3:1.
+  await expect(dialog.getByText("We adjusted 7 colors so links and text are easier to read.")).toBeVisible();
   await expect(dialog.locator('[data-rb="import-show"]')).toHaveText("Neon Drizzle");
   await dialog.getByText("See changes").click();
-  await expect(dialog.getByRole("rowheader", { name: /Graph levels/ })).toBeVisible();
+  await expect(dialog.getByRole("rowheader", { name: /Code syntax keyword/ })).toBeVisible();
   await expect(dialog.locator('[data-rb="import-frame"] iframe').first()).toBeAttached();
   await dialog.getByRole("button", { name: "Use theme" }).click();
   await expect(dialog).toBeHidden();
@@ -699,11 +701,12 @@ async function backupAndHelp(env) {
   page.once("dialog", (dialog) => (messages.push([dialog.type(), dialog.message()]), dialog.accept()));
   await backup.getByRole("button", { name: "Reset all" }).click();
   expect(messages.at(-1)[1]).toContain(themes.length === 2 ? "your saved theme," : `your ${themes.length - 1} saved themes`);
-  await expect(backup.locator('[data-rk="status"]')).toHaveText("Reskin is reset. Choom Circuit is selected.");
+  await expect(backup.locator('[data-rk="status"]')).toHaveText("Reskin is reset. No theme is selected, so GitHub keeps its own look.");
   await expect(backup.getByRole("button", { name: "Reset all" })).toBeFocused();
   await expect(backup.getByText("Your saved themes will appear here.")).toBeVisible();
   const records = await env.records();
   expect(settingsOf(records).customThemes).toEqual([]);
+  expect(settingsOf(records).selectedThemeId).toBeNull();
   expect(records[STORAGE_KEYS.draft] ?? null).toBeNull();
   await expect(backup.locator('[data-rk="draft-text"]')).toHaveText("There is no unsaved draft.");
   await page.close();

@@ -87,7 +87,8 @@ async function checkMigrations(root) {
     const recovery = stored[RECOVERY_KEY];
     check(JSON.stringify(recovery ? Object.keys(recovery).filter((k) => k !== "from").sort() : []) === JSON.stringify(expect.recovery), `${name}: recovery keys`);
     check(LEGACY_STORAGE_KEYS.every((key) => !(key in stored)), `${name}: legacy keys remain`);
-    check(settings.enabled ? bootRecordProblems(stored[STORAGE_KEYS.boot]).length === 0 : stored[STORAGE_KEYS.boot] === null, `${name}: boot record`);
+    // Disabled settings, and a new install with no theme, have nothing to paint.
+    check(settings.enabled && settings.selectedThemeId !== null ? bootRecordProblems(stored[STORAGE_KEYS.boot]).length === 0 : stored[STORAGE_KEYS.boot] === null, `${name}: boot record`);
     check(opened === expect.firstRun && api.tabs.opened.length === (expect.firstRun ? 1 : 0), `${name}: first-run tab`);
     check(!JSON.stringify(stored).includes("github-reskin-css"), `${name}: page cache key leaked into extension storage`);
   }
@@ -166,7 +167,7 @@ async function visibleDescendant(browser, bootCss, check) {
 async function gateScenarios(root, check) {
   const { build } = await import("esbuild");
   const { chromium, firefox } = await import("@playwright/test");
-  const { STORAGE_KEYS } = await import("../contracts/index.js");
+  const { DEFAULT_THEME_ID, STORAGE_KEYS } = await import("../contracts/index.js");
   const { createRepository } = await import("./index.js");
   const bootCss = readFileSync(join(root, "extension/content/lifecycle/boot.css"), "utf8");
   const bundle = await build({ entryPoints: [join(root, "tests/settings/gate-entry.mjs")], bundle: true, format: "iife", globalName: "ReskinGate", platform: "browser", write: false, logLevel: "silent" });
@@ -174,7 +175,10 @@ async function gateScenarios(root, check) {
   const { catalog, snapshot } = await import(pathToFileURL(join(root, "tests/settings/gate-entry.mjs")).href);
   const records = {};
   const memory = { get: async (keys) => Object.fromEntries(keys.filter((k) => k in records).map((k) => [k, records[k]])), set: async (r) => Object.assign(records, structuredClone(r)), remove: async () => {}, subscribe: () => () => {} };
-  await createRepository(memory, { catalog, snapshot, newId: () => "00000000-0000-4000-8000-000000000001" }).initialize();
+  const repository = createRepository(memory, { catalog, snapshot, newId: () => "00000000-0000-4000-8000-000000000001" });
+  await repository.initialize();
+  // A new install has no theme and nothing to paint; the healthy boot is one with a theme picked.
+  await repository.commit({ type: "selectTheme", id: DEFAULT_THEME_ID }, 0);
   const data = JSON.stringify({ [STORAGE_KEYS.settings]: records[STORAGE_KEYS.settings], [STORAGE_KEYS.boot]: records[STORAGE_KEYS.boot] });
 
   const scenarios = {

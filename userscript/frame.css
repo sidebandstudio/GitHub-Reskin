@@ -1,18 +1,8 @@
 /* The popup's card in the userscript frame, after the extension's ui.css and popup.css. The card
-   takes its natural height and the frame follows it up to the viewport; past that the frame
-   document scrolls. The gallery keeps its own bounded scroller at every frame height, so the
-   frame's height never changes which layout the card uses. */
+   takes the frame's width and its own natural height, and the frame follows it up to the
+   viewport; past that the frame document scrolls. */
 html {
   width: auto;
-}
-.rs-popup {
-  height: auto;
-  overflow: visible;
-  padding-bottom: 4px;
-}
-html .rs-popup .rs-gallery {
-  flex: none;
-  max-height: 300px;
 }
 .us-close {
   display: inline-flex;

@@ -3,10 +3,10 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { DEFAULT_THEME_ID, LOCAL_THEME_ID_PREFIX } from "../../packages/contracts/index.js";
 import { resolveTheme } from "../../packages/engine/index.js";
-import { bootMismatches, bootRecordProblems, buildBootRecord, defaultSettings, effectivePreferences, RUNNING_VERSIONS, snapshotProblems, usableSnapshot } from "../../packages/settings/index.js";
-import { catalog, CHOOM, ROOT, SEEDS, snapshot } from "./helpers.mjs";
+import { bootMismatches, bootRecordProblems, buildBootRecord, createCatalogSource, defaultSettings, effectivePreferences, RUNNING_VERSIONS, snapshotProblems, usableSnapshot } from "../../packages/settings/index.js";
+import { catalog, CHOOM, CLASSICS, ROOT, SEEDS, snapshot } from "./helpers.mjs";
 
-const settings = { ...defaultSettings(catalog), revision: 12 };
+const settings = { ...defaultSettings(catalog), selectedThemeId: DEFAULT_THEME_ID, revision: 12 };
 const record = () => buildBootRecord(settings, { catalog, snapshot });
 const current = (overrides = {}) => ({
   settingsRevision: 12,
@@ -35,6 +35,10 @@ test("a built record validates and is reused when everything matches", () => {
   assert.equal(value.sanitizerVersion, 1);
   assert.deepEqual(bootMismatches(value, current()), []);
   assert.equal(usableSnapshot(value, current()), value.validatedTokenSnapshot);
+});
+
+test("settings with no theme have no boot record", () => {
+  assert.equal(buildBootRecord({ ...settings, selectedThemeId: null }, { catalog, snapshot }), null);
 });
 
 test("a snapshot without expansion or sanitizer versions is invalid", () => {
@@ -88,6 +92,23 @@ test("pair and graph constraints are recomputed, not trusted", () => {
   assert.notDeepEqual(bootRecordProblems(forgedAudit), []);
   const flatGraph = mutate((r) => (r.validatedTokenSnapshot.graph[3] = r.validatedTokenSnapshot.graph[4]));
   assert.notDeepEqual(bootRecordProblems(flatGraph), []);
+});
+
+test("a theme with its own status colors keeps the seed's in its snapshot, checked like its others", () => {
+  const theme = { ...structuredClone(CHOOM), overrides: { ...CHOOM.overrides, danger: "#3fb950" } };
+  const own = createCatalogSource([{ id: DEFAULT_THEME_ID, document: theme }, ...CLASSICS]);
+  const value = buildBootRecord(settings, { catalog: own, snapshot });
+  assert.ok(value, "the record is written");
+  assert.deepEqual(bootRecordProblems(value), []);
+  assert.notEqual(value.validatedTokenSnapshot.statusSemantics.danger.text, value.validatedTokenSnapshot.semantics.danger.text);
+  const broken = structuredClone(value);
+  delete broken.validatedTokenSnapshot.statusSemantics.danger.text;
+  assert.notDeepEqual(bootRecordProblems(broken), []);
+  const unreadable = structuredClone(value);
+  unreadable.validatedTokenSnapshot.statusSemantics.danger.text = unreadable.validatedTokenSnapshot.tokens.canvas;
+  assert.notDeepEqual(bootRecordProblems(unreadable), []);
+  // A snapshot from engine 2, before protected UI kept these, is resolved again.
+  assert.notDeepEqual(bootRecordProblems({ ...structuredClone(value), engineVersion: 2 }), []);
 });
 
 test("effects, flavor and repairs are checked against the registry bounds", () => {

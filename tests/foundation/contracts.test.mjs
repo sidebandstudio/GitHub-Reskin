@@ -58,7 +58,7 @@ test("deferred editor and settings features have no contract", () => {
   // Dimmed is a standard-family mode ID, not a family.
   assert.deepEqual([...contracts.MODE_FAMILIES], ["standard", "colorblind", "tritanopia"]);
   assert.deepEqual([...contracts.MODE_POLICIES], ["themed", "native-high-contrast", "native-unknown"]);
-  assert.equal(contracts.PAIR_MATRIX_VERSION, 2);
+  assert.equal(contracts.PAIR_MATRIX_VERSION, 3);
   assert.equal(contracts.EXPANSION_VERSION, 1);
   assert.equal(contracts.SANITIZER_VERSION, 1);
   assert.deepEqual([...contracts.SHARED_BUILD_SCOPES], ["engine", "primer", "preview"]);

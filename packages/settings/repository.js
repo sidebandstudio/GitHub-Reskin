@@ -171,10 +171,10 @@ export function createRepository(storage, context) {
     };
   }
 
-  // A boot record is stale when it is missing for enabled settings, malformed, or from other
-  // versions or another revision. A null record for disabled settings is current.
+  // A boot record is stale when it is missing for enabled settings with a theme, malformed, or
+  // from other versions or another revision. A null record for disabled settings or no theme is current.
   function staleBoot(record, settings) {
-    if (record === null || record === undefined) return settings.enabled;
+    if (record === null || record === undefined) return settings.enabled && settings.selectedThemeId !== null;
     return bootRecordProblems(record).length > 0 || record.settingsRevision !== settings.revision || record.catalogHash !== catalog.hash;
   }
 

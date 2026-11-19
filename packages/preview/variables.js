@@ -42,7 +42,7 @@ export const PREVIEW_VARIABLES = Object.freeze({
   "--contribution-default-bgColor-2": "/graph/2",
   "--contribution-default-bgColor-3": "/graph/3",
   "--contribution-default-bgColor-4": "/graph/4",
-  "--contribution-default-borderColor-0": "/tokens/controlBorder",
+  "--contribution-default-borderColor-0": "/graph/0",
   "--header-bgColor": "/appearance/colors/header/background",
   "--header-fgColor-default": "/appearance/colors/header/text",
   "--header-fgColor-logo": "/tokens/text",

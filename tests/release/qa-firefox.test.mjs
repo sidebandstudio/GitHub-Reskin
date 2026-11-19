@@ -4,7 +4,8 @@
 import assert from "node:assert/strict";
 import net from "node:net";
 import test from "node:test";
-import { findFirefox, procedure, qaFirefox, remoteClient } from "../../scripts/qa-firefox.mjs";
+import { remoteClient } from "../../scripts/firefox-addon.mjs";
+import { findFirefox, procedure, qaFirefox } from "../../scripts/qa-firefox.mjs";
 
 test("the Firefox comes from --firefox, then RESKIN_FIREFOX, then the usual install path", () => {
   const exists = (path) => path.startsWith("C:");

@@ -8,10 +8,15 @@
     "text": "#c0caf5"
   },
   "description": "Palette from the Tokyo Night theme, MIT license.",
+  "details": {
+    "headerText": "#7b84af"
+  },
   "name": "Tokyo Night",
   "overrides": {
     "border": "#292e42",
     "mutedText": "#9aa0b9",
+    "primaryBackground": "#5571ad",
+    "primaryText": "#ffffff",
     "surface": "#16161e"
   },
   "schemaVersion": 1,

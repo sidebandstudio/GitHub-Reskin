@@ -1,9 +1,9 @@
-// The first-run tab, opened once after a genuine install. Choom Circuit is already selected; a
-// choice here commits at once with Undo, like the popup. The preview is C5's shared offline
-// fixture painted by the same engine, Primer compiler and appearance as github.com, with its own
-// Before/After comparison. See UX.md "First-run tab". The chooser sits beside the preview on wide
-// windows; on narrow ones the full list closes again after a choice, so the result, Undo and Open
-// GitHub follow the chips.
+// The first-run tab, opened once after a genuine install. No theme is selected yet, so the preview
+// shows GitHub's own look; a choice here commits at once with Undo, like the popup. The preview is
+// C5's shared offline fixture painted by the same engine, Primer compiler and appearance as
+// github.com, with its own Before/After comparison. See UX.md "First-run tab". The chooser sits
+// beside the preview on wide windows; on narrow ones the full list closes again after a choice, so
+// the result, Undo and Open GitHub follow the chips.
 import { configurePreview, mountPreview } from "../../packages/preview/index.js";
 import * as primer from "../../packages/primer/index.js";
 import { effectivePreferences, selectedSource } from "../../packages/settings/index.js";
@@ -45,7 +45,8 @@ export function mountOnboarding() {
   const container = document.querySelector("[data-rs-preview]");
   let preview = null;
   let completing = null;
-  let initialTheme = null;
+  // Undefined until the first render; null is no theme.
+  let initialTheme;
   let latest = null;
 
   // Completion is recorded once, on a theme choice or Open GitHub. The installed record already
@@ -57,16 +58,20 @@ export function mountOnboarding() {
     });
   }
 
+  // The full list is the anime.
   const picker = mountPage({
+    defaultGroup: "anime",
     onChange({ settings, selectedId }) {
       latest = settings;
       showPicked(selectedId);
-      initialTheme ??= settings.selectedThemeId;
+      if (initialTheme === undefined) initialTheme = settings.selectedThemeId;
       if (settings.selectedThemeId !== initialTheme) complete(settings);
-      const theme = selectedSource({ ...settings, selectedThemeId: selectedId }, catalog);
-      if (!theme) return;
+      const chosen = selectedSource({ ...settings, selectedThemeId: selectedId }, catalog);
+      if (!chosen && selectedId !== null) return;
       // The preview always shows the chosen theme; Before is the comparison with GitHub's own look.
-      const preferences = { ...effectivePreferences(settings), enabled: true };
+      // Before any choice it shows GitHub's own look, painting no theme.
+      const theme = chosen ?? catalog.document(catalog.ids[0]);
+      const preferences = { ...effectivePreferences(settings), enabled: Boolean(chosen) };
       // A bundled theme's own reviewed CSS applies, as on GitHub; a saved theme's waits for consent.
       const cssAllowed = catalog.has(selectedId);
       if (!preview) preview = mountPreview(container, { view: "profile", theme, preferences, cssAllowed });

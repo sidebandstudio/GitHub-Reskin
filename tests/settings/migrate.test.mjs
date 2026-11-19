@@ -38,7 +38,8 @@ for (const { name, raw, expect } of cases) {
     for (const key of expect.recovery) assert.deepEqual(recovery[key], raw[key]);
     // Old extension keys go once v2 reloads; boot is written in the same set and validates.
     for (const key of LEGACY_STORAGE_KEYS) assert.equal(key in stored, false, `${key} remains`);
-    if (settings.enabled) assert.deepEqual(bootRecordProblems(stored[STORAGE_KEYS.boot]), []);
+    // Disabled settings, and a new install with no theme, have nothing to paint.
+    if (settings.enabled && settings.selectedThemeId !== null) assert.deepEqual(bootRecordProblems(stored[STORAGE_KEYS.boot]), []);
     else assert.equal(stored[STORAGE_KEYS.boot], null);
     // First run only for a genuine install with nothing stored.
     assert.equal(installed, expect.firstRun);

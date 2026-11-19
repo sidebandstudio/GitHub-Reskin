@@ -1,8 +1,12 @@
-// The first-run tab: opened once on a genuine install, never on a reload or update, with Choom
-// Circuit selected, a working Before/After preview, instant theme choice and Open GitHub, with the
-// result, Undo and Open GitHub in the first screen and a preview that scrolls.
+// The first-run tab: opened once on a genuine install, never on a reload or update, with no theme
+// selected and GitHub's own look in the preview, a working Before/After preview, instant theme
+// choice and Open GitHub, with the result, Undo and Open GitHub in the first screen and a preview
+// that scrolls.
 import { chromium } from "@playwright/test";
-import { CHOOM, expect, openGitHub, storage, test, waitFor, waitPainted } from "./helpers.mjs";
+import { expect, openGitHub, storage, test, waitFor, waitPainted } from "./helpers.mjs";
+
+// A genuine install, with nothing picked before the welcome tab.
+test.use({ theme: null });
 
 const onboardingTabs = (extension) => extension.context.pages().filter((page) => page.url() === extension.url("onboarding"));
 
@@ -18,17 +22,17 @@ async function welcomeTab(extension) {
   return page;
 }
 
-test("a genuine install opens the welcome tab once, with Choom Circuit already selected", async ({ extension, packageDir }) => {
+test("a genuine install opens the welcome tab once, with no theme selected", async ({ extension, packageDir }) => {
   const welcome = await welcomeTab(extension);
   await welcome.setViewportSize({ width: 1440, height: 900 });
   await expect(welcome.getByRole("heading", { level: 1 })).toHaveText("Pick your GitHub world.");
-  await expect(welcome.locator("[data-rs=summary-show]")).toHaveText("Cyberpunk: Edgerunners");
-  await expect(welcome.locator("[data-rs=summary-name]")).toHaveText("Choom Circuit");
-  await expect(welcome.getByRole("button", { name: "Cyberpunk: Edgerunners" })).toHaveAttribute("aria-pressed", "true");
+  await expect(welcome.locator("[data-rs=summary-show]")).toHaveText("No theme");
+  await expect(welcome.locator("[data-rs=summary-name]")).toHaveText("GitHub's own look");
+  await expect(welcome.getByRole("button", { name: "Cyberpunk: Edgerunners" })).toHaveAttribute("aria-pressed", "false");
   await expect(welcome.getByRole("link", { name: "Open GitHub" })).toHaveAttribute("href", "https://github.com/whoisaldo");
   await expect(welcome.getByText("Not affiliated with or endorsed by GitHub.", { exact: false })).toBeVisible();
   const settings = (await storage(extension.worker))["reskin.settings"];
-  expect(settings).toMatchObject({ enabled: true, selectedThemeId: CHOOM, onboardingCompleted: false });
+  expect(settings).toMatchObject({ enabled: true, selectedThemeId: null, onboardingCompleted: false });
 
   // A browser restart is not an install: the same profile opens no second welcome tab and keeps
   // its settings. (An update reaches the same onInstalled path with reason "update"; C4's
@@ -42,7 +46,7 @@ test("a genuine install opens the welcome tab once, with Choom Circuit already s
   try {
     let [worker] = context.serviceWorkers();
     worker ??= await context.waitForEvent("serviceworker");
-    expect((await worker.evaluate(() => chrome.storage.local.get(null)))["reskin.settings"].selectedThemeId).toBe(CHOOM);
+    expect((await worker.evaluate(() => chrome.storage.local.get(null)))["reskin.settings"].selectedThemeId).toBe(null);
     await new Promise((resolve) => setTimeout(resolve, 1500));
     expect(context.pages().filter((page) => page.url().includes("/pages/onboarding.html"))).toHaveLength(0);
   } finally {
@@ -50,11 +54,20 @@ test("a genuine install opens the welcome tab once, with Choom Circuit already s
   }
 });
 
-test("the welcome preview shows the selected theme and Before/After, and a choice there commits", async ({ extension }) => {
+test("the welcome preview shows GitHub's own look until a choice, then the theme and Before/After", async ({ extension }) => {
   const welcome = await welcomeTab(extension);
   await welcome.setViewportSize({ width: 1440, height: 900 });
   const host = welcome.locator("[data-reskin-preview]");
-  await expect(host).toHaveAttribute("data-policy", "themed", { timeout: 15000 });
+  await expect(host).toHaveAttribute("data-completed", /\d+/, { timeout: 15000 });
+  // Nothing is painted before a choice: none of a theme's owned nodes, and first run is not done.
+  await expect(host).toHaveAttribute("data-owned-nodes", "0");
+  expect((await storage(extension.worker))["reskin.settings"].onboardingCompleted).toBe(false);
+  await welcome.getByRole("button", { name: "Cyberpunk: Edgerunners" }).click();
+  await expect(welcome.locator("[data-rs=status]")).toHaveText("Applied to GitHub.");
+  // The first choice completes first run.
+  await expect.poll(async () => (await storage(extension.worker))["reskin.settings"].onboardingCompleted).toBe(true);
+  await expect(host).toHaveAttribute("data-policy", "themed");
+  await expect.poll(() => host.getAttribute("data-owned-nodes")).not.toBe("0");
   const choomHash = await host.getAttribute("data-source-hash");
 
   await welcome.getByRole("radio", { name: "Before" }).check();
@@ -66,7 +79,6 @@ test("the welcome preview shows the selected theme and Before/After, and a choic
   await expect(welcome.locator("[data-rs=summary-name]")).toHaveText("Longroad Petals");
   await expect.poll(() => host.getAttribute("data-source-hash")).not.toBe(choomHash);
   await expect(welcome.locator("[data-rs=undo]")).toBeVisible();
-  await expect.poll(async () => (await storage(extension.worker))["reskin.settings"].onboardingCompleted).toBe(true);
 
   // All 13 anime opens the full gallery in place.
   await welcome.getByRole("button", { name: "All 13 anime" }).click();
@@ -92,6 +104,9 @@ const inFirstScreen = (page, selector) =>
 
 test("the result, Undo and Open GitHub stay in the first screen while choosing, at 1440 and 390", async ({ extension }) => {
   const welcome = await welcomeTab(extension);
+  // A first choice, so a later one has a theme for Undo to go back to.
+  await welcome.getByRole("button", { name: "Frieren" }).click();
+  await expect(welcome.locator("[data-rs=summary-name]")).toHaveText("Longroad Petals");
   for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
     const label = JSON.stringify(viewport);
     await welcome.setViewportSize(viewport);
@@ -179,6 +194,8 @@ test("the preview region scrolls by wheel and keyboard and shows the contributio
 test("the welcome preview paints Choom's own tag and heading treatment as on GitHub", async ({ extension }) => {
   const welcome = await welcomeTab(extension);
   await welcome.setViewportSize({ width: 1440, height: 900 });
+  await welcome.getByRole("button", { name: "Cyberpunk: Edgerunners" }).click();
+  await expect(welcome.locator("[data-rs=summary-name]")).toHaveText("Choom Circuit");
   await expect(welcome.locator("[data-reskin-preview]")).toHaveAttribute("data-policy", "themed", { timeout: 15000 });
   const SLOTS = ["profile.tag", "profile.pinned.heading"];
   const read = (doc, slots) =>

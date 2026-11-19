@@ -20,9 +20,11 @@ const PREFERENCE_KEYS = ["enabled", "extras", "text", "motion", "fonts", "effect
 // recolors them. Widths, labels and content stay GitHub's.
 const GRAPH_TARGET = '.js-highlight-blob,.Progress-item:is(main #js-contribution-activity .Progress[role="img"] > *):not(.markdown-body *)';
 // Protected UI, as the registry lists it and as admission marks it, keeps GitHub's own components
-// and colors with everything inside it: no structured rule or themed island applies in it, it
-// clears the Reskin switches its descendants' rules read, and it takes back its nearest island's
-// native values.
+// with everything inside it: no structured rule or themed island applies in it, and it clears the
+// Reskin switches its descendants' rules read. Its colors are the theme's, inherited from its
+// nearest island, as 1.0 colored all of GitHub, except the status colors of a theme that sets its
+// own: those are the seed's, repaired for the theme, so a warning, a danger control or a verified
+// badge cannot read as another state.
 const PROTECTED_UI = `${PROTECTED},[${CSS_MARKERS.protected}]`;
 const UNPROTECTED = `:not(${PROTECTED_UI},:is(${PROTECTED_UI}) *)`;
 // GitHub's mode files do not reset Brand variables, and no captured baseline restores them, so a
@@ -45,8 +47,6 @@ const ISSUE_LABEL = {
 // every element sees its nearest island's: whether it is themed, its selection colors and the
 // audited scalar variables advanced CSS and owned decorations read.
 const ON = "--reskin-on";
-// The mode of an element's nearest island, which protected UI reads while that island is themed.
-const MODE = "--reskin-mode";
 const SELECTION_TEXT = "--reskin-selection-text";
 const SELECTION_BACKGROUND = "--reskin-selection-background";
 const CLEARED = [ON, ...Object.keys(CSS_VARIABLES)].map((name) => `${name}:initial !important`).join(";");
@@ -83,6 +83,8 @@ const each = (target, suffix) => alternatives(target).map((t) => `${t}${suffix}`
 // Protected UI that is not an island itself; an island keeps GitHub's own declarations for its
 // mode. Each alternative keeps its own key.
 const FRAGMENT = each(PROTECTED_UI, `:not(${ATTRIBUTED})`);
+// The status colors protected UI keeps: every variable mapped from a semantic role.
+const STATUS = MAPPINGS.emit.filter((m) => m.role.startsWith("/semantics/"));
 
 const checkedDeclarations = new WeakMap();
 // islandScope builds the same long selectors for every compile of a plan, so they are kept.
@@ -154,7 +156,7 @@ function digest(text) {
   return a.toString(16).padStart(8, "0") + b.toString(16).padStart(8, "0");
 }
 
-// A declaration list of the ModeIndex, `nativeCss` or `restoreCss`, checked once, with each
+// A declaration list of the ModeIndex, `nativeCss` or `statusAliasCss`, checked once, with each
 // declaration's name and value.
 function indexDeclarations(index, field, mode) {
   let cache = checkedDeclarations.get(index);
@@ -173,38 +175,6 @@ const nativeBaseline = (index, seedMode) => indexDeclarations(index, "nativeCss"
 // light-dark() values from.
 const schemeDeclarations = (base) => [`--lightningcss-light:${base === "dark" ? " " : "initial"}`, `--lightningcss-dark:${base === "dark" ? "initial" : " "}`, `color-scheme:${base}`];
 
-// For each covered mode, its own value of every variable a themed island sets differently, the
-// mapped `colors` over the seed's `baseline`, and its scheme: what protected UI inside an island
-// of that mode takes back. Only themed islands set these variables, so on protected UI that is no
-// island they need no !important, and GitHub's own rules that set one there still win. A mode
-// without a restoring baseline fails rather than leave protected UI themed.
-function restoring(index, covered, colors, baseline) {
-  return covered.map((mode) => {
-    const own = indexDeclarations(index, "restoreCss", mode);
-    if (!own.length || !index.modes[mode]) throw new TypeError(`ModeIndex.restoreCss has no ${mode} baseline`);
-    const changed = [];
-    for (const [name, value] of own.values) {
-      const set = colors.has(name) ? colors.get(name) : baseline.get(name);
-      if (set !== undefined && set !== value) changed.push(`${name}:${value}`);
-    }
-    return [mode, [...changed, ...schemeDeclarations(index.modes[mode].base)].join(";")];
-  });
-}
-
-// GitHub's text was made for its own canvas, not the theme's. Protected UI in an island whose own
-// default or muted text does not read at 4.5:1 on the theme's canvas takes back GitHub's values of
-// the seed's mode instead, the theme's own base; where the seed's muted text does not read either,
-// as on Nord's lighter dark canvas, its muted text takes the seed's default. No canvas is painted
-// behind protected UI: a block's background extends under the floats beside it, such as the
-// profile timeline before its pagination form, and would sit under themed text. A value that is
-// not a plain color cannot be checked and counts as not reading.
-function legibly(index, restore, seed, colors, baseline, canvas) {
-  const value = (mode, name) => indexDeclarations(index, "restoreCss", mode).values.get(name) ?? baseline.get(name);
-  const reads = (mode, name) => HEX6.test(value(mode, name) ?? "") && contrast(value(mode, name), canvas) >= 4.5;
-  const [[, body]] = restoring(index, [seed.id], colors, baseline);
-  const fallback = reads(seed.id, "--fgColor-muted") ? body : `${body};--fgColor-muted:${value(seed.id, "--fgColor-default")}`;
-  return restore.map(([mode, own]) => [mode, reads(mode, "--fgColor-default") && reads(mode, "--fgColor-muted") ? own : fallback]);
-}
 
 function assertPreferences(prefs) {
   if (!prefs || PREFERENCE_KEYS.some((k) => typeof prefs[k] !== "boolean")) throw new TypeError("compileGitHub needs EffectivePreferences with six booleans");
@@ -286,10 +256,14 @@ export function compileGitHub(resolved, modePlan, prefs, index = MODE_INDEX, opt
   ].join(";");
   const brandDeclarations = [...brand].map(([name, value]) => `${name}:${value} !important`).join(";");
   const brandPageDeclarations = [...brandPage].map(([name, value]) => `${name}:${value} !important`).join(";");
+  // A theme that sets its own status colors leaves protected UI the seed's, repaired for the theme
+  // as the page's would be, with GitHub's aliases of them declared again so they read those. Only
+  // themed islands set these variables, so on protected UI that is no island they need no
+  // !important, and GitHub's own rules that set one there still win. The preview fixture holds no
+  // protected UI.
+  const status = preview || !resolved.statusSemantics ? "" : [...[...emittedColors({ ...resolved, semantics: resolved.statusSemantics }, STATUS)].map(([name, value]) => `${name}:${value}`), ...indexDeclarations(index, "statusAliasCss", seed.id)].join(";");
 
   const covered = coveredModes(index, seed.id);
-  // The preview fixture holds no protected UI.
-  const restore = preview ? [] : legibly(index, restoring(index, covered, colors, baseline.values), seed, colors, baseline.values, colorAt(resolved, "/tokens/canvas"));
   const known = Object.keys(index.modes);
   const baseOf = (m) => index.modes[m]?.base;
   // Fill and stroke paint the blob, background-color the bar.
@@ -336,8 +310,6 @@ export function compileGitHub(resolved, modePlan, prefs, index = MODE_INDEX, opt
       // Protected UI and everything in it never raise the switches again, nor does an island past
       // the sixth from the root that holds protected UI, whose nearest island no selector names.
       `${scope.eligible}${UNPROTECTED}:not(${scope.deep}:has(${PROTECTED_UI})){${declarations}}`,
-      // Each covered island's mode, for protected UI inside it.
-      ...restore.map(([mode]) => `${scope.mode(mode)}{${MODE}:${mode} !important}`),
       // Only a themed island's own descendants can suppress it, and a graph or label holds no
       // islands, so for these subjects no unsafe descendant at all is the same, shorter test. A
       // Brand footer holds no island of `others`, unsafe ones included.
@@ -362,12 +334,10 @@ export function compileGitHub(resolved, modePlan, prefs, index = MODE_INDEX, opt
       ...geckoRules.map(rule("&")),
       "}",
       // Protected UI whose nearest island is themed, found by selector through six islands, and
-      // neither protected nor inside protected UI, takes back GitHub's own values for the seed's
-      // mode: that island's own in a seed-mode island, and GitHub's colors of the seed's mode in
-      // the plan's others, whose own would make this fallback as large as the rest of the
-      // stylesheet. Past six islands no island holding protected UI is themed. Gecko tests every
-      // element against the rule, and the protected list fails at once for nearly all of them.
-      ...restore.filter(([mode]) => mode === seed.id).map(([, body]) => `:is(${PROTECTED_UI})${scope.shallow}:not(:is(${PROTECTED_UI}) ${ATTRIBUTED} *,${ATTRIBUTED}:is(${PROTECTED_UI}) *){${body}}`),
+      // neither protected nor inside protected UI, takes GitHub's own status colors. Past six
+      // islands no island holding protected UI is themed. Gecko tests every element against the
+      // rule, and the protected list fails at once for nearly all of them.
+      ...(status ? [`:is(${PROTECTED_UI})${scope.shallow}:not(:is(${PROTECTED_UI}) ${ATTRIBUTED} *,${ATTRIBUTED}:is(${PROTECTED_UI}) *){${status}}`] : []),
       "}",
       ...(wanted("selection")
         ? [
@@ -393,10 +363,9 @@ export function compileGitHub(resolved, modePlan, prefs, index = MODE_INDEX, opt
     "@media (prefers-color-scheme: dark){",
     branch("dark"),
     "}",
-    // Protected UI inside a themed island takes back that island's native values for its mode,
-    // which everything in it inherits. The style query reads the parent's, the nearest island's.
-    // Where that island's own text would not read on the theme's canvas, it takes the seed's.
-    ...restore.map(([mode, body]) => `@container style(${ON}: 1) and style(${MODE}: ${mode}){${FRAGMENT}{${body}}}`),
+    // Protected UI inside a themed island takes GitHub's own status colors, which everything in it
+    // inherits. The style query reads the parent's, the nearest island's.
+    ...(status ? [`@container style(${ON}: 1){${FRAGMENT}{${status}}}`] : []),
     // Last, protected UI clears the Reskin switches for itself and everything in it, as a native
     // island does, so no style-queried rule or Reskin variable reaches inside.
     `${PROTECTED_UI}{${CLEARED}}`,

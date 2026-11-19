@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "records": [
     {
       "id": "text",
@@ -754,7 +754,7 @@
         "/tokens/active",
         "/tokens/inputBackground"
       ],
-      "minimum": 3,
+      "minimum": 1.2,
       "purpose": "boundary"
     },
     {

@@ -1,14 +1,28 @@
 {
   "product": "GitHub Reskin",
   "studio": "Sideband Studio",
-  "date": "2026-11-08",
+  "date": "2026-11-18",
   "originalArtwork": {
-    "author": "Sideband Studio",
-    "method": "Hand-authored SVG geometry, rendered with resvg. No generated or stock bitmap art.",
-    "files": ["icon.svg", "icon-16.png", "icon-32.png", "icon-48.png", "icon-64.png", "icon-128.png", "icon-512.png", "sources/build.mjs"],
+    "author": "Sideband Studio for GitHub Reskin, November 18, 2026, from Ali Tleis's 1.0 grid of October 31, 2026",
+    "method": "sources/icon.mjs draws the grid as SVG rectangles, writes icon.svg and renders each PNG from it in Chromium with its squares snapped to whole pixels. No generated or stock bitmap art.",
+    "files": [
+      "icon.svg",
+      "icon-16.png",
+      "icon-32.png",
+      "icon-48.png",
+      "icon-64.png",
+      "icon-128.png",
+      "icon-512.png"
+    ],
     "permission": "Sideband Studio may use, modify, reproduce and redistribute this artwork with GitHub Reskin and its promotion.",
     "thirdPartyArtwork": [],
-    "excluded": ["Octocat", "GitHub mark", "GitHub logotype artwork", "franchise art", "franchise emblems", "the earlier extension icons' geometry and pixels"]
+    "excluded": [
+      "Octocat",
+      "GitHub mark",
+      "GitHub logotype artwork",
+      "franchise art",
+      "franchise emblems"
+    ]
   },
   "font": {
     "family": "Manrope",
@@ -22,12 +36,12 @@
     "redistribution": "Unmodified, with its copyright notice and license."
   },
   "sha256": {
-    "icon.svg": "1acc6bfa09de1cd5df665876755019bcd2565280752de1c723bd2a6321edcef6",
-    "icon-16.png": "86aa71a445121a51af228b0794c0d73ad3c966d2ea64aa3ba99b329a0830bfd3",
-    "icon-32.png": "06684cb33eca2fdc2751eceef9a6738bef8e9601742ccb046598d61ae1be9b80",
-    "icon-48.png": "fd02c05e47d3c5ebc69b9cff2ae04a967fe6fe6f274e9bb37f1c0fcd16d6a11b",
-    "icon-64.png": "e43576366ad09049cfb66c7ac8ae3d1274b7801730f7fa3542af861d27a650c3",
-    "icon-128.png": "d967fbd6327e87e85217e31d776b18681576d447c248165e4673427dabe20148",
-    "icon-512.png": "66ef2656f18b7b1328baf7de4b7b0ddb474083c3f8c44b3219cfc987282f46ca"
+    "icon.svg": "e3bcd23ef7a1b3d744c1435c5ca5a78b7f78b730b397a9fa73c2a0068a17e6d9",
+    "icon-16.png": "cd74f01ca73706308020b6bcdd639e5e1d4af3fb4ac92ba5efdd757041369155",
+    "icon-32.png": "022397cdb83e4e3b459e247d6a2bbf24731f85c17ff85c5a754b507d36683b48",
+    "icon-48.png": "8cbac5822af3de998fbf3fc4795a73d888e7324033fcbf4feefcfd9eea4ca27b",
+    "icon-64.png": "de37802d5077ba6a80425c0b1699a5a400c7884a1241c385a8db0b68bcea2681",
+    "icon-128.png": "229daf305c56f8f1ed2d84617f1563cbfb81f6ecfca4166f4c5f5d913ab5ca54",
+    "icon-512.png": "f598674937f3df3c5501561f6579b2f90406b59184e4834fc9743956d46e8078"
   }
 }

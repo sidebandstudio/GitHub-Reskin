@@ -244,8 +244,8 @@ export const withFavorites: SettingsV2 = { ...settings, favorites: [] };
 export const boot: BootRecord = {
   settingsRevision: 0,
   rendererVersion: 1,
-  engineVersion: 1,
-  pairMatrixVersion: 2,
+  engineVersion: 3,
+  pairMatrixVersion: 3,
   expansionVersion: 1,
   sanitizerVersion: 1,
   catalogHash: "0".repeat(64),
@@ -264,8 +264,9 @@ export const actions: CommitAction[] = [
   { type: "resetAll" },
 ];
 
-export async function commitWith(host: UiHost): Promise<string> {
+export async function commitWith(host: UiHost): Promise<string | null> {
   const reply: SettingsReply = await host.commit({ type: "setEnabled", enabled: false }, 3);
+  // A new install has no theme selected.
   return reply.ok ? reply.settings.selectedThemeId : reply.code;
 }
 
