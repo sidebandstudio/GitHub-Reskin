@@ -1,10 +1,10 @@
 {
-  "captured": "2026-11-10T03:08:36.795Z",
+  "captured": "2026-11-19T04:13:09.780Z",
   "browser": "Chromium 156.0.8078.4",
   "extension": {
     "name": "GitHub Reskin",
-    "version": "1.1.0",
-    "commit": "3365cdc6bf6ad0cd182b807725681cd9f731e571",
+    "version": "2.0.0",
+    "commit": "b3653435ce29e5d48d68d3e320d028565cee3270",
     "sourceDirty": false,
     "package": "npm run build:stores, dist/chrome unpacked"
   },
@@ -16,7 +16,7 @@
   "theme": "editing-suite",
   "themeSource": {
     "file": "themes/classics/editing-suite.reskin.json",
-    "sha256": "3ee3b3e4700d513503c5f15db383a566aed51c43d95bbf39d37c4a21fc485c5a"
+    "sha256": "8b9516a7cfb0cc817d915670950c57c960cfeeca3f4496699b4feb86cbab5c8a"
   },
   "appearance": "full",
   "flavorText": true,
@@ -52,9 +52,9 @@
       "motion": true,
       "text": true
     },
-    "revision": 6,
+    "revision": 1,
     "selectedThemeId": "editing-suite",
     "settingsVersion": 2
   },
-  "sha256": "c4941faa57f0ca0764e271e08837531e6c691e7131c36e4eb26d8abf061bf29b"
+  "sha256": "69ccb82bb526a644e1d9eea5931685a207de8bc08e4a75d34128b9ef390425f4"
 }
